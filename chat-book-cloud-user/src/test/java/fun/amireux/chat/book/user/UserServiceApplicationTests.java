@@ -1,10 +1,10 @@
-package fun.amireux.chatbookclouduser;
+package fun.amireux.chat.book.user;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.boot.test.context.SpringBootTest;
 
 @SpringBootTest
-class ChatBookCloudUserApplicationTests {
+class UserServiceApplicationTests {
 
     @Test
     void contextLoads() {
