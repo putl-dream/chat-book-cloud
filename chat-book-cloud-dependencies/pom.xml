@@ -15,6 +15,7 @@
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <spring.boot.version>3.2.4</spring.boot.version>
+        <spring.security.version>6.5.2</spring.security.version>
         <spring.cloud.version>2023.0.1</spring.cloud.version>
         <spring.cloud.alibaba.version>2023.0.1.0</spring.cloud.alibaba.version>
 
@@ -28,6 +29,7 @@
         <httpclient.version>4.5.14</httpclient.version>
         <gson.version>2.10.1</gson.version>
         <commons.lang3.version>3.9</commons.lang3.version>
+        <jwt.version>0.11.5</jwt.version>
     </properties>
 
     <dependencyManagement>
@@ -131,6 +133,38 @@
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons.lang3.version}</version>
+            </dependency>
+
+            <!-- 处理手动请求 -->
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-webflux</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+
+            <!-- JWT -->
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId> <!-- or jjwt-gson if you prefer Gson -->
+                <version>${jwt.version}</version>
+                <scope>runtime</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-common</artifactId>
+                <version>{revision}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -12,10 +12,37 @@
 
     <artifactId>chat-book-cloud-security</artifactId>
 
-
-
     <description>
-        1. security：用户的认证、权限的校验，实现「谁」可以做「什么事」
-        2. operatelog：操作日志，实现「谁」在「什么时间」对「什么」做了「什么事」
+        Spring Security 为身份验证、授权和针对常见漏洞的保护提供全面的支持。 它还提供与其他库的集成以简化其使用。
     </description>
+
+    <dependencies>
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-common</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-security</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-webflux</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <configuration>
+                    <source>17</source>
+                    <target>17</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
 </project>
