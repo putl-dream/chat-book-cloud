@@ -1,6 +1,6 @@
 package fun.amireux.chat.book.user.config;
 
-import lombok.Data;
+import fun.amireux.chat.book.user.vo.LoginRequest;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -18,12 +18,6 @@ public class AuthController {
         } else {
             return ResponseEntity.status(401).body("Invalid credentials");
         }
-    }
-
-    @Data
-    public static class LoginRequest {
-        private String username;
-        private String password;
     }
 }
 
