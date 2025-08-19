@@ -2,18 +2,8 @@ spring:
   application:
     name: gateway-server
 
+  profiles:
+    active: dev
+
 server:
   port: 8080
-
---- #################### 注册中心相关配置 ####################
-spring:
-  cloud:
-    nacos:
-      server-addr:
-      username:
-      password:
-      discovery:
-        enabled: true
-        namespace:  # 命名空间。这里使用 dev 开发环境
-      config:
-        file-extension: yaml
