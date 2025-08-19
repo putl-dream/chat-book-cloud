@@ -11,6 +11,8 @@ spring:
       routes:
         ## system-server 服务
         - id: user-api # 路由的编号
-          uri: grayLb://user-server
+          uri: lb://user-server
           predicates: # 断言，作为路由的匹配条件，对应 RouteDefinition 数组
             - Path=/pc-api/user/**
+          filters:
+            - StripPrefix=2  # 去掉前 2 段：/pc-api/user

@@ -1,0 +1,18 @@
+services:
+  nacos:
+    image: nacos/nacos-server:v2.0.3
+    container_name: nacos-chat
+    environment:
+      - MODE=standalone
+      - SPRING_DATASOURCE_PLATFORM=mysql
+      - MYSQL_SERVICE_HOST=49.235.53.56  # 这里使用 MySQL 服务在 docker 网络中的服务名
+      - MYSQL_SERVICE_PORT=3306
+      - MYSQL_SERVICE_DB_NAME=nacos
+      - MYSQL_SERVICE_USER=nacos  # 请根据您的 MySQL 配置修改
+      - MYSQL_SERVICE_PASSWORD=nacos  # 请根据您的 MySQL 配置修改
+      - MYSQL_DATABASE_NUM=1
+    ports:
+      - "8848:8848"                       # 映射 Nacos 控制台端口
+      - "9848:9848"
+      - "9849:9849"
+    restart: always
