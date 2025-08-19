@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: user-server
+
+  # ==================== Nacos 注册中心 + 配置中心 ====================
+  cloud:
+    nacos:
+      discovery:
+        server-addr: :8848
+        namespace:
+        username:
+        password:
+
+      config:
+        server-addr: :8848  # 配置中心地址
+        namespace:                 # 命名空间
+        group: DEFAULT_GROUP
+        file-extension: yaml
+        username:
+        password:
+
+server:
+  port: 8081
