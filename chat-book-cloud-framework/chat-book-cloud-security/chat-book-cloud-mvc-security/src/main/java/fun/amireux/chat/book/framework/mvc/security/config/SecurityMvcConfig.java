@@ -73,6 +73,10 @@ public class SecurityMvcConfig {
             // 根据 JWT 的 claims 设置角色
             Map<String, Object> claims = jwt.getClaims();
             String role = claims.get("role").toString(); // 或解析 JSON 得到角色
+            if (role == null || role.isEmpty()) {
+                log.warn("JWT claims does not contain role.");
+                role = "ROLE_USER";
+            }
             return Collections.singletonList(new SimpleGrantedAuthority(role));
         });
         return converter;

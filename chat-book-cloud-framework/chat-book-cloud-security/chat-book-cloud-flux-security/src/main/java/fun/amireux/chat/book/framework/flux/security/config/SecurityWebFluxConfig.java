@@ -1,7 +1,5 @@
 package fun.amireux.chat.book.framework.flux.security.config;
 
-import fun.amireux.chat.book.framework.flux.security.core.JwtReactiveAuthenticationManager;
-import fun.amireux.chat.book.framework.flux.security.core.JwtServerAuthenticationConverter;
 import fun.amireux.chat.book.framework.flux.security.exresult.JsonAccessDeniedHandler;
 import fun.amireux.chat.book.framework.flux.security.exresult.JsonAuthenticationEntryPoint;
 import lombok.extern.slf4j.Slf4j;
@@ -15,7 +13,6 @@ import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import org.springframework.security.web.server.authentication.AuthenticationWebFilter;
 import reactor.core.publisher.Flux;
 
 import javax.crypto.SecretKey;
@@ -38,9 +35,6 @@ public class SecurityWebFluxConfig {
 
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
-        AuthenticationWebFilter jwtFilter = new AuthenticationWebFilter(new JwtReactiveAuthenticationManager());
-        jwtFilter.setServerAuthenticationConverter(new JwtServerAuthenticationConverter());
-
         return http
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
@@ -51,7 +45,6 @@ public class SecurityWebFluxConfig {
                 .oauth2ResourceServer(auth -> auth
                         .jwt(jwt -> jwt
                                 .jwtDecoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
                         ))
                 .exceptionHandling(ex -> ex
                         .authenticationEntryPoint(jsonAuthenticationEntryPoint)
@@ -68,21 +61,5 @@ public class SecurityWebFluxConfig {
         );
         return NimbusReactiveJwtDecoder.withSecretKey(key).build();
     }
-
-    @Bean
-    public ReactiveJwtAuthenticationConverter jwtAuthenticationConverter() {
-        ReactiveJwtAuthenticationConverter converter = new ReactiveJwtAuthenticationConverter();
-        converter.setJwtGrantedAuthoritiesConverter(jwt -> {
-            // 解析 claims
-            String role = jwt.getClaimAsString("role");
-            if (role == null) {
-                role = "ROLE_USER";
-            }
-            return Flux.just(new SimpleGrantedAuthority(role));
-        });
-        return converter;
-    }
-
-
 }
 
