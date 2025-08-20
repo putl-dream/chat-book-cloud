@@ -21,9 +21,13 @@
         <module>chat-book-cloud-gateway</module>
         <module>chat-book-cloud-user</module>
         <module>chat-book-cloud-dependencies</module>
+        <module>chat-book-cloud-framework/chat-book-cloud-security/chat-book-cloud-mvc-security</module>
+        <module>chat-book-cloud-framework/chat-book-cloud-security/chat-book-cloud-flux-security</module>
     </modules>
 
     <properties>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
         <revision>chat-book-boot:1.0.0</revision>
     </properties>
 

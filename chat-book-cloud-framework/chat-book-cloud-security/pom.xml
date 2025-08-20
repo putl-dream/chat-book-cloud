@@ -16,33 +16,4 @@
         Spring Security 为身份验证、授权和针对常见漏洞的保护提供全面的支持。 它还提供与其他库的集成以简化其使用。
     </description>
 
-    <dependencies>
-        <dependency>
-            <groupId>fun.amireux</groupId>
-            <artifactId>chat-book-cloud-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-security</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
-        </dependency>
-    </dependencies>
-
-    <build>
-        <plugins>
-            <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-compiler-plugin</artifactId>
-                <configuration>
-                    <source>17</source>
-                    <target>17</target>
-                </configuration>
-            </plugin>
-        </plugins>
-    </build>
 </project>

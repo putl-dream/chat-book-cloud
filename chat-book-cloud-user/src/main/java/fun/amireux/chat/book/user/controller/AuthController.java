@@ -1,5 +1,8 @@
 package fun.amireux.chat.book.user.controller;
 
+import fun.amireux.chat.book.framework.common.pojo.LoginRequest;
+import fun.amireux.chat.book.framework.common.utils.JwtUtil;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,7 +12,14 @@ import org.springframework.web.bind.annotation.RestController;
 public class AuthController {
     @PostMapping("/login")
     public String login() {
-        return "success";
+        return JwtUtil.generateToken(
+                new LoginRequest("zhangsan", "111", "admin")
+        );
+    }
+
+    @PreAuthorize("hasRole('USER')")
+    @PostMapping("/logout")
+    public String logout() {
+        return "logout";
     }
 }
-
