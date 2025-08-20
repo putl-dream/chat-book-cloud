@@ -17,9 +17,9 @@ public class JsonAccessDeniedHandler implements AccessDeniedHandler {
         response.setCharacterEncoding("UTF-8");
         response.getWriter().write("""
                 {
-                    "code":401,
-                    "message":权限不足，访问被拒绝",
-                    "data":null
+                    "code": 401,
+                    "message":"权限不足，访问被拒绝",
+                    "data": null
                 }
                 """);
         response.getWriter().close();

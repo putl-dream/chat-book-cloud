@@ -13,11 +13,11 @@ public class AuthController {
     @PostMapping("/login")
     public String login() {
         return JwtUtil.generateToken(
-                new LoginRequest("zhangsan", "111", "admin")
+                new LoginRequest("zhangsan", "111", "ADMIN")
         );
     }
 
-    @PreAuthorize("hasRole('USER')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/logout")
     public String logout() {
         return "logout";

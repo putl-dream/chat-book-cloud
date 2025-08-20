@@ -77,7 +77,11 @@ public class SecurityMvcConfig {
                 log.warn("JWT claims does not contain role.");
                 role = "ROLE_USER";
             }
-            return Collections.singletonList(new SimpleGrantedAuthority(role));
+            // Spring Security 的 hasRole() 会自动添加 ROLE_ 前缀，所以需要去掉前缀
+            if (role.startsWith("ROLE_")) {
+                role = role.substring(5); // 去掉 "ROLE_" 前缀
+            }
+            return Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + role));
         });
         return converter;
     }
