@@ -40,6 +40,8 @@ public class SecurityWebFluxConfig {
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/pc-api/user/auth/**")
                         .permitAll()
+                        .pathMatchers("/pc-api/user/ws/**")
+                        .permitAll()
                         .anyExchange().authenticated()
                 )
                 .oauth2ResourceServer(auth -> auth

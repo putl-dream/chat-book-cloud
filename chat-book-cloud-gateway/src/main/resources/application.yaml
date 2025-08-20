@@ -7,12 +7,23 @@ spring:
   cloud:
     # Spring Cloud Gateway 配置项，对应 GatewayProperties 类
     gateway:
+      default-filters:
+        - PreserveHostHeader #WebSocket 转发要开启：
       # 路由配置项，对应 RouteDefinition 数组
       routes:
-        ## system-server 服务
+        ## user-server 服务
+        - id: socket-api # 路由的编号
+          uri: lb://user-server
+          predicates: # 断言，作为路由的匹配条件，对应 RouteDefinition 数组
+            - Path=/pc-api/user/ws/**
+            - Header=Upgrade, websocket
+          filters:
+            - StripPrefix=2  # 去掉前 2 段：/pc-api/user
+        ## user-server 服务
         - id: user-api # 路由的编号
           uri: lb://user-server
           predicates: # 断言，作为路由的匹配条件，对应 RouteDefinition 数组
             - Path=/pc-api/user/**
           filters:
             - StripPrefix=2  # 去掉前 2 段：/pc-api/user
+

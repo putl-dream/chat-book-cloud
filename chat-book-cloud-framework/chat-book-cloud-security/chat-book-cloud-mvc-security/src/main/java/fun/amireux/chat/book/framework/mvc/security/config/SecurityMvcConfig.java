@@ -42,6 +42,8 @@ public class SecurityMvcConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/auth/**") // 放行登录等公共接口
                         .permitAll()
+                        .requestMatchers("/ws/**")
+                        .permitAll()
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(auth -> auth
