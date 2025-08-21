@@ -22,7 +22,7 @@ spring:
         - id: user-api
           uri: lb://user-server
           predicates:
-            - Path=/pc-api/user/**, /pc-api/user/ws/**
+            - Path=/pc-api/user/**
           filters:
             - StripPrefix=2
 
