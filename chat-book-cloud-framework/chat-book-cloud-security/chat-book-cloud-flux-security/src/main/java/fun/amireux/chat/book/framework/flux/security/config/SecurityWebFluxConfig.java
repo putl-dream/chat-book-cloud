@@ -2,18 +2,17 @@ package fun.amireux.chat.book.framework.flux.security.config;
 
 import fun.amireux.chat.book.framework.flux.security.exresult.JsonAccessDeniedHandler;
 import fun.amireux.chat.book.framework.flux.security.exresult.JsonAuthenticationEntryPoint;
+import fun.amireux.chat.book.framework.flux.security.filter.RequestBodyLoggingFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
 import org.springframework.security.config.annotation.web.reactive.EnableWebFluxSecurity;
+import org.springframework.security.config.web.server.SecurityWebFiltersOrder;
 import org.springframework.security.config.web.server.ServerHttpSecurity;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.oauth2.jwt.NimbusReactiveJwtDecoder;
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder;
-import org.springframework.security.oauth2.server.resource.authentication.ReactiveJwtAuthenticationConverter;
 import org.springframework.security.web.server.SecurityWebFilterChain;
-import reactor.core.publisher.Flux;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -36,6 +35,7 @@ public class SecurityWebFluxConfig {
     @Bean
     public SecurityWebFilterChain springSecurityFilterChain(ServerHttpSecurity http) {
         return http
+                .addFilterBefore(new RequestBodyLoggingFilter(), SecurityWebFiltersOrder.FIRST)
                 .csrf(ServerHttpSecurity.CsrfSpec::disable)
                 .authorizeExchange(ex -> ex
                         .pathMatchers("/pc-api/user/auth/**")
@@ -44,6 +44,7 @@ public class SecurityWebFluxConfig {
                         .permitAll()
                         .anyExchange().authenticated()
                 )
+                .addFilterAfter(new RequestBodyLoggingFilter(), SecurityWebFiltersOrder.AUTHENTICATION)
                 .oauth2ResourceServer(auth -> auth
                         .jwt(jwt -> jwt
                                 .jwtDecoder(jwtDecoder())

@@ -2,7 +2,7 @@ package fun.amireux.chat.book.framework.mvc.security.config;
 
 import fun.amireux.chat.book.framework.mvc.security.exresult.JsonAccessDeniedHandler;
 import fun.amireux.chat.book.framework.mvc.security.exresult.JsonAuthenticationEntryPoint;
-import io.jsonwebtoken.Claims;
+import fun.amireux.chat.book.framework.mvc.security.filter.RequestLoggingFilter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,6 +15,7 @@ import org.springframework.security.oauth2.jwt.JwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.www.BasicAuthenticationFilter;
 
 import javax.crypto.SecretKey;
 import javax.crypto.spec.SecretKeySpec;
@@ -46,10 +47,12 @@ public class SecurityMvcConfig {
                         .permitAll()
                         .anyRequest().authenticated()
                 )
+                .addFilterBefore(new RequestLoggingFilter(), BasicAuthenticationFilter.class)
                 .oauth2ResourceServer(auth -> auth
-                        .jwt(jwt -> jwt
-                                .decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                                .jwt(jwt -> jwt
+                                                .decoder(jwtDecoder())
+                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
+                                )
                 )
                 .exceptionHandling(ex -> {
                     ex.accessDeniedHandler(jsonAccessDeniedHandler);

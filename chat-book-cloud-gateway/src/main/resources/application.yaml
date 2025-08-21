@@ -11,19 +11,18 @@ spring:
         - PreserveHostHeader #WebSocket 转发要开启：
       # 路由配置项，对应 RouteDefinition 数组
       routes:
-        ## user-server 服务
-        - id: socket-api # 路由的编号
-          uri: lb://user-server
-          predicates: # 断言，作为路由的匹配条件，对应 RouteDefinition 数组
+        - id: ws-api   # 1 websocket
+          uri: lb:ws://user-server
+          predicates:
             - Path=/pc-api/user/ws/**
-            - Header=Upgrade, websocket
           filters:
-            - StripPrefix=2  # 去掉前 2 段：/pc-api/user
-        ## user-server 服务
-        - id: user-api # 路由的编号
+            - StripPrefix=2
+
+        # 3. 普通 user API
+        - id: user-api
           uri: lb://user-server
-          predicates: # 断言，作为路由的匹配条件，对应 RouteDefinition 数组
-            - Path=/pc-api/user/**
+          predicates:
+            - Path=/pc-api/user/**, /pc-api/user/ws/**
           filters:
-            - StripPrefix=2  # 去掉前 2 段：/pc-api/user
+            - StripPrefix=2
 

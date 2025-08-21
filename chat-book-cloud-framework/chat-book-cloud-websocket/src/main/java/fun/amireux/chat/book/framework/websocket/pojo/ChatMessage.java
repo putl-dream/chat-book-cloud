@@ -13,8 +13,5 @@ public class ChatMessage {
     private String from;
     private String to;
     private String content;
-
-
-
 }
 

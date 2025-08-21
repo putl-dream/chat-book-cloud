@@ -1,2 +1,3 @@
 fun.amireux.chat.book.framework.flux.security.exresult.JsonAccessDeniedHandler
 fun.amireux.chat.book.framework.flux.security.exresult.JsonAuthenticationEntryPoint
+fun.amireux.chat.book.framework.flux.security.filter.RequestBodyLoggingFilter

@@ -13,7 +13,7 @@ import org.springframework.web.socket.config.annotation.WebSocketTransportRegist
 @EnableWebSocketMessageBroker  // 开启STOMP协议的WebSocket
 public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
-    @Value("${socket.path}")
+    @Value("${socket.path:/ws}")
     private String path;
 
     @PostConstruct
@@ -33,7 +33,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
         // 服务端接收消息的前缀
-        registry.setApplicationDestinationPrefixes("/app");
+        registry.setApplicationDestinationPrefixes("/ws");
 
         // 服务端消息的前缀
         // - /topic → 一般用于 广播（一对多）。
