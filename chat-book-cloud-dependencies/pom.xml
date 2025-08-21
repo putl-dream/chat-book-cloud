@@ -54,11 +54,10 @@
                 <version>${spring.boot.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.cmos.yn.cloud</groupId>
-                <artifactId>cmos-cloud-spring-boot-starter-redis</artifactId>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-data-redis</artifactId>
                 <version>${spring.boot.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
