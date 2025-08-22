@@ -1,3 +1,5 @@
 fun.amireux.chat.book.framework.mvc.security.config.SecurityMvcConfig
 fun.amireux.chat.book.framework.websocket.config.WebSocketConfig
 fun.amireux.chat.book.framework.redis.config.RedisConfig
+fun.amireux.chat.book.minio.utils.impl.MinioUpdateUtilImpl
+fun.amireux.chat.book.minio.config.MinIOConfigProperties

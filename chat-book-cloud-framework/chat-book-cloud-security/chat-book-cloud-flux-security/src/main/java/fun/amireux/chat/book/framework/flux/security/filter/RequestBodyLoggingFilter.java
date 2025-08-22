@@ -3,6 +3,7 @@ package fun.amireux.chat.book.framework.flux.security.filter;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;
 import org.springframework.core.io.buffer.DataBufferUtils;
+import org.springframework.http.MediaType;
 import org.springframework.http.server.reactive.ServerHttpRequest;
 import org.springframework.http.server.reactive.ServerHttpRequestDecorator;
 import org.springframework.stereotype.Component;
@@ -26,6 +27,12 @@ public class RequestBodyLoggingFilter implements WebFilter {
     public Mono<Void> filter(ServerWebExchange exchange, WebFilterChain chain) {
         // 检查是否已经处理过
         if (exchange.getAttribute(ALREADY_LOGGED_ATTR) != null) {
+            return chain.filter(exchange);
+        }
+
+        // 如果类型是文件的直接丢出去
+        MediaType contentType = exchange.getRequest().getHeaders().getContentType();
+        if (contentType != null && contentType.isCompatibleWith(MediaType.MULTIPART_FORM_DATA)) {
             return chain.filter(exchange);
         }
 
