@@ -3,6 +3,8 @@ package fun.amireux.chat.book.minio.utils;
 import fun.amireux.chat.book.minio.pojo.FileInfo;
 import jakarta.servlet.http.HttpServletResponse;
 
+import java.util.List;
+
 
 public interface MinioUpdateUtil {
 
@@ -13,6 +15,8 @@ public interface MinioUpdateUtil {
     void downloadFile(String storagePath, HttpServletResponse response);
 
     String uploadChunkFile(FileInfo chunkInfo, int chunkIndex);
+
+    String mergeChunkFiles(List<String> storagePaths, String fileName);
 
     default String getFileType(String fileName) {
         if (fileName == null || fileName.isEmpty()) {

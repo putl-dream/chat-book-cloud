@@ -17,6 +17,7 @@ import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -46,21 +47,35 @@ public class MinioUpdateUtilImpl implements MinioUpdateUtil {
 
     @Override
     public void downloadFile(String storagePath, HttpServletResponse response) {
-        StatObjectResponse stat = getFileStatus(storagePath);
+        try {
+            StatObjectResponse stat = getFileStatus(storagePath);
+            // 设置响应头
+            response.setContentType(stat.contentType());
+            response.setContentLengthLong(stat.size());
 
-        // 设置响应头
-        response.setContentType(stat.contentType());
-        response.setContentLengthLong(stat.size());
+            // 处理中文文件名或特殊字符
+            String filename = storagePath.substring(storagePath.lastIndexOf("/") + 1);
+            String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
+            response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFilename);
 
-        // 处理中文文件名或特殊字符
-        String filename = storagePath.substring(storagePath.lastIndexOf("/") + 1);
-        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8);
-        response.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodedFilename);
-
-        // 从 MinIO 获取输入流并写入响应
-        streamDownloadFile(storagePath, response);
+            // 从 MinIO 获取输入流并写入响应
+            streamDownloadFile(storagePath, response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
+
+    @Override
+    public String mergeChunkFiles(List<String> storagePaths, String fileName) {
+        if (hasMissingChunk(storagePaths)) {
+            return null;
+        }
+
+        String storagePath = "files/" + fileName;
+
+        return mergeChunks(storagePaths, storagePath) ? storagePath : null;
+    }
 
     @Override
     public String uploadChunkFile(FileInfo chunkInfo, int chunkIndex) {
@@ -71,12 +86,59 @@ public class MinioUpdateUtilImpl implements MinioUpdateUtil {
     }
 
 
+    private boolean mergeChunks(List<String> storagePaths, String storagePath) {
+        // 合并分片
+        List<ComposeSource> sources = storagePaths.stream()
+                .map(path -> ComposeSource.builder().bucket(minIOConfigProperties.getBucket()).object(path).build())
+                .toList();
+
+        try {
+            minioClient.composeObject(
+                    ComposeObjectArgs.builder()
+                            .bucket(minIOConfigProperties.getBucket())
+                            .object(storagePath)
+                            .sources(sources)
+                            .build()
+            );
+
+            // 检查合并后的文件
+            getFileStatus(storagePath);
+            return true;
+        } catch (Exception e) {
+            log.error("文件合并失败：{}", e.getMessage(), e);
+            return false;
+        }
+    }
+
+
+    /**
+     * 检查是否缺少分片
+     *
+     * @param storagePaths 文件路径
+     */
+    private boolean hasMissingChunk(List<String> storagePaths) {
+        return storagePaths.stream().anyMatch(path -> {
+            try {
+                StatObjectResponse stat = minioClient.statObject(StatObjectArgs
+                        .builder()
+                        .bucket(minIOConfigProperties.getBucket())
+                        .object(path)
+                        .build()
+                );
+                return stat == null;
+            } catch (Exception e) {
+                return true;
+            }
+        });
+    }
+
+
     private String selectFileUrl(String storagePath, int hours) {
         try {
             return minioClient.getPresignedObjectUrl(
                     GetPresignedObjectUrlArgs.builder()
                             .method(Method.GET)
-                            .bucket("uploads")
+                            .bucket(minIOConfigProperties.getBucket())
                             .object(storagePath)
                             .expiry(hours, TimeUnit.HOURS) // 设置有效期为 1 小时
                             .build()
@@ -111,18 +173,14 @@ public class MinioUpdateUtilImpl implements MinioUpdateUtil {
      *
      * @param storagePath 文件存储路径
      */
-    private StatObjectResponse getFileStatus(String storagePath) {
+    private StatObjectResponse getFileStatus(String storagePath) throws Exception {
         // 1. 获取文件元信息（用于设置响应头）
-        try {
-            return minioClient.statObject(
-                    StatObjectArgs.builder()
-                            .bucket(minIOConfigProperties.getBucket())
-                            .object(storagePath)
-                            .build()
-            );
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return minioClient.statObject(
+                StatObjectArgs.builder()
+                        .bucket(minIOConfigProperties.getBucket())
+                        .object(storagePath)
+                        .build()
+        );
     }
 
 
