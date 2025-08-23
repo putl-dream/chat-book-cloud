@@ -2,16 +2,12 @@ package fun.amireux.chat.book.user.controller;
 
 import fun.amireux.chat.book.framework.common.pojo.LoginRequest;
 import fun.amireux.chat.book.framework.common.utils.JwtUtil;
-import fun.amireux.chat.book.minio.pojo.FileInfo;
-import fun.amireux.chat.book.minio.utils.MinioUpdateUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.web.multipart.MultipartFile;
 
 @RestController
 @RequestMapping("/auth")

@@ -29,7 +29,7 @@
 
         <dependency>
             <groupId>fun.amireux</groupId>
-            <artifactId>chat-book-cloud-flux-security</artifactId>
+            <artifactId>chat-book-cloud-security-flux</artifactId>
         </dependency>
 
         <!-- Registry 注册中心相关 -->

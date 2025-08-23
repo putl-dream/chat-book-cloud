@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>fun.amireux</groupId>
-        <artifactId>chat-book-cloud-security</artifactId>
+        <artifactId>chat-book-cloud-framework</artifactId>
         <version>1.0.0</version>
         <relativePath>../pom.xml</relativePath>
     </parent>
