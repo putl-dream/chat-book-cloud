@@ -6,30 +6,23 @@
 
     <groupId>fun.amireux</groupId>
     <artifactId>chat-book-cloud</artifactId>
-    <version>{revision}</version>
+    <version>1.0.0</version>
     <packaging>pom</packaging>
     <name>chat-book-cloud</name>
     <description>大模型知识库</description>
 
     <modules>
+        <module>chat-book-cloud-dependencies</module>
         <module>chat-book-cloud-framework</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-common</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-kafka</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-redis</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-security</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-websocket</module>
         <module>chat-book-cloud-gateway</module>
         <module>chat-book-cloud-user</module>
-        <module>chat-book-cloud-dependencies</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-security/chat-book-cloud-mvc-security</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-security/chat-book-cloud-flux-security</module>
-        <module>chat-book-cloud-framework/chat-book-cloud-minio</module>
+        <module>chat-book-cloud-test</module>
     </modules>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
-        <revision>chat-book-boot:1.0.0</revision>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     </properties>
 
     <dependencyManagement>
@@ -37,7 +30,15 @@
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-dependencies</artifactId>
-                <version>${revision}</version>
+                <version>1.0.0</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-framework</artifactId>
+                <version>1.0.0</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>

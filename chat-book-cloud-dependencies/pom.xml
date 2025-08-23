@@ -4,13 +4,18 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>fun.amireux</groupId>
-    <version>chat-book-boot:1.0.0</version>
+    <parent>
+        <groupId>fun.amireux</groupId>
+        <artifactId>chat-book-cloud</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath> <!-- 指向根POM -->
+    </parent>
+
+    <version>1.0.0</version>
     <artifactId>chat-book-cloud-dependencies</artifactId>
     <packaging>pom</packaging>
 
     <properties>
-        <revision>chat-book-boot:1.0.0</revision>
         <maven.compiler.source>17</maven.compiler.source>
         <maven.compiler.target>17</maven.compiler.target>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
@@ -84,8 +89,6 @@
                 <artifactId>spring-alibaba-nacos-config</artifactId>
                 <version>${spring.cloud.nacos.version}</version>
             </dependency>
-
-
 
             <dependency>
                 <groupId>com.mysql</groupId>
@@ -180,12 +183,6 @@
                 <artifactId>jjwt-jackson</artifactId> <!-- or jjwt-gson if you prefer Gson -->
                 <version>${jwt.version}</version>
                 <scope>runtime</scope>
-            </dependency>
-
-            <dependency>
-                <groupId>fun.amireux</groupId>
-                <artifactId>chat-book-cloud-common</artifactId>
-                <version>{revision}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -3,13 +3,16 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
+
     <parent>
         <groupId>fun.amireux</groupId>
         <artifactId>chat-book-cloud</artifactId>
-        <version>{revision}</version>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>chat-book-cloud-gateway</artifactId>
+
 
     <dependencies>
         <!-- Spring Cloud 基础 -->
@@ -27,7 +30,6 @@
         <dependency>
             <groupId>fun.amireux</groupId>
             <artifactId>chat-book-cloud-flux-security</artifactId>
-            <version>{revision}</version>
         </dependency>
 
         <!-- Registry 注册中心相关 -->

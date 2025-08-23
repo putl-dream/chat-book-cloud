@@ -5,15 +5,35 @@
     <modelVersion>4.0.0</modelVersion>
     <parent>
         <groupId>fun.amireux</groupId>
-        <artifactId>chat-book-cloud</artifactId>
-        <version>{revision}</version>
-        <relativePath>../../pom.xml</relativePath>
+        <artifactId>chat-book-cloud-framework</artifactId>
+        <version>1.0.0</version>
+        <relativePath>../pom.xml</relativePath>
     </parent>
 
     <artifactId>chat-book-cloud-security</artifactId>
 
+    <modules>
+        <module>chat-book-cloud-flux-security</module>
+        <module>chat-book-cloud-mvc-security</module>
+    </modules>
+
     <description>
         Spring Security 为身份验证、授权和针对常见漏洞的保护提供全面的支持。 它还提供与其他库的集成以简化其使用。
     </description>
+
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-flux-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-mvc-security</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
 
 </project>
