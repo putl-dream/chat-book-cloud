@@ -16,7 +16,6 @@
         <module>chat-book-cloud-framework</module>
         <module>chat-book-cloud-gateway</module>
         <module>chat-book-cloud-user</module>
-        <module>chat-book-cloud-test</module>
     </modules>
 
     <properties>

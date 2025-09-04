@@ -18,6 +18,8 @@
         <module>chat-book-cloud-security-flux</module>
         <module>chat-book-cloud-minio</module>
         <module>chat-book-cloud-parsing</module>
+        <module>chat-book-cloud-langchain</module>
+        <module>chat-book-cloud-excel</module>
     </modules>
 
     <properties>
@@ -38,32 +40,32 @@
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-common</artifactId>
-                <version>${project.version}</version>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-kafka</artifactId>
-                <version>${project.version}</version>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-redis</artifactId>
-                <version>${project.version}</version>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-websocket</artifactId>
-                <version>${project.version}</version>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-minio</artifactId>
-                <version>${project.version}</version>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-parsing</artifactId>
-                <version>${project.version}</version>
+                <version>1.0.0</version>
             </dependency>
             <dependency>
                 <groupId>fun.amireux</groupId>
@@ -73,6 +75,16 @@
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-security-mvc</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-langchain</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-excel</artifactId>
                 <version>1.0.0</version>
             </dependency>
         </dependencies>
