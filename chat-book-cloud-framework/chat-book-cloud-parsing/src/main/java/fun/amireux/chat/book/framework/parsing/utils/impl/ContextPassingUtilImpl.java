@@ -1,6 +1,7 @@
 package fun.amireux.chat.book.framework.parsing.utils.impl;
 
 import fun.amireux.chat.book.framework.parsing.pojo.DocumentInfo;
+import fun.amireux.chat.book.framework.parsing.pojo.TextChunkIterator;
 import fun.amireux.chat.book.framework.parsing.utils.ContextParsingUtil;
 import org.apache.tika.metadata.Metadata;
 import org.apache.tika.metadata.TikaCoreProperties;
@@ -11,9 +12,13 @@ import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.stereotype.Component;
 import org.xml.sax.ContentHandler;
 
+import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.StringReader;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Component
@@ -62,5 +67,29 @@ public class ContextPassingUtilImpl implements ContextParsingUtil {
         }
 
         return documentInfo;
+    }
+
+    @Override
+    public List<String> textSlicing(String text) {
+        return textSlicing(text, 100);
+    }
+
+    @Override
+    public List<String> textSlicing(String text, int miniBlockSize) {
+        List<String> textChunks = new ArrayList<>();
+        // 文档切割处理
+        try (BufferedReader br = new BufferedReader(new StringReader(text));
+             TextChunkIterator iterator = new TextChunkIterator(br)) {
+
+            while (iterator.hasNext()) {
+                String chunk = iterator.next();
+                System.out.println(chunk);
+                if (chunk.length() > miniBlockSize) {
+                    textChunks.add(chunk);
+                }
+            }
+        } catch (IOException ignored) {
+        }
+        return textChunks;
     }
 }
