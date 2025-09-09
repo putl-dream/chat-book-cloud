@@ -7,10 +7,15 @@ import fun.amireux.chat.book.framework.excel.factory.ExcelWriterBuilder;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.function.Function;
 
 public class ExcelTemplate {
     public static <T> ExcelReaderBuilder<T> read(InputStream inputStream, Class<T> clazz) {
         return new ExcelReaderBuilder<>(inputStream, clazz);
+    }
+
+    public static <T, R> ExcelReaderBuilder<T> read(R r, Function<R, InputStream> toInputStream, Class<T> clazz) {
+        return read(toInputStream.apply(r), clazz);
     }
 
     public static List<String> getSheets(InputStream inputStream) {
@@ -21,5 +26,9 @@ public class ExcelTemplate {
 
     public static <T> ExcelWriterBuilder<T> write(OutputStream outputStream, Class<T> clazz) {
         return new ExcelWriterBuilder<>(outputStream, clazz);
+    }
+
+    public static <T, R> ExcelWriterBuilder<T> write(R r, Function<R, OutputStream> toOutputStream, Class<T> clazz) {
+        return write(toOutputStream.apply(r), clazz);
     }
 }
