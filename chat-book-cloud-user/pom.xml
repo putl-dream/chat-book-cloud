@@ -91,6 +91,11 @@
         </dependency>
 
         <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-langchain</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>cn.hutool</groupId>
             <artifactId>hutool-all</artifactId>
         </dependency>

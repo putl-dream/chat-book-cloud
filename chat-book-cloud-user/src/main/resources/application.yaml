@@ -1,6 +1,16 @@
 # 最大上传文件
 spring:
   servlet:
-      multipart:
-          max-file-size: 100MB
-          max-request-size: 100MB
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+ai:
+  qwen:
+    temperature: 0.7
+    api-key: ${QWEN_KEY:}
+    chat-model-name: qwen-plus-2025-07-28
+    embedding-model-name: text-embedding-v4
+    image-model-name: qwen-plus-2025-07-28
+    base-url: https://dashscope.aliyuncs.com/compatible-mode/v1
+
