@@ -1,4 +1,4 @@
-package fun.amireux.chat.book.framework.flux.security.filter;
+package fun.amireux.chat.book.gateway.filter;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.buffer.DataBuffer;

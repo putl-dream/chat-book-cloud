@@ -3,19 +3,21 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 49.235.53.56:8848 # 注册中心地址
+        server-addr: 127.0.0.1:8848 # 注册中心地址
         namespace: putl # 命名空间
         username: nacos # 用户名
-        password: nacos@2025 # 密码
+        password: nacos # 密码
 
 --- ###==================== Nacos 配置中心 ====================
 spring:
   cloud:
     nacos:
       config:
-        server-addr: 49.235.53.56:8848  # 配置中心地址
-        namespace: putl                # 命名空间
+        server-addr: 127.0.0.1:8848  # 配置中心地址
+        namespace: public            # 命名空间
         group: DEFAULT_GROUP  # 组名
         file-extension: yaml  # 文件后缀
-        username: nacos # 用户名
-        password: nacos@2025 # 密码
+        shared-configs:
+          - data-id: sys_auth.yaml
+            group: DEFAULT_GROUP
+            refresh: true

@@ -16,6 +16,23 @@ spring:
         - PreserveHostHeader #WebSocket 转发要开启：
       # 路由配置项，对应 RouteDefinition 数组
       routes:
+        # 鉴权服务路由
+        - id: auth-service  # 路由id
+          uri: lb://auth-server # 路由地址
+          predicates:
+            - Path=/api/auth/** # 路由匹配
+          filters:
+            - StripPrefix=1 # 去掉前缀
+
+        # 需要认证的服务路由
+        - id: user-service
+          uri: lb://user-server
+          predicates:
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+#          - name: JwtAuthFilter  # 自定义JWT验证过滤器
+
         - id: ws-api   # 1 websocket
           uri: lb:ws://user-server
           predicates:
@@ -30,4 +47,5 @@ spring:
             - Path=/pc-api/user/**
           filters:
             - StripPrefix=2
+
 

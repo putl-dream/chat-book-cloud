@@ -15,7 +15,7 @@
         <module>chat-book-cloud-dependencies</module>
         <module>chat-book-cloud-framework</module>
         <module>chat-book-cloud-gateway</module>
-        <module>chat-book-cloud-user</module>
+        <module>chat-book-cloud-auth</module>
     </modules>
 
     <properties>
