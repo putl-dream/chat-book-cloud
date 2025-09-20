@@ -35,7 +35,7 @@ public class JwtAuthFilter implements GlobalFilter, Ordered {
 
     @PostConstruct
     public void init() {
-        excludePaths = authConfiguration.getWhiteList();
+        excludePaths = authConfiguration.getGateway_whiteList();
         log.info("白名单路径：{}", excludePaths);
     }
 

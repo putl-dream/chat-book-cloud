@@ -20,7 +20,7 @@ public class SecurityConfig {
 
     @PostConstruct
     public void init() {
-        excludePaths = authConfiguration.getWhiteList().toArray(new String[0]);
+        excludePaths = authConfiguration.getGateway_whiteList().toArray(new String[0]);
     }
 
 

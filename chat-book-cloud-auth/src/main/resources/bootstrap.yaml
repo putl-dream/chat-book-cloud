@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: auth-server
+
+  profiles:
+    active: dev
+
+server:
+  port: 8081
+
+--- ## 日志
+logging:
+  level:
+    org.springframework.cloud.gateway: debug

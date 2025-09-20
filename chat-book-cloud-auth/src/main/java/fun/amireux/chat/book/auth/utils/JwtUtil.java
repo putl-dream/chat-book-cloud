@@ -1,7 +1,7 @@
 package fun.amireux.chat.book.auth.utils;
 
-import fun.amireux.chat.book.auth.config.AuthConfiguration;
 import fun.amireux.chat.book.auth.request.AuthTokenRequest;
+import fun.amireux.chat.book.framework.mvc.security.config.AuthConfiguration;
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
 import jakarta.annotation.PostConstruct;

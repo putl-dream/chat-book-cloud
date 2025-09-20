@@ -1,11 +1,12 @@
-package fun.amireux.chat.book.gateway.config;
+package fun.amireux.chat.book.framework.mvc.security.config;
 
-import com.alibaba.nacos.shaded.com.google.common.collect.Lists;
+
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -15,8 +16,10 @@ import java.util.List;
 @ConfigurationProperties(prefix = "auth")
 public class AuthConfiguration {
     // ===================================== 白名单 配置 ==============================================
-    private List<String> gateway_whiteList = Lists.newLinkedList();
+    private List<String> auth_whiteList = new ArrayList<>();
 
     // ===================================== 鉴权 配置 ==============================================
     private String JWT_SECRET;
+    private long JWT_ACCESS_EXPIRATION;
+    private long JWT_REFRESH_EXPIRATION;
 }
