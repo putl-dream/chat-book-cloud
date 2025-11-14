@@ -10,18 +10,23 @@
     <packaging>pom</packaging>
     <description>内部框架模块统一管理 (BOM)</description>
 
-
+    <properties>
+        <!-- Java 版本配置 -->
+        <java.version>17</java.version>
+        <maven.compiler.source>17</maven.compiler.source>
+        <maven.compiler.target>17</maven.compiler.target>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+        <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
+    </properties>
 
     <modules>
         <module>chat-book-cloud-common</module>
-        <!-- kafka 模块暂未实现，暂时注释 -->
-        <!-- <module>chat-book-cloud-kafka</module> -->
         <module>chat-book-cloud-redis</module>
         <module>chat-book-cloud-websocket</module>
         <module>chat-book-cloud-security-mvc</module>
         <module>chat-book-cloud-minio</module>
         <module>chat-book-cloud-parsing</module>
-        <module>chat-book-cloud-langchain</module>
         <module>chat-book-cloud-excel</module>
     </modules>
 
@@ -42,15 +47,6 @@
                 <artifactId>chat-book-cloud-common</artifactId>
                 <version>1.0.0</version>
             </dependency>
-
-            <!-- kafka 模块暂未实现，暂时注释 -->
-            <!--
-            <dependency>
-                <groupId>fun.amireux</groupId>
-                <artifactId>chat-book-cloud-kafka</artifactId>
-                <version>1.0.0</version>
-            </dependency>
-            -->
 
             <dependency>
                 <groupId>fun.amireux</groupId>
@@ -84,16 +80,11 @@
 
             <dependency>
                 <groupId>fun.amireux</groupId>
-                <artifactId>chat-book-cloud-langchain</artifactId>
-                <version>1.0.0</version>
-            </dependency>
-
-            <dependency>
-                <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-excel</artifactId>
                 <version>1.0.0</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
+
 
 </project>
