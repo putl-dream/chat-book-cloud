@@ -1,8 +1,14 @@
+### Maven ###
 chat-book-cloud-user/HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+**/target/
+
+### Maven flatten plugin 生成的文件 ###
+.flattened-pom.xml
+**/.flattened-pom.xml
 
 ### STS ###
 .apt_generated
@@ -18,6 +24,7 @@ target/
 *.iws
 *.iml
 *.ipr
+out/
 
 ### NetBeans ###
 /nbproject/private/
@@ -32,5 +39,24 @@ build/
 ### VS Code ###
 .vscode/
 
-### 移除所有模块的target目录 ###
-**/target/
+### 日志文件 ###
+*.log
+logs/
+*.log.*
+
+### 操作系统 ###
+.DS_Store
+Thumbs.db
+
+### 临时文件 ###
+*.tmp
+*.bak
+*.swp
+*~
+
+### 敏感配置文件 ###
+application-local.yml
+application-local.yaml
+bootstrap-local.yml
+bootstrap-local.yaml
+
