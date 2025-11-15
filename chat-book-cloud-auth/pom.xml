@@ -21,23 +21,6 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
-        <!-- Spring Cloud Bootstrap -->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-starter-bootstrap</artifactId>
-        </dependency>
-
-        <!-- 内部框架模块 -->
-        <dependency>
-            <groupId>fun.amireux</groupId>
-            <artifactId>chat-book-cloud-common</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>fun.amireux</groupId>
-            <artifactId>chat-book-cloud-security-mvc</artifactId>
-        </dependency>
-
         <!-- Nacos 注册中心 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
@@ -48,13 +31,6 @@
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
             <artifactId>spring-cloud-starter-alibaba-nacos-config</artifactId>
-        </dependency>
-
-        <!-- Lombok -->
-        <dependency>
-            <groupId>org.projectlombok</groupId>
-            <artifactId>lombok</artifactId>
-            <optional>true</optional>
         </dependency>
 
         <!-- JWT -->

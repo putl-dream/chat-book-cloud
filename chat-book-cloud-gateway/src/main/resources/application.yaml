@@ -5,7 +5,6 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
   main:
-    allow-circular-references: true # 允许循环依赖，因为项目是三层架构，无法避免这个情况。
     allow-bean-definition-overriding: true
   codec:
     max-in-memory-size: -1
@@ -13,39 +12,13 @@ spring:
     # Spring Cloud Gateway 配置项，对应 GatewayProperties 类
     gateway:
       default-filters:
-        - PreserveHostHeader #WebSocket 转发要开启：
-      # 路由配置项，对应 RouteDefinition 数组
       routes:
         # 鉴权服务路由
         - id: auth-service  # 路由id
           uri: lb://auth-server # 路由地址
           predicates:
-            - Path=/api/auth/** # 路由匹配
+            - Path=/auth/** # 路由匹配
           filters:
             - StripPrefix=1 # 去掉前缀
-
-        # 需要认证的服务路由
-        - id: user-service
-          uri: lb://user-server
-          predicates:
-            - Path=/api/user/**
-          filters:
-            - StripPrefix=1
-#          - name: JwtAuthFilter  # 自定义JWT验证过滤器
-
-        - id: ws-api   # 1 websocket
-          uri: lb:ws://user-server
-          predicates:
-            - Path=/pc-api/user/ws/**
-          filters:
-            - StripPrefix=2
-
-        # 3. 普通 user API
-        - id: user-api
-          uri: lb://user-server
-          predicates:
-            - Path=/pc-api/user/**
-          filters:
-            - StripPrefix=2
 
 

@@ -4,7 +4,7 @@ spring:
     nacos:
       discovery:
         server-addr: 127.0.0.1:8848 # 注册中心地址
-        namespace: putl # 命名空间
+        namespace: public # 命名空间
         username: nacos # 用户名
         password: nacos # 密码
 
