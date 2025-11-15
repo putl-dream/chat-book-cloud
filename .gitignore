@@ -1,5 +1,4 @@
 ### Maven ###
-chat-book-cloud-user/HELP.md
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
