@@ -1,8 +1,5 @@
 package fun.amireux.chat.book.framework.common.pojo;
 
-import cn.hutool.core.lang.Assert;
-import fun.amireux.chat.book.framework.common.exceptions.ServiceException;
-import fun.amireux.chat.book.framework.common.exceptions.enums.GlobalErrorCodeConstants;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -22,7 +19,6 @@ public class CommonResult<T> implements Serializable {
     }
 
     public static <T> CommonResult<T> error(Integer code, String message) {
-        Assert.isTrue(!GlobalErrorCodeConstants.SUCCESS.code().equals(code), "code 必须是错误的！");
         CommonResult<T> result = new CommonResult<>();
         result.code = code;
         result.msg = message;
@@ -37,13 +33,10 @@ public class CommonResult<T> implements Serializable {
         return error(errorCode.code(), String.format(messageFormat, params));
     }
 
-    public static <T> CommonResult<T> error(ServiceException serviceException) {
-        return error(serviceException.getCode(), serviceException.getMessage());
-    }
 
     public static <T> CommonResult<T> success(T data) {
         CommonResult<T> result = new CommonResult<>();
-        result.code = GlobalErrorCodeConstants.SUCCESS.code();
+        result.code = 200;
         result.data = data;
         result.msg = "";
         return result;
@@ -51,14 +44,14 @@ public class CommonResult<T> implements Serializable {
 
     public static <T> CommonResult<T> success() {
         CommonResult<T> result = new CommonResult<>();
-        result.code = GlobalErrorCodeConstants.SUCCESS.code();
+        result.code = 200;
         result.data = null;
         result.msg = "";
         return result;
     }
 
     public static boolean isSuccess(Integer code) {
-        return Objects.equals(code, GlobalErrorCodeConstants.SUCCESS.code());
+        return Objects.equals(code, 200);
     }
 
     public boolean isSuccess() {

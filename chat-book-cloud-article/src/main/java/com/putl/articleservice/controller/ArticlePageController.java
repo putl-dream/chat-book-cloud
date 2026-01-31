@@ -2,8 +2,8 @@ package com.putl.articleservice.controller;
 
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.service.ArticlePageService;
-import com.putl.articleservice.utils.CommonResult;
 import com.putl.articleservice.utils.PageResult;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
