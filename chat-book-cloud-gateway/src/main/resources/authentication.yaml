@@ -1,0 +1,7 @@
+feature-toggle:
+  rules:
+    - name: register
+      pattern: /user/signIn
+
+    - name: article-publish
+      pattern: /article
