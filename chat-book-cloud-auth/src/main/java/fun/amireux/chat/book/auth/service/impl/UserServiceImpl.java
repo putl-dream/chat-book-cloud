@@ -30,22 +30,24 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }
 
         if (StringUtils.isAllBlank(user.getPassword(), user.getVerificationCode())) {
+            log.error("密码或验证码不能为空");
             throw new AuthenticationException("登录信息不完整");
         }
 
+        if (user.getLoginMethod() == null) {
+            log.error("登录方式不能为空");
+            throw new AuthenticationException("登录方式不能为空");
+        }
+
         return switch (user.getLoginMethod()) {
-            case EMAIL -> emailLogin(user);
+            case VERIFICATION_CODE -> verificationCodeLogin(user);
             case REGISTER -> signIn(user);
             default -> passwordLogin(user);
         };
     }
 
-    private String emailLogin(UserDTO user) {
-        UserDO userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
-        if (userDO == null) {
-            log.error("用户不存在");
-            throw new AuthenticationException("用户不存在");
-        }
+    private String verificationCodeLogin(UserDTO user) {
+        UserDO userDO = getUserInfo(user);
         if (!userDO.getPassword().equals(user.getPassword())) {
             log.error("密码错误");
             throw new AuthenticationException("密码错误");
@@ -56,11 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
 
     private String passwordLogin(UserDTO user) {
-        UserDO userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, user.getUsername()));
-        if (userDO == null) {
-            log.error("用户不存在");
-            throw new AuthenticationException("用户不存在");
-        }
+        UserDO userDO = getUserInfo(user);
         if (!userDO.getPassword().equals(user.getPassword())) {
             log.error("密码错误");
             throw new AuthenticationException("密码错误");
@@ -69,10 +67,26 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", userDO.getUsername()));
     }
 
+    @Override
+    public UserDO getUserInfo(UserDTO user) {
+        UserDO userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, user.getUsername()));
+        if (userDO == null)
+            userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
+
+        if (userDO == null) {
+            log.error("用户不存在");
+            throw new AuthenticationException("用户不存在");
+        }
+        return userDO;
+    }
 
     @Override
     public String signIn(UserDTO signInVO) {
         if (userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, signInVO.getEmail())) != null) {
+            log.error("邮箱已存在");
+            throw new AuthenticationException("邮箱已存在");
+        }
+        if (userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, signInVO.getUsername())) != null) {
             log.error("用户名已存在");
             throw new AuthenticationException("用户名已存在");
         }

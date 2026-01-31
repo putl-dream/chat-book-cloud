@@ -1,6 +1,7 @@
 package fun.amireux.chat.book.gateway.filters;
 
 import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.web.reactive.error.ErrorWebExceptionHandler;
 import org.springframework.core.annotation.Order;
 import org.springframework.core.io.buffer.DataBuffer;
@@ -16,10 +17,12 @@ import java.nio.charset.StandardCharsets;
 // 位于 common 模块
 @Component
 @Order(-1)
+@Slf4j
 public class JsonExceptionHandler implements ErrorWebExceptionHandler {
 
     @Override
     public Mono<Void> handle(ServerWebExchange exchange, Throwable ex) {
+        log.error("[ 系统异常 ]: ", ex);
         ServerHttpResponse response = exchange.getResponse();
         if (response.isCommitted()) {
             return Mono.error(ex);
@@ -28,9 +31,10 @@ public class JsonExceptionHandler implements ErrorWebExceptionHandler {
         response.getHeaders().setContentType(MediaType.APPLICATION_JSON);
         
         // 判断是否是 AuthException
-        int code = 401;
+        int code = 500;
         String msg = "Internal Server Error";
         if (ex instanceof AuthenticationException) {
+            code = 401;
             msg = ex.getMessage();
             response.setStatusCode(HttpStatus.UNAUTHORIZED);
         }

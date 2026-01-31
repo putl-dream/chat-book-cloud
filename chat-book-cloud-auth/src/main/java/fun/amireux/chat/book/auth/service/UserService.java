@@ -19,4 +19,12 @@ public interface UserService extends IService<UserDO> {
      * @return 注册结果
      */
     String signIn(UserDTO signInVO);
+
+    /**
+     * 获取用户信息
+     *
+     * @param userDTO 用户id
+     * @return 用户信息
+     */
+    UserDO getUserInfo(UserDTO userDTO);
 }

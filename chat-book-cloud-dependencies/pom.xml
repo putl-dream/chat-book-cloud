@@ -43,7 +43,7 @@
         <easyexcel.version>3.3.3</easyexcel.version>
         <!-- AI 模型集成 -->
         <langchain4j.version>0.31.0</langchain4j.version>
-        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <mybatis.version>3.0.3</mybatis.version>
         <jsoup.version>1.15.3</jsoup.version>
         <ua.version>1.21</ua.version>
@@ -267,21 +267,10 @@
 
             <dependency>
                 <groupId>com.baomidou</groupId>
-                <artifactId>mybatis-plus-boot-starter</artifactId>
-                <exclusions>
-                    <exclusion>
-                        <artifactId>mybatis-spring</artifactId>
-                        <groupId>org.mybatis</groupId>
-                    </exclusion>
-                </exclusions>
+                <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
                 <version>${mybatis-plus.version}</version>
             </dependency>
 
-            <dependency>
-                <groupId>org.mybatis</groupId>
-                <artifactId>mybatis-spring</artifactId>
-                <version>${mybatis.version}</version>
-            </dependency>
 
             <dependency>
                 <groupId>org.jsoup</groupId>
