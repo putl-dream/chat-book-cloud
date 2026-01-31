@@ -108,6 +108,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     public LoginDTO login(String email, String password){
         UserDO userDO = selectByEmail(email);
+        if (userDO == null) {
+            return null;
+        }
         boolean checked = PwdUtil.checkPassword(password, userDO.getPassword());
         if (!checked) return null;
 

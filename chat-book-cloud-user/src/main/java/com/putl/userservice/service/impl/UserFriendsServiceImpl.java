@@ -29,6 +29,9 @@ public class UserFriendsServiceImpl extends ServiceImpl<UserFriendsMapper, UserF
 
     @Override
     public String addFriend(Integer userId, Integer friendId){
+        if (userId == null || friendId == null) {
+            return "参数错误";
+        }
         // 如果本人已经关注对方，则关注返回已关注
         UserFriendsDO userFriendsDO = userFriendsMapper.selectOne(Wrappers.<UserFriendsDO>lambdaQuery().eq(UserFriendsDO::getUserId1, userId).eq(UserFriendsDO::getUserId2, friendId));
         if (userFriendsDO != null) return "已关注";

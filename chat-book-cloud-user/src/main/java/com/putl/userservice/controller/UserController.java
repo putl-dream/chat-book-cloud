@@ -25,13 +25,7 @@ public class UserController {
 
     @PostMapping("/login")
     public Result<LoginDTO> login(@RequestBody LoginVO loginVO){
-        // 判断用户是否存在
-        String email = loginVO.getEmail();
-        UserDO userDO = userService.selectByEmail(email);
-        if (userDO == null) {
-            return Result.error("用户名或密码错误");
-        }
-        LoginDTO dto = userService.login(email, loginVO.getPassword());
+        LoginDTO dto = userService.login(loginVO.getEmail(), loginVO.getPassword());
         return dto == null ? Result.error("用户名或密码错误") : Result.success(dto);
     }
 
