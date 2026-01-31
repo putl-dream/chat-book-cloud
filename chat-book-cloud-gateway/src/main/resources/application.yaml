@@ -11,6 +11,23 @@ spring:
   cloud:
     # Spring Cloud Gateway 配置项，对应 GatewayProperties 类
     gateway:
+      globalcors:
+        cors-configurations:
+          '[/**]': # 允许跨域的请求
+            allowedOriginPatterns: # 使用模式匹配允许的源
+              - "http://*"
+              - "https://*"
+              - "ws://*"
+            allowedMethods: # 支持的请求方法
+              - GET
+              - POST
+              - PUT
+              - DELETE
+              - OPTIONS
+            allowedHeaders: "*" # 允许所有请求头
+            allowCredentials: true # 允许携带凭证（如 cookies）
+            max-age: 3600
+        add-to-simple-url-handler-mapping: true
       default-filters:
       routes:
         # 鉴权服务路由
@@ -25,16 +42,12 @@ spring:
           predicates: # 路由断言
             - Path=/article/** # 路由路径
           filters:
-            - name: SystemCustomGatewayFilterFactory
-              args:
-                name: article-service
+            - StripPrefix=1 # 去掉前缀
         - id: user-service
           uri: lb://user-service
           predicates:
             - Path=/user/**
           filters:
-            - name: SystemCustomGatewayFilterFactory
-              args:
-                name: user-service
+            - StripPrefix=1 # 去掉前缀
 
 

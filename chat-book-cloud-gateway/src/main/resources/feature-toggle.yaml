@@ -1,0 +1,13 @@
+feature-toggle:
+  rules:
+    - name: register
+      pattern: /user/signIn
+      methods: [POST]
+      enabled: false
+      message: "注册功能已关闭"
+
+    - name: article-publish
+      pattern: /article
+      methods: [POST]
+      enabled: false
+      message: "投稿功能维护中"
