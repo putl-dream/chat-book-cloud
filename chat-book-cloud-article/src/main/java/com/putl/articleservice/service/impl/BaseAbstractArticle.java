@@ -58,9 +58,27 @@ public abstract class BaseAbstractArticle {
     }
 
     private void setArticleVO(ArticleListVO article) {
-        UserFootVO userFoot = userClient.getUserFoot(article.getId());
-        article.setViewCount(userFoot.getViewCount());
-        article.setPraiseCount(userFoot.getPraiseStat());
-        article.setCommentCount(userFoot.getCollectStat());
+        try {
+            // 调用带 userId 参数的方法，避免用户服务依赖 ReqInfoContext
+            // 对于获取文章统计数据，当前用户 ID 不重要，传入 0 表示系统查询
+            UserFootVO userFoot = userClient.getUserFoot(article.getId(), 0);
+            if (userFoot != null) {
+                article.setViewCount(userFoot.getViewCount());
+                article.setPraiseCount(userFoot.getPraiseStat());
+                article.setCommentCount(userFoot.getCollectStat());
+            } else {
+                // 设置默认值，避免空指针异常
+                article.setViewCount(0L);
+                article.setPraiseCount(0L);
+                article.setCommentCount(0L);
+                log.warn("UserFootVO is null for articleId: {}", article.getId());
+            }
+        } catch (Exception e) {
+            // Feign 调用失败时设置默认值
+            article.setViewCount(0L);
+            article.setPraiseCount(0L);
+            article.setCommentCount(0L);
+            log.error("获取文章统计数据失败，articleId: {}", article.getId(), e);
+        }
     }
 }

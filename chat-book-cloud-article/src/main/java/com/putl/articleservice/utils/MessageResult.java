@@ -32,4 +32,8 @@ public class MessageResult<T> {
     public static String messagePublish(String data) {
         return JSON.toJSONString(new MessageResult<>("PUBLISH", data));
     }
+
+    public static String messageError(String data) {
+        return JSON.toJSONString(new MessageResult<>("ERROR", data));
+    }
 }

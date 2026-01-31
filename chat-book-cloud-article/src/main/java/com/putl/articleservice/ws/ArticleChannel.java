@@ -22,7 +22,7 @@ import java.util.concurrent.ConcurrentHashMap;
 @ServerEndpoint(value = "/article/ws", configurator = SessionConfig.class)
 public class ArticleChannel {
     private static final ConcurrentHashMap<Integer, Session> sessions = new ConcurrentHashMap<>();
-    private static final HashMap<Integer, String> articleInfo = new HashMap<>();
+    private static final ConcurrentHashMap<Integer, String> articleInfo = new ConcurrentHashMap<>();
     private static final String NULL_ARTICLE = "<p><br></p>";
     private Session session;
     private Integer userId;
@@ -34,13 +34,21 @@ public class ArticleChannel {
 
     // 连接打开
     @OnOpen
-    public void onOpen(Session session, EndpointConfig endpointConfig) {
+    public void onOpen(Session session, EndpointConfig endpointConfig) throws IOException {
         session.setMaxBinaryMessageBufferSize(1024 * 1024 * 100);
         session.setMaxTextMessageBufferSize(1024 * 1024 * 100);
         this.session = session;
         HttpSession httpSession = (HttpSession) endpointConfig.getUserProperties().get(HttpSession.class.getName());
-        Integer userId = Integer.valueOf(String.valueOf(httpSession.getAttribute("userId")));
-        this.userId = userId;
+
+        // 验证用户是否登录
+        if (httpSession == null || httpSession.getAttribute("userId") == null) {
+            log.error("[websocket] Session中不存在userId，关闭连接");
+            session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "未登录"));
+            return;
+        }
+
+        Object userIdObj = httpSession.getAttribute("userId");
+        this.userId = Integer.valueOf(String.valueOf(userIdObj));
 
         // 查询是否有缓存信息, 有则发送
         if (articleInfo.containsKey(this.userId)) {
@@ -56,10 +64,16 @@ public class ArticleChannel {
     public void onMessage(String message) throws IOException {
         log.info("[websocket] 收到消息：用户={}，message={}", this.userId, message);
 
-        // 反序列化
+        // 反序列化并验证
         Message messages = BeanUtil.toBean(message, Message.class);
+        if (messages == null || messages.getType() == null) {
+            sendMessage(MessageResult.messageError("消息格式错误"));
+            log.error("[websocket] 消息反序列化失败，message={}", message);
+            return;
+        }
+
         if (messages.getType().equals("SAVE") || messages.getType().equals("PUBLISH")) {
-            if (StringUtils.equals(NULL_ARTICLE, messages.getData().getContent())) {
+            if (messages.getData() == null || StringUtils.equals(NULL_ARTICLE, messages.getData().getContent())) {
                 sendMessage(MessageResult.messageSave("文章内容为空，不保存！！"));
                 return;
             }

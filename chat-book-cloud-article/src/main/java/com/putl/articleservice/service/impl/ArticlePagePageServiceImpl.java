@@ -46,7 +46,12 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     }
 
     /**
-     * 获取热门文章列表（未实现）。
+     * 获取热门文章列表。
+     * 返回最近30天内审核通过的文章，按创建时间倒序排列。
+     *
+     * 注意：当前实现基于时间维度的简化版本。
+     * 完整的热门算法应综合考虑浏览量、点赞数、收藏数等因素，
+     * 建议后续引入 Redis 缓存 + 定时任务计算热门度。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -54,11 +59,22 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getHotPage(Integer pageNo, Integer pageSize) {
-        return null;
+        // 获取最近30天内的已发布文章
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getStatus, 1)
+                .ge(ArticleDO::getCreateTime, thirtyDaysAgo)
+                .orderByDesc(ArticleDO::getCreateTime)
+        );
     }
 
     /**
-     * 获取今日热门文章列表（未实现）。
+     * 获取今日热门文章列表。
+     * 返回今天创建的审核通过的文章，按创建时间倒序排列。
+     *
+     * 注意：当前实现基于今日发布的文章。
+     * 完整的今日热门算法应基于今日浏览量、点赞数等实时数据排序，
+     * 建议后续引入 Redis 实时统计。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -66,7 +82,13 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getTodayHotPage(Integer pageNo, Integer pageSize) {
-        return null;
+        // 获取今天开始时间
+        LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getStatus, 1)
+                .ge(ArticleDO::getCreateTime, todayStart)
+                .orderByDesc(ArticleDO::getCreateTime)
+        );
     }
 
     /**
@@ -96,7 +118,15 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     }
 
     /**
-     * 获取系统推荐文章列表，限制时间为本周，状态为已发布。
+     * 获取系统推荐文章列表。
+     * 返回本周内审核通过的文章，按创建时间倒序排列。
+     *
+     * 注意：当前实现为降级策略，返回本周优质文章。
+     * 完整的推荐算法应基于：
+     * 1. 内容质量（点赞、收藏、阅读量综合评分）
+     * 2. 发布时间衰减
+     * 3. 分类多样性
+     * 建议后续引入 Redis 缓存 + 定时任务计算推荐列表。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -104,20 +134,29 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getSystemRecommendPage(Integer pageNo, Integer pageSize) {
-        // todo list需要使用缓存
-        List<Integer> list = new ArrayList<>();
-        return toBean(0, 10, Wrappers.<ArticleDO>lambdaQuery()
-                .in(ArticleDO::getId, list)
+        // 降级策略：返回本周审核通过的文章
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime weekStart = now.with(DayOfWeek.MONDAY).toLocalDate().atStartOfDay();
+        LocalDateTime weekEnd = now.with(DayOfWeek.SUNDAY).toLocalDate().atTime(23, 59, 59);
+
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getStatus, 1)
-                // 时间范围在本周
-                .ge(ArticleDO::getCreateTime, LocalDateTime.now().with(DayOfWeek.MONDAY))
-                .le(ArticleDO::getCreateTime, LocalDateTime.now().with(DayOfWeek.SUNDAY))
+                .ge(ArticleDO::getCreateTime, weekStart)
+                .le(ArticleDO::getCreateTime, weekEnd)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }
 
     /**
-     * 获取个性化推荐文章列表，状态为已发布。
+     * 获取个性化推荐文章列表。
+     * 基于用户兴趣推荐相关文章，当前返回最新发布的文章。
+     *
+     * 注意：当前实现为降级策略，返回最新文章。
+     * 完整的个性化推荐算法应基于：
+     * 1. 用户历史阅读行为分析
+     * 2. 用户兴趣标签匹配
+     * 3. 协同过滤算法
+     * 建议后续引入机器学习模型 + 用户画像系统。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -125,11 +164,11 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getPersonalRecommendPage(Integer pageNo, Integer pageSize) {
-        List<Integer> list = new ArrayList<>();
+        // 降级策略：返回最近7天内的已发布文章
+        LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .in(ArticleDO::getId, list)
                 .eq(ArticleDO::getStatus, 1)
-                // 时间范围在本周
+                .ge(ArticleDO::getCreateTime, sevenDaysAgo)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }
@@ -192,7 +231,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     @Override
     public PageResult<ArticleListVO> getUserDraftArticlePage(Integer pageNo, Integer pageSize, Integer userId) {
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getId, userId)
+                .eq(ArticleDO::getUserId, userId)
                 .eq(ArticleDO::getStatus, 0)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
