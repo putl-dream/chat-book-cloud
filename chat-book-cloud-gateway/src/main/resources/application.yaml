@@ -45,7 +45,6 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/user/**
-          filters:
-            - StripPrefix=1 # 去掉前缀
+
 
 

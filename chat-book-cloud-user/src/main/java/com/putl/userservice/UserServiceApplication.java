@@ -24,11 +24,5 @@ public class UserServiceApplication {
         // 解决WebSocket不能注入的问题
         ChatChannel.setMessageService(configurableApplicationContext.getBean(MessageService.class));
     }
-
-    @EventListener
-    public void handleContextClosed(ContextClosedEvent event) {
-        // 在上下文关闭时清理引用
-        ChatChannel.setMessageService(null);
-    }
 }
 

@@ -7,7 +7,9 @@ import jakarta.annotation.PostConstruct;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -29,6 +31,7 @@ import java.util.stream.Collectors;
 @Configuration
 @EnableWebSecurity
 @EnableMethodSecurity(prePostEnabled = true, securedEnabled = true) // 默认关闭
+@ComponentScan("fun.amireux.chat.book.framework.mvc.security")
 public class SecurityMvcConfig {
 
     private final JsonAccessDeniedHandler jsonAccessDeniedHandler;
@@ -51,32 +54,29 @@ public class SecurityMvcConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
+                .cors(Customizer.withDefaults())
                 .csrf(AbstractHttpConfigurer::disable)
+                .httpBasic(AbstractHttpConfigurer::disable)
+                .formLogin(AbstractHttpConfigurer::disable)
+
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers(excludePaths) // 放行登录等公共接口
-                        .permitAll()
-                        .requestMatchers("/ws/**")
-                        .permitAll()
-                        .anyRequest().authenticated()
+                        // 1. 静态资源或特殊路径放行
+                        .requestMatchers("/ws/**", "/favicon.ico").permitAll()
+                        // 2. 核心改变：默认允许所有人访问所有接口
+                        .anyRequest().permitAll()
                 )
-                .addFilterBefore(new RequestLoggingFilter(), BasicAuthenticationFilter.class)
+
                 .oauth2ResourceServer(auth -> auth
-                        .jwt(jwt -> jwt
-                                .decoder(jwtDecoder())
-                                .jwtAuthenticationConverter(jwtAuthenticationConverter())
-                        )
+                        .jwt(jwt -> jwt.jwtAuthenticationConverter(jwtAuthenticationConverter()))
+                        .authenticationEntryPoint(jsonAuthenticationEntryPoint)
                 )
-                .exceptionHandling(ex -> {
-                    ex.accessDeniedHandler(jsonAccessDeniedHandler);
-                    ex.authenticationEntryPoint(jsonAuthenticationEntryPoint);
-                })
                 .build();
     }
 
     @Bean
     public JwtDecoder jwtDecoder() {
         // 使用 NimbusJwtDecoder 解析
-        SecretKey key = new SecretKeySpec(authConfiguration.getJWT_SECRET().getBytes(), "HmacSHA256");
+        SecretKey key = new SecretKeySpec("auth-gateway".getBytes(), "HmacSHA256");
         return NimbusJwtDecoder.withSecretKey(key).build();
     }
 
