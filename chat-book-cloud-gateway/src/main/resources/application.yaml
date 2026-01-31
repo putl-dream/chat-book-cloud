@@ -20,5 +20,21 @@ spring:
             - Path=/auth/** # 路由匹配
           filters:
             - StripPrefix=1 # 去掉前缀
+        - id: article-service # 路由id
+          uri: lb://article-service # 路由地址
+          predicates: # 路由断言
+            - Path=/article/** # 路由路径
+          filters:
+            - name: SystemCustomGatewayFilterFactory
+              args:
+                name: article-service
+        - id: user-service
+          uri: lb://user-service
+          predicates:
+            - Path=/user/**
+          filters:
+            - name: SystemCustomGatewayFilterFactory
+              args:
+                name: user-service
 
 

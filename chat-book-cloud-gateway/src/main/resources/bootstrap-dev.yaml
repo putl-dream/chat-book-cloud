@@ -5,8 +5,8 @@ spring:
       discovery:
         server-addr: 127.0.0.1:8848 # 注册中心地址
         namespace: public # 命名空间
-        username: nacos # 用户名
-        password: nacos # 密码
+#        username: nacos # 用户名
+#        password: nacos # 密码
 
 --- ###==================== Nacos 配置中心 ====================
 spring:
@@ -16,5 +16,5 @@ spring:
         server-addr: 127.0.0.1:8848  # 配置中心地址
         namespace: public            # 命名空间
         group: DEFAULT_GROUP  # 组名
-        username: nacos
-        password: nacos
+#        username: nacos
+#        password: nacos

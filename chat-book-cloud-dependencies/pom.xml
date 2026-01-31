@@ -43,6 +43,10 @@
         <easyexcel.version>3.3.3</easyexcel.version>
         <!-- AI 模型集成 -->
         <langchain4j.version>0.31.0</langchain4j.version>
+        <mybatis-plus.version>3.5.5</mybatis-plus.version>
+        <mybatis.version>3.0.3</mybatis.version>
+        <jsoup.version>1.15.3</jsoup.version>
+        <ua.version>1.21</ua.version>
     </properties>
 
     <dependencyManagement>
@@ -273,6 +277,58 @@
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-open-ai</artifactId>
                 <version>${langchain4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.baomidou</groupId>
+                <artifactId>mybatis-plus-boot-starter</artifactId>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>mybatis-spring</artifactId>
+                        <groupId>org.mybatis</groupId>
+                    </exclusion>
+                </exclusions>
+                <version>${mybatis-plus.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.mybatis</groupId>
+                <artifactId>mybatis-spring</artifactId>
+                <version>${mybatis.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.jsoup</groupId>
+                <artifactId>jsoup</artifactId>
+                <version>${jsoup.version}</version>
+            </dependency>
+
+
+            <!-- UA解析工具 -->
+            <dependency>
+                <groupId>eu.bitwalker</groupId>
+                <artifactId>UserAgentUtils</artifactId>
+                <version>${ua.version}</version>
+            </dependency>
+
+            <!-- https://mvnrepository.com/artifact/com.fasterxml.jackson.datatype/jackson-datatype-jsr310 -->
+            <dependency>
+                <groupId>com.fasterxml.jackson.datatype</groupId>
+                <artifactId>jackson-datatype-jsr310</artifactId>
+                <version>2.18.3</version>
+            </dependency>
+
+<!--            &lt;!&ndash; JWT &ndash;&gt;-->
+<!--            <dependency>-->
+<!--                <groupId>com.auth0</groupId>-->
+<!--                <artifactId>java-jwt</artifactId>-->
+<!--                <version>${jwt.version}</version>-->
+<!--            </dependency>-->
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-amqp</artifactId>
+                <version>${spring.boot.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

@@ -16,6 +16,7 @@
         <module>chat-book-cloud-framework</module>
         <module>chat-book-cloud-gateway</module>
         <module>chat-book-cloud-auth</module>
+        <module>chat-book-cloud-article</module>
     </modules>
 
     <properties>
