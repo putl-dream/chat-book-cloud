@@ -1,0 +1,14 @@
+spring:
+  application:
+    name: user-service
+
+  profiles:
+    active: dev
+
+server:
+  port: 9093
+
+--- ## 日志
+logging:
+  level:
+    org.springframework.cloud.gateway: debug

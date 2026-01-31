@@ -1,6 +1,5 @@
 package com.putl.articleservice.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.articleservice.client.UserClient;
@@ -9,8 +8,8 @@ import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
-import com.putl.articleservice.utils.BeanUtils;
 import com.putl.articleservice.utils.PageResult;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
@@ -41,9 +40,11 @@ public abstract class BaseAbstractArticle {
     private UserClient userClient;
 
     protected PageResult<ArticleListVO> toBean(Integer pageNo, Integer pageSize, Wrapper<ArticleDO> wrapper) {
-        PageResult<ArticleListVO> bean = BeanUtils.toBean(articleMapper.selectCustomizePage(new Page<>(pageNo, pageSize), wrapper), ArticleListVO.class);
-        bean.getList().forEach(this::setArticleVO);
-        return bean;
+        PageResult<ArticleDO> articleDOPageResult = articleMapper.selectCustomizePage(new Page<>(pageNo, pageSize), wrapper);
+        List<ArticleListVO> bean = BeanUtil.toBean(articleDOPageResult.getList(), ArticleListVO.class);
+        PageResult<ArticleListVO> pageResult = new PageResult<>(bean, articleDOPageResult.getTotal());
+        pageResult.getList().forEach(this::setArticleVO);
+        return pageResult;
     }
 
     protected ArticleVO toBean(Wrapper<ArticleDO> wrapper) {

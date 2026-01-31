@@ -1,11 +1,13 @@
 package com.putl.articleservice.ws;
 
-import cn.hutool.json.JSONUtil;
+
 import com.alibaba.cloud.commons.lang.StringUtils;
+import com.alibaba.fastjson2.JSON;
 import com.putl.articleservice.config.SessionConfig;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.service.ArticleService;
 import com.putl.articleservice.utils.MessageResult;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import jakarta.servlet.http.HttpSession;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
@@ -26,13 +28,13 @@ public class ArticleChannel {
     private Integer userId;
     private static ArticleService articleService;
 
-    public static void setArticleService(ArticleService articleService){
+    public static void setArticleService(ArticleService articleService) {
         ArticleChannel.articleService = articleService;
     }
 
     // 连接打开
     @OnOpen
-    public void onOpen(Session session, EndpointConfig endpointConfig){
+    public void onOpen(Session session, EndpointConfig endpointConfig) {
         session.setMaxBinaryMessageBufferSize(1024 * 1024 * 100);
         session.setMaxTextMessageBufferSize(1024 * 1024 * 100);
         this.session = session;
@@ -51,12 +53,12 @@ public class ArticleChannel {
 
     // 收到消息
     @OnMessage
-    public void onMessage(String message) throws IOException{
+    public void onMessage(String message) throws IOException {
         log.info("[websocket] 收到消息：用户={}，message={}", this.userId, message);
 
         // 反序列化
-        Message messages = JSONUtil.toBean(message, Message.class);
-        if (messages.getType().equals("SAVE") || messages.getType().equals("PUBLISH")){
+        Message messages = BeanUtil.toBean(message, Message.class);
+        if (messages.getType().equals("SAVE") || messages.getType().equals("PUBLISH")) {
             if (StringUtils.equals(NULL_ARTICLE, messages.getData().getContent())) {
                 sendMessage(MessageResult.messageSave("文章内容为空，不保存！！"));
                 return;
@@ -82,7 +84,7 @@ public class ArticleChannel {
      * @param closeReason 关闭原因
      */
     @OnClose
-    public void onClose(CloseReason closeReason){
+    public void onClose(CloseReason closeReason) {
         sessions.remove(userId, this.session);
         articleInfo.remove(userId);
         log.info("[websocket] 连接关闭：用户={}，reason={}", userId, closeReason.getReasonPhrase());
@@ -94,7 +96,7 @@ public class ArticleChannel {
      * @param throwable 异常
      */
     @OnError
-    public void onError(Throwable throwable) throws IOException{
+    public void onError(Throwable throwable) throws IOException {
         log.info("[websocket] 连接异常：id={}，throwable={}", this.session.getId(), throwable.getMessage());
         // 关闭连接。状态码为 UNEXPECTED_CONDITION（意料之外的异常）
         this.session.close(new CloseReason(CloseReason.CloseCodes.UNEXPECTED_CONDITION, throwable.getMessage()));
@@ -106,7 +108,7 @@ public class ArticleChannel {
      *
      * @param message
      */
-    private void sendMessage(String message){
+    private void sendMessage(String message) {
         try {
             this.session.getBasicRemote().sendText(message);
             log.info("<<< 发送消息：id={}，message={}", this.session.getId(), message);
@@ -122,7 +124,7 @@ public class ArticleChannel {
      *  - publish 发布
      *  - select 查询
      */
-    private void articleHandle(Message message){
+    private void articleHandle(Message message) {
         String article = articleInfo.get(userId);
         log.info("[websocket] 用户={}, 操作{} ,缓存{}", userId, message.getType(), article);
         Integer id = message.getData().getId();
@@ -152,7 +154,7 @@ public class ArticleChannel {
                     break;
                 case "SELECT":
                     ArticleVO articleVO = articleService.getArticleDetail(id);
-                    sendMessage(MessageResult.messageSelect(JSONUtil.toJsonStr(articleVO)));
+                    sendMessage(MessageResult.messageSelect(JSON.toJSONString(articleVO)));
                     break;
             }
         }

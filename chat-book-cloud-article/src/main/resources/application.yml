@@ -1,0 +1,15 @@
+spring:
+  config:
+    import: nacos:article-service-dev.yml
+
+  datasource:
+    url: jdbc:mysql://127.0.0.1:3306/ice-article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: root
+
+  data:
+    redis:
+      host: 127.0.0.1
+      port: 6379
+      password:

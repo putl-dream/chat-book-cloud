@@ -1,3 +1,0 @@
-fun.amireux.chat.book.framework.mvc.security.exresult.JsonAccessDeniedHandler
-fun.amireux.chat.book.framework.mvc.security.exresult.JsonAuthenticationEntryPoint
-fun.amireux.chat.book.framework.mvc.security.filter.RequestLoggingFilter

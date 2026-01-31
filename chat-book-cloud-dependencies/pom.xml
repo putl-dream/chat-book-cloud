@@ -27,7 +27,6 @@
         <!-- 消息队列 -->
         <kafka.version>3.2.1</kafka.version>
         <!-- 工具类相关 -->
-        <hutool.version>5.8.20</hutool.version>
         <commons.lang3.version>3.9</commons.lang3.version>
         <fastjson2.version>2.0.59</fastjson2.version>
         <!-- HTTP 相关 -->
@@ -176,12 +175,6 @@
             <!-- 工具类库                                      -->
             <!-- ============================================= -->
             <dependency>
-                <groupId>cn.hutool</groupId>
-                <artifactId>hutool-all</artifactId>
-                <version>${hutool.version}</version>
-            </dependency>
-
-            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-lang3</artifactId>
                 <version>${commons.lang3.version}</version>
@@ -296,6 +289,12 @@
             <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter-amqp</artifactId>
+                <version>${spring.boot.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-starter-mail</artifactId>
                 <version>${spring.boot.version}</version>
             </dependency>
         </dependencies>

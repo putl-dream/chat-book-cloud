@@ -1,12 +1,12 @@
 package com.putl.articleservice.service.impl;
 
-import cn.hutool.core.bean.BeanUtil;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.service.ArticleService;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
