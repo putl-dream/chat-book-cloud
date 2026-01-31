@@ -3,6 +3,7 @@ package com.putl.articleservice.client;
 import com.putl.articleservice.client.result.UserFootListVO;
 import com.putl.articleservice.client.result.UserFootVO;
 import com.putl.articleservice.client.result.UserResult;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
