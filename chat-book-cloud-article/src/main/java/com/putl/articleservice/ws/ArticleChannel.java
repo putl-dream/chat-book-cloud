@@ -38,17 +38,25 @@ public class ArticleChannel {
         session.setMaxBinaryMessageBufferSize(1024 * 1024 * 100);
         session.setMaxTextMessageBufferSize(1024 * 1024 * 100);
         this.session = session;
-        HttpSession httpSession = (HttpSession) endpointConfig.getUserProperties().get(HttpSession.class.getName());
+
+        // 优先从 UserProperties 中获取 userId (由 SessionConfig 设置)
+        Object userIdObj = endpointConfig.getUserProperties().get("userId");
+        if (userIdObj != null) {
+            this.userId = Integer.valueOf(String.valueOf(userIdObj));
+        } else {
+            // 兜底方案：从 HttpSession 获取 (兼容旧逻辑)
+            HttpSession httpSession = (HttpSession) endpointConfig.getUserProperties().get(HttpSession.class.getName());
+            if (httpSession != null && httpSession.getAttribute("userId") != null) {
+                this.userId = Integer.valueOf(String.valueOf(httpSession.getAttribute("userId")));
+            }
+        }
 
         // 验证用户是否登录
-        if (httpSession == null || httpSession.getAttribute("userId") == null) {
-            log.error("[websocket] Session中不存在userId，关闭连接");
+        if (this.userId == null) {
+            log.error("[websocket] 无法获取用户ID，关闭连接");
             session.close(new CloseReason(CloseReason.CloseCodes.VIOLATED_POLICY, "未登录"));
             return;
         }
-
-        Object userIdObj = httpSession.getAttribute("userId");
-        this.userId = Integer.valueOf(String.valueOf(userIdObj));
 
         // 查询是否有缓存信息, 有则发送
         if (articleInfo.containsKey(this.userId)) {

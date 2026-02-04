@@ -14,8 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -64,12 +62,6 @@ public class FileController {
             File uploadDir = savePath.toFile();
             if (!uploadDir.exists() && !uploadDir.mkdirs()) {
                 return ImageResult.error("创建上传目录失败");
-            }
-
-            try {
-                String ipAddress = InetAddress.getLocalHost().getHostAddress();
-            } catch (UnknownHostException e) {
-                log.error("获取本地 IP 地址失败", e);
             }
 
             // 创建文件

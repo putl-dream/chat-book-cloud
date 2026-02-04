@@ -1,6 +1,6 @@
 package com.putl.articleservice.config;
 
-import com.putl.articleservice.common.ReqInfoContext;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import lombok.extern.slf4j.Slf4j;
@@ -26,22 +26,21 @@ public class FeignClientsConfig {
         return new RequestInterceptor() {
             @Override
             public void apply(RequestTemplate template) {
-                ReqInfoContext.ReqInfo reqInfo = ReqInfoContext.getReqInfo();
-                if (reqInfo != null) {
+                String userId = UserContext.getUserId();
+                if (userId != null) {
                     // 传递用户ID
-                    template.header("X-User-Id", String.valueOf(reqInfo.getUserId()));
+                    template.header("X-User-Id", userId);
+                    // 传递用户名
+                    String username = UserContext.getUsername();
+                    if (username != null) {
+                        template.header("X-User-Name", username);
+                    }
                     // 传递客户端IP
-                    if (reqInfo.getClientIp() != null) {
-                        template.header("X-Client-IP", reqInfo.getClientIp());
+                    String clientIp = UserContext.getClientIp();
+                    if (clientIp != null) {
+                        template.header("X-Client-IP", clientIp);
                     }
-                    // 传递设备信息
-                    if (reqInfo.getDevice() != null) {
-                        template.header("X-Device", reqInfo.getDevice());
-                    }
-                    log.debug("[Feign] 传递用户上下文: userId={}, path={}",
-                            reqInfo.getUserId(), template.path());
-                } else {
-                    log.warn("[Feign] ReqInfoContext 为空，无法传递用户上下文，path={}", template.path());
+                    log.debug("[Feign] 传递用户上下文: userId={}, path={}", userId, template.path());
                 }
             }
         };
