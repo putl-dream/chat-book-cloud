@@ -28,7 +28,7 @@ out/
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/ui-ice/node_modules
+/chat-book-ui-blog/node_modules
 /dist/
 /nbdist/
 /.nb-gradle/
