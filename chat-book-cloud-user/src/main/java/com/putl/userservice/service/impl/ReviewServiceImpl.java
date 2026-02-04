@@ -3,7 +3,7 @@ package com.putl.userservice.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.CollectionUtils;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.putl.userservice.common.ReqInfoContext;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.controller.vo.ReviewListVO;
 import com.putl.userservice.controller.vo.ReviewVO;
 import com.putl.userservice.mapper.ReviewMapper;
@@ -69,8 +69,12 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
 
     @Override
     public boolean save(ReviewVO reviewVO){
+        String userId = UserContext.getUserId();
+        if (userId == null) {
+            throw new IllegalStateException("用户信息未找到，请重新登录");
+        }
         ReviewDO bean = BeanUtil.toBean(reviewVO, ReviewDO.class);
-        bean.setUserId(ReqInfoContext.getReqInfo().getUserId());
+        bean.setUserId(Integer.parseInt(userId));
         bean.setTextId(reviewVO.getArticleId());
         return reviewMapper.insert(bean) == 1;
     }

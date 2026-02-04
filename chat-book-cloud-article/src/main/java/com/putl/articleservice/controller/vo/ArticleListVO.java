@@ -1,5 +1,6 @@
 package com.putl.articleservice.controller.vo;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -19,9 +20,11 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "文章标题")
     private String title;
 
+    @JSONField(name = "cover")
     @Schema(description = "文章封面图片URL")
     private String articleCover;
 
+    @JSONField(name = "abstractText")
     @Schema(description = "文章摘要")
     private String summary;
 

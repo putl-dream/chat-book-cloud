@@ -1,7 +1,7 @@
 package com.putl.userservice.controller;
 
 
-import com.putl.userservice.common.ReqInfoContext;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.mapper.entity.MessageDO;
 import com.putl.userservice.service.MessageService;
 import com.putl.userservice.util.Result;
@@ -24,7 +24,11 @@ public class MessageController {
     @Operation(summary = "查询用户消息")
     @GetMapping("/queryUserMessage")
     public Result<List<MessageDO>> queryUserMessage(Integer receiveId){
-        List<MessageDO> dos = messageService.queryUserMessage(ReqInfoContext.getReqInfo().getUserId(), receiveId);
+        String userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.error("用户信息未找到，请重新登录");
+        }
+        List<MessageDO> dos = messageService.queryUserMessage(Integer.parseInt(userId), receiveId);
         return Result.success(dos);
     }
 

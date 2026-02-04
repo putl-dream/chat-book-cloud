@@ -1,6 +1,6 @@
 package com.putl.userservice.controller;
 
-import com.putl.userservice.common.ReqInfoContext;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.controller.vo.LoginVO;
 import com.putl.userservice.controller.vo.SignInVO;
 import com.putl.userservice.controller.vo.UserChatVO;
@@ -47,13 +47,21 @@ public class UserController {
     @Operation(summary = "查询自己")
     @GetMapping("/bySelf")
     public Result<UserVO> getUserBySelf(){
-        UserVO user = userService.selectById(ReqInfoContext.getReqInfo().getUserId());
+        String userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.error("用户信息未找到，请重新登录");
+        }
+        UserVO user = userService.selectById(Integer.parseInt(userId));
         return Result.success(user);
     }
 
     @Operation(summary = "根据id查询用户好友列表")
     @GetMapping("/friendList")
     public Result<List<UserChatVO>> getFriendList(){
-        return Result.success(userService.selectFriendList(ReqInfoContext.getReqInfo().getUserId()));
+        String userId = UserContext.getUserId();
+        if (userId == null) {
+            return Result.error("用户信息未找到，请重新登录");
+        }
+        return Result.success(userService.selectFriendList(Integer.parseInt(userId)));
     }
 }

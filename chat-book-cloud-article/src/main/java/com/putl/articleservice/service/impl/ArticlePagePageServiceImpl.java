@@ -8,7 +8,6 @@ import com.putl.articleservice.utils.PageResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -134,15 +133,11 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getSystemRecommendPage(Integer pageNo, Integer pageSize) {
-        // 降级策略：返回本周审核通过的文章
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime weekStart = now.with(DayOfWeek.MONDAY).toLocalDate().atStartOfDay();
-        LocalDateTime weekEnd = now.with(DayOfWeek.SUNDAY).toLocalDate().atTime(23, 59, 59);
-
+        // 降级策略：返回所有审核通过的文章
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getStatus, 1)
-                .ge(ArticleDO::getCreateTime, weekStart)
-                .le(ArticleDO::getCreateTime, weekEnd)
+//                .ge(ArticleDO::getCreateTime, weekStart)
+//                .le(ArticleDO::getCreateTime, weekEnd)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }

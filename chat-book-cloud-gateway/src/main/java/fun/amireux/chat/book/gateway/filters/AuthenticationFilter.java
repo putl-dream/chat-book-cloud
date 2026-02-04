@@ -32,33 +32,55 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        List<AuthenticationProperties.AuthenticationRule> rules = authenticationProperties.getRules();
-        if (CollectionUtils.isEmpty(rules)) {
-            return chain.filter(exchange);
+        String token = extractToken(request);
+        String userId = null;
+        String username = null;
+
+        if (token != null) {
+            try {
+                com.auth0.jwt.interfaces.DecodedJWT decodedJWT = jwtUtil.verifyToken(token);
+                userId = String.valueOf(decodedJWT.getClaim("id").asInt());
+                username = decodedJWT.getClaim("username").asString();
+            } catch (Exception e) {
+                log.error("Token verification failed: {}", e.getMessage());
+            }
         }
 
-        for (AuthenticationProperties.AuthenticationRule rule : rules) {
-            if (antPathMatcher.match(rule.getPattern(), path)) {
-                log.info("[ 身份认证 ]: 功能 {}，接口 {}", rule.getName(), path);
+        List<AuthenticationProperties.AuthenticationRule> rules = authenticationProperties.getRules();
+        boolean isMandatory = false;
 
-                String token = extractToken(exchange.getRequest());
-                if (token == null) {
-                    throw new AuthenticationException("未找到认证信息");
+        if (!CollectionUtils.isEmpty(rules)) {
+            for (AuthenticationProperties.AuthenticationRule rule : rules) {
+                if (antPathMatcher.match(rule.getPattern(), path)) {
+                    isMandatory = true;
+                    log.info("[ 身份认证 ]: 功能 {}，接口 {}", rule.getName(), path);
+                    break;
                 }
-                String identity = jwtUtil.verifyToken(token).getClaim("username").asString();
-
-                exchange.getAttributes().put("identity", identity);
-                log.info("认证成功: {}", exchange.getRequest().getPath());
-
-                return chain.filter(exchange);
             }
+        }
+
+        if (isMandatory && userId == null) {
+            throw new AuthenticationException("未找到有效认证信息");
+        }
+
+        // 无论是否必选，只要有身份信息，就传递给下游
+        if (userId != null) {
+            ServerHttpRequest mutableRequest = exchange.getRequest().mutate()
+                    .header("X-User-Id", userId)
+                    .header("X-User-Name", username)
+                    .build();
+            return chain.filter(exchange.mutate().request(mutableRequest).build());
         }
 
         return chain.filter(exchange);
     }
 
     private String extractToken(ServerHttpRequest request) {
-        return request.getHeaders().getFirst("Authorization");
+        String token = request.getHeaders().getFirst("Authorization");
+        if (token == null || token.isEmpty()) {
+            token = request.getHeaders().getFirst("token");
+        }
+        return token;
     }
 
     @Override

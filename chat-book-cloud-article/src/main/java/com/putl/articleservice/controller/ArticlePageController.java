@@ -7,6 +7,7 @@ import com.putl.articleservice.controller.dto.UserPageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.utils.PageResult;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -69,14 +70,16 @@ public class ArticlePageController {
 
     @Operation(summary = "获取用户历史阅读文章列表")
     @PostMapping("/userHistoryPage")
-    public CommonResult<PageResult<ArticleListVO>> getUserHistoryPage(@Valid @RequestBody UserPageRequestDTO request) {
-        return CommonResult.success(articlePageService.getUserHistoryPage(request.getPageNo(), request.getPageSize(), request.getUserId()));
+    public CommonResult<PageResult<ArticleListVO>> getUserHistoryPage(@Valid @RequestBody PageRequestDTO request) {
+        Integer userId = Integer.valueOf(UserContext.getUserId());
+        return CommonResult.success(articlePageService.getUserHistoryPage(request.getPageNo(), request.getPageSize(), userId));
     }
 
     @Operation(summary = "获取用户收藏文章列表")
     @PostMapping("/userCollectPage")
-    public CommonResult<PageResult<ArticleListVO>> getUserCollectPage(@Valid @RequestBody UserPageRequestDTO request) {
-        return CommonResult.success(articlePageService.getUserCollectPage(request.getPageNo(), request.getPageSize(), request.getUserId()));
+    public CommonResult<PageResult<ArticleListVO>> getUserCollectPage(@Valid @RequestBody PageRequestDTO request) {
+        Integer userId = Integer.valueOf(UserContext.getUserId());
+        return CommonResult.success(articlePageService.getUserCollectPage(request.getPageNo(), request.getPageSize(), userId));
     }
 
     @Operation(summary = "获取用户发布的文章列表")
@@ -87,8 +90,9 @@ public class ArticlePageController {
 
     @Operation(summary = "获取用户草稿箱文章列表")
     @PostMapping("/userDraftArticlePage")
-    public CommonResult<PageResult<ArticleListVO>> getUserDraftArticlePage(@Valid @RequestBody UserPageRequestDTO request) {
-        return CommonResult.success(articlePageService.getUserDraftArticlePage(request.getPageNo(), request.getPageSize(), request.getUserId()));
+    public CommonResult<PageResult<ArticleListVO>> getUserDraftArticlePage(@Valid @RequestBody PageRequestDTO request) {
+        Integer userId = Integer.valueOf(UserContext.getUserId());
+        return CommonResult.success(articlePageService.getUserDraftArticlePage(request.getPageNo(), request.getPageSize(), userId));
     }
 
     @Operation(summary = "获取管理员审核文章列表")

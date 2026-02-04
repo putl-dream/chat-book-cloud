@@ -1,0 +1,23 @@
+<svg width="240" height="60" viewBox="0 0 240 60" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="iceGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+            <stop offset="0%" style="stop-color:#80D0C7;stop-opacity:1"/>
+            <stop offset="100%" style="stop-color:#0093E9;stop-opacity:1"/>
+        </linearGradient>
+    </defs>
+
+    <g transform="translate(10, 8)">
+        <path d="M12 2 L35 7 L35 37 L12 42 L2 22 Z" fill="url(#iceGradient)" opacity="0.9">
+            <animate attributeName="opacity" values="0.7;1;0.7" dur="3s" repeatCount="indefinite"/>
+        </path>
+        <path d="M12 2 L12 42 M12 22 L35 7" stroke="white" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+        <circle cx="12" cy="22" r="2" fill="white"/>
+    </g>
+
+    <text x="60" y="42" font-family="Verdana, sans-serif" font-weight="900" font-size="36" fill="url(#iceGradient)">
+        ICE
+    </text>
+
+    <circle cx="210" cy="15" r="3" fill="#80D0C7" opacity="0.5" />
+    <rect x="220" y="25" width="4" height="4" fill="#0093E9" opacity="0.4" transform="rotate(45 222 27)" />
+</svg>

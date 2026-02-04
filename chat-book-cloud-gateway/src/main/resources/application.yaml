@@ -38,9 +38,7 @@ spring:
         - id: article-service # 路由id
           uri: lb://article-service # 路由地址
           predicates: # 路由断言
-            - Path=/article/** # 路由路径
-          filters:
-            - StripPrefix=1 # 去掉前缀
+            - Path=/page/** # 路由路径
         - id: user-service
           uri: lb://user-service
           predicates:

@@ -1,0 +1,60 @@
+* {
+    padding: 0;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    color: var(--text-color-primary);
+    background-color: var(--bg-color-base);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.5;
+}
+
+a, button, .clickable {
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+/* Glassmorphism utility */
+.glass-effect {
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-base);
+    -webkit-backdrop-filter: var(--blur-base);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow: var(--box-shadow-glass);
+}
+
+.interactive-card {
+    transition: var(--transition-base);
+    border: 1px solid var(--border-color-base);
+    background: var(--bg-color-white);
+}
+
+.interactive-card:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--box-shadow-hover);
+    border-color: var(--color-primary-light);
+}
+
+/* Scrollbar styling - Sleeker */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--border-color-base);
+    border-radius: 10px;
+    border: 2px solid var(--bg-color-base);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--text-color-secondary);
+}

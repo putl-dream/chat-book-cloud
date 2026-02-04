@@ -1,0 +1,49 @@
+:root {
+    /* Brand Colors - Modern Blue Palette */
+    --color-primary: #2563eb;
+    --color-primary-hover: #1d4ed8;
+    --color-primary-light: #eff6ff;
+    --color-primary-active: #1e40af;
+    
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #6b7280;
+
+    /* Text Colors - High Legibility */
+    --text-color-primary: #111827;
+    --text-color-regular: #374151;
+    --text-color-secondary: #6b7280;
+    --text-color-placeholder: #9ca3af;
+
+    /* Background Colors - Glassmorphism Base */
+    --bg-color-base: #f8fafc;
+    --bg-color-white: #ffffff;
+    --bg-color-glass: rgba(255, 255, 255, 0.7);
+    --bg-color-overlay: rgba(255, 255, 255, 0.85);
+
+    /* Borders & Radius - Soft & Premium */
+    --border-color-base: #e5e7eb;
+    --border-color-light: #f3f4f6;
+    --border-color-lighter: #f9fafb;
+    --border-radius-base: 8px;
+    --border-radius-large: 12px;
+    --border-radius-xl: 16px;
+    --border-radius-round: 9999px;
+
+    /* Shadows - Deep & Subtle */
+    --box-shadow-base: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+    --box-shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.08), 0 4px 6px -2px rgba(0, 0, 0, 0.04);
+    --box-shadow-glass: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+
+    /* Layout */
+    --header-height: 64px;
+    --container-width-lg: 1280px;
+    --container-padding: 24px;
+
+    /* Interactivity */
+    --transition-fast: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-base: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    --blur-base: blur(12px);
+    --blur-large: blur(20px);
+}

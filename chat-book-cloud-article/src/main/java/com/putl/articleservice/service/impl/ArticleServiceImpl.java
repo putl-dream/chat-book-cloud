@@ -6,6 +6,7 @@ import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.service.ArticleService;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -58,6 +59,10 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     @Override
     public void addArticle(ArticleVO articleVO) {
         ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
+        String userId = UserContext.getUserId();
+        if (userId != null) {
+            articleDO.setUserId(Integer.valueOf(userId));
+        }
         articleMapper.insert(articleDO);
     }
 
@@ -70,6 +75,11 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     @Override
     public void updateArticle(ArticleVO articleVO) {
         ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
+        // 更新时也可以校验一下权限，或者确保 userId 不被串改
+        String userId = UserContext.getUserId();
+        if (userId != null) {
+            articleDO.setUserId(Integer.valueOf(userId));
+        }
         articleMapper.updateById(articleDO);
     }
 
