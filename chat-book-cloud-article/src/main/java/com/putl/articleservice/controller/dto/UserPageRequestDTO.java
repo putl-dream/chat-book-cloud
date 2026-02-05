@@ -18,6 +18,5 @@ public class UserPageRequestDTO extends PageRequestDTO {
     /**
      * 用户ID
      */
-    @NotNull(message = "用户ID不能为空")
     private Integer userId;
 }

@@ -17,5 +17,13 @@ public class UserDTO {
     @Schema(description = "邮箱")
     private String email;
     @Schema(description = "验证码")
-    private String verificationCode;
+    private String captcha;
+
+    public String getVerificationCode() {
+        return captcha;
+    }
+
+    public void setVerificationCode(String captcha) {
+        this.captcha = captcha;
+    }
 }

@@ -34,7 +34,7 @@ export function signUp(params) {
  * @returns
  */
 export function captcha(email) {
-    return request.get(`/user/captcha`, { params: { email } });
+    return request.get(`/auth/account/captcha`, { params: { email } });
 }
 
 /**
@@ -63,12 +63,22 @@ export function getFriendList() {
 }
 
 /**
+ * 添加关注
+ * @param {string} userId
+ * @param {string} friendId
+ * @returns
+ */
+export function addFriend(userId, friendId) {
+    return request.get(`/user/friends`, { params: { userId, friendId } });
+}
+
+/**
  * 查询用户消息
  * @param {string} receiveId
  * @returns
  */
 export function queryUserMessage(receiveId) {
-    return request.get(`/user/captcha/queryUserMessage`, { params: { receiveId } });
+    return request.get(`/user/message/queryUserMessage`, { params: { receiveId } });
 }
 
 /**
