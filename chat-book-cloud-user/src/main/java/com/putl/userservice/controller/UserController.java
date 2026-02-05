@@ -47,4 +47,11 @@ public class UserController {
         }
         return Result.success(userService.selectFriendList(Integer.parseInt(userId)));
     }
+
+    @Operation(summary = "更新用户信息")
+    @PostMapping("/update")
+    public Result<Void> updateUser(@RequestBody UserVO userVO) {
+        userService.updateUser(userVO);
+        return Result.success();
+    }
 }

@@ -1,4 +1,4 @@
-import {createWebHistory, createRouter} from 'vue-router';
+import { createWebHistory, createRouter } from 'vue-router';
 
 const routes = [
     {
@@ -10,15 +10,15 @@ const routes = [
                 path: '',
                 name: 'Home',
                 component: () => import('@/views/Home.vue')
-            },            {
+            }, {
                 path: 'backend',
                 name: 'Backend',
                 component: () => import('@/views/Home.vue')
-            },            {
+            }, {
                 path: 'frontend',
                 name: 'Frontend',
                 component: () => import('@/views/Home.vue')
-            },            {
+            }, {
                 path: 'mysql',
                 name: 'Mysql',
                 component: () => import('@/views/Home.vue')
@@ -37,25 +37,31 @@ const routes = [
                 path: '/message',
                 name: 'Message',
                 component: () => import('@/views/Message.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             },
             {
                 path: '/history',
                 name: 'History',
                 component: () => import('@/views/History.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             },
             {
                 path: '/profile',
                 name: 'Profile',
                 component: () => import('@/views/Profile.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
+            },
+            {
+                path: '/profile/edit',
+                name: 'ProfileEdit',
+                component: () => import('@/views/ProfileEdit.vue'),
+                meta: { requiresAuth: true }
             },
             {
                 path: '/chat',
                 name: 'Chat',
                 component: () => import('@/views/Chat.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             }
         ]
     },
@@ -80,13 +86,13 @@ const routes = [
                 path: '',
                 name: 'CreativeHome',
                 component: () => import('@/views/Creative.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             },
             {
                 path: 'content',
                 name: 'Content',
                 component: () => import('@/views/Content.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             }
         ]
     },
@@ -99,13 +105,13 @@ const routes = [
                 path: '',
                 name: 'Write',
                 component: () => import('@/views/Text.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             },
             {
                 path: ':id',
                 name: 'Edit',
                 component: () => import('@/views/Text.vue'),
-                meta: {requiresAuth: true}
+                meta: { requiresAuth: true }
             }
         ]
     },

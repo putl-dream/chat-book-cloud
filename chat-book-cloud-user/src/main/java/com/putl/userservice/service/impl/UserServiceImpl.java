@@ -1,6 +1,7 @@
 package com.putl.userservice.service.impl;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
+import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -66,5 +67,23 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     public IPage<UserVO> selectPage(Integer page, Integer size){
         Page<UserDO> user = userMapper.selectPage(new Page<>(page, size), Wrappers.<UserDO>lambdaQuery().orderByDesc(UserDO::getCreateTime));
         return user.convert(userDO -> selectById(userDO.getId()));
+    }
+
+    @Override
+    public void updateUser(UserVO userVO) {
+        String userId = UserContext.getUserId();
+        if (userId == null || !userId.equals(String.valueOf(userVO.getUserId()))) {
+            throw new RuntimeException("无权修改他人信息");
+        }
+        
+        UserInfoDO userInfo = UserInfoDO.builder()
+                .id(userVO.getId())
+                .userId(userVO.getUserId())
+                .username(userVO.getUsername())
+                .photo(userVO.getPhoto())
+                .profile(userVO.getProfile())
+                .build();
+                
+        userInfoService.update(userInfo);
     }
 }

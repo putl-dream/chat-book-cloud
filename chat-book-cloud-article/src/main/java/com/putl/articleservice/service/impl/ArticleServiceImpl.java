@@ -39,7 +39,8 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      */
     @Override
     public ArticleVO getArticleInfo(Integer articleId) {
-        return toBean(Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getId, articleId));
+        ArticleDO articleDO = articleMapper.selectById(articleId);
+        return BeanUtil.toBean(articleDO, ArticleVO.class);
     }
 
     /**

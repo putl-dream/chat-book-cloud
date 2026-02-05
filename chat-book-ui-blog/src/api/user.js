@@ -73,6 +73,15 @@ export function addFriend(userId, friendId) {
 }
 
 /**
+ * 更新用户信息
+ * @param {object} data
+ * @returns
+ */
+export function updateUser(data) {
+    return request.post(`/user/update`, data);
+}
+
+/**
  * 查询用户消息
  * @param {string} receiveId
  * @returns

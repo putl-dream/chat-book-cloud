@@ -1,7 +1,7 @@
 package com.putl.userservice.config;
 
 import fun.amireux.chat.book.framework.common.context.UserContext;
-import com.putl.userservice.util.JwtUtil;
+import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.springframework.context.annotation.Bean;
@@ -13,14 +13,14 @@ import java.util.Map;
 public class FeignConfig {
 
     @Bean
-    public RequestInterceptor requestInterceptor() {
+    public RequestInterceptor requestInterceptor(JwtUtil jwtUtil) {
         return new RequestInterceptor() {
             @Override
             public void apply(RequestTemplate template) {
                 // 添加自定义请求头
                 String userId = UserContext.getUserId();
                 if (userId != null) {
-                    String jwt = JwtUtil.generateToken(Map.of("id", Integer.parseInt(userId)));
+                    String jwt = jwtUtil.generateToken(Map.of("id", Long.valueOf(userId)));
                     template.header("token", jwt);
                     template.header("X-User-Id", userId);
                     String username = UserContext.getUsername();

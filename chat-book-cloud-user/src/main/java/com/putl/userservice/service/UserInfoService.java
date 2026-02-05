@@ -8,4 +8,6 @@ public interface UserInfoService {
 
 
     UserInfoDO getByUserId(int id);
+
+    void update(UserInfoDO info);
 }

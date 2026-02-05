@@ -13,7 +13,7 @@ spring:
     gateway:
       globalcors:
         cors-configurations:
-          '[/**]': # 允许跨域的请求
+          "[/**]": # 允许跨域的请求
             allowedOriginPatterns: # 使用模式匹配允许的源
               - "http://*"
               - "https://*"
@@ -31,18 +31,15 @@ spring:
       default-filters:
       routes:
         # 鉴权服务路由
-        - id: auth-service  # 路由id
+        - id: auth-service # 路由id
           uri: lb://auth-server # 路由地址
           predicates:
             - Path=/auth/** # 路由匹配
         - id: article-service # 路由id
           uri: lb://article-service # 路由地址
           predicates: # 路由断言
-            - Path=/page/** # 路由路径
+            - Path=/page/**, /article/** # 路由路径
         - id: user-service
           uri: lb://user-service
           predicates:
             - Path=/user/**
-
-
-

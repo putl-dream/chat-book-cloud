@@ -9,7 +9,7 @@
                     </div>
                     <div class="info-content">
                         <h2 class="username">{{ user.username || '用户' }}</h2>
-                        <p class="bio">{{ user.introduction || '这个人很懒，什么都没有留下' }}</p>
+                        <p class="bio">{{ user.profile || '这个人很懒，什么都没有留下' }}</p>
                         <div class="stats">
                             <div class="stat-item">
                                 <span class="count">{{ user.articleCount || 0 }}</span>
@@ -26,7 +26,7 @@
                         </div>
                     </div>
                     <div class="actions">
-                        <el-button type="primary" plain>编辑资料</el-button>
+                        <el-button type="primary" plain @click="$router.push('/profile/edit')">编辑资料</el-button>
                     </div>
                 </div>
             </div>
@@ -56,7 +56,7 @@
                         <el-tab-pane label="关于我" name="about">
                             <div class="about-section">
                                 <h3>详细介绍</h3>
-                                <p>{{ user.introduction || '暂无介绍' }}</p>
+                                <p>{{ user.profile || '暂无介绍' }}</p>
                             </div>
                         </el-tab-pane>
                     </el-tabs>
@@ -116,8 +116,8 @@ const fetchUserPosts = async () => {
     try {
         // 确保 userId 存在
         if (!user.value || !user.value.id) {
-             console.warn('User ID is missing, cannot fetch posts');
-             return;
+            console.warn('User ID is missing, cannot fetch posts');
+            return;
         }
         const res = await getUserArticlePage(1, 10, user.value.id);
         if (res && res.list) {

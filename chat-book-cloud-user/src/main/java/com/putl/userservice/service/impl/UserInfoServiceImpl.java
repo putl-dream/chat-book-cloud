@@ -22,4 +22,9 @@ public class UserInfoServiceImpl implements UserInfoService {
     public UserInfoDO getByUserId(int id){
         return userInfoMapper.selectOne(Wrappers.<UserInfoDO>lambdaQuery().eq(UserInfoDO::getUserId,id));
     }
+
+    @Override
+    public void update(UserInfoDO info) {
+        userInfoMapper.updateById(info);
+    }
 }

@@ -22,4 +22,10 @@ public interface UserService extends IService<UserDO> {
 
     //分页查询用户
     IPage<UserVO> selectPage(Integer page, Integer size);
+
+    /**
+     * 更新用户信息
+     * @param userVO
+     */
+    void updateUser(UserVO userVO);
 }
