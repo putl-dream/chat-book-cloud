@@ -25,7 +25,8 @@ public class CaptchaService {
         String key = CAPTCHA_PREFIX + email;
         redisTemplate.opsForValue().set(key, code, CAPTCHA_EXPIRE_TIME, TimeUnit.MINUTES);
         
-        emailService.sendTextMailMessage(email, "【ChatBook】验证码", "您的验证码是：" + code + "，有效期5分钟。");
+        // 使用 HTML 模板发送验证码
+        emailService.sendCaptchaMailMessage(email, code, (int) CAPTCHA_EXPIRE_TIME);
         log.info("验证码发送成功: {} -> {}", email, code);
     }
 

@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatBook 验证码</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif; background-color: #f5f7fa;">
+    <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px;">
+        <tr>
+            <td align="center">
+                <table role="presentation" cellspacing="0" cellpadding="0" border="0" width="100%" style="max-width: 520px; background-color: #ffffff; border-radius: 16px; box-shadow: 0 10px 40px rgba(0,0,0,0.15); overflow: hidden;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="padding: 40px 40px 30px; text-align: center; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                            <h1 style="margin: 0; color: #ffffff; font-size: 28px; font-weight: 700; letter-spacing: 2px;">
+                                📚 ChatBook
+                            </h1>
+                            <p style="margin: 10px 0 0; color: rgba(255,255,255,0.9); font-size: 14px;">
+                                您的智能阅读伴侣
+                            </p>
+                        </td>
+                    </tr>
+                    
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding: 40px;">
+                            <h2 style="margin: 0 0 20px; color: #1a1a2e; font-size: 22px; font-weight: 600; text-align: center;">
+                                邮箱验证码
+                            </h2>
+                            <p style="margin: 0 0 30px; color: #666666; font-size: 15px; line-height: 1.6; text-align: center;">
+                                您好！您正在进行邮箱验证操作，请使用以下验证码完成验证：
+                            </p>
+                            
+                            <!-- Verification Code Box -->
+                            <div style="text-align: center; margin: 30px 0;">
+                                <div style="display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 4px; border-radius: 12px;">
+                                    <div style="background-color: #ffffff; padding: 20px 40px; border-radius: 10px;">
+                                        <span style="font-size: 36px; font-weight: 700; letter-spacing: 8px; color: #667eea; font-family: 'Courier New', monospace;">
+                                            {{code}}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Warning Box -->
+                            <div style="background-color: #fff3cd; border-left: 4px solid #ffc107; padding: 15px 20px; border-radius: 8px; margin: 25px 0;">
+                                <p style="margin: 0; color: #856404; font-size: 14px; line-height: 1.5;">
+                                    ⏰ 验证码有效期为 <strong>{{expireTime}} 分钟</strong>，请尽快完成验证。
+                                </p>
+                            </div>
+                            
+                            <!-- Security Notice -->
+                            <div style="background-color: #f8f9fa; padding: 20px; border-radius: 10px; margin-top: 25px;">
+                                <p style="margin: 0; color: #666666; font-size: 13px; line-height: 1.6;">
+                                    🔒 <strong>安全提示：</strong><br>
+                                    • 请勿将验证码透露给任何人<br>
+                                    • 如非本人操作，请忽略此邮件<br>
+                                    • ChatBook 团队不会以任何形式索要您的验证码
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 25px 40px; background-color: #f8f9fa; border-top: 1px solid #e9ecef;">
+                            <p style="margin: 0; color: #999999; font-size: 12px; text-align: center; line-height: 1.6;">
+                                此邮件由系统自动发送，请勿直接回复<br>
+                                © 2024 ChatBook. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
