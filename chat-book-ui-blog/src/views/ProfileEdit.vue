@@ -10,6 +10,7 @@
                 <el-form :model="form" label-width="80px" class="edit-form">
                     <el-form-item label="头像">
                         <div class="avatar-edit">
+                            {{ form.photo }}
                             <el-upload class="avatar-uploader" action="#" :show-file-list="false"
                                 :http-request="handleUpload" :before-upload="beforeAvatarUpload">
                                 <img v-if="form.photo" :src="form.photo" class="avatar" />
