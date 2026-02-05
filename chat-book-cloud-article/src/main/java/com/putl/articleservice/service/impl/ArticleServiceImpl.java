@@ -1,13 +1,16 @@
 package com.putl.articleservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.service.ArticleService;
+import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -48,6 +51,21 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     @Override
     public ArticleVO getArticleDetail(Integer articleId) {
         return toBean(Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getId, articleId));
+    }
+
+    /**
+     * 分页查询文章。
+     *
+     * @param pageNum  页码
+     * @param pageSize 每页大小
+     * @return 分页结果
+     */
+    @Override
+    public PageResult<ArticleVO> queryPage(Integer pageNum, Integer pageSize) {
+        Page<ArticleDO> page = new Page<>(pageNum, pageSize);
+        Page<ArticleDO> articleDOPage = articleMapper.selectPage(page, Wrappers.emptyWrapper());
+        List<ArticleVO> articleVOS = BeanUtil.toBean(articleDOPage.getRecords(), ArticleVO.class);
+        return new PageResult<>(articleVOS, articleDOPage.getTotal());
     }
 
     /**

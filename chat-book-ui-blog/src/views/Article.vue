@@ -109,6 +109,7 @@ import { getByArticleId, queryArticle } from "@/api/article.js";
 import AuthorCard from "@/components/widget/AuthorCard.vue";
 import { saveReview, updateCollection, updatePraise } from "@/api/user.js";
 import { ElDrawer, ElAvatar, ElInput, ElButton, ElMessage } from 'element-plus';
+import { checkLogin } from "@/utils/index.js";
 
 // 获取路由参数
 const route = useRoute();
@@ -127,12 +128,14 @@ const parentId = ref(0); // 评论的父ID
 const comments = ref([]);
 
 const handleLike = async () => {
+    if (!checkLogin()) return;
     const res = await updateCollection(articleId);
     console.log("点赞", res);
     praiseStat.value = res;
 };
 
 const handleComment = async () => {
+    if (!checkLogin()) return;
     console.log('评论' + articleId);
     drawerVisible.value = true; // 打开抽屉
     await nextTick(() => {
@@ -142,6 +145,7 @@ const handleComment = async () => {
 };
 
 const handleFavorite = async () => {
+    if (!checkLogin()) return;
     const res = await updatePraise(articleId);
     console.log('收藏', res);
     if (res === 0) {
@@ -174,6 +178,7 @@ const queryCommentRequest = async () => {
 };
 
 const addComment = async () => {
+    if (!checkLogin()) return;
     if (newComment.value.trim() === '') {
         return;
     }

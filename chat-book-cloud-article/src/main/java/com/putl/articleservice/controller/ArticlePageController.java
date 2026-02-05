@@ -85,7 +85,16 @@ public class ArticlePageController {
     @Operation(summary = "获取用户发布的文章列表")
     @PostMapping("/userArticlePage")
     public CommonResult<PageResult<ArticleListVO>> getUserArticlePage(@Valid @RequestBody UserPageRequestDTO request) {
-        return CommonResult.success(articlePageService.getUserArticlePage(request.getPageNo(), request.getPageSize(), request.getUserId()));
+        Integer userId = request.getUserId();
+        if (userId == null) {
+            String currentUserId = UserContext.getUserId();
+            if (currentUserId != null) {
+                userId = Integer.valueOf(currentUserId);
+            } else {
+                 throw new IllegalArgumentException("用户ID不能为空");
+            }
+        }
+        return CommonResult.success(articlePageService.getUserArticlePage(request.getPageNo(), request.getPageSize(), userId));
     }
 
     @Operation(summary = "获取用户草稿箱文章列表")

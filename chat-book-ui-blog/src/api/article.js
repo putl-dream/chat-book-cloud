@@ -41,6 +41,24 @@ export function addArticle(params) {
 }
 
 /**
+ * 更新文章
+ * @param {object} params ArticleVO
+ * @returns
+ */
+export function updateArticle(params) {
+    return request.post(`/article/update`, params);
+}
+
+/**
+ * 删除文章
+ * @param {string} id
+ * @returns
+ */
+export function deleteArticle(id) {
+    return request.post(`/article/delete?id=${id}`);
+}
+
+/**
  * 获取最新文章列表
  * @param {number} pageNo
  * @param {number} pageSize
@@ -131,8 +149,8 @@ export function getUserCollectPage(pageNo, pageSize) {
  * @param {number} pageSize
  * @param {string} userId
  */
-export function getUserArticlePage(pageNo, pageSize) {
-    return request.post('/page/userArticlePage', { pageNo, pageSize });
+export function getUserArticlePage(pageNo, pageSize, userId) {
+    return request.post('/page/userArticlePage', { pageNo, pageSize, userId });
 }
 
 /**
