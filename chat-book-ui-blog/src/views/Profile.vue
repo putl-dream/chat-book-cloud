@@ -114,7 +114,12 @@ const fetchUserData = async () => {
 const fetchUserPosts = async () => {
     loading.value = true;
     try {
-        const res = await getUserArticlePage(1, 10);
+        // 确保 userId 存在
+        if (!user.value || !user.value.id) {
+             console.warn('User ID is missing, cannot fetch posts');
+             return;
+        }
+        const res = await getUserArticlePage(1, 10, user.value.id);
         if (res && res.list) {
             posts.value = res.list;
         }
@@ -129,9 +134,9 @@ const openArticle = (id) => {
     router.push({ name: 'Article', params: { id } });
 };
 
-onMounted(() => {
-    fetchUserData();
-    fetchUserPosts();
+onMounted(async () => {
+    await fetchUserData();
+    await fetchUserPosts();
 });
 </script>
 

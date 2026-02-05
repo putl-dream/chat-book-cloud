@@ -16,7 +16,7 @@ import java.util.List;
 
 @Tag(name = "消息服务")
 @RestController
-@RequestMapping("/user/captcha")
+@RequestMapping("/user/message")
 @RequiredArgsConstructor
 public class MessageController {
     private final MessageService messageService;

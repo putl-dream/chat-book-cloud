@@ -38,8 +38,8 @@ const messageRequest = async () => {
     loading.value = true;
     try {
         const res = await getMessage();
-        if (res.code === 200){
-            messages.value = res.data;
+        if (res){
+            messages.value = res;
         }
     } catch (error) {
         console.error("获取消息失败", error);

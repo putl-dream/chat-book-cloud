@@ -64,8 +64,8 @@ const fetchPosts = async (isLoadMore = false) => {
     loading.value = true;
     try {
         const response = await getLikePage(currentPage.value, pageSize.value, keyValue.value);
-        if (response.code === 200) {
-            const newPosts = response.data.records;
+        if (response) {
+            const newPosts = response.records;
             if (newPosts.length === 0) {
                 noMoreArticles.value = true;
             } else {

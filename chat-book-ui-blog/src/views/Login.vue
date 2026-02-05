@@ -1,6 +1,8 @@
 <template>
     <div class="body">
-        <div class="container" :class="{ 'right-panel-active': isSignUpPanelActive, 'email-sign-in-active': isEmailSignIn }" id="login-box">
+        <div class="container"
+            :class="{ 'right-panel-active': isSignUpPanelActive, 'email-sign-in-active': isEmailSignIn }"
+            id="login-box">
             <div class="form-container sign-up-container">
                 <form @submit.prevent="handleSignUp">
                     <h1>注册</h1>
@@ -16,7 +18,7 @@
                     <div class="txtb" style="display:flex;">
                         <input v-model="signupForm.captcha" placeholder="输入验证码" type="text" required>
                         <el-button color="#626aef" style="padding: 0;margin: 0;width: 150px;" @click="getCode"
-                                   :disabled="isCounting">
+                            :disabled="isCounting">
                             {{ isCounting ? `${countdown}秒后重新获取` : '获取验证码' }}
                         </el-button>
                     </div>
@@ -32,7 +34,7 @@
                     <div class="txtb">
                         <input v-model="signInForm.password" placeholder="密码/Password" type="password" required>
                     </div>
-<!--                    <span href="#" @click.prevent="toggleEmailSignIn(true)">验证码登录</span>-->
+                    <!--                    <span href="#" @click.prevent="toggleEmailSignIn(true)">验证码登录</span>-->
                     <button style="margin: 10px 0">登录</button>
                     <el-text href="#">忘记密码？</el-text>
                 </form>
@@ -46,7 +48,7 @@
                     <div class="txtb" style="display:flex;">
                         <input v-model="signInForm.captcha" placeholder="输入验证码" type="text" required>
                         <el-button color="#626aef" style="padding: 0;margin: 0;width: 150px;" @click="getEmailCode"
-                                   :disabled="isCounting">
+                            :disabled="isCounting">
                             {{ isCounting ? `${countdown}秒后重新获取` : '获取验证码' }}
                         </el-button>
                     </div>
@@ -107,7 +109,8 @@ async function handleSignUp() {
         return;
     }
     let params = await signUp(signupForm);
-    if (params.code === 200) {
+    console.log(params);
+    if (params) {
         ElMessage.success('注册成功');
         togglePanel(false);
     }
@@ -115,10 +118,10 @@ async function handleSignUp() {
 
 // 登录逻辑
 async function handleSignIn() {
-    let signIn = await login(signInForm);
-    if (signIn.code === 200) {
+    let data = await login(signInForm);
+    if (data) {
         ElMessage.success('登录成功');
-        localStorage.setItem("token", signIn.data.token);
+        localStorage.setItem("token", data);
         window.location.href = '/';
     }
 }
@@ -140,7 +143,7 @@ async function getCode() {
         return;
     }
     let params = await captcha(signupForm.email);
-    if (params.code === 200) {
+    if (params) {
         ElMessage.success('验证码发送成功');
     }
     // 启动倒计时
@@ -167,7 +170,7 @@ async function getEmailCode() {
         return;
     }
     let params = await captcha(signInForm.email);
-    if (params.code === 200) {
+    if (params) {
         ElMessage.success('验证码发送成功');
     }
     // 启动邮箱验证码倒计时

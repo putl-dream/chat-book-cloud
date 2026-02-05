@@ -9,35 +9,29 @@ const routes = [
             {
                 path: '',
                 name: 'Home',
-                component: () => import('@/views/Home.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Home.vue')
             },            {
                 path: 'backend',
                 name: 'Backend',
-                component: () => import('@/views/Home.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Home.vue')
             },            {
                 path: 'frontend',
                 name: 'Frontend',
-                component: () => import('@/views/Home.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Home.vue')
             },            {
                 path: 'mysql',
                 name: 'Mysql',
-                component: () => import('@/views/Home.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Home.vue')
             },
             {
                 path: 'algorithm',
                 name: 'Algorithm',
-                component: () => import('@/views/Home.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Home.vue')
             },
             {
                 path: '/article/:id',
                 name: 'Article',
-                component: () => import('@/views/Article.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Article.vue')
             },
             {
                 path: '/message',
@@ -73,8 +67,7 @@ const routes = [
             {
                 path: 'list/:keyValue',
                 name: 'List',
-                component: () => import('@/views/Search.vue'),
-                meta: {requiresAuth: true}
+                component: () => import('@/views/Search.vue')
             }
         ]
     },

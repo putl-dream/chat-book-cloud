@@ -72,6 +72,7 @@ function handleBusinessError(res) {
             duration: 3000
         });
         localStorage.removeItem('token');
+        localStorage.removeItem('avatar');
         if (router.currentRoute.value.name !== 'Login') {
             router.push({ name: 'Login' });
         }
@@ -121,6 +122,20 @@ function handleHttpError(error) {
         type: 'error',
         duration: 5 * 1000
     });
+}
+
+/**
+ * 检查是否登录
+ * @returns {boolean} true: 已登录, false: 未登录
+ */
+export function checkLogin() {
+    const token = localStorage.getItem('token');
+    if (!token) {
+        ElMessage.warning('请先登录');
+        router.push('/login');
+        return false;
+    }
+    return true;
 }
 
 export default service;
