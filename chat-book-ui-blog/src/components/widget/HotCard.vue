@@ -27,7 +27,12 @@ const getRankClass = (index) => {
 const queryHotRequest = async () => {
     try {
         const response = await getHotPage(1, 10);
-        hotArticles.value = response.data.records;
+        if (response && response.list) {
+            hotArticles.value = response.list;
+        } else if (response && response.records) {
+             // Fallback if the field name is records
+             hotArticles.value = response.records;
+        }
     } catch (error) {
         console.error('Failed to fetch hot articles:', error);
     }

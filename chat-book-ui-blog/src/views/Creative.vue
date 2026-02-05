@@ -1,7 +1,7 @@
 <template>
     <div class="dashboard">
         <!-- 数据展示卡片 -->
-<!--        <div class="data-cards">
+        <!--        <div class="data-cards">
             <UserDataCard/>
         </div>-->
 
@@ -32,24 +32,18 @@
                     </div>
                 </div>
             </div>
-            <el-pagination
-                background
-                layout="prev, pager, next"
-                :total="totalArticles"
-                :page-size="pageSize"
-                v-model:current-page="currentPage"
-                @current-change="handlePageChange"
-            />
+            <el-pagination background layout="prev, pager, next" :total="totalArticles" :page-size="pageSize"
+                v-model:current-page="currentPage" @current-change="handlePageChange" />
         </div>
     </div>
 </template>
 
 <script setup>
-import {ref, onMounted} from 'vue';
+import { ref, onMounted } from 'vue';
 import axios from 'axios';
 import UserDataCard from "@/components/widget/UserDataCard.vue";
-import {getUserArticlePage} from "@/api/article.js";
-import {getUserBySelf} from "@/api/user.js";
+import { getUserArticlePage } from "@/api/article.js";
+import { getUserBySelf } from "@/api/user.js";
 
 
 
@@ -65,18 +59,18 @@ const fetchArticles = async () => {
     try {
         if (!userId.value) {
             const userRes = await getUserBySelf();
-            if (userRes.code === 200 && userRes.data) {
-                userId.value = userRes.data.id;
+            if (userRes) {
+                userId.value = userRes.id;
             }
         }
-        
+
         if (!userId.value) return;
 
         const response = await getUserArticlePage(currentPage.value, pageSize.value, userId.value)
-        if (response.data === null) {return;}
-        articles.value = response.data.records;
+        if (response === null) { return; }
+        articles.value = response.records;
         console.log(articles.value)
-        totalArticles.value = parseInt(response.data.total);
+        totalArticles.value = parseInt(response.total);
     } catch (error) {
         console.error('Failed to fetch articles:', error);
     }
@@ -96,7 +90,7 @@ onMounted(() => {
 
 <style scoped>
 .dashboard {
-    padding: 10px  100px;
+    padding: 10px 100px;
 }
 
 .data-cards {
@@ -120,7 +114,7 @@ onMounted(() => {
     display: flex;
     justify-content: space-between;
     padding: 20px;
-/*    border-radius: 8px;*/
+    /*    border-radius: 8px;*/
     margin-bottom: 10px;
     background-color: #f9f9f9;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);

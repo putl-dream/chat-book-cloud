@@ -48,8 +48,8 @@ const handleCommand = (command) => {
 const user = ref({})
 const userRequest = async () => {
     const params = await getUserBySelf()
-    if (params.code === 200) {
-        user.value = params.data
+    if (params) {
+        user.value = params
     }
 }
 onMounted(() => {

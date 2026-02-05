@@ -39,8 +39,8 @@ const fetchArticles = async () => {
     try {
         if (!userId.value) {
             const userRes = await getUserBySelf();
-            if (userRes.code === 200 && userRes.data) {
-                userId.value = userRes.data.id;
+            if (userRes) {
+                userId.value = userRes.id;
             }
         }
         if (!userId.value) {
@@ -50,8 +50,8 @@ const fetchArticles = async () => {
 
         const response = await getUserArticlePage(currentPage.value, pageSize.value, userId.value)
         console.log(response)
-        const newArticles = response.data.records;
-        const total = response.data.total;
+        const newArticles = response.records;
+        const total = response.total;
         if (newArticles.length === 0) {
             noMoreArticles.value = true;
         } else {

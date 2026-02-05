@@ -21,7 +21,7 @@
         <div class="flex-spacer" v-else></div>
 
         <div class="right-actions">
-            <div class="user-info">
+            <div class="user-info" v-if="user.id">
                 <el-dropdown trigger="click">
                     <span class="user-avatar-trigger">
                         <el-avatar class="user-avatar" :size="36" :src="user.photo"></el-avatar>
@@ -38,6 +38,9 @@
                         </div>
                     </template>
                 </el-dropdown>
+            </div>
+            <div class="user-info" v-else>
+                <el-button type="primary" link @click="router.push('/login')">登录 / 注册</el-button>
             </div>
 
             <div class="nav-links right-nav">
@@ -81,6 +84,8 @@ const handleCommand = (command) => {
     switch (command) {
         case 'logout':
             console.log('退出登录');
+            localStorage.removeItem('token');
+            localStorage.removeItem('avatar');
             router.push('/login')
             break;
         case 'user':
@@ -109,9 +114,12 @@ const menusRight = reactive([
 
 const user = ref({})
 const userRequest = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
     const params = await getUserBySelf()
-    if (params.code === 200) {
-        user.value = params.data
+    if (params) {
+        user.value = params
         localStorage.setItem('avatar', user.value.photo)
     }
 }

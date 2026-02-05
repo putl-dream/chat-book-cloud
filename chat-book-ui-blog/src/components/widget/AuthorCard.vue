@@ -49,8 +49,8 @@ const userInfo = ref({});
 const queryUserInfo = async () => {
     if (props.userId) {
         const param = await getUserById(props.userId);
-        if (param.code === 200) {
-            userInfo.value = param.data;
+        if (param) {
+            userInfo.value = param;
         }
     }
 };
