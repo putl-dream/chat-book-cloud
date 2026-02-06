@@ -1,25 +1,38 @@
 <template>
     <div class="search-page">
+        <!-- Background Decorations -->
+        <div class="bg-decoration bg-decoration-1"></div>
+        <div class="bg-decoration bg-decoration-2"></div>
+
         <div class="search-container">
             <div class="search-header-area">
                 <div class="search-bar-wrapper">
                     <div class="search-input-group" @keyup.enter="handleSearch">
-                        <input type="text" v-model="keyValue" placeholder="搜索文章..." />
-                        <button @click="handleSearch">搜索</button>
+                        <input type="text" v-model="keyValue" placeholder="搜索你感兴趣的文章..." />
+                        <button @click="handleSearch">
+                            <el-icon class="search-icon">
+                                <Search />
+                            </el-icon>
+                        </button>
                     </div>
                 </div>
             </div>
 
             <div class="search-content">
-                <div class="search-main-list">
+
+
+                <div class="search-main-list glass-panel">
                     <div v-if="loading && currentPage === 1" class="loading">
                         <el-skeleton :rows="5" animated />
                     </div>
                     <template v-else>
-                        <div v-for="(post, index) in posts" :key="index" class="post-item"
-                            @click="openArticle(post.id)">
-                            <ArticleCard :post="post" />
-                        </div>
+                        <transition-group name="list" tag="div">
+                            <div v-for="(post, index) in posts" :key="post.id || index" class="post-item"
+                                @click="openArticle(post.id)">
+                                <ArticleCard :post="post" />
+                            </div>
+                        </transition-group>
+
                         <div v-if="loading && currentPage > 1" class="loading">
                             <el-skeleton :rows="2" animated />
                         </div>
@@ -31,7 +44,7 @@
                 </div>
 
                 <div class="search-sidebar">
-                    <div class="sidebar-card">
+                    <div class="sidebar-card glass-panel">
                         <HotCard />
                     </div>
                 </div>
@@ -42,7 +55,8 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
-import { ElSkeleton } from "element-plus";
+import { ElSkeleton, ElIcon } from "element-plus";
+import { Search } from "@element-plus/icons-vue";
 import ArticleCard from "@/components/widget/ArticleCard.vue";
 import HotCard from "@/components/widget/HotCard.vue";
 import { useRoute } from "vue-router";
@@ -123,116 +137,199 @@ onUnmounted(() => {
 
 <style scoped>
 .search-page {
-    min-height: 100vh;
+    height: 100%;
     background-color: var(--bg-color-base);
-    padding-top: 20px;
+    padding-top: 40px;
+    position: relative;
+    overflow: hidden;
+}
+
+/* Background Decorations */
+.bg-decoration {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    z-index: 0;
+    opacity: 0.6;
+}
+
+.bg-decoration-1 {
+    top: -100px;
+    left: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, rgba(37, 99, 235, 0) 70%);
+}
+
+.bg-decoration-2 {
+    bottom: 10%;
+    right: -5%;
+    width: 600px;
+    height: 600px;
+    background: radial-gradient(circle, rgba(16, 185, 129, 0.15) 0%, rgba(16, 185, 129, 0) 70%);
 }
 
 .search-container {
     max-width: var(--container-width-lg);
     margin: 0 auto;
     padding: 0 20px;
+    position: relative;
+    z-index: 1;
 }
 
 .search-header-area {
-    margin-bottom: 24px;
+    margin-bottom: 40px;
     display: flex;
     justify-content: center;
+    animation: fadeInDown 0.8s ease-out;
 }
 
 .search-bar-wrapper {
     width: 100%;
-    max-width: 600px;
+    max-width: 700px;
 }
 
 .search-input-group {
     display: flex;
-    border: 1px solid var(--border-color-base);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: var(--border-radius-round);
     overflow: hidden;
-    height: 44px;
-    background: var(--bg-color-white);
-    transition: all 0.3s;
-    box-shadow: var(--box-shadow-base);
+    height: 56px;
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-base);
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
 }
 
 .search-input-group:focus-within {
     border-color: var(--color-primary);
-    box-shadow: 0 0 0 3px var(--color-primary-light);
+    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
+    transform: translateY(-2px);
 }
 
 .search-input-group input {
     border: none;
-    padding: 0 20px;
+    padding: 0 32px;
     flex: 1;
     outline: none;
-    font-size: 16px;
+    font-size: 1.1rem;
     color: var(--text-color-primary);
+    background: transparent;
+    font-weight: 500;
+}
+
+.search-input-group input::placeholder {
+    color: var(--text-color-placeholder);
+    font-weight: 400;
 }
 
 .search-input-group button {
-    width: 100px;
-    background-color: var(--color-primary);
-    color: white;
+    width: 80px;
+    background: transparent;
     border: none;
     cursor: pointer;
-    font-size: 16px;
-    font-weight: 500;
-    transition: background-color 0.3s;
+    transition: all 0.3s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--color-primary);
 }
 
 .search-input-group button:hover {
-    background-color: var(--color-primary-hover);
+    background: rgba(37, 99, 235, 0.1);
+    transform: scale(1.05);
+}
+
+.search-icon {
+    font-size: 24px;
+    font-weight: bold;
 }
 
 .search-content {
     display: flex;
-    gap: 24px;
+    gap: 20px;
     align-items: flex-start;
+    animation: fadeInUp 0.8s ease-out 0.2s backwards;
+}
+
+.glass-panel {
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-large);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: var(--border-radius-xl);
+    padding: 24px;
+    box-shadow: var(--box-shadow-glass);
 }
 
 .search-main-list {
     flex: 1;
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-large);
-    padding: 20px;
-    box-shadow: var(--box-shadow-base);
     min-height: 400px;
 }
 
 .post-item {
-    border-bottom: 1px solid var(--border-color-lighter);
-    padding: 16px 0;
-    cursor: pointer;
-    transition: background-color 0.2s;
+    margin-bottom: 20px;
+    border-radius: var(--border-radius-large);
+    transition: all 0.3s ease;
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid transparent;
 }
 
 .post-item:hover {
-    background-color: var(--bg-color-base);
-}
-
-.post-item:last-child {
-    border-bottom: none;
+    background: var(--bg-color-white);
+    transform: translateY(-4px);
+    box-shadow: var(--box-shadow-hover);
+    border-color: var(--border-color-light);
 }
 
 .search-sidebar {
-    width: 300px;
+    width: 320px;
     flex-shrink: 0;
-}
-
-.sidebar-card {
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-large);
-    padding: 20px;
-    box-shadow: var(--box-shadow-base);
 }
 
 .loading,
 .no-more,
 .empty-state {
     text-align: center;
-    padding: 20px;
+    padding: 40px 0;
     color: var(--text-color-secondary);
+    font-weight: 500;
+}
+
+/* List Transitions */
+.list-enter-active,
+.list-leave-active {
+    transition: all 0.5s ease;
+}
+
+.list-enter-from,
+.list-leave-to {
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+/* Animations */
+@keyframes fadeInDown {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 
 /* Responsive Design */
@@ -243,6 +340,10 @@ onUnmounted(() => {
 
     .search-sidebar {
         width: 100%;
+    }
+
+    .search-header-area {
+        margin-bottom: 24px;
     }
 }
 </style>
