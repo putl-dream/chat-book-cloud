@@ -1,7 +1,7 @@
 package com.putl.articleservice.utils;
 
-import com.alibaba.fastjson2.JSON;
 import com.putl.articleservice.controller.vo.ArticleVO;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,27 +13,27 @@ public class MessageResult<T> {
     private T data;
 
     public static String messageSystem(String data) {
-        return JSON.toJSONString(new MessageResult<>("SYSTEM", data));
+        return BeanUtil.toJsonString(new MessageResult<>("SYSTEM", data));
     }
 
     public static String messageCache(String data) {
-        return JSON.toJSONString(new MessageResult<>("CACHE", data));
+        return BeanUtil.toJsonString(new MessageResult<>("CACHE", data));
     }
 
     public static String messageSave(String data) {
-        return JSON.toJSONString(new MessageResult<>("SAVE", data));
+        return BeanUtil.toJsonString(new MessageResult<>("SAVE", data));
     }
 
     public static String messageSelect(String data) {
-        ArticleVO article = JSON.parseObject(data, ArticleVO.class);
-        return JSON.toJSONString(new MessageResult<>("SELECT", article));
+        ArticleVO article = BeanUtil.toBean(data, ArticleVO.class);
+        return BeanUtil.toJsonString(new MessageResult<>("SELECT", article));
     }
 
     public static String messagePublish(String data) {
-        return JSON.toJSONString(new MessageResult<>("PUBLISH", data));
+        return BeanUtil.toJsonString(new MessageResult<>("PUBLISH", data));
     }
 
     public static String messageError(String data) {
-        return JSON.toJSONString(new MessageResult<>("ERROR", data));
+        return BeanUtil.toJsonString(new MessageResult<>("ERROR", data));
     }
 }

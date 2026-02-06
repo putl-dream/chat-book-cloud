@@ -1,12 +1,12 @@
 package com.putl.userservice.service.impl;
 
-import com.alibaba.fastjson2.JSON;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.putl.userservice.controller.vo.MessageVO;
 import com.putl.userservice.mapper.MessageMapper;
 import com.putl.userservice.mapper.entity.MessageDO;
 import com.putl.userservice.service.MessageService;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
@@ -36,7 +36,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, MessageDO> im
 
     @Override
     public boolean save(MessageVO message){
-        MessageDO messageDO = JSON.copyTo(message, MessageDO.class);
+        MessageDO messageDO = BeanUtil.toBean(message, MessageDO.class);
         return this.save(messageDO);
     }
 

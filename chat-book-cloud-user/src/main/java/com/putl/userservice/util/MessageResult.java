@@ -1,8 +1,8 @@
 package com.putl.userservice.util;
 
 
-import com.alibaba.fastjson2.JSON;
 import com.putl.userservice.controller.vo.MessageVO;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
@@ -13,10 +13,10 @@ public class MessageResult<T> {
     private T data;
 
     public static String messageSystem(String data) {
-        return JSON.toJSONString(new MessageResult<>("SYSTEM", data));
+        return BeanUtil.toJsonString(new MessageResult<>("SYSTEM", data));
     }
 
     public static String messageUser(MessageVO data) {
-        return JSON.toJSONString(new MessageResult<>("USER", data));
+        return BeanUtil.toJsonString(new MessageResult<>("USER", data));
     }
 }

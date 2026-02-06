@@ -1,7 +1,6 @@
 package fun.amireux.chat.book.framework.websocket.server;
 
-import com.alibaba.fastjson2.JSON;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import fun.amireux.chat.book.framework.websocket.domain.BaseMessage;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -15,7 +14,6 @@ import java.util.Map;
 @Service
 public class DefaultMessageRouter implements MessageRouter {
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
     private final Map<String, MessageHandler> handlers = new HashMap<>();
 
     @Autowired
@@ -29,7 +27,7 @@ public class DefaultMessageRouter implements MessageRouter {
         try {
             // 解析消息结构
 
-            var base = JSON.to(BaseMessage.class, rawMessage);
+            var base = BeanUtil.toBean(rawMessage, BaseMessage.class);
             String type = base.getType();
 
             MessageHandler handler = handlers.get(type);
