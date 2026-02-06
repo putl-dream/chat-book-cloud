@@ -25,11 +25,6 @@
             <artifactId>chat-book-cloud-security-mvc</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>fun.amireux</groupId>
-            <artifactId>chat-book-cloud-security-mvc</artifactId>
-        </dependency>
-
         <!-- Nacos 注册中心 -->
         <dependency>
             <groupId>com.alibaba.cloud</groupId>
