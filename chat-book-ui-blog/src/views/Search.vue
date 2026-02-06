@@ -4,7 +4,7 @@
             <div class="search-header-area">
                 <div class="search-bar-wrapper">
                     <div class="search-input-group" @keyup.enter="handleSearch">
-                        <input type="text" v-model="keyValue" placeholder="搜索文章..."/>
+                        <input type="text" v-model="keyValue" placeholder="搜索文章..." />
                         <button @click="handleSearch">搜索</button>
                     </div>
                 </div>
@@ -13,14 +13,15 @@
             <div class="search-content">
                 <div class="search-main-list">
                     <div v-if="loading && currentPage === 1" class="loading">
-                        <el-skeleton :rows="5" animated/>
+                        <el-skeleton :rows="5" animated />
                     </div>
                     <template v-else>
-                        <div v-for="(post, index) in posts" :key="index" class="post-item" @click="openArticle(post.id)">
-                            <ArticleCard :post="post"/>
+                        <div v-for="(post, index) in posts" :key="index" class="post-item"
+                            @click="openArticle(post.id)">
+                            <ArticleCard :post="post" />
                         </div>
                         <div v-if="loading && currentPage > 1" class="loading">
-                            <el-skeleton :rows="2" animated/>
+                            <el-skeleton :rows="2" animated />
                         </div>
                         <div v-if="noMoreArticles && posts.length > 0" class="no-more">没有更多文章了</div>
                         <div v-if="posts.length === 0 && !loading" class="empty-state">
@@ -28,10 +29,10 @@
                         </div>
                     </template>
                 </div>
-                
+
                 <div class="search-sidebar">
                     <div class="sidebar-card">
-                        <HotCard/>
+                        <HotCard />
                     </div>
                 </div>
             </div>
@@ -40,12 +41,12 @@
 </template>
 
 <script setup>
-import {ref, onMounted, onUnmounted} from 'vue';
-import {ElSkeleton} from "element-plus";
+import { ref, onMounted, onUnmounted } from 'vue';
+import { ElSkeleton } from "element-plus";
 import ArticleCard from "@/components/widget/ArticleCard.vue";
 import HotCard from "@/components/widget/HotCard.vue";
-import {useRoute} from "vue-router";
-import {getLikePage} from "@/api/article.js";
+import { useRoute } from "vue-router";
+import { getLikePage } from "@/api/article.js";
 import router from "@/router/index.js";
 
 const posts = ref([]);
@@ -60,12 +61,12 @@ const route = useRoute();
 
 const fetchPosts = async (isLoadMore = false) => {
     if (loading.value || (noMoreArticles.value && isLoadMore)) return;
-    
+
     loading.value = true;
     try {
         const response = await getLikePage(currentPage.value, pageSize.value, keyValue.value);
         if (response) {
-            const newPosts = response.records;
+            const newPosts = response.list;
             if (newPosts.length === 0) {
                 noMoreArticles.value = true;
             } else {
@@ -104,7 +105,7 @@ const handleScroll = () => {
 };
 
 const openArticle = async (id) => {
-    await router.push({name: 'Article', params: {id: id}})
+    await router.push({ name: 'Article', params: { id: id } })
 };
 
 onMounted(() => {
@@ -226,7 +227,9 @@ onUnmounted(() => {
     box-shadow: var(--box-shadow-base);
 }
 
-.loading, .no-more, .empty-state {
+.loading,
+.no-more,
+.empty-state {
     text-align: center;
     padding: 20px;
     color: var(--text-color-secondary);
@@ -237,7 +240,7 @@ onUnmounted(() => {
     .search-content {
         flex-direction: column;
     }
-    
+
     .search-sidebar {
         width: 100%;
     }
