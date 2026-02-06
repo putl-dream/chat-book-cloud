@@ -25,7 +25,7 @@ defineProps({
 .default-sidebar {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 8px;
 }
 
 .article-right-card {
