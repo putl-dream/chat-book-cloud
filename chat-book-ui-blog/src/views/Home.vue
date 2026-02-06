@@ -1,11 +1,23 @@
 <template>
   <div class="home">
     <div class="home-container">
+      <div class="section-header">
+        <h2 class="section-title">
+          <span class="text-gradient">推荐阅读</span>
+        </h2>
+        <div class="header-line"></div>
+      </div>
+
       <div class="recommended">
-        <div v-for="(item, index) in recommendations" :key="item.id || index" class="card"
-          @click="openArticle(item.id)">
-          <el-image src="https://img.shetu66.com/2023/06/26/1687770031227597.png" alt="Cover Image"
-            class="cover-image" />
+        <div v-for="(item, index) in recommendations" :key="item.id || index" class="card glass-panel"
+          :style="{ '--delay': `${index * 0.1}s` }" @click="openArticle(item.id)">
+          <div class="card-image-wrapper">
+            <el-image src="https://img.shetu66.com/2023/06/26/1687770031227597.png" alt="Cover Image"
+              class="cover-image" fit="cover" />
+            <div class="card-overlay">
+              <span class="read-more-btn">阅读更多</span>
+            </div>
+          </div>
           <div class="card-content">
             <div class="title-wrapper">
               <span class="title">{{ item.title }}</span>
@@ -25,18 +37,28 @@
       </div>
 
       <div class="content-wrapper">
-        <div class="list-life">
-          <div v-for="(post, index) in posts" :key="post.id || index" class="post-item" @click="openArticle(post.id)">
-            <ArticleCard :post="post" />
+        <div class="list-life glass-panel">
+          <div class="list-header">
+            <h3>最新文章</h3>
+          </div>
+          <div class="post-list">
+            <transition-group name="list-anim">
+              <div v-for="(post, index) in posts" :key="post.id || index" class="post-item-wrapper"
+                :style="{ '--delay': `${index * 0.05}s` }" @click="openArticle(post.id)">
+                <ArticleCard :post="post" />
+              </div>
+            </transition-group>
           </div>
           <div v-if="loading" class="loading">
-            <el-skeleton :rows="5" animated />
+            <div class="spinner"></div>
           </div>
-          <div v-if="noMoreArticles" class="no-more">没有更多文章了</div>
+          <div v-if="noMoreArticles" class="no-more">
+            <span>— 到底啦 —</span>
+          </div>
         </div>
 
         <div class="home-right">
-          <div class="home-right-card">
+          <div class="home-right-card glass-panel">
             <HotCard />
           </div>
         </div>
@@ -180,40 +202,111 @@ onUnmounted(() => {
   padding: 0 var(--container-padding);
 }
 
+.section-header {
+  margin-bottom: 24px;
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.section-title {
+  font-size: 24px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, var(--text-color-primary) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-line {
+  height: 2px;
+  flex: 1;
+  background: linear-gradient(90deg, var(--color-primary-light), transparent);
+  border-radius: 2px;
+  opacity: 0.5;
+}
+
 .recommended {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 24px;
-  margin-bottom: 40px;
+  margin-bottom: 48px;
 }
 
 .card {
-  background: var(--bg-color-white);
-  border: 1px solid var(--border-color-light);
-  border-radius: var(--border-radius-large);
+  border-radius: 16px;
   overflow: hidden;
-  transition: var(--transition-base);
+  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  box-shadow: var(--box-shadow-base);
+  animation: fadeInUp 0.6s backwards;
+  animation-delay: var(--delay);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.65);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
 }
 
 .card:hover {
-  transform: translateY(-6px);
-  box-shadow: var(--box-shadow-hover);
+  transform: translateY(-8px);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
+  background: rgba(255, 255, 255, 0.9);
   border-color: var(--color-primary-light);
+}
+
+.card-image-wrapper {
+  position: relative;
+  overflow: hidden;
+  aspect-ratio: 16/9;
 }
 
 .cover-image {
   width: 100%;
-  aspect-ratio: 16/9;
+  height: 100%;
   object-fit: cover;
-  transition: var(--transition-base);
+  transition: transform 0.6s ease;
 }
 
 .card:hover .cover-image {
-  transform: scale(1.05);
+  transform: scale(1.1);
+}
+
+.card-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.card:hover .card-overlay {
+  opacity: 1;
+}
+
+.read-more-btn {
+  color: white;
+  border: 1px solid white;
+  padding: 6px 16px;
+  border-radius: 20px;
+  font-size: 12px;
+  backdrop-filter: blur(4px);
+  transform: translateY(10px);
+  transition: transform 0.3s ease;
+}
+
+.card:hover .read-more-btn {
+  transform: translateY(0);
 }
 
 .card-content {
@@ -229,15 +322,15 @@ onUnmounted(() => {
 }
 
 .title {
-  font-size: 0.9375rem;
-  font-weight: 600;
+  font-size: 15px;
+  font-weight: 700;
   color: var(--text-color-primary);
   display: -webkit-box;
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   line-height: 1.5;
-  transition: var(--transition-fast);
+  transition: color 0.2s;
 }
 
 .card:hover .title {
@@ -249,7 +342,7 @@ onUnmounted(() => {
   flex-direction: row;
   flex-wrap: wrap;
   gap: 12px;
-  font-size: 0.75rem;
+  font-size: 12px;
   color: var(--text-color-secondary);
 }
 
@@ -268,6 +361,7 @@ onUnmounted(() => {
 
 .dot.primary {
   background-color: var(--color-primary);
+  box-shadow: 0 0 8px var(--color-primary-light);
 }
 
 .dot.secondary {
@@ -282,39 +376,60 @@ onUnmounted(() => {
 
 .list-life {
   flex: 1;
-  background: var(--bg-color-white);
-  border-radius: var(--border-radius-xl);
-  padding: 8px;
-  box-shadow: var(--box-shadow-base);
-  border: 1px solid var(--border-color-light);
+  border-radius: 24px;
+  padding: 24px;
+  min-height: 500px;
+  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.post-item {
-  border-bottom: 1px solid var(--border-color-lighter);
-  padding: 4px;
-  cursor: pointer;
-  border-radius: var(--border-radius-large);
-  transition: var(--transition-base);
+.list-header {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
 }
 
-.post-item:hover {
-  background-color: var(--bg-color-light);
+.list-header h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-color-primary);
 }
 
-.post-item:last-child {
-  border-bottom: none;
+.post-item-wrapper {
+  margin-bottom: 16px;
+  border-radius: 16px;
+  transition: all 0.3s;
+  animation: fadeInUp 0.5s backwards;
+  animation-delay: var(--delay);
+}
+
+.post-item-wrapper:hover {
+  background: rgba(255, 255, 255, 0.5);
+  transform: translateX(4px);
 }
 
 .loading {
   text-align: center;
   padding: 40px 0;
+  display: flex;
+  justify-content: center;
+}
+
+.spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid rgba(0, 0, 0, 0.1);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
 .no-more {
   text-align: center;
   padding: 40px 0;
-  color: var(--text-color-secondary);
-  font-size: 0.875rem;
+  color: var(--text-color-placeholder);
+  font-size: 13px;
+  letter-spacing: 1px;
 }
 
 .home-right {
@@ -325,11 +440,27 @@ onUnmounted(() => {
 }
 
 .home-right-card {
-  background: var(--bg-color-white);
-  border-radius: var(--border-radius-xl);
-  box-shadow: var(--box-shadow-base);
-  border: 1px solid var(--border-color-light);
+  border-radius: 24px;
   overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.5);
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Responsive Design */

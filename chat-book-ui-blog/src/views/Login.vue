@@ -1,73 +1,119 @@
 <template>
     <div class="body">
-        <div class="container"
+        <div class="background-shapes">
+            <div class="shape shape-1"></div>
+            <div class="shape shape-2"></div>
+            <div class="shape shape-3"></div>
+        </div>
+        <div class="container glass-effect"
             :class="{ 'right-panel-active': isSignUpPanelActive, 'email-sign-in-active': isEmailSignIn }"
             id="login-box">
             <div class="form-container sign-up-container">
                 <form @submit.prevent="handleSignUp">
-                    <h1>注册</h1>
-                    <div class="txtb">
-                        <input v-model="signupForm.username" placeholder="昵称/Username" type="text" required>
+                    <h1>创建账户</h1>
+                    <div class="social-container">
+                        <a href="#" class="social"><el-icon><i-ep-platform /></el-icon></a>
+                        <a href="#" class="social"><el-icon><i-ep-google /></el-icon></a>
+                        <a href="#" class="social"><el-icon><i-ep-chat-dot-round /></el-icon></a>
                     </div>
-                    <div class="txtb">
-                        <input v-model="signupForm.email" placeholder="邮箱/Email" type="email" required>
+                    <span>或使用邮箱注册</span>
+                    <div class="input-group">
+                        <input v-model="signupForm.username" type="text" placeholder="昵称" required />
+                        <el-icon class="input-icon">
+                            <User />
+                        </el-icon>
                     </div>
-                    <div class="txtb">
-                        <input v-model="signupForm.password" placeholder="密码/Password" type="password" required>
+                    <div class="input-group">
+                        <input v-model="signupForm.email" type="email" placeholder="邮箱" required />
+                        <el-icon class="input-icon">
+                            <Message />
+                        </el-icon>
                     </div>
-                    <div class="txtb" style="display:flex;">
-                        <input v-model="signupForm.captcha" placeholder="输入验证码" type="text" required>
-                        <el-button color="#626aef" style="padding: 0;margin: 0;width: 150px;" @click="getCode"
-                            :disabled="isCounting">
-                            {{ isCounting ? `${countdown}秒后重新获取` : '获取验证码' }}
+                    <div class="input-group">
+                        <input v-model="signupForm.password" type="password" placeholder="密码" required />
+                        <el-icon class="input-icon">
+                            <Lock />
+                        </el-icon>
+                    </div>
+                    <div class="input-group captcha-group">
+                        <input v-model="signupForm.captcha" type="text" placeholder="验证码" required />
+                        <el-button class="code-btn" type="primary" link @click="getCode" :disabled="isCounting">
+                            {{ isCounting ? `${countdown}s` : '获取验证码' }}
                         </el-button>
                     </div>
-                    <button>注册</button>
+                    <button class="submit-btn">立即注册</button>
                 </form>
             </div>
+
             <div class="form-container sign-in-container" v-if="!isEmailSignIn">
                 <form @submit.prevent="handleSignIn">
-                    <h1>登录</h1>
-                    <div class="txtb">
-                        <input v-model="signInForm.email" placeholder="邮箱/Email" type="email" required>
+                    <h1>欢迎回来</h1>
+                    <div class="social-container">
+                        <a href="#" class="social"><el-icon><i-ep-platform /></el-icon></a>
+                        <a href="#" class="social"><el-icon><i-ep-google /></el-icon></a>
+                        <a href="#" class="social"><el-icon><i-ep-chat-dot-round /></el-icon></a>
                     </div>
-                    <div class="txtb">
-                        <input v-model="signInForm.password" placeholder="密码/Password" type="password" required>
+                    <span>使用您的账户登录</span>
+                    <div class="input-group">
+                        <input v-model="signInForm.email" type="email" placeholder="邮箱" required />
+                        <el-icon class="input-icon">
+                            <Message />
+                        </el-icon>
                     </div>
-                    <!--                    <span href="#" @click.prevent="toggleEmailSignIn(true)">验证码登录</span>-->
-                    <button style="margin: 10px 0">登录</button>
-                    <el-text href="#">忘记密码？</el-text>
+                    <div class="input-group">
+                        <input v-model="signInForm.password" type="password" placeholder="密码" required />
+                        <el-icon class="input-icon">
+                            <Lock />
+                        </el-icon>
+                    </div>
+                    <div class="actions">
+                        <span class="action-link" @click.prevent="toggleEmailSignIn(true)">验证码登录</span>
+                        <span class="action-link">忘记密码？</span>
+                    </div>
+                    <button class="submit-btn">登录</button>
                 </form>
             </div>
+
             <div class="form-container sign-in-container" v-if="isEmailSignIn">
                 <form @submit.prevent="handleEmailSignIn">
-                    <h1>登录</h1>
-                    <div class="txtb">
-                        <input v-model="signInForm.email" placeholder="邮箱/Email" type="email" required>
+                    <h1>验证码登录</h1>
+                    <div class="social-container">
+                        <a href="#" class="social"><el-icon><i-ep-platform /></el-icon></a>
+                        <a href="#" class="social"><el-icon><i-ep-google /></el-icon></a>
+                        <a href="#" class="social"><el-icon><i-ep-chat-dot-round /></el-icon></a>
                     </div>
-                    <div class="txtb" style="display:flex;">
-                        <input v-model="signInForm.captcha" placeholder="输入验证码" type="text" required>
-                        <el-button color="#626aef" style="padding: 0;margin: 0;width: 150px;" @click="getEmailCode"
-                            :disabled="isCounting">
-                            {{ isCounting ? `${countdown}秒后重新获取` : '获取验证码' }}
+                    <span>使用邮箱验证码登录</span>
+                    <div class="input-group">
+                        <input v-model="signInForm.email" type="email" placeholder="邮箱" required />
+                        <el-icon class="input-icon">
+                            <Message />
+                        </el-icon>
+                    </div>
+                    <div class="input-group captcha-group">
+                        <input v-model="signInForm.captcha" type="text" placeholder="验证码" required />
+                        <el-button class="code-btn" type="primary" link @click="getEmailCode" :disabled="isCounting">
+                            {{ isCounting ? `${countdown}s` : '获取验证码' }}
                         </el-button>
                     </div>
-                    <span href="#" @click.prevent="toggleEmailSignIn(false)">邮箱密码登录</span>
-                    <button style="margin: 10px 0">登录</button>
-                    <el-text href="#">忘记密码？</el-text>
+                    <div class="actions">
+                        <span class="action-link" @click.prevent="toggleEmailSignIn(false)">密码登录</span>
+                        <span class="action-link">忘记密码？</span>
+                    </div>
+                    <button class="submit-btn">登录</button>
                 </form>
             </div>
+
             <div class="overlay-container">
                 <div class="overlay">
                     <div class="overlay-panel overlay-left">
                         <h1>已有账号？</h1>
-                        <p>请使用您的账号进行登录</p>
-                        <button class="ghost" @click="togglePanel(false)">登录</button>
+                        <p>请使用您的账号进行登录，畅享更多功能</p>
+                        <button class="ghost" @click="togglePanel(false)">去登录</button>
                     </div>
                     <div class="overlay-panel overlay-right">
                         <h1>没有账号?</h1>
-                        <p>立即注册加入我们，和我们一起开始旅程吧</p>
-                        <button class="ghost" @click="togglePanel(true)">注册</button>
+                        <p>立即注册加入我们，开启您的创作之旅</p>
+                        <button class="ghost" @click="togglePanel(true)">去注册</button>
                     </div>
                 </div>
             </div>
@@ -79,6 +125,7 @@
 import { ref, reactive } from 'vue';
 import { ElMessage } from "element-plus";
 import { captcha, login, signUp } from "@/api/user.js";
+import { User, Lock, Message } from '@element-plus/icons-vue';
 
 const isSignUpPanelActive = ref(false);
 const signupForm = reactive({
@@ -89,13 +136,12 @@ const signupForm = reactive({
 });
 const signInForm = reactive({
     email: '',
-    password: ''
+    password: '',
+    captcha: ''
 });
 
 const countdown = ref(0); // 倒计时秒数
 const isCounting = ref(false); // 是否正在倒计时
-const emailCountdown = ref(0); // 邮箱验证码倒计时秒数
-const isEmailCounting = ref(false); // 是否正在邮箱验证码倒计时
 const isEmailSignIn = ref(false); // 是否显示邮箱验证码登录
 
 function togglePanel(isSignUp) {
@@ -105,60 +151,69 @@ function togglePanel(isSignUp) {
 // 注册逻辑
 async function handleSignUp() {
     if (!signupForm.captcha) {
-        ElMessage.error('请填写验证码');
+        ElMessage.warning('请填写验证码');
         return;
     }
-    let params = await signUp(signupForm);
-    console.log(params);
-    if (params) {
-        ElMessage.success('注册成功');
-        togglePanel(false);
+    try {
+        let params = await signUp(signupForm);
+        if (params) {
+            ElMessage.success('注册成功');
+            togglePanel(false);
+        }
+    } catch (e) {
+        console.error(e);
     }
 }
 
 // 登录逻辑
 async function handleSignIn() {
-    let data = await login(signInForm);
-    if (data) {
-        ElMessage.success('登录成功');
-        localStorage.setItem("token", data);
-        window.location.href = '/';
+    try {
+        let data = await login(signInForm);
+        if (data) {
+            ElMessage.success('登录成功');
+            localStorage.setItem("token", data);
+            window.location.href = '/';
+        }
+    } catch (e) {
+        console.error(e);
     }
 }
 
 // 邮箱验证码登录逻辑
 async function handleEmailSignIn() {
     if (!signInForm.captcha) {
-        ElMessage.error('请填写验证码');
+        ElMessage.warning('请填写验证码');
         return;
     }
-    // TODO: 实现邮箱验证码登录逻辑
-    ElMessage.info('邮箱验证码登录功能待实现');
+    ElMessage.info('邮箱验证码登录功能开发中');
 }
 
 // 获取验证码逻辑
 async function getCode() {
     if (signupForm.email === '') {
-        ElMessage.error('请填写邮箱');
+        ElMessage.warning('请填写邮箱');
         return;
     }
-    let params = await captcha(signupForm.email);
-    if (params) {
-        ElMessage.success('验证码发送成功');
+    try {
+        let params = await captcha(signupForm.email);
+        if (params) {
+            ElMessage.success('验证码发送成功');
+        }
+        startCountdown(120);
+    } catch (e) {
+        console.error(e);
     }
-    // 启动倒计时
-    startCountdown(120);
 }
 
 function startCountdown(time) {
-    countdown.value = time; // 设置倒计时为120秒
-    isCounting.value = true; // 启动倒计时，禁用按钮
+    countdown.value = time;
+    isCounting.value = true;
     const interval = setInterval(() => {
         if (countdown.value > 0) {
             countdown.value--;
         } else {
             clearInterval(interval);
-            isCounting.value = false; // 倒计时结束，启用按钮
+            isCounting.value = false;
         }
     }, 1000);
 }
@@ -166,18 +221,19 @@ function startCountdown(time) {
 // 获取邮箱验证码逻辑
 async function getEmailCode() {
     if (signInForm.email === '') {
-        ElMessage.error('请填写邮箱');
+        ElMessage.warning('请填写邮箱');
         return;
     }
-    let params = await captcha(signInForm.email);
-    if (params) {
-        ElMessage.success('验证码发送成功');
+    try {
+        let params = await captcha(signInForm.email);
+        if (params) {
+            ElMessage.success('验证码发送成功');
+        }
+        startCountdown(120);
+    } catch (e) {
+        console.error(e);
     }
-    // 启动邮箱验证码倒计时
-    startCountdown(120)
 }
-
-
 
 // 切换邮箱验证码登录
 function toggleEmailSignIn(isEmail) {
@@ -185,44 +241,83 @@ function toggleEmailSignIn(isEmail) {
 }
 </script>
 
-
 <style scoped>
 .body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    background: radial-gradient(circle at top left, #f8fafc, #eff6ff, #dbeafe);
     height: 100vh;
     display: flex;
     align-items: center;
     justify-content: center;
+    background: #f0f4f8;
+    position: relative;
+    overflow: hidden;
 }
 
-h1 {
-    font-weight: 800;
-    margin: 0 0 24px;
-    color: var(--text-color-primary);
-    letter-spacing: -0.025em;
+.background-shapes .shape {
+    position: absolute;
+    filter: blur(80px);
+    z-index: 0;
+    opacity: 0.6;
+    animation: float 20s infinite;
 }
 
-p {
-    font-size: 0.9375rem;
-    line-height: 1.6;
-    color: var(--text-color-regular);
-    margin: 16px 0 32px;
+.shape-1 {
+    top: -10%;
+    left: -10%;
+    width: 500px;
+    height: 500px;
+    background: #c4b5fd;
+    animation-delay: 0s;
+}
+
+.shape-2 {
+    bottom: -10%;
+    right: -10%;
+    width: 600px;
+    height: 600px;
+    background: #a5f3fc;
+    animation-delay: -5s;
+}
+
+.shape-3 {
+    top: 40%;
+    left: 40%;
+    width: 300px;
+    height: 300px;
+    background: #fbcfe8;
+    animation-delay: -10s;
+}
+
+@keyframes float {
+
+    0%,
+    100% {
+        transform: translate(0, 0) rotate(0deg);
+    }
+
+    33% {
+        transform: translate(30px, -50px) rotate(10deg);
+    }
+
+    66% {
+        transform: translate(-20px, 20px) rotate(-5deg);
+    }
 }
 
 .container {
-    background: var(--bg-color-glass);
-    backdrop-filter: var(--blur-large);
-    -webkit-backdrop-filter: var(--blur-large);
-    border: 1px solid rgba(255, 255, 255, 0.4);
-    border-radius: var(--border-radius-xl);
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 24px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
     position: relative;
     overflow: hidden;
-    width: 800px;
-    max-width: 90%;
-    min-height: 520px;
+    width: 900px;
+    max-width: 95%;
+    min-height: 600px;
     display: flex;
+    z-index: 1;
 }
 
 .form-container {
@@ -231,74 +326,158 @@ p {
     height: 100%;
     transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
     width: 50%;
-    background: white;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(10px);
 }
 
 .form-container form {
-    background: transparent;
     display: flex;
     flex-direction: column;
-    padding: 0 48px;
+    padding: 0 50px;
     height: 100%;
     justify-content: center;
+    align-items: center;
     text-align: center;
 }
 
-.txtb {
-    position: relative;
-    margin: 12px 0;
-}
-
-.txtb input {
-    font-size: 0.875rem;
+h1 {
+    font-weight: 800;
+    margin: 0 0 20px;
     color: var(--text-color-primary);
-    border: 1px solid var(--border-color-base);
-    border-radius: var(--border-radius-large);
-    width: 100%;
-    outline: none;
-    background: var(--bg-color-base);
-    padding: 12px 16px;
-    transition: var(--transition-base);
+    font-size: 28px;
 }
 
-.txtb input:focus {
-    border-color: var(--color-primary);
+.social-container {
+    margin: 10px 0 20px;
+    display: flex;
+    gap: 16px;
+}
+
+.social {
+    border: 1px solid #ddd;
+    border-radius: 50%;
+    display: inline-flex;
+    justify-content: center;
+    align-items: center;
+    width: 40px;
+    height: 40px;
+    color: var(--text-color-secondary);
+    transition: all 0.3s;
     background: white;
-    box-shadow: 0 0 0 4px var(--color-primary-light);
 }
 
-button {
-    border-radius: var(--border-radius-large);
-    border: none;
-    background: var(--color-primary);
-    color: #fff;
-    font-size: 0.875rem;
-    font-weight: 600;
-    padding: 12px 32px;
-    transition: var(--transition-base);
-    cursor: pointer;
-    margin-top: 16px;
-}
-
-button:hover {
-    background: var(--color-primary-hover);
+.social:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
 }
 
-button:active {
-    transform: translateY(0);
+span {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    margin-bottom: 20px;
 }
 
-button.ghost {
-    background: transparent;
-    border: 1.5px solid #fff;
-    margin-top: 0;
+.input-group {
+    position: relative;
+    width: 100%;
+    margin: 8px 0;
 }
 
-button.ghost:hover {
-    background: rgba(255, 255, 255, 0.1);
-    box-shadow: none;
+.input-group input {
+    background: rgba(255, 255, 255, 0.8);
+    border: 1px solid transparent;
+    padding: 12px 15px 12px 45px;
+    width: 100%;
+    border-radius: 12px;
+    font-size: 14px;
+    outline: none;
+    transition: all 0.3s;
+    color: var(--text-color-primary);
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+}
+
+.input-group input:focus {
+    background: #fff;
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.1);
+}
+
+.input-icon {
+    position: absolute;
+    left: 15px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-color-placeholder);
+    transition: color 0.3s;
+}
+
+.input-group input:focus+.input-icon {
+    color: var(--color-primary);
+}
+
+.captcha-group {
+    display: flex;
+    gap: 10px;
+}
+
+.captcha-group input {
+    padding-left: 15px;
+    /* Adjust padding if no icon */
+    flex: 1;
+}
+
+.code-btn {
+    white-space: nowrap;
+    padding: 0 15px;
+}
+
+.actions {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    margin: 15px 0 25px;
+    font-size: 13px;
+}
+
+.action-link {
+    color: var(--text-color-secondary);
+    cursor: pointer;
+    transition: color 0.3s;
+}
+
+.action-link:hover {
+    color: var(--color-primary);
+    text-decoration: underline;
+}
+
+.submit-btn {
+    border-radius: 30px;
+    border: none;
+    background: linear-gradient(135deg, var(--color-primary), #6366f1);
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    padding: 12px 45px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: transform 80ms ease-in, box-shadow 0.3s;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+}
+
+.submit-btn:active {
+    transform: scale(0.95);
+}
+
+.submit-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
 }
 
 .overlay-container {
@@ -313,7 +492,10 @@ button.ghost:hover {
 }
 
 .overlay {
-    background: linear-gradient(135deg, var(--color-primary), #4f46e5);
+    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: 0 0;
     color: #fff;
     position: relative;
     left: -100%;
@@ -330,7 +512,7 @@ button.ghost:hover {
     flex-direction: column;
     justify-content: center;
     align-items: center;
-    padding: 0 54px;
+    padding: 0 40px;
     height: 100%;
     width: 50%;
     text-align: center;
@@ -340,20 +522,46 @@ button.ghost:hover {
 
 .overlay-panel h1 {
     color: white;
+    margin-bottom: 10px;
 }
 
 .overlay-panel p {
+    font-size: 14px;
+    font-weight: 300;
+    line-height: 1.6;
+    margin: 10px 0 30px;
     color: rgba(255, 255, 255, 0.9);
+}
+
+.ghost {
+    background: transparent;
+    border: 1px solid #fff;
+    border-radius: 30px;
+    color: #fff;
+    font-size: 13px;
+    font-weight: 700;
+    padding: 10px 40px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    transition: all 0.3s;
+    cursor: pointer;
+}
+
+.ghost:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: scale(1.05);
 }
 
 .overlay-right {
     right: 0;
+    transform: translateX(0);
 }
 
 .overlay-left {
     transform: translateX(-20%);
 }
 
+/* Animation States */
 .container.right-panel-active .sign-in-container {
     transform: translateX(100%);
     opacity: 0;

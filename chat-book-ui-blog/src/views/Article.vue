@@ -1,47 +1,81 @@
 <template>
-    <div class="article-detail">
-        <div class="article-buttons">
-            <div>
-                <el-button class="comment-button" size="large" type="warning" :icon="Pointer" circle
-                    :style="{ backgroundColor: praiseStat === 0 ? 'white' : 'orange', color: praiseStat === 0 ? 'orange' : 'white' }"
-                    @click="handleLike" />
-            </div>
-            <div>
-                <el-button class="comment-button" size="large" type="warning" :icon="ChatLineRound" circle
-                    style="background-color: white; color: orange" @click="handleComment" />
-            </div>
-            <div>
-                <el-button class="comment-button" size="large" type="primary" :icon="Service" circle
-                    @click="handleAiChat" />
-            </div>
-            <div>
-                <el-button class="comment-button" size="large" type="warning" :icon="Star" circle
-                    :style="{ backgroundColor: collectStat === 0 ? 'white' : 'orange', color: collectStat === 0 ? 'orange' : 'white' }"
-                    @click="handleFavorite" />
-            </div>
-        </div>
-
-        <div class="content">
-            <header class="article-header">
-                <h1>{{ article.title }}</h1>
-                <div class="article-meta">
-                    <span class="gap">作者: {{ article.author }}</span>
-                    <span class="gap">发布日期: {{ article.createTime }}</span>
-                    <span class="gap">阅读量: {{ article.viewCount }}</span>
+    <div class="article-page">
+        <div class="article-detail">
+            <div class="article-buttons glass-panel-mini">
+                <div class="action-item">
+                    <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }"
+                        @click="handleLike">
+                        <el-icon>
+                            <Pointer />
+                        </el-icon>
+                    </el-button>
+                    <span class="action-label">点赞</span>
                 </div>
-            </header>
-            <main class="article-content">
-                <MarkdownRenderer :content="article.content" />
-            </main>
-        </div>
+                <div class="action-item">
+                    <el-button class="action-btn" size="large" circle
+                        :class="{ 'is-active': activePanel === 'comment' }" @click="handleComment">
+                        <el-icon>
+                            <ChatLineRound />
+                        </el-icon>
+                    </el-button>
+                    <span class="action-label">评论</span>
+                </div>
+                <div class="action-item">
+                    <el-button class="action-btn ai-btn" size="large" circle
+                        :class="{ 'is-active': activePanel === 'ai' }" @click="handleAiChat">
+                        <el-icon>
+                            <Service />
+                        </el-icon>
+                    </el-button>
+                    <span class="action-label">AI助手</span>
+                </div>
+                <div class="action-item">
+                    <el-button class="action-btn" size="large" circle :class="{ 'is-active': collectStat !== 0 }"
+                        @click="handleFavorite">
+                        <el-icon>
+                            <Star />
+                        </el-icon>
+                    </el-button>
+                    <span class="action-label">收藏</span>
+                </div>
+            </div>
 
-        <div class="article-right" :class="{ 'expanded-panel': activePanel !== 'default' }">
-            <keep-alive>
-                <component :is="componentMap[activePanel]" :userId="article.authorId" :articleId="articleId" />
-            </keep-alive>
+            <div class="content glass-panel">
+                <header class="article-header">
+                    <h1 class="article-title">{{ article.title }}</h1>
+                    <div class="article-meta">
+                        <div class="meta-item">
+                            <span class="label">作者</span>
+                            <span class="value">{{ article.author }}</span>
+                        </div>
+                        <div class="meta-divider"></div>
+                        <div class="meta-item">
+                            <span class="label">发布于</span>
+                            <span class="value">{{ article.createTime }}</span>
+                        </div>
+                        <div class="meta-divider"></div>
+                        <div class="meta-item">
+                            <span class="label">阅读</span>
+                            <span class="value">{{ article.viewCount }}</span>
+                        </div>
+                    </div>
+                </header>
+                <main class="article-content custom-scrollbar">
+                    <MarkdownRenderer :content="article.content" />
+                </main>
+            </div>
+
+            <div class="article-right" :class="{ 'expanded-panel glass-panel': activePanel !== 'default' }">
+                <transition name="fade-slide" mode="out-in">
+                    <keep-alive>
+                        <component :is="componentMap[activePanel]" :userId="article.authorId" :articleId="articleId" />
+                    </keep-alive>
+                </transition>
+            </div>
         </div>
     </div>
 </template>
+
 <script setup>
 import { onMounted, ref } from 'vue';
 import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
@@ -120,13 +154,20 @@ onMounted(() => {
     queryArticleRequest();
 });
 </script>
+
 <style scoped>
+.article-page {
+    height: 100%;
+    background-color: var(--bg-color-base);
+    background: radial-gradient(circle at top left, #f8fafc, var(--bg-color-base));
+}
+
 .article-detail {
     display: flex;
-    max-width: var(--container-width-lg);
+    max-width: 1400px;
     margin: 0 auto;
-    gap: 8px;
-    padding: 8px var(--container-padding);
+    gap: 24px;
+    padding: 24px var(--container-padding);
     position: relative;
     align-items: flex-start;
     height: 100%;
@@ -134,84 +175,180 @@ onMounted(() => {
     box-sizing: border-box;
 }
 
+.glass-panel {
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    border-radius: 24px;
+}
+
+.glass-panel-mini {
+    background: rgba(255, 255, 255, 0.5);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
+    border-radius: 50px;
+}
+
 .content {
     flex: 1;
     min-width: 0;
-    max-width: 840px;
-    padding: 40px;
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-light);
+    padding: 40px 60px;
     height: 100%;
-    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
 }
 
 .article-header {
-    border-bottom: 1px solid var(--border-color-light);
-    padding-bottom: 16px;
-    margin-bottom: 16px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+    padding-bottom: 24px;
+    margin-bottom: 24px;
 }
 
-.article-header h1 {
-    font-size: 2.25rem;
+.article-title {
+    font-size: 2.5rem;
     font-weight: 800;
     color: var(--text-color-primary);
     line-height: 1.3;
-    margin-bottom: 16px;
+    margin: 0 0 24px;
+    letter-spacing: -0.02em;
 }
 
 .article-meta {
     display: flex;
+    align-items: center;
     gap: 16px;
     font-size: 0.875rem;
     color: var(--text-color-secondary);
 }
 
+.meta-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.meta-item .label {
+    opacity: 0.7;
+}
+
+.meta-item .value {
+    font-weight: 500;
+    color: var(--text-color-primary);
+}
+
+.meta-divider {
+    width: 1px;
+    height: 12px;
+    background: rgba(0, 0, 0, 0.1);
+}
+
 .article-content {
-    font-size: 1.0625rem;
+    flex: 1;
+    overflow-y: auto;
+    font-size: 1.1rem;
     line-height: 1.8;
     color: var(--text-color-regular);
+    padding-right: 10px;
 }
 
 .article-buttons {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 24px;
     height: fit-content;
     align-self: center;
-    padding-right: 4px;
+    padding: 24px 12px;
+    position: sticky;
+    top: 50%;
+    transform: translateY(-50%);
 }
 
-.comment-button {
+.action-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+}
+
+.action-btn {
     width: 48px;
     height: 48px;
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-light);
-    transition: var(--transition-base);
+    border: none;
+    background: white;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    font-size: 20px;
+    color: var(--text-color-secondary);
 }
 
-.comment-button:hover {
-    transform: scale(1.1);
-    box-shadow: var(--box-shadow-hover);
+.action-btn:hover {
+    transform: scale(1.15) translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.12);
+    color: var(--color-primary);
+}
+
+.action-btn.is-active {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: 0 8px 20px rgba(var(--color-primary-rgb), 0.3);
+}
+
+.action-btn.ai-btn.is-active {
+    background: #8b5cf6;
+    box-shadow: 0 8px 20px rgba(139, 92, 246, 0.3);
+}
+
+.action-label {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+    opacity: 0.8;
 }
 
 .article-right {
-    width: 320px;
+    width: 340px;
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
     height: 100%;
-    overflow-y: auto;
+    transition: all 0.4s ease;
 }
 
 .article-right.expanded-panel {
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-light);
     height: 100%;
     overflow: hidden;
+    padding: 20px;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 0, 0, 0.2);
+}
+
+/* Transitions */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+    transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from,
+.fade-slide-leave-to {
+    opacity: 0;
+    transform: translateX(20px);
 }
 </style>
