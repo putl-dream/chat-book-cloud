@@ -1,23 +1,26 @@
 <template>
-    <div class="header">
-        <el-button type="danger" @click="router.push('/text')">发布文章</el-button>
+    <div class="creative-aside">
+        <div class="aside-header">
+            <el-button class="publish-btn" type="primary" @click="router.push('/text')">
+                <el-icon><EditPen /></el-icon> 发布文章
+            </el-button>
+        </div>
+        <el-menu :default-active="$route.path" class="glass-menu" router>
+            <template v-for="(item, index) in menus" :key="index">
+                <el-menu-item :index="item.url" v-if="!item.children" class="menu-item">
+                    <el-icon class="icon">
+                        <component :is="item.icon"/>
+                    </el-icon>
+                    <span slot="title">{{ item.name }}</span>
+                </el-menu-item>
+            </template>
+        </el-menu>
     </div>
-    <el-menu text-color="#fc5531" class="aside" router>
-        <template v-for="(item, index) in menus" :key="index">
-            <el-menu-item :index="item.url" v-if="!item.children">
-                <el-icon class="icon">
-                    <component :is="item.icon"/>
-                </el-icon>
-                <span slot="title">{{ item.name }}</span>
-            </el-menu-item>
-        </template>
-    </el-menu>
 </template>
 
 <script setup>
-import logo from '@/assets/logo.png';
 import {markRaw, reactive} from 'vue';
-import {HomeFilled, Monitor, Promotion, Document, Edit} from "@element-plus/icons-vue";
+import {HomeFilled, Monitor, EditPen} from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 
 const menus = reactive([
@@ -28,31 +31,67 @@ const menus = reactive([
 </script>
 
 <style scoped>
-.header {
-    display: flex; /* 使用 Flexbox 布局 */
-    align-items: center; /* 垂直居中 */
+.creative-aside {
+    height: 100%;
+    padding: 20px 10px;
+}
+
+.aside-header {
+    display: flex;
     justify-content: center;
-    gap: 10px; /* 可选：设置图片和文本之间的间距 */
-    padding: 10px 0;
-    height: 60px;
+    margin-bottom: 24px;
+    padding: 0 10px;
 }
 
-.header button {
-    width: 70%;
-    height: 40px;
-    border-radius: 20px;
+.publish-btn {
+    width: 100%;
+    height: 44px;
+    border-radius: 12px;
+    font-size: 16px;
+    font-weight: 600;
+    background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%);
+    border: none;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.3);
+    transition: all 0.3s ease;
 }
 
-.icon {
-    margin-right: 20px;
+.publish-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 14px rgba(37, 99, 235, 0.4);
 }
 
-.aside {
-    overflow-y: auto;
-    overflow-x: hidden;
+.publish-btn .el-icon {
+    margin-right: 8px;
+}
+
+.glass-menu {
     border-right: none;
-    padding: 0 70px;
     background-color: transparent;
+}
 
+.menu-item {
+    margin-bottom: 8px;
+    border-radius: 10px;
+    height: 50px;
+    line-height: 50px;
+    color: var(--text-color-regular);
+    transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+    background-color: rgba(255, 255, 255, 0.5);
+    color: var(--color-primary);
+}
+
+.menu-item.is-active {
+    background-color: var(--bg-color-white);
+    color: var(--color-primary);
+    font-weight: 600;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.menu-item .icon {
+    margin-right: 12px;
+    font-size: 18px;
 }
 </style>
