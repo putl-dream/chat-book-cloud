@@ -6,6 +6,7 @@ import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
+import com.putl.articleservice.mapper.entity.ArticleInfoDO;
 import com.putl.articleservice.service.ArticleService;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
@@ -30,6 +31,7 @@ import java.util.List;
 public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleService {
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
+    private final com.putl.articleservice.client.UserClient userClient;
 
     /**
      * 获取文章基本信息。
@@ -40,7 +42,37 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     @Override
     public ArticleVO getArticleInfo(Integer articleId) {
         ArticleDO articleDO = articleMapper.selectById(articleId);
-        return BeanUtil.toBean(articleDO, ArticleVO.class);
+        if (articleDO == null) {
+            return null;
+        }
+        ArticleVO articleVO = BeanUtil.toBean(articleDO, ArticleVO.class);
+
+        // 填充文章详情内容
+        ArticleInfoDO articleInfoDO = articleInfoMapper.selectOne(Wrappers.<ArticleInfoDO>lambdaQuery()
+                .eq(ArticleInfoDO::getArticleId, articleId));
+        if (articleInfoDO != null) {
+            articleVO.setContent(articleInfoDO.getContent());
+            if ((articleVO.getUserName() == null || articleVO.getUserName().isEmpty()) && articleInfoDO.getUserName() != null) {
+                articleVO.setUserName(articleInfoDO.getUserName());
+            }
+        }
+
+        // 填充统计数据
+        try {
+            String currentUserIdStr = UserContext.getUserId();
+            Integer currentUserId = currentUserIdStr != null ? Integer.valueOf(currentUserIdStr) : 0;
+            
+            com.putl.articleservice.client.result.UserFootVO userFoot = userClient.getUserFoot(articleId, currentUserId);
+            if (userFoot != null) {
+                articleVO.setViewCount(userFoot.getViewCount());
+                articleVO.setPraiseStat(userFoot.getPraiseStat() != null ? userFoot.getPraiseStat().intValue() : 0);
+                articleVO.setCollectStat(userFoot.getCollectStat() != null ? userFoot.getCollectStat().intValue() : 0);
+            }
+        } catch (Exception e) {
+            log.error("获取用户足迹信息失败: articleId={}", articleId, e);
+        }
+
+        return articleVO;
     }
 
     /**

@@ -10,8 +10,11 @@ import lombok.Data;
 public class ArticleVO {
     private Integer id;
     private String title;
-    private String author;
-    private Integer authorId;
+    private String userName;
+    private Integer userId;
     private String createTime;
     private String content;
+    private Integer praiseStat;
+    private Integer collectStat;
+    private Long viewCount;
 }

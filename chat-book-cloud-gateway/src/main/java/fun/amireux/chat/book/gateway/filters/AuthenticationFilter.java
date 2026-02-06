@@ -36,10 +36,19 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String userId = null;
         String username = null;
 
+        if (token != null && token.startsWith("Bearer ")) {
+            token = token.substring(7);
+        }
+
         if (token != null) {
             try {
                 com.auth0.jwt.interfaces.DecodedJWT decodedJWT = jwtUtil.verifyToken(token);
-                userId = String.valueOf(decodedJWT.getClaim("id").asInt());
+                if (!decodedJWT.getClaim("id").isNull()) {
+                    userId = String.valueOf(decodedJWT.getClaim("id").asLong());
+                    if (userId == null || "null".equals(userId)) {
+                        userId = decodedJWT.getClaim("id").asString();
+                    }
+                }
                 username = decodedJWT.getClaim("username").asString();
             } catch (Exception e) {
                 log.error("Token verification failed: {}", e.getMessage());

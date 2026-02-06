@@ -1,10 +1,10 @@
 package com.putl.userservice.ws;
 
-import com.alibaba.fastjson2.JSON;
 import com.putl.userservice.config.SessionConfig;
 import com.putl.userservice.controller.vo.MessageVO;
 import com.putl.userservice.service.MessageService;
 import com.putl.userservice.util.MessageResult;
+import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import jakarta.servlet.http.HttpSession;
 import jakarta.websocket.*;
 import jakarta.websocket.server.ServerEndpoint;
@@ -45,7 +45,7 @@ public class ChatChannel {
     @OnMessage
     public void onMessage(String message) {
         log.info("[websocket] 收到消息：id={}，message={}", this.userId, message);
-        Message msg = JSON.parseObject(message, Message.class);
+        Message msg = BeanUtil.toBean(message, Message.class);
         messageHandle(msg);
     }
 
