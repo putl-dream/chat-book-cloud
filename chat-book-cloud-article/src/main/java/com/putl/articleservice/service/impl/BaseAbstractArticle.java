@@ -34,7 +34,7 @@ import java.util.List;
 public abstract class BaseAbstractArticle {
 
     @Resource
-    private ArticleMapper articleMapper;
+    protected ArticleMapper articleMapper;
 
     @Resource
     private UserClient userClient;
@@ -45,6 +45,12 @@ public abstract class BaseAbstractArticle {
         PageResult<ArticleListVO> pageResult = new PageResult<>(bean, articleDOPageResult.getTotal());
         pageResult.getList().forEach(this::setArticleVO);
         return pageResult;
+    }
+
+    protected List<ArticleListVO> toBean(List<ArticleDO> articleDOs) {
+        List<ArticleListVO> bean = BeanUtil.toBean(articleDOs, ArticleListVO.class);
+        bean.forEach(this::setArticleVO);
+        return bean;
     }
 
     protected ArticleVO toBean(Wrapper<ArticleDO> wrapper) {

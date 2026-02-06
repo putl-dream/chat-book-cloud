@@ -20,7 +20,7 @@ public interface ArticleClient {
     @PostMapping(USER_SERVICE_URL + "query")
     Result<ArticleVO> queryArticle(@RequestParam Integer id);
 
-    @PostMapping(USER_SERVICE_URL + "page/ids")
+    @PostMapping("page/ids")
     Result<List<ArticleListVO>> selectIds(@RequestBody List<Integer> ids);
 
     @PostMapping(USER_SERVICE_URL + "queryCount")

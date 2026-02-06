@@ -18,6 +18,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/page")
 @RequiredArgsConstructor
@@ -108,5 +110,11 @@ public class ArticlePageController {
     @PostMapping("/adminArticlePage")
     public CommonResult<PageResult<ArticleListVO>> getAdminArticlePage(@Valid @RequestBody PageRequestDTO request) {
         return CommonResult.success(articlePageService.getAdminArticlePage(request.getPageNo(), request.getPageSize()));
+    }
+
+    @Operation(summary = "根据ID列表获取文章")
+    @PostMapping("/ids")
+    public CommonResult<List<ArticleListVO>> selectIds(@RequestBody List<Integer> ids) {
+        return CommonResult.success(articlePageService.selectIds(ids));
     }
 }

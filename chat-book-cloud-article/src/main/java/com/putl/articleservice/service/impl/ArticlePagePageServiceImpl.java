@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -242,5 +243,20 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     @Override
     public PageResult<ArticleListVO> getAdminArticlePage(Integer pageNo, Integer pageSize) {
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    /**
+     * 根据ID列表查询文章列表
+     *
+     * @param ids 文章ID列表
+     * @return 文章列表
+     */
+    @Override
+    public List<ArticleListVO> selectIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ArticleDO> articleDOS = articleMapper.selectBatchIds(ids);
+        return toBean(articleDOS);
     }
 }

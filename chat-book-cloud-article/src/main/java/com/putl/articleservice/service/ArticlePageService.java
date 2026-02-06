@@ -3,6 +3,8 @@ package com.putl.articleservice.service;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.utils.PageResult;
 
+import java.util.List;
+
 /**
  * 文章列表功能
  * - 获取最新文章列表
@@ -55,5 +57,8 @@ public interface ArticlePageService {
 
     // 管理员审核文章列表
     PageResult<ArticleListVO> getAdminArticlePage(Integer pageNo, Integer pageSize);
+
+    // 根据ID列表查询文章列表
+    List<ArticleListVO> selectIds(List<Integer> ids);
 }
 
