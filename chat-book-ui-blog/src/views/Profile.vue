@@ -181,7 +181,7 @@ onMounted(async () => {
 }
 
 .user-cover {
-    height: 240px;
+    height: 175px;
     background: linear-gradient(120deg, #a5f3fc, #c4b5fd, #fbcfe8);
     background-size: 200% 200%;
     animation: gradientBG 10s ease infinite;

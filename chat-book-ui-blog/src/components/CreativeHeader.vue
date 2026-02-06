@@ -2,7 +2,7 @@
     <div class="creative-header glass-effect">
         <div class="left-section">
             <div class="logo" @click="router.push('/')">
-                <img src="@/assets/logo.png" alt="logo" />
+                <img src="@/assets/logo.svg" alt="logo" />
                 <span class="logo-text">ChatBook 创作中心</span>
             </div>
             <el-button @click.stop="router.push('/')" link class="home-btn">
