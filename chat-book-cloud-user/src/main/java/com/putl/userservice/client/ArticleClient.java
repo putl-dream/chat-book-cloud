@@ -17,7 +17,7 @@ public interface ArticleClient {
 
     String USER_SERVICE_URL = "article/";
 
-    @PostMapping(USER_SERVICE_URL + "queryOpen")
+    @PostMapping(USER_SERVICE_URL + "query")
     Result<ArticleVO> queryArticle(@RequestParam Integer id);
 
     @PostMapping(USER_SERVICE_URL + "page/ids")

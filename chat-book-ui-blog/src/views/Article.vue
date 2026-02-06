@@ -3,14 +3,21 @@
         <div class="article-buttons">
             <div>
                 <el-button class="comment-button" size="large" type="warning" :icon="Pointer" circle
-                    :style="{ backgroundColor: praiseStat === 0 ? 'white' : 'orange' }" @click="handleLike" />
+                    :style="{ backgroundColor: praiseStat === 0 ? 'white' : 'orange', color: praiseStat === 0 ? 'orange' : 'white' }"
+                    @click="handleLike" />
             </div>
             <div>
-                <el-button class="comment-button" type="warning" :icon="ChatLineRound" circle @click="handleComment" />
+                <el-button class="comment-button" size="large" type="warning" :icon="ChatLineRound" circle
+                    style="background-color: white; color: orange" @click="handleComment" />
+            </div>
+            <div>
+                <el-button class="comment-button" size="large" type="primary" :icon="Service" circle
+                    @click="handleAiChat" />
             </div>
             <div>
                 <el-button class="comment-button" size="large" type="warning" :icon="Star" circle
-                    :style="{ backgroundColor: collectStat === 0 ? 'white' : 'orange' }" @click="handleFavorite" />
+                    :style="{ backgroundColor: collectStat === 0 ? 'white' : 'orange', color: collectStat === 0 ? 'orange' : 'white' }"
+                    @click="handleFavorite" />
             </div>
         </div>
 
@@ -24,129 +31,72 @@
                 </div>
             </header>
             <main class="article-content">
-                <p v-html="article.content"></p>
+                <MarkdownRenderer :content="article.content" />
             </main>
         </div>
 
-        <div class="article-right">
-            <div class="article-right-card">
-                <AuthorCard :userId="article.authorId" />
-            </div>
-            <div class="article-right-card">
-                <HotCard />
-            </div>
+        <div class="article-right" :class="{ 'expanded-panel': activePanel !== 'default' }">
+            <keep-alive>
+                <component :is="componentMap[activePanel]" :userId="article.authorId" :articleId="articleId" />
+            </keep-alive>
         </div>
-
-        <!-- 抽屉组件 -->
-        <el-drawer title="评论" v-model="drawerVisible" :direction="direction" size="30%" class="article-drawer"
-            :with-header="false">
-            <div class="article-header" style="display:flex;justify-content: space-between;margin-bottom: 10px">
-                <el-text size="large"><b>评论</b></el-text>
-                <div>
-                    <el-button type="primary" @click="addComment">发布</el-button>
-                </div>
-            </div>
-            <div class="comment-section">
-                <!-- 评论框 -->
-                <div class="comment-avatar">
-                    <el-avatar :size="40" :src="selfPhoto" />
-                </div>
-                <el-input v-model="newComment" type="textarea" :rows="6" placeholder="请输入评论" class="comment-input" />
-            </div>
-            <div class="comments-list">
-                <div v-for="(comment, index) in comments" :key="index" class="comment-item">
-                    <div class="comment-avatar">
-                        <el-avatar :size="40" :src="comment.headerImg" />
-                    </div>
-                    <div class="comment-details">
-                        <div class="comment-header">
-                            <span class="comment-username">{{ comment.username }}</span>
-                            <span class="comment-time">{{ comment.createTime }}</span>
-                        </div>
-                        <div class="comment-message">
-                            <p>{{ comment.content }}</p>
-                            <div class="comment-actions">
-                                <el-button type="text" @click="toggleComment(comment)"
-                                    v-if="comment.children.length > 0">
-                                    {{ comment.expanded ? '收起' : '展开' }}
-                                </el-button>
-                                <el-button type="text" @click="replyToComment(comment)">回复</el-button>
-                            </div>
-                        </div>
-
-                        <div v-if="comment.expanded" class="sub-comments">
-                            <div v-for="(subComment, subIndex) in comment.children" :key="subIndex"
-                                class="sub-comment-item">
-                                <div class="comment-avatar">
-                                    <el-avatar :size="40" :src="subComment.headerImg" />
-                                </div>
-                                <div class="comment-details">
-                                    <div class="comment-header">
-                                        <span class="comment-username">{{ subComment.username }}</span>
-                                        <span class="comment-time">{{ subComment.createTime }}</span>
-                                    </div>
-                                    <div class="comment-message">
-                                        <p>{{ subComment.content }}</p>
-                                        <div class="comment-actions">
-                                            <el-button type="text" @click="replyToComment(subComment)">回复</el-button>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </el-drawer>
     </div>
 </template>
 <script setup>
-import { nextTick, onMounted, ref } from 'vue';
-import { ChatLineRound, Pointer, Star } from '@element-plus/icons-vue';
-import HotCard from "@/components/widget/HotCard.vue";
+import { onMounted, ref } from 'vue';
+import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
 import { useRoute } from "vue-router";
-import { getByArticleId, queryArticle } from "@/api/article.js";
-import AuthorCard from "@/components/widget/AuthorCard.vue";
-import { saveReview, updateCollection, updatePraise } from "@/api/user.js";
-import { ElDrawer, ElAvatar, ElInput, ElButton, ElMessage } from 'element-plus';
+import { queryArticle } from "@/api/article.js";
+import { updateCollection, updatePraise } from "@/api/user.js";
+import { ElButton, ElMessage } from 'element-plus';
 import { checkLogin } from "@/utils/index.js";
+import MarkdownRenderer from "@/components/MarkdownRenderer.vue";
+
+import SidebarDefault from '@/views/article-sidebar/SidebarDefault.vue';
+import SidebarComment from '@/views/article-sidebar/SidebarComment.vue';
+import SidebarAI from '@/views/article-sidebar/SidebarAI.vue';
 
 // 获取路由参数
 const route = useRoute();
 const articleId = route.params.id;
 
-const selfPhoto = localStorage.getItem('avatar')
 const article = ref({});
 const praiseStat = ref(0);
 const collectStat = ref(0);
-const drawerVisible = ref(false);
-const direction = ref('rtl'); // 抽屉方向
-const newComment = ref('');
-const parentId = ref(0); // 评论的父ID
+const activePanel = ref('default'); // default, comment, ai
 
-// 模拟评论数据
-const comments = ref([]);
+const componentMap = {
+    'default': SidebarDefault,
+    'comment': SidebarComment,
+    'ai': SidebarAI
+};
 
 const handleLike = async () => {
     if (!checkLogin()) return;
-    const res = await updateCollection(articleId);
+    const res = await updatePraise(articleId);
     console.log("点赞", res);
     praiseStat.value = res;
 };
 
-const handleComment = async () => {
-    if (!checkLogin()) return;
-    console.log('评论' + articleId);
-    drawerVisible.value = true; // 打开抽屉
-    await nextTick(() => {
-        const messageList = document.querySelector('.article-content');
-        messageList.scrollTop = messageList.scrollHeight;
-    });
+const handleComment = () => {
+    if (activePanel.value === 'comment') {
+        activePanel.value = 'default';
+    } else {
+        activePanel.value = 'comment';
+    }
+};
+
+const handleAiChat = () => {
+    if (activePanel.value === 'ai') {
+        activePanel.value = 'default';
+    } else {
+        activePanel.value = 'ai';
+    }
 };
 
 const handleFavorite = async () => {
     if (!checkLogin()) return;
-    const res = await updatePraise(articleId);
+    const res = await updateCollection(articleId);
     console.log('收藏', res);
     if (res === 0) {
         ElMessage.warning('取消收藏');
@@ -166,59 +116,8 @@ const queryArticleRequest = async () => {
     }
 };
 
-const queryCommentRequest = async () => {
-    const res = await getByArticleId(articleId);
-    if (res) {
-        comments.value = res.map(comment => ({
-            ...comment,
-            expanded: true
-        }));
-        console.log("构建评论", comments.value);
-    }
-};
-
-const addComment = async () => {
-    if (!checkLogin()) return;
-    if (newComment.value.trim() === '') {
-        return;
-    }
-    const res = await saveReview({
-        articleId: articleId,
-        parentId: parentId.value,
-        content: newComment.value,
-    });
-    console.log("评论结果", res)
-    newComment.value = '';
-    parentId.value = 0;
-};
-const toggleComment = (comment) => {
-    comment.expanded = !comment.expanded;
-};
-
-const replyToComment = (comment) => {
-    newComment.value = `回复 ${comment.username}: `;
-    parentId.value = comment.id;
-};
-
-const findCommentById = (comments, id) => {
-    for (const comment of comments) {
-        if (comment.id === id) {
-            return comment;
-        }
-        if (comment.children.length > 0) {
-            const found = findCommentById(comment.children, id);
-            if (found) {
-                return found;
-            }
-        }
-    }
-    return null;
-};
-
-
 onMounted(() => {
     queryArticleRequest();
-    queryCommentRequest();
 });
 </script>
 <style scoped>
@@ -226,9 +125,13 @@ onMounted(() => {
     display: flex;
     max-width: var(--container-width-lg);
     margin: 0 auto;
-    gap: 32px;
-    padding: 32px var(--container-padding);
+    gap: 8px;
+    padding: 8px var(--container-padding);
     position: relative;
+    align-items: flex-start;
+    height: calc(100vh - var(--header-height) - 40px);
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .content {
@@ -240,12 +143,14 @@ onMounted(() => {
     border-radius: var(--border-radius-xl);
     box-shadow: var(--box-shadow-base);
     border: 1px solid var(--border-color-light);
+    height: 100%;
+    overflow-y: auto;
 }
 
 .article-header {
     border-bottom: 1px solid var(--border-color-light);
-    padding-bottom: 24px;
-    margin-bottom: 32px;
+    padding-bottom: 16px;
+    margin-bottom: 16px;
 }
 
 .article-header h1 {
@@ -258,7 +163,7 @@ onMounted(() => {
 
 .article-meta {
     display: flex;
-    gap: 24px;
+    gap: 16px;
     font-size: 0.875rem;
     color: var(--text-color-secondary);
 }
@@ -270,12 +175,12 @@ onMounted(() => {
 }
 
 .article-buttons {
-    position: sticky;
-    top: calc(var(--header-height) + 40px);
     display: flex;
     flex-direction: column;
     gap: 16px;
     height: fit-content;
+    align-self: center;
+    padding-right: 4px;
 }
 
 .comment-button {
@@ -296,45 +201,17 @@ onMounted(() => {
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
-    gap: 24px;
-    position: sticky;
-    top: calc(var(--header-height) + 32px);
-    height: fit-content;
+    gap: 8px;
+    height: 100%;
+    overflow-y: auto;
 }
 
-.article-right-card {
+.article-right.expanded-panel {
     background: var(--bg-color-white);
     border-radius: var(--border-radius-xl);
     box-shadow: var(--box-shadow-base);
     border: 1px solid var(--border-color-light);
+    height: 100%;
     overflow: hidden;
-}
-
-.comment-section {
-    display: flex;
-    gap: 16px;
-    margin-bottom: 32px;
-    padding-bottom: 24px;
-    border-bottom: 1px solid var(--border-color-light);
-}
-
-.comments-list {
-    display: flex;
-    flex-direction: column;
-    gap: 24px;
-}
-
-.comment-item {
-    display: flex;
-    gap: 16px;
-}
-
-.sub-comments {
-    margin-top: 16px;
-    padding-left: 16px;
-    border-left: 2px solid var(--border-color-light);
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
 }
 </style>

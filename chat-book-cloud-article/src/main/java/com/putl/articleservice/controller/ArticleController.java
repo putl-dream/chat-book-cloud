@@ -36,8 +36,8 @@ public class ArticleController {
     }
 
     @PostMapping("/query")
-    public ArticleVO getArticleInfo(Integer id) {
-        return articleService.getArticleInfo(id);
+    public CommonResult<ArticleVO> getArticleInfo(Integer id) {
+        return CommonResult.success(articleService.getArticleInfo(id));
     }
 
     @PostMapping("/delete")

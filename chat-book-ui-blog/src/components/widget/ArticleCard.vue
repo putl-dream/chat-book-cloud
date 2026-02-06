@@ -9,20 +9,26 @@
         <div class="post-footer">
             <div class="post-meta">
                 <div class="author-info">
-                    <el-avatar class="user-avatar" :src="post.authorAvatar" :size="24"/>
+                    <el-avatar class="user-avatar" :src="post.authorAvatar" :size="24" />
                     <span class="author-name">{{ post.author }}</span>
                 </div>
-                
+
                 <div class="meta-stats">
                     <span class="meta-item time">{{ post.createTime }}</span>
                     <span class="meta-item">
-                        <el-icon><View/></el-icon> {{ post.viewCount }}
+                        <el-icon>
+                            <View />
+                        </el-icon> {{ post.viewCount }}
                     </span>
                     <span class="meta-item">
-                        <el-icon><ChatDotSquare/></el-icon> {{ post.commentCount }}
+                        <el-icon>
+                            <ChatDotSquare />
+                        </el-icon> {{ post.commentCount }}
                     </span>
                     <span class="meta-item">
-                        <el-icon><Star/></el-icon> {{ post.praiseCount }}
+                        <el-icon>
+                            <Star />
+                        </el-icon> {{ post.praiseCount }}
                     </span>
                 </div>
             </div>
@@ -34,9 +40,9 @@
 </template>
 
 <script setup>
-import {ChatDotSquare, Star, View} from "@element-plus/icons-vue";
-import {ElAvatar} from "element-plus";
-import {getCategoryName} from "@/utils/category.js";
+import { ChatDotSquare, Star, View } from "@element-plus/icons-vue";
+import { ElAvatar } from "element-plus";
+import { getCategoryName } from "@/utils/category.js";
 
 defineProps({
     post: {

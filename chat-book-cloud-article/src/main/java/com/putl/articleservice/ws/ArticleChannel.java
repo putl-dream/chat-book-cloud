@@ -2,7 +2,6 @@ package com.putl.articleservice.ws;
 
 
 import com.alibaba.cloud.commons.lang.StringUtils;
-import com.alibaba.fastjson2.JSON;
 import com.putl.articleservice.config.SessionConfig;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.service.ArticleService;
@@ -176,7 +175,7 @@ public class ArticleChannel {
                     break;
                 case "SELECT":
                     ArticleVO articleVO = articleService.getArticleDetail(id);
-                    sendMessage(MessageResult.messageSelect(JSON.toJSONString(articleVO)));
+                    sendMessage(MessageResult.messageSelect(BeanUtil.toJsonString(articleVO)));
                     break;
             }
         }
