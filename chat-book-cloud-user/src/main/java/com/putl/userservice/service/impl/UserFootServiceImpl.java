@@ -36,7 +36,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     public boolean addBrowse(Integer articleId, Integer userId){
         if (!dataNULL(articleId, userId)) return false;
         ArticleVO article = articleClient.queryArticle(articleId).getData();
-        UserFootDO build = UserFootDO.builder().userId(userId).documentId(articleId).documentUserId(article.getAuthorId()).build();
+        UserFootDO build = UserFootDO.builder().userId(userId).documentId(articleId).documentUserId(article.getUserId()).build();
         return this.save(build);
     }
 

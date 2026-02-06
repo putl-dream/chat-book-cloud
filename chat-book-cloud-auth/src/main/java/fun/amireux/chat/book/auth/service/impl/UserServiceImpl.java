@@ -15,6 +15,7 @@ import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.Map;
@@ -25,8 +26,9 @@ import java.util.Map;
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
     private final UserMapper userMapper;
     private final UserInfoMapper userInfoMapper;
-    private final JwtUtil jwtUtil;
+    private final JwtUtil jwtUtil = new JwtUtil("chat-book", "auth-service");
     private final CaptchaService captchaService;
+
 
     @Override
     public String login(UserDTO user) {
@@ -51,10 +53,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (StringUtils.isBlank(user.getVerificationCode())) {
             throw new AuthenticationException("验证码不能为空");
         }
-        
+
         // Use email for verification code login usually
         if (StringUtils.isBlank(user.getEmail())) {
-             throw new AuthenticationException("邮箱不能为空");
+            throw new AuthenticationException("邮箱不能为空");
         }
 
         if (!captchaService.verifyCaptcha(user.getEmail(), user.getVerificationCode())) {
@@ -84,7 +86,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     public UserDO getUserInfo(UserDTO user) {
         UserDO userDO = null;
         if (StringUtils.isNotBlank(user.getUsername())) {
-             userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, user.getUsername()));
+            userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, user.getUsername()));
         }
         if (userDO == null && StringUtils.isNotBlank(user.getEmail())) {
             userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
@@ -101,7 +103,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     public String signIn(UserDTO signInVO) {
         // Verify Captcha for registration
         if (!captchaService.verifyCaptcha(signInVO.getEmail(), signInVO.getVerificationCode())) {
-             throw new AuthenticationException("验证码错误");
+            throw new AuthenticationException("验证码错误");
         }
 
         if (userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, signInVO.getEmail())) != null) {
