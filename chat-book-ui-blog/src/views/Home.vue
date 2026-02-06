@@ -124,10 +124,11 @@ const fetchPosts = async () => {
   }
 };
 
-const handleScroll = () => {
-  const scrollTop = window.scrollY;
-  const clientHeight = window.innerHeight;
-  const scrollHeight = document.documentElement.scrollHeight;
+const handleScroll = (e) => {
+  const target = e.target;
+  const scrollTop = target.scrollTop;
+  const clientHeight = target.clientHeight;
+  const scrollHeight = target.scrollHeight;
 
   if (scrollTop + clientHeight >= scrollHeight - 50) {
     fetchPosts();
@@ -152,11 +153,17 @@ watch(
 );
 
 onMounted(() => {
-  window.addEventListener('scroll', handleScroll);
+  const main = document.getElementById('common-layout-main');
+  if (main) {
+    main.addEventListener('scroll', handleScroll);
+  }
 });
 
 onUnmounted(() => {
-  window.removeEventListener('scroll', handleScroll);
+  const main = document.getElementById('common-layout-main');
+  if (main) {
+    main.removeEventListener('scroll', handleScroll);
+  }
 });
 </script>
 
@@ -314,7 +321,7 @@ onUnmounted(() => {
   width: 320px;
   flex-shrink: 0;
   position: sticky;
-  top: calc(var(--header-height) + 32px);
+  top: 32px;
 }
 
 .home-right-card {

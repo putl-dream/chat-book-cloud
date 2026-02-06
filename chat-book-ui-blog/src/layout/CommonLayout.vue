@@ -4,7 +4,7 @@
             <CommonHeader/>
         </el-header>
 
-        <el-main class="main">
+        <el-main class="main" id="common-layout-main">
             <router-view/>
         </el-main>
     </el-container>
@@ -17,24 +17,25 @@ import CommonHeader from "@/components/CommonHeader.vue";
 <style scoped>
 
 .main {
-    padding: 20px;
-    max-width: var(--container-width-lg);
-    margin: 0 auto;
+    padding: 0;
     width: 100%;
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
 }
 
 .header {
     padding: 0;
-    min-width: 100%;
-    position: sticky;
-    top: 0;
+    width: 100%;
     z-index: 100;
+    height: auto;
 }
 
 .page {
-    min-height: 100vh;
+    height: 100vh;
     background: radial-gradient(circle at top right, #f8fafc, #f1f5f9);
     display: flex;
     flex-direction: column;
+    overflow: hidden;
 }
 </style>

@@ -129,7 +129,7 @@ onMounted(() => {
     padding: 8px var(--container-padding);
     position: relative;
     align-items: flex-start;
-    height: calc(100vh - var(--header-height) - 40px);
+    height: 100%;
     overflow: hidden;
     box-sizing: border-box;
 }

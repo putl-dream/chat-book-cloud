@@ -148,7 +148,7 @@ onMounted(() => {
 
 <style scoped>
 .profile-edit-page {
-    min-height: 100vh;
+    min-height: 100%;
     background-color: var(--bg-color-base);
     padding: 40px 20px;
 }

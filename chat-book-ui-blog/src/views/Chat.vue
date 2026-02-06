@@ -224,7 +224,7 @@ onMounted(() => {
 
 <style scoped>
 .chat-page-wrapper {
-    height: calc(100vh - var(--header-height));
+    height: 100%;
     padding: 24px;
     background: var(--bg-color-base);
     display: flex;
