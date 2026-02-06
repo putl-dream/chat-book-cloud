@@ -234,7 +234,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(5, 1fr);
   gap: 24px;
-  margin-bottom: 48px;
+  margin-bottom: 24px;
 }
 
 .card {
@@ -370,7 +370,7 @@ onUnmounted(() => {
 
 .content-wrapper {
   display: flex;
-  gap: 32px;
+  gap: 24px;
   align-items: flex-start;
 }
 

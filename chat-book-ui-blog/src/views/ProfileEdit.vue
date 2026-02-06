@@ -1,39 +1,67 @@
 <template>
     <div class="profile-edit-page">
-        <div class="edit-container">
+        <!-- Background decoration -->
+        <div class="bg-decoration"></div>
+
+        <div class="edit-container animate-fade-in">
             <div class="page-header">
-                <h2>编辑个人资料</h2>
-                <el-button link @click="$router.back()">返回个人主页</el-button>
+                <div class="header-content">
+                    <h2>编辑个人资料</h2>
+                    <p class="subtitle">完善您的个人信息，展示独特的自己</p>
+                </div>
+                <el-button class="back-btn" link @click="$router.back()">
+                    <el-icon>
+                        <ArrowLeft />
+                    </el-icon> 返回个人主页
+                </el-button>
             </div>
 
             <div class="edit-content" v-loading="loading">
-                <el-form :model="form" label-width="80px" class="edit-form">
-                    <el-form-item label="头像">
-                        <div class="avatar-edit">
-                            {{ form.photo }}
-                            <el-upload class="avatar-uploader" action="#" :show-file-list="false"
-                                :http-request="handleUpload" :before-upload="beforeAvatarUpload">
-                                <img v-if="form.photo" :src="form.photo" class="avatar" />
-                                <el-icon v-else class="avatar-uploader-icon">
-                                    <Plus />
-                                </el-icon>
-                            </el-upload>
-                            <div class="avatar-tip">点击头像可进行更换，支持 JPG/PNG 格式，大小不超过 2MB</div>
+                <el-form :model="form" label-position="top" class="edit-form">
+                    <div class="form-section">
+                        <div class="avatar-section">
+                            <div class="avatar-wrapper">
+                                <el-upload class="avatar-uploader" action="#" :show-file-list="false"
+                                    :http-request="handleUpload" :before-upload="beforeAvatarUpload">
+                                    <div class="avatar-overlay">
+                                        <el-icon>
+                                            <Camera />
+                                        </el-icon>
+                                        <span>更换头像</span>
+                                    </div>
+                                    <img v-if="form.photo" :src="form.photo" class="avatar" />
+                                    <div v-else class="avatar-placeholder">
+                                        <el-icon>
+                                            <User />
+                                        </el-icon>
+                                    </div>
+                                </el-upload>
+                            </div>
+                            <div class="avatar-info">
+                                <h3>头像设置</h3>
+                                <p>支持 JPG/PNG 格式，大小不超过 2MB</p>
+                            </div>
                         </div>
-                    </el-form-item>
+                    </div>
 
-                    <el-form-item label="用户名">
-                        <el-input v-model="form.username" placeholder="请输入用户名" />
-                    </el-form-item>
+                    <div class="form-grid">
+                        <el-form-item label="用户名" class="custom-field">
+                            <el-input v-model="form.username" placeholder="请输入用户名" size="large" />
+                        </el-form-item>
 
-                    <el-form-item label="个人简介">
-                        <el-input v-model="form.profile" type="textarea" :rows="4" placeholder="请输入个人简介" />
-                    </el-form-item>
+                        <el-form-item label="个人简介" class="custom-field">
+                            <el-input v-model="form.profile" type="textarea" :rows="4" placeholder="写一句话介绍一下自己..."
+                                resize="none" />
+                        </el-form-item>
+                    </div>
 
-                    <el-form-item>
-                        <el-button type="primary" @click="onSubmit" :loading="submitting">保存修改</el-button>
-                        <el-button @click="$router.back()">取消</el-button>
-                    </el-form-item>
+                    <div class="form-actions">
+                        <el-button class="submit-btn" type="primary" @click="onSubmit" :loading="submitting"
+                            size="large">
+                            保存修改
+                        </el-button>
+                        <el-button class="cancel-btn" @click="$router.back()" size="large">取消</el-button>
+                    </div>
                 </el-form>
             </div>
         </div>
@@ -45,7 +73,7 @@ import { ref, onMounted } from 'vue';
 import { getUserBySelf, updateUser } from "@/api/user.js";
 import { uploadFile } from "@/api/article.js";
 import { ElMessage } from 'element-plus';
-import { Plus } from '@element-plus/icons-vue';
+import { Camera, User, ArrowLeft } from '@element-plus/icons-vue';
 import router from "@/router/index.js";
 
 const loading = ref(false);
@@ -148,90 +176,271 @@ onMounted(() => {
 
 <style scoped>
 .profile-edit-page {
-    min-height: 100%;
+    height: 100%;
     background-color: var(--bg-color-base);
-    padding: 40px 20px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+/* Background Decoration */
+.bg-decoration {
+    position: absolute;
+    top: -100px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--color-primary-light) 0%, rgba(255, 255, 255, 0) 70%);
+    opacity: 0.6;
+    z-index: 0;
+    pointer-events: none;
 }
 
 .edit-container {
-    max-width: 800px;
-    margin: 0 auto;
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-large);
-    padding: 30px;
-    box-shadow: var(--box-shadow-base);
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 720px;
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-large);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: var(--border-radius-xl);
+    padding: 40px;
+    box-shadow: var(--box-shadow-glass);
+    margin-top: 20px;
 }
 
+/* Animations */
+.animate-fade-in {
+    animation: fadeIn 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Header */
 .page-header {
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    margin-bottom: 30px;
-    border-bottom: 1px solid var(--border-color-lighter);
-    padding-bottom: 15px;
+    align-items: flex-start;
+    margin-bottom: 40px;
 }
 
-.page-header h2 {
-    margin: 0;
+.header-content h2 {
+    margin: 0 0 8px 0;
+    font-size: 24px;
+    font-weight: 700;
     color: var(--text-color-primary);
+    letter-spacing: -0.5px;
 }
 
-.edit-content {
-    padding: 0 20px;
+.subtitle {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 14px;
 }
 
-.avatar-edit {
+.back-btn {
+    font-weight: 500;
+    color: var(--text-color-secondary);
+    transition: var(--transition-fast);
+}
+
+.back-btn:hover {
+    color: var(--color-primary);
+}
+
+/* Avatar Section */
+.form-section {
+    margin-bottom: 40px;
+}
+
+.avatar-section {
     display: flex;
     align-items: center;
-    gap: 20px;
+    gap: 24px;
 }
 
-.avatar-tip {
-    font-size: 14px;
-    color: var(--text-color-secondary);
-}
-
-.avatar-uploader .avatar {
+.avatar-wrapper {
+    position: relative;
     width: 100px;
     height: 100px;
-    display: block;
-    border-radius: 50%;
-    object-fit: cover;
 }
 
 .avatar-uploader :deep(.el-upload) {
-    border: 1px dashed var(--border-color-base);
+    border: 2px solid var(--bg-color-white);
     border-radius: 50%;
     cursor: pointer;
     position: relative;
     overflow: hidden;
-    transition: var(--el-transition-duration-fast);
     width: 100px;
     height: 100px;
+    box-shadow: var(--box-shadow-base);
+    transition: var(--transition-base);
 }
 
 .avatar-uploader :deep(.el-upload:hover) {
+    transform: scale(1.05);
+    box-shadow: var(--box-shadow-hover);
+}
+
+.avatar {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.avatar-placeholder {
+    width: 100%;
+    height: 100%;
+    background: var(--color-primary-light);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: var(--color-primary);
+    font-size: 32px;
+}
+
+.avatar-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.4);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: white;
+    opacity: 0;
+    transition: var(--transition-fast);
+    z-index: 2;
+}
+
+.avatar-overlay span {
+    font-size: 12px;
+    margin-top: 4px;
+}
+
+.avatar-uploader :deep(.el-upload:hover) .avatar-overlay {
+    opacity: 1;
+}
+
+.avatar-info h3 {
+    margin: 0 0 4px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-color-primary);
+}
+
+.avatar-info p {
+    margin: 0;
+    font-size: 13px;
+    color: var(--text-color-secondary);
+}
+
+/* Form Styling */
+.form-grid {
+    display: grid;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.custom-field :deep(.el-form-item__label) {
+    font-weight: 600;
+    color: var(--text-color-primary);
+    padding-bottom: 8px;
+}
+
+.custom-field :deep(.el-input__wrapper),
+.custom-field :deep(.el-textarea__inner) {
+    background-color: rgba(255, 255, 255, 0.5);
+    box-shadow: none;
+    border: 1px solid var(--border-color-base);
+    border-radius: var(--border-radius-base);
+    padding: 12px 16px;
+    transition: var(--transition-base);
+}
+
+.custom-field :deep(.el-input__wrapper:hover),
+.custom-field :deep(.el-textarea__inner:hover) {
+    background-color: var(--bg-color-white);
     border-color: var(--color-primary);
 }
 
-.avatar-uploader-icon {
-    font-size: 28px;
-    color: #8c939d;
-    width: 100px;
-    height: 100px;
-    text-align: center;
-    line-height: 100px;
+.custom-field :deep(.el-input__wrapper.is-focus),
+.custom-field :deep(.el-textarea__inner:focus) {
+    background-color: var(--bg-color-white);
+    box-shadow: 0 0 0 3px var(--color-primary-light);
+    border-color: var(--color-primary);
+}
+
+/* Buttons */
+.form-actions {
+    display: flex;
+    gap: 16px;
+    margin-top: 40px;
+}
+
+.submit-btn {
+    padding: 12px 32px;
+    font-weight: 600;
+    border-radius: var(--border-radius-base);
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+    transition: var(--transition-base);
+}
+
+.submit-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
+}
+
+.cancel-btn {
+    padding: 12px 32px;
+    border-radius: var(--border-radius-base);
+    background: transparent;
+    border: 1px solid var(--border-color-base);
+}
+
+.cancel-btn:hover {
+    background: var(--bg-color-white);
+    color: var(--text-color-primary);
+    border-color: var(--text-color-secondary);
 }
 
 /* Responsive */
 @media (max-width: 768px) {
-    .edit-container {
+    .profile-edit-page {
         padding: 20px;
     }
 
-    .avatar-edit {
+    .edit-container {
+        padding: 24px;
+    }
+
+    .avatar-section {
         flex-direction: column;
         align-items: flex-start;
+        gap: 16px;
+    }
+
+    .form-actions {
+        flex-direction: column;
+    }
+
+    .submit-btn,
+    .cancel-btn {
+        width: 100%;
     }
 }
 </style>

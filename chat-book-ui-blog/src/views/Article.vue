@@ -108,7 +108,6 @@ const componentMap = {
 const handleLike = async () => {
     if (!checkLogin()) return;
     const res = await updatePraise(articleId);
-    console.log("点赞", res);
     praiseStat.value = res;
 };
 
@@ -131,7 +130,6 @@ const handleAiChat = () => {
 const handleFavorite = async () => {
     if (!checkLogin()) return;
     const res = await updateCollection(articleId);
-    console.log('收藏', res);
     if (res === 0) {
         ElMessage.warning('取消收藏');
     } else {
@@ -146,7 +144,6 @@ const queryArticleRequest = async () => {
         article.value = res;
         praiseStat.value = article.value.praiseStat;
         collectStat.value = article.value.collectStat;
-        console.log("article->", article.value);
     }
 };
 
@@ -166,7 +163,7 @@ onMounted(() => {
     display: flex;
     max-width: 1400px;
     margin: 0 auto;
-    gap: 24px;
+    gap: 12px;
     padding: 24px var(--container-padding);
     position: relative;
     align-items: flex-start;
@@ -198,6 +195,7 @@ onMounted(() => {
     height: 100%;
     display: flex;
     flex-direction: column;
+    margin-left: 96px;
 }
 
 .article-header {
@@ -258,11 +256,12 @@ onMounted(() => {
     flex-direction: column;
     gap: 24px;
     height: fit-content;
-    align-self: center;
     padding: 24px 12px;
-    position: sticky;
+    position: absolute;
+    left: var(--container-padding);
     top: 50%;
     transform: translateY(-50%);
+    z-index: 10;
 }
 
 .action-item {

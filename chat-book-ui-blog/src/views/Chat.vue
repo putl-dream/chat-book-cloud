@@ -93,11 +93,12 @@
 </template>
 
 <script setup>
-import { ref, onMounted, nextTick } from 'vue'
+import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from "element-plus";
 import ChatUserCard from "@/components/widget/ChatUserCard.vue";
 import ChatMessage from "@/components/widget/ChatMsgCard.vue";
 import { getFriendList, queryUserMessage } from "@/api/user.js";
+import { API_CONFIG } from "@/config/index.js";
 
 const friends = ref([])
 const messages = ref([])
@@ -108,7 +109,6 @@ const friendsListRequest = async () => {
     const res = await getFriendList()
     if (res) {
         friends.value = res
-        console.log(res)
     }
 }
 
@@ -116,10 +116,8 @@ const selectFriend = async (friend) => {
     if (selectedFriend.value?.userId === friend.userId) return
     messages.value = []
     selectedFriend.value = friend
-    console.log("选择用户：", friend)
     const res = await queryUserMessage(selectedFriend.value.userId);
     if (res) {
-        console.log("查询消息：", res)
         for (let i = 0; i < res.length; i++) {
             if (res[i].senderId === selectedFriend.value.userId) {
                 messages.value.push({
@@ -152,7 +150,9 @@ let socket;
 const newMessage = ref('')
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
-    socket = new WebSocket('ws://localhost:8080/user/chat', [token]);
+    let baseUrl = API_CONFIG.baseURL || 'http://localhost:8080';
+    let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
+    socket = new WebSocket(`${wsUrl}/user/chat`, [token]);
 
     socket.onopen = function (event) {
         console.log('已连接到服务器');
@@ -161,12 +161,9 @@ const connectWebSocket = () => {
 
     socket.onmessage = function (event) {
         const parse = JSON.parse(event.data)
-        console.log("接收到消息-->>", parse)
         if (parse.type === 'SYSTEM') {
-            console.log("系统消息-->>", parse.data)
             ElMessage.success(parse.data)
         } else if (parse.type === 'USER') {
-            console.log("用户消息-->>", parse.data)
             messages.value.push({
                 sender: 'other',
                 content: parse.data.content,
@@ -232,6 +229,12 @@ const sendUserMessage = () => {
 onMounted(() => {
     friendsListRequest()
     connectWebSocket()
+})
+
+onUnmounted(() => {
+    if (socket) {
+        socket.close();
+    }
 })
 </script>
 

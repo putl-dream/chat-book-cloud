@@ -8,7 +8,7 @@
                 <div class="user-info-card glass-panel">
                     <div class="avatar-wrapper">
                         <el-avatar :size="100" :src="user.photo" class="user-avatar">
-                            <img src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
+                            <img :src="DEFAULT_AVATAR" />
                         </el-avatar>
                         <div class="avatar-border"></div>
                     </div>
@@ -118,6 +118,7 @@ import { getUserArticlePage } from "@/api/article.js";
 import ArticleCard from "@/components/widget/ArticleCard.vue";
 import { Star, View } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
+import { DEFAULT_AVATAR } from "@/constants/index.js";
 
 const user = ref({});
 const posts = ref([]);
