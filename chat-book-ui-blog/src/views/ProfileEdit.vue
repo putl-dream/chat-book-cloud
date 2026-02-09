@@ -120,7 +120,7 @@ const handleUpload = async (options) => {
             form.value.photo = res.data.url;
             ElMessage.success('头像上传成功');
         } else {
-            // 按照 utils/index.js 的拦截器逻辑，如果 code=200，直接返回 res.data
+            // 按照 utils/http.js 的拦截器逻辑，如果 code=200，直接返回 res.data
             // FileController 返回 ImageResult.success(new Img(...))
             // ImageResult 应该也是 CommonResult 的一种变体或者类似结构
             // 如果拦截器已经解包了 data，那么 res 就是 Img 对象

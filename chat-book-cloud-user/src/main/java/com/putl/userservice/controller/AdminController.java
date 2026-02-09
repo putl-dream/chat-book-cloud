@@ -6,7 +6,7 @@ import com.putl.userservice.controller.vo.DataCount;
 import com.putl.userservice.controller.vo.UserVO;
 import com.putl.userservice.service.MessageService;
 import com.putl.userservice.service.UserService;
-import com.putl.userservice.util.Result;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -23,16 +23,16 @@ public class AdminController {
     private final ArticleClient articleClient;
 
     @GetMapping("/count")
-    public Result<DataCount> getDataCount() {
+    public CommonResult<DataCount> getDataCount() {
         DataCount dataCount = new DataCount();
         dataCount.setUserCount(userService.count());
         dataCount.setArticleCount(articleClient.queryCount());
         dataCount.setReviewCount(messageService.count());
-        return Result.success(dataCount);
+        return CommonResult.success(dataCount);
     }
 
     @GetMapping("/user")
-    public Result<IPage<UserVO>> getUserPage(Integer page, Integer size) {
-        return Result.success(userService.selectPage(page, size));
+    public CommonResult<IPage<UserVO>> getUserPage(Integer page, Integer size) {
+        return CommonResult.success(userService.selectPage(page, size));
     }
 }

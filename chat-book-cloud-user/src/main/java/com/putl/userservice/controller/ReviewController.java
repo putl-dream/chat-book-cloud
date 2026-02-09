@@ -3,7 +3,7 @@ package com.putl.userservice.controller;
 import com.putl.userservice.controller.vo.ReviewListVO;
 import com.putl.userservice.controller.vo.ReviewVO;
 import com.putl.userservice.service.ReviewService;
-import com.putl.userservice.util.Result;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -27,15 +27,15 @@ public class ReviewController {
 
     @Operation(summary = "查询文章评论")
     @GetMapping("/getByArticleId")
-    public Result<List<ReviewListVO>> getByArticleId(@RequestParam Integer articleId){
-        return Result.success(reviewService.getByArticleId(articleId));
+    public CommonResult<List<ReviewListVO>> getByArticleId(@RequestParam Integer articleId) {
+        return CommonResult.success(reviewService.getByArticleId(articleId));
     }
 
     @Operation(summary = "添加评论")
     @PostMapping("/save")
-    public Result<String> save(@RequestBody ReviewVO reviewVO){
+    public CommonResult<String> save(@RequestBody ReviewVO reviewVO) {
         boolean save = reviewService.save(reviewVO);
-        return save ? Result.success("评论成功") : Result.error("评论失败");
+        return save ? CommonResult.success("评论成功") : CommonResult.error(500, "评论失败");
     }
 
 }

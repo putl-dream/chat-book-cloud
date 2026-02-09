@@ -43,7 +43,7 @@ String username = UserContext.getUsername();
 
 #### 2. 通用异常处理与响应封装
 
-框架层(`common` 模块)统一了全局异常处理 (`GlobalExceptionHandler`) 和响应结构 (`Result<T>`)。
+框架层(`common` 模块)统一了全局异常处理 (`GlobalExceptionHandler`) 和响应结构 (`CommonResult<T>`)。
 
 - **统一响应**：所有 API 均返回 `code`, `message`, `data` 格式。
 - **异常拦截**：自动捕获 `BusinessException` 并转换为对应的错误码响应。
@@ -74,7 +74,7 @@ chat-book-cloud
 
 | 模块名称                         | 说明         | 关键功能点                                                                                         |
 | :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------- |
-| **chat-book-cloud-common**       | **通用基座** | `UserContext` 线程隔离上下文, `Result` 统一响应, `GlobalExceptionHandler` 全局异常, `JwtUtil` 工具 |
+| **chat-book-cloud-common**       | **通用基座** | `UserContext` 线程隔离上下文, `CommonResult` 统一响应, `GlobalExceptionHandler` 全局异常, `JwtUtil` 工具 |
 | **chat-book-cloud-security-mvc** | **安全插件** | 提供 `UserContextFilter`，自动拦截请求并填充 `UserContext`，实现微服务内部无感鉴权                 |
 | **chat-book-cloud-minio**        | **存储插件** | 封装 MinIO SDK，提供文件上传、下载、预览 URL 生成等一键式服务                                      |
 | **chat-book-cloud-parsing**      | **AI 解析**  | 集成 Apache Tika 和 LangChain4j，支持 PDF/Word/Txt 等多格式文档解析与分块                          |

@@ -1,8 +1,10 @@
 package fun.amireux.chat.book.framework.websocket.server;
 
+import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 import org.springframework.web.socket.BinaryMessage;
 import org.springframework.web.socket.CloseStatus;
 import org.springframework.web.socket.TextMessage;
@@ -10,8 +12,7 @@ import org.springframework.web.socket.WebSocketSession;
 import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 
 import java.net.URI;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.List;
 
 /**
  * 从技术与业务来看：
@@ -29,69 +30,135 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     @Resource
     private MessageRouter messageRouter;
 
+    @Resource
+    private JwtUtil jwtUtil;
+
+    private final List<WebSocketConnectionListener> connectionListeners;
+
+    public WebSocketHandler(List<WebSocketConnectionListener> connectionListeners) {
+        this.connectionListeners = connectionListeners;
+    }
+
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
-        log.info("连接建立成功：{}", session.getId());
-        Map<String, String> headers = getHeadersFromSession(session);
-        sessionManager.register(session.getId(), session);
+        String userId = getUserIdFromSession(session);
+        if (StringUtils.hasText(userId)) {
+            log.info("连接建立成功，用户ID：{}，SessionID：{}", userId, session.getId());
+            session.getAttributes().put("userId", userId);
+            sessionManager.register(userId, session);
+
+            // 通知监听器
+            if (connectionListeners != null) {
+                for (WebSocketConnectionListener listener : connectionListeners) {
+                    try {
+                        listener.onConnect(userId, session);
+                    } catch (Exception e) {
+                        log.error("连接监听器执行异常", e);
+                    }
+                }
+            }
+        } else {
+            log.warn("连接建立成功，但未识别到用户身份，SessionID：{}", session.getId());
+            // 可以在这里选择是否允许匿名连接，或者注册为 session ID
+            // sessionManager.register(session.getId(), session);
+        }
     }
 
     @Override
     protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
         log.info("接收到文本消息：{}", message.getPayload());
-        Map<String, String> headers = getHeadersFromSession(session);
-        messageRouter.route(session.getId(), message.getPayload());
+        // 路由时使用 userId (如果存在) 还是 sessionId?
+        // 建议优先使用 userId，方便后续业务处理
+        String userId = (String) session.getAttributes().get("userId");
+        String senderId = StringUtils.hasText(userId) ? userId : session.getId();
+        messageRouter.route(senderId, message.getPayload());
     }
 
     @Override
     protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) throws Exception {
         log.info("接收到二进制消息：{}", message.getPayload());
-        Map<String, String> headers = getHeadersFromSession(session);
-        messageRouter.route(session.getId(), message.getPayload().toString());
+        String userId = (String) session.getAttributes().get("userId");
+        String senderId = StringUtils.hasText(userId) ? userId : session.getId();
+        messageRouter.route(senderId, message.getPayload().toString());
     }
 
     @Override
     public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
         log.warn("连接关闭：{}", status.getReason());
-        Map<String, String> headers = getHeadersFromSession(session);
-        sessionManager.remove(session.getId());
+        String userId = (String) session.getAttributes().get("userId");
+        if (StringUtils.hasText(userId)) {
+            sessionManager.remove(userId);
+
+            // 通知监听器
+            if (connectionListeners != null) {
+                for (WebSocketConnectionListener listener : connectionListeners) {
+                    try {
+                        listener.onClose(userId, session);
+                    } catch (Exception e) {
+                        log.error("关闭监听器执行异常", e);
+                    }
+                }
+            }
+        }
+        // 如果也注册了 sessionId，也要移除
+        // sessionManager.remove(session.getId());
     }
 
     @Override
     public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
         log.error("连接出错：{}", exception.getMessage(), exception);
-        Map<String, String> headers = getHeadersFromSession(session);
-        sessionManager.remove(session.getId());
+        String userId = (String) session.getAttributes().get("userId");
+        if (StringUtils.hasText(userId)) {
+            sessionManager.remove(userId);
+        }
     }
 
-    private Map<String, String> getHeadersFromSession(WebSocketSession session) {
-        // 尝试从请求头获取设备ID
-        String[] deviceKeys = {"device-id", "mac_address", "uuid", "Authorization"};
-
-        Map<String, String> headers = new HashMap<>();
-
-        for (String key : deviceKeys) {
-            String value = session.getHandshakeHeaders().getFirst(key);
-            if (value != null) {
-                headers.put(key, value);
-            }
-        }
-        // 尝试从URI参数中获取
+    private String getUserIdFromSession(WebSocketSession session) {
+        // 1. 尝试从 Query Param 获取 token 或 uid
         URI uri = session.getUri();
-        if (uri != null) {
+        if (uri != null && uri.getQuery() != null) {
             String query = uri.getQuery();
-            if (query != null) {
-                for (String key : deviceKeys) {
-                    String paramPattern = key + "=";
-                    int startIdx = query.indexOf(paramPattern);
-                    if (startIdx >= 0) {
-                        startIdx += paramPattern.length();
-                        int endIdx = query.indexOf('&', startIdx);
-                        headers.put(key, endIdx >= 0 ? query.substring(startIdx, endIdx) : query.substring(startIdx));
-                    }
-                }
+            // 简单解析 token=xxx
+            String token = extractParam(query, "token");
+            if (StringUtils.hasText(token)) {
+                return getUserIdFromToken(token);
             }
         }
-        return headers;
+
+        // 2. 尝试从 Header 获取 Authorization
+        String authHeader = session.getHandshakeHeaders().getFirst("Authorization");
+        if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
+            String token = authHeader.substring(7);
+            return getUserIdFromToken(token);
+        }
+
+        // 3. 尝试从 Header 获取 token (有些客户端可能直接传 token)
+        String tokenHeader = session.getHandshakeHeaders().getFirst("token");
+        if (StringUtils.hasText(tokenHeader)) {
+            return getUserIdFromToken(tokenHeader);
+        }
+
+        return null;
+    }
+
+    private String extractParam(String query, String key) {
+        String paramPattern = key + "=";
+        int startIdx = query.indexOf(paramPattern);
+        if (startIdx >= 0) {
+            startIdx += paramPattern.length();
+            int endIdx = query.indexOf('&', startIdx);
+            return endIdx >= 0 ? query.substring(startIdx, endIdx) : query.substring(startIdx);
+        }
+        return null;
+    }
+
+    private String getUserIdFromToken(String token) {
+        try {
+            // 假设 token 里有 id 字段
+            return jwtUtil.verifyToken(token).getClaim("id").asString();
+        } catch (Exception e) {
+            log.warn("Token 解析失败: {}", e.getMessage());
+            return null;
+        }
     }
 }

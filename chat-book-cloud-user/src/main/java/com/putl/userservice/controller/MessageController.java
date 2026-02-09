@@ -4,7 +4,8 @@ package com.putl.userservice.controller;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.mapper.entity.MessageDO;
 import com.putl.userservice.service.MessageService;
-import com.putl.userservice.util.Result;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
+import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -23,13 +24,13 @@ public class MessageController {
 
     @Operation(summary = "查询用户消息")
     @GetMapping("/queryUserMessage")
-    public Result<List<MessageDO>> queryUserMessage(Integer receiveId){
+    public CommonResult<List<MessageDO>> queryUserMessage(Integer receiveId){
         String userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.error("用户信息未找到，请重新登录");
+            return CommonResult.error(ErrorType.ERROR_401);
         }
         List<MessageDO> dos = messageService.queryUserMessage(Integer.parseInt(userId), receiveId);
-        return Result.success(dos);
+        return CommonResult.success(dos);
     }
 
 }

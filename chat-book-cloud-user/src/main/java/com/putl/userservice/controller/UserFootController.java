@@ -6,7 +6,8 @@ import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.controller.vo.UserFootListVO;
 import com.putl.userservice.controller.vo.UserFootVO;
 import com.putl.userservice.service.UserFootService;
-import com.putl.userservice.util.Result;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
+import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -32,35 +33,35 @@ public class UserFootController {
 
     @Operation(summary = "更新点赞记录")
     @GetMapping("/praise")
-    public Result<Integer> updatePraise(@RequestParam Integer articleId){
+    public CommonResult<Integer> updatePraise(@RequestParam Integer articleId){
         String userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.error("用户信息未找到，请重新登录");
+            return CommonResult.error(ErrorType.ERROR_401);
         }
         int praise = userFootService.updatePraise(articleId, Integer.parseInt(userId));
-        return Result.success(praise);
+        return CommonResult.success(praise);
     }
 
     @Operation(summary = "更新收藏记录")
     @GetMapping("/collection")
-    public Result<Integer> updateCollection(@RequestParam Integer articleId){
+    public CommonResult<Integer> updateCollection(@RequestParam Integer articleId){
         String userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.error("用户信息未找到，请重新登录");
+            return CommonResult.error(ErrorType.ERROR_401);
         }
         int collection = userFootService.updateCollection(articleId, Integer.parseInt(userId));
-        return Result.success(collection);
+        return CommonResult.success(collection);
     }
 
     @Operation(summary = "更新评论记录")
     @GetMapping("/comment")
-    public Result<Integer> updateComment(@RequestParam Integer articleId){
+    public CommonResult<Integer> updateComment(@RequestParam Integer articleId){
         String userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.error("用户信息未找到，请重新登录");
+            return CommonResult.error(ErrorType.ERROR_401);
         }
         int comment = userFootService.updateComment(articleId, Integer.parseInt(userId));
-        return Result.success(comment);
+        return CommonResult.success(comment);
     }
 
     @Operation(summary = "获取用户足迹信息")
@@ -77,23 +78,23 @@ public class UserFootController {
 
     @Operation(summary = "获取用户浏览记录")
     @GetMapping("/getHistory")
-    public Result<List<ArticleListVO>> getHistory(@RequestParam Integer page, @RequestParam Integer size){
+    public CommonResult<List<ArticleListVO>> getHistory(@RequestParam Integer page, @RequestParam Integer size){
         String userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.error("用户信息未找到，请重新登录");
+            return CommonResult.error(ErrorType.ERROR_401);
         }
         List<ArticleListVO> history = userFootService.getHistory(Integer.parseInt(userId), page, size);
-        return Result.success(history);
+        return CommonResult.success(history);
     }
 
     @Operation(summary = "获取消息")
     @GetMapping("/getMessage")
-    public Result<List<ArticleListVO>> getMessage(){
+    public CommonResult<List<ArticleListVO>> getMessage(){
         String userId = UserContext.getUserId();
         if (userId == null) {
-            return Result.error("用户信息未找到，请重新登录");
+            return CommonResult.error(ErrorType.ERROR_401);
         }
         List<ArticleListVO> message = userFootService.getMessage(Integer.parseInt(userId));
-        return Result.success(message);
+        return CommonResult.success(message);
     }
 }

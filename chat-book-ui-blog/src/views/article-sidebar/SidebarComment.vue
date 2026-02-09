@@ -98,7 +98,7 @@ import { ref, onMounted, computed } from 'vue';
 import { ElAvatar, ElInput, ElButton, ElEmpty, ElMessage, ElLink, ElDivider } from 'element-plus';
 import { getByArticleId } from "@/api/article.js";
 import { saveReview } from "@/api/user.js";
-import { checkLogin } from "@/utils/index.js";
+import { checkLogin } from "@/utils/http.js";
 
 const props = defineProps({
     articleId: {

@@ -14,7 +14,7 @@ import org.springframework.web.socket.config.annotation.WebSocketHandlerRegistry
 @EnableWebSocket  // 开启STOMP协议的WebSocket
 public class WebSocketConfig implements WebSocketConfigurer {
 
-    @Value("${socket.path:/ws}")
+    @Value("${websocket.path:/ws}")
     private String WS_PATH;
 
     @Resource
