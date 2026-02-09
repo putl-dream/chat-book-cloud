@@ -1,4 +1,4 @@
-import request from '@/utils/index.js'
+import request from '@/utils/http.js'
 
 /**
  * 上传文件
