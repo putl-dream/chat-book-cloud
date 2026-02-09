@@ -1,7 +1,7 @@
 package com.putl.userservice.controller;
 
 import com.putl.userservice.service.UserFriendsService;
-import com.putl.userservice.util.Result;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -18,8 +18,8 @@ public class UserFriendsController {
 
     @Operation(summary = "新增关注")
     @GetMapping
-    public Result<String> addFriend(Integer userId, Integer friendId) {
+    public CommonResult<String> addFriend(Integer userId, Integer friendId) {
         String userRelation = userFriendsService.addFriend(userId, friendId);
-        return Result.success(userRelation);
+        return CommonResult.success(userRelation);
     }
 }

@@ -16,7 +16,6 @@ import com.putl.userservice.service.MessageService;
 import com.putl.userservice.service.UserFriendsService;
 import com.putl.userservice.service.UserInfoService;
 import com.putl.userservice.service.UserService;
-import com.putl.userservice.util.Result;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
