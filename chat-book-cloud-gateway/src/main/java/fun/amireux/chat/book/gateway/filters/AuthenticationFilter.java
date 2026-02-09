@@ -2,6 +2,7 @@ package fun.amireux.chat.book.gateway.filters;
 
 import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException;
 import fun.amireux.chat.book.framework.common.utils.JwtUtil;
+import fun.amireux.chat.book.framework.common.utils.InternalTokenUtil;
 import fun.amireux.chat.book.gateway.config.AuthenticationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -35,6 +36,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String token = extractToken(request);
         String userId = null;
         String username = null;
+        String roles = null;
 
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
@@ -50,6 +52,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     }
                 }
                 username = decodedJWT.getClaim("username").asString();
+                // 尝试获取 roles，如果不存在则为 null
+                if (!decodedJWT.getClaim("roles").isNull()) {
+                     // 假设 roles 存的是 "ROLE_USER,ROLE_ADMIN" 这种逗号分隔字符串，或者是 JSON 数组
+                     // 这里简化处理，尝试直接获取字符串。如果是数组需要根据实际情况解析
+                     roles = decodedJWT.getClaim("roles").asString();
+                }
             } catch (Exception e) {
                 log.error("Token verification failed: {}", e.getMessage());
             }
@@ -74,11 +82,21 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
         // 无论是否必选，只要有身份信息，就传递给下游
         if (userId != null) {
-            ServerHttpRequest mutableRequest = exchange.getRequest().mutate()
+            // 生成内部签名，防止篡改
+            // 数据拼接：userId + "::" + roles (roles 可能为 null)
+            String rawData = userId + "::" + roles;
+            String internalToken = InternalTokenUtil.generateSignature(rawData, authenticationProperties.getInternalSecret());
+
+            ServerHttpRequest.Builder builder = exchange.getRequest().mutate()
                     .header("X-User-Id", userId)
                     .header("X-User-Name", username)
-                    .build();
-            return chain.filter(exchange.mutate().request(mutableRequest).build());
+                    .header("X-Internal-Token", internalToken);
+            
+            if (roles != null) {
+                builder.header("X-User-Roles", roles);
+            }
+
+            return chain.filter(exchange.mutate().request(builder.build()).build());
         }
 
         return chain.filter(exchange);
