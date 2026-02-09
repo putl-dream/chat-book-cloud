@@ -1,8 +1,7 @@
 package com.putl.articleservice.ws;
 
 import com.putl.articleservice.controller.vo.ArticleVO;
-import com.putl.articleservice.utils.MessageResult;
-import fun.amireux.chat.book.framework.common.utils.BeanUtil;
+import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -18,7 +17,6 @@ public class SelectArticleHandler extends AbstractArticleHandler {
         if (message.getData() == null || message.getData().getId() == null) return;
 
         ArticleVO articleVO = articleService.getArticleDetail(message.getData().getId());
-        // MessageResult.messageSelect expects JSON string of the article
-        messagePublisher.sendToUser(userId, MessageResult.messageSelect(BeanUtil.toJsonString(articleVO)));
+        messagePublisher.sendToUser(userId, WebSocketResult.of("SELECT", articleVO));
     }
 }

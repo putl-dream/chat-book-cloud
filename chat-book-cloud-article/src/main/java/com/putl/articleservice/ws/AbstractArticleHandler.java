@@ -1,7 +1,7 @@
 package com.putl.articleservice.ws;
 
 import com.putl.articleservice.service.ArticleService;
-import com.putl.articleservice.utils.MessageResult;
+import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import fun.amireux.chat.book.framework.websocket.server.MessageHandler;
 import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
 import jakarta.annotation.Resource;
@@ -28,7 +28,7 @@ public abstract class AbstractArticleHandler implements MessageHandler<ArticleMe
         articleCache.put(userId, message);
         
         // Notify cache success (from original logic)
-        messagePublisher.sendToUser(userId, MessageResult.messageCache("缓存成功!"));
+        messagePublisher.sendToUser(userId, WebSocketResult.of("CACHE", "缓存成功!"));
         
         doHandle(userId, message);
     }

@@ -1,6 +1,6 @@
 package com.putl.articleservice.ws;
 
-import com.putl.articleservice.utils.MessageResult;
+import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -20,6 +20,6 @@ public class PublishArticleHandler extends AbstractArticleHandler {
         } else {
             articleService.updateArticle(message.getData());
         }
-        messagePublisher.sendToUser(userId, MessageResult.messagePublish("文章发布成功！！"));
+        messagePublisher.sendToUser(userId, WebSocketResult.of("PUBLISH", "文章发布成功！！"));
     }
 }

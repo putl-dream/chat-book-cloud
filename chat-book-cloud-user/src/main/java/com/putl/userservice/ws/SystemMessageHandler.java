@@ -1,6 +1,6 @@
 package com.putl.userservice.ws;
 
-import com.putl.userservice.util.MessageResult;
+import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import fun.amireux.chat.book.framework.websocket.server.MessageHandler;
 import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
 import jakarta.annotation.Resource;
@@ -27,6 +27,6 @@ public class SystemMessageHandler implements MessageHandler<SystemMessage> {
     @Override
     public void handleMessage(String userId, SystemMessage message) {
         log.info("[websocket] 用户={} 操作 SYSTEM", userId);
-        messagePublisher.sendToUser(userId, MessageResult.messageSystem("欢迎加入聊天室！！"));
+        messagePublisher.sendToUser(userId, WebSocketResult.system("欢迎加入聊天室！！"));
     }
 }
