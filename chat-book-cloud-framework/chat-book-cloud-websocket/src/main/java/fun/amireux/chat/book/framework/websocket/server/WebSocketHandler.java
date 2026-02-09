@@ -33,8 +33,11 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     @Resource
     private JwtUtil jwtUtil;
 
-    @Resource
-    private List<WebSocketConnectionListener> connectionListeners;
+    private final List<WebSocketConnectionListener> connectionListeners;
+
+    public WebSocketHandler(List<WebSocketConnectionListener> connectionListeners) {
+        this.connectionListeners = connectionListeners;
+    }
 
     @Override
     public void afterConnectionEstablished(WebSocketSession session) throws Exception {
@@ -85,7 +88,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
         String userId = (String) session.getAttributes().get("userId");
         if (StringUtils.hasText(userId)) {
             sessionManager.remove(userId);
-            
+
             // 通知监听器
             if (connectionListeners != null) {
                 for (WebSocketConnectionListener listener : connectionListeners) {
@@ -121,14 +124,14 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
                 return getUserIdFromToken(token);
             }
         }
-        
+
         // 2. 尝试从 Header 获取 Authorization
         String authHeader = session.getHandshakeHeaders().getFirst("Authorization");
         if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
             String token = authHeader.substring(7);
             return getUserIdFromToken(token);
         }
-        
+
         // 3. 尝试从 Header 获取 token (有些客户端可能直接传 token)
         String tokenHeader = session.getHandshakeHeaders().getFirst("token");
         if (StringUtils.hasText(tokenHeader)) {
@@ -137,7 +140,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 
         return null;
     }
-    
+
     private String extractParam(String query, String key) {
         String paramPattern = key + "=";
         int startIdx = query.indexOf(paramPattern);

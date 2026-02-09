@@ -1,16 +1,10 @@
 package com.putl.userservice;
 
-import com.putl.userservice.service.MessageService;
-import com.putl.userservice.ws.ChatChannel;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.event.ContextClosedEvent;
-import org.springframework.context.event.EventListener;
 import org.springframework.scheduling.annotation.EnableAsync;
-
 
 @EnableAsync
 @SpringBootApplication
@@ -19,10 +13,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 public class UserServiceApplication {
 
     public static void main(String[] args) {
-        SpringApplication application = new SpringApplication(UserServiceApplication.class);
-        ConfigurableApplicationContext configurableApplicationContext = application.run(args);
-        // 解决WebSocket不能注入的问题
-        ChatChannel.setMessageService(configurableApplicationContext.getBean(MessageService.class));
+        SpringApplication.run(UserServiceApplication.class, args);
     }
 }
 

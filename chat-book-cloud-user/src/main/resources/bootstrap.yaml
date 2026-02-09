@@ -8,6 +8,9 @@ spring:
 server:
   port: 9093
 
+websocket:
+  path: /user/ws
+
 --- ## 日志
 logging:
   level:

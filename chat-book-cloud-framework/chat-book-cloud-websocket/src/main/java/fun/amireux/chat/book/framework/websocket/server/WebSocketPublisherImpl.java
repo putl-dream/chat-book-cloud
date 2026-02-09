@@ -2,12 +2,12 @@ package fun.amireux.chat.book.framework.websocket.server;
 
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
+import org.springframework.stereotype.Component;
 import org.springframework.web.socket.TextMessage;
 import org.springframework.web.socket.WebSocketSession;
 
 @Slf4j
-@Service
+@Component
 public class WebSocketPublisherImpl implements MessagePublisher {
 
     private final SessionManager sessionManager;
