@@ -2,6 +2,7 @@ package fun.amireux.chat.book.gateway.filters;
 
 import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException;
 import fun.amireux.chat.book.framework.common.utils.JwtUtil;
+import fun.amireux.chat.book.framework.common.utils.InternalTokenUtil;
 import fun.amireux.chat.book.gateway.config.AuthenticationProperties;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -74,9 +75,13 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
 
         // 无论是否必选，只要有身份信息，就传递给下游
         if (userId != null) {
+            // 生成内部签名，防止篡改
+            String internalToken = InternalTokenUtil.generateSignature(userId, authenticationProperties.getInternalSecret());
+
             ServerHttpRequest mutableRequest = exchange.getRequest().mutate()
                     .header("X-User-Id", userId)
                     .header("X-User-Name", username)
+                    .header("X-Internal-Token", internalToken)
                     .build();
             return chain.filter(exchange.mutate().request(mutableRequest).build());
         }

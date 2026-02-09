@@ -19,6 +19,12 @@ public class AuthenticationProperties {
      */
     private List<AuthenticationRule> rules = new ArrayList<>();
 
+    /**
+     * 内部通信密钥 (Gateway -> Microservices)
+     * 用于防止绕过网关直接攻击微服务
+     */
+    private String internalSecret = "chat-book-cloud-internal-secret-key-2026";
+
     @Data
     public static class AuthenticationRule {
         private String name;
