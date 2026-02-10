@@ -79,7 +79,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             throw new AuthenticationException("密码错误");
         }
         log.info("用户登录成功: {}", userDO.getUsername());
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", userDO.getUsername()));
+        // todo : 待加入roles
+        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", userDO.getUsername()));//
     }
 
     @Override
