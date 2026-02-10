@@ -1,5 +1,6 @@
 package fun.amireux.chat.book.framework.common.pojo;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import lombok.Data;
 
 import java.io.Serializable;
@@ -54,10 +55,12 @@ public class CommonResult<T> implements Serializable {
         return Objects.equals(code, 200);
     }
 
+    @JsonIgnore
     public boolean isSuccess() {
         return isSuccess(code);
     }
 
+    @JsonIgnore
     public boolean isError() {
         return !isSuccess();
     }

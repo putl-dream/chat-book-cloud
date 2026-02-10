@@ -75,34 +75,80 @@ const handleEdit = async (id) => {
 <style scoped>
 .post-card {
     display: flex;
+    padding: 24px;
+    background: rgba(255, 255, 255, 0.7);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 16px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+    margin-bottom: 16px;
+}
+
+.post-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    background: rgba(255, 255, 255, 0.9);
 }
 
 .post-picture {
-    width: 150px;
-    margin-right: 20px;
+    width: 180px;
+    height: 120px;
+    margin-right: 24px;
+    border-radius: 12px;
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+.post-picture :deep(.el-image) {
+    width: 100% !important;
+    height: 100% !important;
+    transition: transform 0.3s ease;
+}
+
+.post-picture:hover :deep(.el-image) {
+    transform: scale(1.05);
 }
 
 .post-context {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0; /* Fix flex child overflow */
 }
 
 .post-header {
-    margin-bottom: 10px;
+    margin-bottom: 8px;
+    cursor: pointer;
 }
 
 .post-title {
     font-size: 18px;
-    color: #333333;
+    font-weight: 600;
+    color: #1f2937;
+    margin: 0;
+    line-height: 1.4;
+    transition: color 0.2s;
+}
+
+.post-title:hover {
+    color: #3b82f6;
 }
 
 .post-summary {
-    margin-bottom: 10px;
-    width: 800px;
+    margin-bottom: 16px;
+    width: 100%;
 }
 
-.post-summary p {
+.post-summary :deep(.el-text) {
     font-size: 14px;
-    color: #666666;
+    color: #6b7280;
+    line-height: 1.6;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
 }
 
 .post-footer {
@@ -116,26 +162,61 @@ const handleEdit = async (id) => {
     align-items: center;
 }
 
-.userInfo {
-    margin: 0 10px;
-    font-size: 11px;
-    color: #999999;
-    align-content: center;
-}
-
-.post-category {
+.meta-details {
     display: flex;
     align-items: center;
+    gap: 16px;
+}
+
+.userInfo {
+    display: flex;
+    align-items: center;
+    font-size: 13px;
+    color: #9ca3af;
+    gap: 4px;
+}
+
+.userInfo b {
+    color: #4b5563;
+    font-weight: 500;
+}
+
+.el-icon-img {
+    font-size: 14px;
+    margin-right: 2px;
+}
+
+.post-controls {
+    display: flex;
+    gap: 8px;
 }
 
 .controls-txt {
-    background-image: linear-gradient(45deg, #e7ffdb, #f8eded, #eeeeff);
-    padding: 5px 10px;
-    border-radius: 15px;
+    background: rgba(59, 130, 246, 0.1);
+    padding: 6px 16px;
+    border-radius: 20px;
     font-size: 12px;
-    color: #6a7ecd;
-    margin-right: 20px;
-    /*去除默认的边框*/
-    border: none;
+    color: #3b82f6;
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: 500;
+}
+
+.controls-txt:hover {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
+}
+
+.controls-txt:last-child {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+}
+
+.controls-txt:last-child:hover {
+    background: #ef4444;
+    color: white;
+    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
 }
 </style>

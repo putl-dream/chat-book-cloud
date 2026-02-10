@@ -42,7 +42,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getNewPage(Integer pageNo, Integer pageSize) {
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().orderByDesc(ArticleDO::getCreateTime));
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getStatus, 1).orderByDesc(ArticleDO::getCreateTime));
     }
 
     /**

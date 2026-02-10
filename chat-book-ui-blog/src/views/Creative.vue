@@ -75,7 +75,6 @@
 import { ref, onMounted } from 'vue';
 import UserDataCard from "@/components/widget/UserDataCard.vue";
 import { getUserArticlePage } from "@/api/article.js";
-import { getUserBySelf } from "@/api/user.js";
 import { View, ChatDotSquare, Star, Collection } from '@element-plus/icons-vue';
 
 // 文章列表数据
@@ -83,7 +82,6 @@ const articles = ref([]);
 const totalArticles = ref(0);
 const pageSize = ref(10);
 const currentPage = ref(1);
-const userId = ref(null);
 
 // Format Helper
 const formatNumber = (num) => {
@@ -99,18 +97,9 @@ const formatDate = (dateStr) => {
 // 获取文章列表
 const fetchArticles = async () => {
     try {
-        if (!userId.value) {
-            const userRes = await getUserBySelf();
-            if (userRes) {
-                userId.value = userRes.id;
-            }
-        }
-
-        if (!userId.value) return;
-
-        const response = await getUserArticlePage(currentPage.value, pageSize.value, userId.value)
+        const response = await getUserArticlePage(currentPage.value, pageSize.value)
         if (response === null) { return; }
-        articles.value = response.records;
+        articles.value = response.list;
         totalArticles.value = parseInt(response.total);
     } catch (error) {
         console.error('Failed to fetch articles:', error);
@@ -131,8 +120,37 @@ onMounted(() => {
 
 <style scoped>
 .dashboard {
+    padding: 24px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+}
+
+.articles-container {
     max-width: 1000px;
     margin: 0 auto;
+    position: relative;
+    height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px;
+    /* For scrollbar space */
+}
+
+/* Custom Scrollbar */
+.articles-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.articles-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.articles-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+.articles-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
 }
 
 .animate-fade-in {
@@ -151,21 +169,18 @@ onMounted(() => {
     }
 }
 
-.articles-container {
-    position: relative;
-}
-
 .section-header {
     display: flex;
     align-items: center;
     margin-bottom: 24px;
     position: relative;
+    padding-top: 8px;
 }
 
 .section-title {
     font-size: 24px;
     font-weight: 700;
-    color: var(--text-color-primary);
+    color: #1f2937;
     margin: 0;
     z-index: 1;
 }
@@ -176,7 +191,7 @@ onMounted(() => {
     left: 0;
     width: 60px;
     height: 8px;
-    background: var(--color-primary-light);
+    background: rgba(59, 130, 246, 0.2);
     border-radius: 4px;
     z-index: 0;
 }
@@ -194,13 +209,14 @@ onMounted(() => {
     padding: 24px;
     background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.5);
     border-radius: 16px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
     animation: slideUp 0.5s ease-out forwards;
     opacity: 0;
-    /* for animation */
+    margin-bottom: 0;
+    /* Handled by flex gap */
 }
 
 @keyframes slideUp {
@@ -216,10 +232,9 @@ onMounted(() => {
 }
 
 .article-card:hover {
-    transform: translateY(-4px) scale(1.01);
+    transform: translateY(-2px);
     background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.1);
-    border-color: rgba(255, 255, 255, 0.9);
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
 }
 
 .article-main {
@@ -232,17 +247,23 @@ onMounted(() => {
 .article-title {
     font-size: 18px;
     font-weight: 600;
-    color: var(--text-color-primary);
+    color: #1f2937;
     margin: 0 0 8px 0;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    transition: color 0.2s;
+    cursor: pointer;
+}
+
+.article-title:hover {
+    color: #3b82f6;
 }
 
 .article-summary {
-    color: var(--text-color-secondary);
+    color: #6b7280;
     font-size: 14px;
-    line-height: 1.5;
+    line-height: 1.6;
     margin: 0 0 12px 0;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -252,15 +273,23 @@ onMounted(() => {
 
 .article-meta {
     font-size: 12px;
-    color: var(--text-color-placeholder);
+    color: #9ca3af;
+    display: flex;
+    align-items: center;
+}
+
+.date {
+    background: rgba(0, 0, 0, 0.05);
+    padding: 2px 8px;
+    border-radius: 4px;
 }
 
 .article-stats {
     display: flex;
     gap: 24px;
     padding: 0 24px;
-    border-left: 1px solid var(--border-color-light);
-    border-right: 1px solid var(--border-color-light);
+    border-left: 1px solid rgba(229, 231, 235, 0.5);
+    border-right: 1px solid rgba(229, 231, 235, 0.5);
 }
 
 .stat-item {
@@ -268,30 +297,31 @@ onMounted(() => {
     flex-direction: column;
     align-items: center;
     min-width: 48px;
+    cursor: default;
 }
 
 .stat-icon {
     font-size: 20px;
-    color: var(--text-color-secondary);
+    color: #9ca3af;
     margin-bottom: 4px;
-    transition: color 0.2s;
+    transition: all 0.3s;
 }
 
 .stat-value {
     font-size: 16px;
     font-weight: 700;
-    color: var(--text-color-primary);
+    color: #4b5563;
     line-height: 1.2;
 }
 
 .stat-label {
     font-size: 12px;
-    color: var(--text-color-placeholder);
+    color: #9ca3af;
     margin-top: 2px;
 }
 
 .article-card:hover .stat-item:hover .stat-icon {
-    color: var(--color-primary);
+    color: #3b82f6;
     transform: scale(1.1);
 }
 
@@ -302,16 +332,22 @@ onMounted(() => {
     padding-left: 24px;
 }
 
+.card-actions .el-button {
+    margin: 0;
+}
+
 .pagination-wrapper {
     margin-top: 32px;
     display: flex;
     justify-content: center;
+    margin-bottom: 32px;
 }
 
 .empty-state {
     padding: 60px 0;
     background: rgba(255, 255, 255, 0.5);
     border-radius: 16px;
+    backdrop-filter: blur(10px);
 }
 
 /* Responsive */
@@ -330,7 +366,7 @@ onMounted(() => {
     .article-stats {
         width: 100%;
         border: none;
-        border-top: 1px solid var(--border-color-light);
+        border-top: 1px solid #e5e7eb;
         padding: 16px 0 0 0;
         justify-content: space-between;
     }

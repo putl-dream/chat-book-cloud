@@ -22,7 +22,7 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
 
         String uri = request.getRequestURI();
         String method = request.getMethod();
-        String authHeader = request.getHeader("Authorization");
+        String authHeader = request.getHeader("token");
 
         log.info("Request received: {} {}, Auth present: {}", method, uri, authHeader != null ? "yes" : "no");
 

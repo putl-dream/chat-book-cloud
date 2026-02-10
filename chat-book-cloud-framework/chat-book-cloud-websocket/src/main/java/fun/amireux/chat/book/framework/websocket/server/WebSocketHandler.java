@@ -114,6 +114,12 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     }
 
     private String getUserIdFromSession(WebSocketSession session) {
+        // 0. 优先从 Session 属性获取 (由 AuthHandshakeInterceptor 注入)
+        String userId = String.valueOf(session.getAttributes().get("userId"));
+        if (StringUtils.hasText(userId)) {
+            return userId;
+        }
+
         // 1. 尝试从 Query Param 获取 token 或 uid
         URI uri = session.getUri();
         if (uri != null && uri.getQuery() != null) {
@@ -155,7 +161,7 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     private String getUserIdFromToken(String token) {
         try {
             // 假设 token 里有 id 字段
-            return jwtUtil.verifyToken(token).getClaim("id").asString();
+            return jwtUtil.verifyToken(token).getClaim("id").toString();
         } catch (Exception e) {
             log.warn("Token 解析失败: {}", e.getMessage());
             return null;

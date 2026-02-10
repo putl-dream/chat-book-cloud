@@ -3,12 +3,12 @@
         <!-- 文章列表卡片 -->
         <div class="articles-container" @scroll="handleScroll">
             <div v-if="loading" class="loading">
-                <el-skeleton :rows="5" animated/>
+                <el-skeleton :rows="5" animated />
             </div>
-            <div v-for="(article, index) in articles" :key="index" class="article-card" >
-                <ArticleImgCard :post="article"/>
+            <div v-for="(article, index) in articles" :key="index" class="article-card">
+                <ArticleImgCard :post="article" />
             </div>
-            <div v-if="noMoreArticles " class="no-more">没有了</div>
+            <div v-if="noMoreArticles" class="no-more">没有了</div>
             <div v-if="articles.length === 0" class="no-more">这里空空如也！</div>
         </div>
     </div>
@@ -16,12 +16,9 @@
 
 
 <script setup>
-import {ref, onMounted} from 'vue';
+import { onMounted, ref } from 'vue';
 import ArticleImgCard from '@/components/widget/ArticleImgCard.vue';
-import axios from 'axios';
-import {getUserArticlePage} from "@/api/article.js";
-import {getUserBySelf} from "@/api/user.js";
-import router from "@/router/index.js"; // 假设你使用axios进行HTTP请求
+import { getUserArticlePage } from "@/api/article.js";
 
 
 // 文章列表数据
@@ -30,27 +27,15 @@ const loading = ref(false);
 const noMoreArticles = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
-const userId = ref(null);
 
 // 获取文章列表
 const fetchArticles = async () => {
     if (loading.value || noMoreArticles.value) return;
     loading.value = true;
     try {
-        if (!userId.value) {
-            const userRes = await getUserBySelf();
-            if (userRes) {
-                userId.value = userRes.id;
-            }
-        }
-        if (!userId.value) {
-             loading.value = false;
-             return;
-        }
-
-        const response = await getUserArticlePage(currentPage.value, pageSize.value, userId.value)
+        const response = await getUserArticlePage(currentPage.value, pageSize.value)
         console.log(response)
-        const newArticles = response.records;
+        const newArticles = response.list;
         const total = response.total;
         if (newArticles.length === 0) {
             noMoreArticles.value = true;
@@ -67,7 +52,7 @@ const fetchArticles = async () => {
 
 // 滚动事件处理
 const handleScroll = (event) => {
-    const {scrollTop, clientHeight, scrollHeight} = event.target;
+    const { scrollTop, clientHeight, scrollHeight } = event.target;
     if (scrollTop + clientHeight >= scrollHeight - 10) { // 调整阈值以适应需要
         fetchArticles();
     }
@@ -82,93 +67,87 @@ onMounted(() => {
 
 <style scoped>
 .dashboard {
-    padding: 10px 100px;
-}
-
-.stats-container {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    width: 150px;
-}
-
-.stat-label {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.stat-value {
-    font-size: 1.2em;
+    padding: 24px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
 .articles-container {
-    margin-top: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px; /* For scrollbar space */
 }
 
-.section-title {
-    font-size: 1.5em;
-    margin-bottom: 10px;
+/* Custom Scrollbar for Glassmorphism feel */
+.articles-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.articles-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.articles-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+.articles-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
 }
 
 .article-card {
-    border-bottom: 1px solid #ccc;
-    padding: 0 10px;
-    margin-bottom: 10px;
+    margin-bottom: 24px;
+    animation: fadeIn 0.5s ease-out;
 }
 
-
-.article-image {
-    margin-right: 20px;
-}
-
-.article-info {
-    display: flex;
-    margin-right: 20px;
-}
-
-.article-content {
-    min-width: 500px;
-}
-
-.article-title {
-    font-size: 1.2em;
-    margin-bottom: 5px;
-}
-
-.article-summary {
-    color: #666;
-    margin-bottom: 10px;
-}
-
-.article-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-}
-
-.stat-item .stat-label {
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.stat-item .stat-value {
-    font-size: 1em;
+.loading {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    margin-bottom: 20px;
 }
 
 .no-more {
-    margin-top: 20px;
-    color: #999;
+    margin: 32px 0;
+    color: #9ca3af;
     text-align: center;
+    font-size: 14px;
+    position: relative;
+}
+
+.no-more::before,
+.no-more::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 50px;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.no-more::before {
+    margin-right: 15px;
+    right: 50%;
+    transform: translateX(-20px);
+}
+
+.no-more::after {
+    margin-left: 15px;
+    left: 50%;
+    transform: translateX(20px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
