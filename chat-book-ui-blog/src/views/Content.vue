@@ -67,93 +67,87 @@ onMounted(() => {
 
 <style scoped>
 .dashboard {
-    padding: 10px 100px;
-}
-
-.stats-container {
-    display: flex;
-    justify-content: space-around;
-    margin-bottom: 20px;
-}
-
-.stat-card {
-    padding: 20px;
-    border-radius: 8px;
-    text-align: center;
-    width: 150px;
-}
-
-.stat-label {
-    font-weight: bold;
-    margin-bottom: 5px;
-}
-
-.stat-value {
-    font-size: 1.2em;
+    padding: 24px;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
 .articles-container {
-    margin-top: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    height: calc(100vh - 48px);
+    overflow-y: auto;
+    padding-right: 8px; /* For scrollbar space */
 }
 
-.section-title {
-    font-size: 1.5em;
-    margin-bottom: 10px;
+/* Custom Scrollbar for Glassmorphism feel */
+.articles-container::-webkit-scrollbar {
+    width: 6px;
+}
+
+.articles-container::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.articles-container::-webkit-scrollbar-thumb {
+    background: rgba(156, 163, 175, 0.5);
+    border-radius: 3px;
+}
+
+.articles-container::-webkit-scrollbar-thumb:hover {
+    background: rgba(156, 163, 175, 0.8);
 }
 
 .article-card {
-    border-bottom: 1px solid #ccc;
-    padding: 0 10px;
-    margin-bottom: 10px;
+    margin-bottom: 24px;
+    animation: fadeIn 0.5s ease-out;
 }
 
-
-.article-image {
-    margin-right: 20px;
-}
-
-.article-info {
-    display: flex;
-    margin-right: 20px;
-}
-
-.article-content {
-    min-width: 500px;
-}
-
-.article-title {
-    font-size: 1.2em;
-    margin-bottom: 5px;
-}
-
-.article-summary {
-    color: #666;
-    margin-bottom: 10px;
-}
-
-.article-stats {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.stat-item {
-    display: flex;
-    align-items: center;
-}
-
-.stat-item .stat-label {
-    font-weight: bold;
-    margin-right: 5px;
-}
-
-.stat-item .stat-value {
-    font-size: 1em;
+.loading {
+    padding: 20px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+    margin-bottom: 20px;
 }
 
 .no-more {
-    margin-top: 20px;
-    color: #999;
+    margin: 32px 0;
+    color: #9ca3af;
     text-align: center;
+    font-size: 14px;
+    position: relative;
+}
+
+.no-more::before,
+.no-more::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    width: 50px;
+    height: 1px;
+    background: #e5e7eb;
+}
+
+.no-more::before {
+    margin-right: 15px;
+    right: 50%;
+    transform: translateX(-20px);
+}
+
+.no-more::after {
+    margin-left: 15px;
+    left: 50%;
+    transform: translateX(20px);
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
 }
 </style>
