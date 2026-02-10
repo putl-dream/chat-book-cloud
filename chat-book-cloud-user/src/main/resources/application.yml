@@ -28,7 +28,7 @@ spring:
     #发送者邮箱
     username: 1711858319@qq.com
     #配置密码,注意不是真正的密码，而是刚刚申请到的授权码
-    password: ${QQ_SMTP:ynpehhroknoebfhg}
+    password: ${QQ_SMTP:}
     #端口号465或587
     port: 465
     #默认的邮件编码为UTF-8
