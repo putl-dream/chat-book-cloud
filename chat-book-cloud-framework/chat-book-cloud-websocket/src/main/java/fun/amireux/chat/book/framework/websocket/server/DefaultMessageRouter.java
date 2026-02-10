@@ -2,6 +2,8 @@ package fun.amireux.chat.book.framework.websocket.server;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import fun.amireux.chat.book.framework.common.context.UserContext;
+import fun.amireux.chat.book.framework.common.context.UserInfo;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import fun.amireux.chat.book.framework.websocket.domain.BaseMessage;
 import lombok.extern.slf4j.Slf4j;
@@ -49,7 +51,19 @@ public class DefaultMessageRouter implements MessageRouter {
             BaseMessage message = BeanUtil.toBean(rawMessage, messageClass);
 
             // 4. 调用处理
-            handler.handleMessage(userId, message);
+            // 将 userId 设置到 UserContext 中，以便下游业务服务可以获取
+            if (userId != null) {
+                UserContext.setUser(UserInfo.builder().userId(userId).build());
+            }
+            
+            try {
+                handler.handleMessage(userId, message);
+            } finally {
+                // 清理 UserContext，防止内存泄漏
+                if (userId != null) {
+                    UserContext.remove();
+                }
+            }
         } catch (Exception e) {
             log.error("处理消息时发生错误: {}", e.getMessage(), e);
         }

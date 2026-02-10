@@ -184,6 +184,7 @@ async function publishContent() {
 const sendMessage = (type) => {
     const data = { id: articleId, title: title.value, content: html.value };
     if (socketService && socketService.isConnected()) {
+        console.log("发送消息-->>", type, data);
         socketService.send(type, data);
     } else {
         console.log('WebSocket 未打开');

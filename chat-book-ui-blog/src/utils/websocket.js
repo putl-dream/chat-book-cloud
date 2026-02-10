@@ -179,7 +179,39 @@ export default class SocketService {
      * If not connected, queues the message
      */
     send(type, data) {
-        const message = JSON.stringify({ type, data });
+        // Flatten the message structure: { type, ...data }
+        // If data is not an object (e.g. null), it will be ignored by spread syntax
+        const messagePayload = data && typeof data === 'object' ? { type, ...data } : { type, data };
+        // Special handling if data was null/undefined to avoid {type, data: undefined} if we want just {type}
+        // But the previous line logic:
+        // if data is null: { type, data: null } -> wait, spread null is empty.
+        // let's be precise.
+
+        let finalMessage;
+        if (data && typeof data === 'object') {
+            finalMessage = { type, ...data };
+        } else if (data === undefined || data === null) {
+            finalMessage = { type };
+        } else {
+            // primitive type, wrap in 'data' field? or just send as is?
+            // Backend expects flat structure usually.
+            // But if data is a string, we can't flatten it.
+            // Let's assume for now we keep 'data' field for primitives, but flattened for objects.
+            // However, to be consistent with backend @JsonUnwrapped, it expects fields.
+            // If we send { type, data: "some string" }, backend might not map it unless there is a 'data' field.
+            // But we are removing 'data' field nesting in backend via @JsonUnwrapped.
+            // So primitives might fail unless mapped to a specific field.
+            // Given current usage in Text.vue and Chat.vue, data is always Object or null.
+            finalMessage = { type, data };
+        }
+
+        // Re-evaluating:
+        // Text.vue: always object.
+        // Chat.vue: object or null.
+        // So simply { type, ...data } works for object.
+        // For null, { type, ...null } is { type }. This is perfect for SystemMessage.
+
+        const message = JSON.stringify({ type, ...data });
 
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(message);

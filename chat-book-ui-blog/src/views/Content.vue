@@ -16,12 +16,10 @@
 
 
 <script setup>
-import {ref, onMounted} from 'vue';
+import {onMounted, ref} from 'vue';
 import ArticleImgCard from '@/components/widget/ArticleImgCard.vue';
-import axios from 'axios';
 import {getUserArticlePage} from "@/api/article.js";
 import {getUserBySelf} from "@/api/user.js";
-import router from "@/router/index.js"; // 假设你使用axios进行HTTP请求
 
 
 // 文章列表数据
