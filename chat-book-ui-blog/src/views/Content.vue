@@ -3,12 +3,12 @@
         <!-- 文章列表卡片 -->
         <div class="articles-container" @scroll="handleScroll">
             <div v-if="loading" class="loading">
-                <el-skeleton :rows="5" animated/>
+                <el-skeleton :rows="5" animated />
             </div>
-            <div v-for="(article, index) in articles" :key="index" class="article-card" >
-                <ArticleImgCard :post="article"/>
+            <div v-for="(article, index) in articles" :key="index" class="article-card">
+                <ArticleImgCard :post="article" />
             </div>
-            <div v-if="noMoreArticles " class="no-more">没有了</div>
+            <div v-if="noMoreArticles" class="no-more">没有了</div>
             <div v-if="articles.length === 0" class="no-more">这里空空如也！</div>
         </div>
     </div>
@@ -16,10 +16,9 @@
 
 
 <script setup>
-import {onMounted, ref} from 'vue';
+import { onMounted, ref } from 'vue';
 import ArticleImgCard from '@/components/widget/ArticleImgCard.vue';
-import {getUserArticlePage} from "@/api/article.js";
-import {getUserBySelf} from "@/api/user.js";
+import { getUserArticlePage } from "@/api/article.js";
 
 
 // 文章列表数据
@@ -28,27 +27,15 @@ const loading = ref(false);
 const noMoreArticles = ref(false);
 const currentPage = ref(1);
 const pageSize = ref(10);
-const userId = ref(null);
 
 // 获取文章列表
 const fetchArticles = async () => {
     if (loading.value || noMoreArticles.value) return;
     loading.value = true;
     try {
-        if (!userId.value) {
-            const userRes = await getUserBySelf();
-            if (userRes) {
-                userId.value = userRes.id;
-            }
-        }
-        if (!userId.value) {
-             loading.value = false;
-             return;
-        }
-
-        const response = await getUserArticlePage(currentPage.value, pageSize.value, userId.value)
+        const response = await getUserArticlePage(currentPage.value, pageSize.value)
         console.log(response)
-        const newArticles = response.records;
+        const newArticles = response.list;
         const total = response.total;
         if (newArticles.length === 0) {
             noMoreArticles.value = true;
@@ -65,7 +52,7 @@ const fetchArticles = async () => {
 
 // 滚动事件处理
 const handleScroll = (event) => {
-    const {scrollTop, clientHeight, scrollHeight} = event.target;
+    const { scrollTop, clientHeight, scrollHeight } = event.target;
     if (scrollTop + clientHeight >= scrollHeight - 10) { // 调整阈值以适应需要
         fetchArticles();
     }

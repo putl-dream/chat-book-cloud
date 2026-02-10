@@ -75,7 +75,6 @@
 import { ref, onMounted } from 'vue';
 import UserDataCard from "@/components/widget/UserDataCard.vue";
 import { getUserArticlePage } from "@/api/article.js";
-import { getUserBySelf } from "@/api/user.js";
 import { View, ChatDotSquare, Star, Collection } from '@element-plus/icons-vue';
 
 // 文章列表数据
@@ -83,7 +82,6 @@ const articles = ref([]);
 const totalArticles = ref(0);
 const pageSize = ref(10);
 const currentPage = ref(1);
-const userId = ref(null);
 
 // Format Helper
 const formatNumber = (num) => {
@@ -99,18 +97,9 @@ const formatDate = (dateStr) => {
 // 获取文章列表
 const fetchArticles = async () => {
     try {
-        if (!userId.value) {
-            const userRes = await getUserBySelf();
-            if (userRes) {
-                userId.value = userRes.id;
-            }
-        }
-
-        if (!userId.value) return;
-
-        const response = await getUserArticlePage(currentPage.value, pageSize.value, userId.value)
+        const response = await getUserArticlePage(currentPage.value, pageSize.value)
         if (response === null) { return; }
-        articles.value = response.records;
+        articles.value = response.list;
         totalArticles.value = parseInt(response.total);
     } catch (error) {
         console.error('Failed to fetch articles:', error);
