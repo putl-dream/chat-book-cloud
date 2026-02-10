@@ -1,95 +1,91 @@
 <template>
-    <div class="text-toolbar">
-        <CreativeHeader />
-        <div class="toolbar-container">
-            <!-- 工具栏 -->
-            <el-text v-if="save" style="color: #212121;font-size: 12px">自动保存中...</el-text>
-            <el-text v-else style="color: #212121;font-size: 12px">文章已保存...</el-text>
-            <Toolbar :editor="editor" :mode="mode" />
-        </div>
-    </div>
+    <div class="editor-layout">
+        <CreativeHeader class="site-header" />
 
-    <div class="main-content">
-        <!-- 标题区域 -->
-        <div class="title-area">
-            <input type="text" v-model="title" placeholder="请输入文章标题" class="title-input" @input="onInput" />
+        <div class="text-toolbar">
+            <div class="toolbar-wrapper">
+                <TiptapToolbar :editor="editor" class="glass-toolbar" v-if="editor" />
+                <div class="status-bar">
+                    <div class="status-indicator" :class="{ 'saving': save }"></div>
+                    <el-text class="status-text">{{ save ? '自动保存中...' : '文章已保存' }}</el-text>
+                </div>
+            </div>
         </div>
 
-        <!-- 内容区域 -->
-        <Editor class="main-content-editor" v-model="html" :defaultConfig="editorConfig" :mode="mode"
-            @onCreated="onCreated" />
-    </div>
-    <div class="footer-card">
-        <div class="word-count">
-            <el-text>共 {{ wordCount }} 字</el-text>
+        <div class="scroll-area">
+            <div class="main-content">
+                <!-- 标题区域 -->
+                <div class="title-area">
+                    <input type="text" v-model="title" placeholder="请输入文章标题" class="title-input" @input="onInput" />
+                </div>
+
+                <!-- 内容区域 -->
+                <editor-content :editor="editor" class="main-content-editor" />
+            </div>
         </div>
-        <div class="buttons">
-            <button class="rounded-button" @click="saveContent">保存</button>
-            <button class="rounded-button" @click="publishContent">发布</button>
+
+        <div class="footer-card">
+            <div class="word-count">
+                <el-text>共 {{ wordCount }} 字</el-text>
+            </div>
+            <div class="buttons">
+                <button class="action-btn save" @click="saveContent">保存草稿</button>
+                <button class="action-btn publish" @click="publishContent">发布文章</button>
+            </div>
         </div>
     </div>
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue';
-import '@wangeditor/editor/dist/css/style.css'; // 引入样式
-import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
+import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CreativeHeader from "@/components/CreativeHeader.vue";
+import TiptapToolbar from "@/components/TiptapToolbar.vue";
 import { ElMessage } from "element-plus";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 import SocketService from "@/utils/websocket.js";
 import { API_CONFIG } from "@/config/index.js";
 
-// 初始化 wangEditor
+import { EditorContent, useEditor } from '@tiptap/vue-3';
+import StarterKit from '@tiptap/starter-kit';
+import Image from '@tiptap/extension-image';
+import Placeholder from '@tiptap/extension-placeholder';
+import CharacterCount from '@tiptap/extension-character-count';
+import Underline from '@tiptap/extension-underline';
+import TextAlign from '@tiptap/extension-text-align';
+import Highlight from '@tiptap/extension-highlight';
+
+// 初始化
 let title = ref('');
-const editor = ref(null);
 const html = ref('');
-const mode = ref('simple');
-const editorConfig = {
-    placeholder: '请输入内容...',
-    scroll: false, // 禁用编辑器的滚动条
-};
+const wordCount = ref(0);
 
-// 初始化 MENU_CONF 对象
-if (!editorConfig.MENU_CONF) {
-    editorConfig.MENU_CONF = {};
-}
-
-editorConfig.MENU_CONF['uploadImage'] = {
-    server: `${API_CONFIG.baseURL}/article/file/upload`,
-    fieldName: 'file',
-    maxFileSize: 1024 * 1024, // 1M
-    maxNumberOfFiles: 10,
-    allowedFileTypes: ['image/*'],
-    meta: {
-        token: localStorage.getItem('token'),
+// Tiptap Editor Initialization
+const editor = useEditor({
+    content: '',
+    extensions: [
+        StarterKit,
+        Image,
+        Underline,
+        Highlight,
+        Placeholder.configure({
+            placeholder: '请输入内容...',
+        }),
+        CharacterCount,
+        TextAlign.configure({
+            types: ['heading', 'paragraph'],
+        }),
+    ],
+    onUpdate: ({ editor }) => {
+        const content = editor.getHTML();
+        html.value = content;
+        wordCount.value = editor.storage.characterCount.characters();
     },
-    metaWithUrl: false,
-    headers: {
-        Accept: 'application/json',
-        token: localStorage.getItem('token'),
+    editorProps: {
+        attributes: {
+            class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
+        },
     },
-    withCredentials: true,
-    timeout: 5 * 1000, // 5 秒
-}
-
-function onCreated(editorInstance) {
-    editor.value = editorInstance;
-}
-
-// 统计字数
-function countWords() {
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html.value, 'text/html');
-    const textContent = doc.body.textContent || '';
-    return textContent.replace(/\s+/g, '').length;
-}
-
-const wordCount = ref(countWords());
-watch(html, () => {
-    wordCount.value = countWords();
-}, { immediate: true })
-
+});
 
 // WebSocket 相关
 let socketService;
@@ -138,6 +134,11 @@ const connectWebSocket = () => {
         console.log("查询消息-->>", data);
         html.value = data.content;
         title.value = data.title;
+        // Sync editor content
+        if (editor.value) {
+            editor.value.commands.setContent(data.content);
+            wordCount.value = editor.value.storage.characterCount.characters();
+        }
     });
 
     socketService.connect();
@@ -202,26 +203,12 @@ onMounted(() => {
     connectWebSocket();
 });
 
-onUnmounted(() => {
-    // 这里要注意：saveContent 有 timeout，如果组件卸载了 socketService 可能还在（如果是全局的），
-    // 但这里 socketService 是局部变量。
-    // 为了确保发送，我们应该立即发送而不是等待
-    // 或者，由于 socketService 是在 setup 中定义的，它会随着组件销毁而丢失引用，
-    // 但 WebSocket 连接本身如果是异步的，可能还会保持一小会儿？
-    // 最好的做法是不要在 unmounted 中做异步操作，或者使用 sendBeacon (但这是 ws)。
-    // 我们可以尝试直接调用 send 而不使用 timeout
-    // 不过原来的代码就是这样写的。保留原逻辑，但需要注意 socketService 实例。
-
-    // 如果想要确保发送，可以尝试直接发送:
-    // sendMessage('SAVE'); 
-    // 但原逻辑是 saveContent() -> setTimeout.
+onBeforeUnmount(() => {
+    if (editor.value) {
+        editor.value.destroy();
+    }
+    // Handle socket logic (same as original)
     saveContent();
-    // 不要立即 close，否则 timeout 里的 send 会失败。
-    // 只有当确定不需要 socket 时才 close。
-    // 但如果不 close，会泄露连接。
-    // 鉴于原代码没有显式 close，这里也可以不显式 close，让浏览器处理。
-    // 或者在 saveContent 的 timeout 后 close? 比较复杂。
-    // 简单起见，暂不显式 close，或者仅在非 save 场景下 close。
 });
 
 // 监听路由变化
@@ -232,89 +219,281 @@ onBeforeRouteUpdate((to, from) => {
     }
 });
 
-
 </script>
 
 <style scoped>
-.text-toolbar {
-    position: fixed;
-    left: 0;
-    right: 0;
-    top: 0;
-    height: 100px;
-    background-color: white;
-    z-index: 10;
+.editor-layout {
+    height: 100vh;
+    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    /* Space for footer */
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
 }
 
-.toolbar-container {
+.scroll-area {
+    flex: 1;
+    overflow-y: auto;
+    width: 100%;
+}
+
+.site-header {
+    flex-shrink: 0;
+}
+
+.text-toolbar {
+    position: relative;
+    z-index: 100;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+    transition: all 0.3s ease;
+}
+
+.toolbar-wrapper {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 8px 24px;
     display: flex;
-    justify-content: center;
+    flex-direction: row;
+    /* Changed from column to row */
+    align-items: center;
+    justify-content: space-between;
+    /* Add spacing */
+    gap: 16px;
+}
+
+.status-bar {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    height: 20px;
+    flex-shrink: 0;
+    /* Prevent shrinking */
+    padding-left: 16px;
+    border-left: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.status-indicator {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background-color: #10b981;
+    /* Green for saved */
+    transition: all 0.3s;
+}
+
+.status-indicator.saving {
+    background-color: #f59e0b;
+    /* Amber for saving */
+    box-shadow: 0 0 8px rgba(245, 158, 11, 0.5);
+}
+
+.status-text {
+    color: #6b7280;
+    font-size: 12px;
+}
+
+.glass-toolbar {
+    border: none !important;
+    background: transparent !important;
+    /* width: 100%; Removed to allow status bar to fit */
+    flex: 1;
 }
 
 .main-content {
-    width: 900px;
-    margin: 120px auto 70px;
-    padding: 20px;
-    background-color: white;
+    max-width: 1100px;
+    /* Increased from 900px */
+    width: 100%;
+    margin: 24px auto;
+    padding: 40px 50px;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(10px);
+    border-radius: 12px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    min-height: calc(100vh - 200px);
     box-sizing: border-box;
 }
 
 .title-area {
-    border-bottom: 1px solid #ccc;
-    padding: 0 10px 10px 10px;
-    margin-bottom: 10px;
-}
-
-.main-content-editor {
-    min-height: 550px;
-    overflow-y: hidden;
-}
-
-.footer-card {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background-color: #fff;
-    padding: 10px;
-    box-shadow: 0 -2px 4px rgba(0, 0, 0, 0.1);
-    display: flex;
-    justify-content: space-around;
-    align-items: center;
-    z-index: 10;
-}
-
-.word-count {
-    font-size: 0.9em;
-    color: #999999;
-}
-
-.buttons {
-    display: flex;
-    gap: 10px;
-}
-
-.rounded-button {
-    padding: 10px 20px;
-    border: none;
-    border-radius: 5px;
-    background-color: #007bff;
-    color: #fff;
-    cursor: pointer;
-}
-
-.rounded-button:hover {
-    background-color: #0056b3;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    padding-bottom: 12px;
 }
 
 .title-input {
     width: 100%;
-    padding: 8px;
-    box-sizing: border-box;
-    font-size: 1.5em;
+    font-size: 28px;
+    font-weight: 700;
+    color: #1f2937;
     border: none;
-    /* 移除边框 */
     outline: none;
-    /* 移除选中时的黑框 */
+    background: transparent;
+    padding: 0;
+    font-family: inherit;
+    line-height: 1.4;
+}
+
+.title-input::placeholder {
+    color: #d1d5db;
+}
+
+.main-content-editor {
+    min-height: 60vh;
+    /* Responsive height */
+}
+
+/* Tiptap Customization */
+:deep(.ProseMirror) {
+    outline: none;
+    min-height: 60vh;
+    font-size: 17px;
+    line-height: 1.8;
+    color: #1f2937;
+    padding-bottom: 40px;
+}
+
+:deep(.ProseMirror p.is-editor-empty:first-child::before) {
+    color: #9ca3af;
+    content: attr(data-placeholder);
+    float: left;
+    height: 0;
+    pointer-events: none;
+}
+
+:deep(.ProseMirror img) {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    margin: 1.5rem 0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+:deep(.ProseMirror blockquote) {
+    border-left: 4px solid #3b82f6;
+    padding-left: 1.5rem;
+    margin-left: 0;
+    margin-right: 0;
+    color: #4b5563;
+    font-style: italic;
+    background: #f9fafb;
+    padding: 1rem 1rem 1rem 1.5rem;
+    border-radius: 0 8px 8px 0;
+}
+
+/* 代码块样式优化 */
+:deep(.ProseMirror pre) {
+    background: #1e293b;
+    color: #f8fafc;
+    padding: 1rem 1.5rem;
+    border-radius: 8px;
+    font-family: 'JetBrains Mono', Consolas, Monaco, monospace;
+    overflow-x: auto;
+    margin: 1.5rem 0;
+    line-height: 1.6;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+}
+
+/* 修复代码块内的 code 样式冲突 */
+:deep(.ProseMirror pre code) {
+    background: transparent;
+    color: inherit;
+    padding: 0;
+    border-radius: 0;
+    font-size: 0.9em;
+    font-family: inherit;
+}
+
+/* 行内代码样式 */
+:deep(.ProseMirror code:not(pre code)) {
+    background: #f3f4f6;
+    color: #ef4444;
+    padding: 0.25rem 0.4rem;
+    border-radius: 6px;
+    font-family: Consolas, Monaco, monospace;
+    font-size: 0.85em;
+    font-weight: 500;
+    border: 1px solid #e5e7eb;
+}
+
+.footer-card {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    /* Moved to right corner */
+    left: auto;
+    transform: none;
+    width: auto;
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(10px);
+    padding: 10px 20px;
+    border-radius: 12px;
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    display: flex;
+    flex-direction: column;
+    /* Stacked layout for compact corner view */
+    align-items: flex-end;
+    z-index: 100;
+    gap: 12px;
+    transition: opacity 0.3s;
+}
+
+.footer-card:hover {
+    background: rgba(255, 255, 255, 0.95);
+}
+
+.word-count {
+    color: #9ca3af;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.buttons {
+    display: flex;
+    gap: 8px;
+}
+
+.action-btn {
+    padding: 6px 16px;
+    border: none;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.action-btn.save {
+    background: transparent;
+    color: #6b7280;
+    border: 1px solid #e5e7eb;
+}
+
+.action-btn.save:hover {
+    background: #f3f4f6;
+    color: #374151;
+}
+
+.action-btn.publish {
+    background: #3b82f6;
+    color: white;
+    box-shadow: 0 2px 6px rgba(59, 130, 246, 0.3);
+}
+
+.action-btn.publish:hover {
+    background: #2563eb;
+    box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+    .main-content {
+        max-width: 95%;
+        padding: 30px;
+    }
 }
 </style>
