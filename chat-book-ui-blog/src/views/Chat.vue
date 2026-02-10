@@ -99,6 +99,7 @@ import ChatUserCard from "@/components/widget/ChatUserCard.vue";
 import ChatMessage from "@/components/widget/ChatMsgCard.vue";
 import { getFriendList, queryUserMessage } from "@/api/user.js";
 import { API_CONFIG } from "@/config/index.js";
+import SocketService from "@/utils/websocket.js";
 
 const friends = ref([])
 const messages = ref([])
@@ -146,42 +147,44 @@ const scrollToBottom = () => {
 }
 
 // WebSocket 相关
-let socket;
+let socketService;
 const newMessage = ref('')
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
     let baseUrl = API_CONFIG.baseURL || 'http://localhost:8080';
     let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
-    socket = new WebSocket(`${wsUrl}/user/chat`, [token]);
 
-    socket.onopen = function (event) {
+    socketService = new SocketService(`${wsUrl}/user/ws`, token);
+
+    socketService.onOpen(() => {
         console.log('已连接到服务器');
-        sendSystemMessage()
-    };
+        sendSystemMessage();
+    });
 
-    socket.onmessage = function (event) {
-        const parse = JSON.parse(event.data)
-        if (parse.type === 'SYSTEM') {
-            ElMessage.success(parse.data)
-        } else if (parse.type === 'USER') {
-            messages.value.push({
-                sender: 'other',
-                content: parse.data.content,
-                avatar: selectedFriend.value?.photo,
-            })
-            nextTick(() => {
-                scrollToBottom()
-            })
-        }
-    }
+    socketService.on('SYSTEM', (data) => {
+        ElMessage.success(data);
+    });
 
-    socket.onclose = function (event) {
+    socketService.on('USER', (data) => {
+        messages.value.push({
+            sender: 'other',
+            content: data.content,
+            avatar: selectedFriend.value?.photo,
+        })
+        nextTick(() => {
+            scrollToBottom()
+        })
+    });
+
+    socketService.onClose(() => {
         console.log('已断开与服务器的连接');
-    };
+    });
 
-    socket.onerror = function (error) {
+    socketService.onError((error) => {
         console.log('错误: ' + error.message);
-    };
+    });
+
+    socketService.connect();
 }
 
 const sendMessage = () => {
@@ -196,9 +199,8 @@ const sendMessage = () => {
 };
 
 const sendSystemMessage = () => {
-    const messageJSON = JSON.stringify({ type: "SYSTEM", data: null });
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(messageJSON);
+    if (socketService && socketService.isConnected()) {
+        socketService.send("SYSTEM", null);
     }
 };
 
@@ -214,13 +216,9 @@ const sendUserMessageBox = () => {
 };
 
 const sendUserMessage = () => {
-    const messageJSON = JSON.stringify({
-        type: "USER",
-        data: { receiverId: selectedFriend.value.userId, content: newMessage.value }
-    });
-    if (socket && socket.readyState === WebSocket.OPEN) {
+    if (socketService && socketService.isConnected()) {
+        socketService.send("USER", { receiverId: selectedFriend.value.userId, content: newMessage.value });
         newMessage.value = ''
-        socket.send(messageJSON);
     } else {
         ElMessage.error('消息发送失败，连接已断开')
     }
@@ -232,8 +230,8 @@ onMounted(() => {
 })
 
 onUnmounted(() => {
-    if (socket) {
-        socket.close();
+    if (socketService) {
+        socketService.close();
     }
 })
 </script>

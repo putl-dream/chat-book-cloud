@@ -1,37 +1,23 @@
 <template>
     <div class="text-toolbar">
-        <CreativeHeader/>
+        <CreativeHeader />
         <div class="toolbar-container">
             <!-- 工具栏 -->
             <el-text v-if="save" style="color: #212121;font-size: 12px">自动保存中...</el-text>
             <el-text v-else style="color: #212121;font-size: 12px">文章已保存...</el-text>
-            <Toolbar
-                :editor="editor"
-                :mode="mode"
-            />
+            <Toolbar :editor="editor" :mode="mode" />
         </div>
     </div>
 
     <div class="main-content">
         <!-- 标题区域 -->
         <div class="title-area">
-            <input
-                type="text"
-                v-model="title"
-                placeholder="请输入文章标题"
-                class="title-input"
-                @input="onInput"
-            />
+            <input type="text" v-model="title" placeholder="请输入文章标题" class="title-input" @input="onInput" />
         </div>
 
         <!-- 内容区域 -->
-        <Editor
-            class="main-content-editor"
-            v-model="html"
-            :defaultConfig="editorConfig"
-            :mode="mode"
-            @onCreated="onCreated"
-        />
+        <Editor class="main-content-editor" v-model="html" :defaultConfig="editorConfig" :mode="mode"
+            @onCreated="onCreated" />
     </div>
     <div class="footer-card">
         <div class="word-count">
@@ -45,12 +31,14 @@
 </template>
 
 <script setup>
-import {onMounted, onUnmounted, ref, watch} from 'vue';
+import { onMounted, onUnmounted, ref, watch } from 'vue';
 import '@wangeditor/editor/dist/css/style.css'; // 引入样式
-import {Editor, Toolbar} from '@wangeditor/editor-for-vue';
+import { Editor, Toolbar } from '@wangeditor/editor-for-vue';
 import CreativeHeader from "@/components/CreativeHeader.vue";
-import {ElMessage} from "element-plus";
-import {onBeforeRouteUpdate, useRoute} from "vue-router";
+import { ElMessage } from "element-plus";
+import { onBeforeRouteUpdate, useRoute } from "vue-router";
+import SocketService from "@/utils/websocket.js";
+import { API_CONFIG } from "@/config/index.js";
 
 // 初始化 wangEditor
 let title = ref('');
@@ -68,7 +56,7 @@ if (!editorConfig.MENU_CONF) {
 }
 
 editorConfig.MENU_CONF['uploadImage'] = {
-    server: 'http://localhost:8080/article/file/upload',
+    server: `${API_CONFIG.baseURL}/article/file/upload`,
     fieldName: 'file',
     maxFileSize: 1024 * 1024, // 1M
     maxNumberOfFiles: 10,
@@ -100,68 +88,59 @@ function countWords() {
 const wordCount = ref(countWords());
 watch(html, () => {
     wordCount.value = countWords();
-}, {immediate: true})
+}, { immediate: true })
 
 
 // WebSocket 相关
-let socket;
+let socketService;
 let debounceTimeout;
 let save = ref(false);
 
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
-    socket = new WebSocket('ws://localhost:8080/article/ws', [token]);
+    // 构建 WebSocket URL
+    let baseUrl = API_CONFIG.baseURL || 'http://localhost:8080';
+    let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
 
-    socket.onopen = function (event) {
+    socketService = new SocketService(`${wsUrl}/article/ws`, token);
+
+    socketService.onOpen(() => {
         console.log('已连接到服务器');
         if (articleId && articleId !== '') {
             console.log("存在文章ID-->>", articleId, "正在查询")
             sendMessage('SELECT')
         }
-    };
+    });
 
-    socket.onmessage = function (event) {
-        const parse = JSON.parse(event.data)
-        messageHandler(parse)
-    };
-
-    socket.onclose = function (event) {
+    socketService.onClose(() => {
         console.log('已断开与服务器的连接');
-    };
+    });
 
-    socket.onerror = function (error) {
+    socketService.onError((error) => {
         console.log('错误: ' + error.message);
-    };
-}
-// 消息处理
-const messageHandler = (parse) => {
-    console.log("消息处理-->>", parse)
-    switch (parse.type) {
-        case 'USER':
-            console.log("用户消息-->>", parse.data)
-            break;
-        case 'SYSTEM':
-            console.log("系统消息-->>", parse.data)
-            break;
-        case 'CACHE':
-            save.value = false;
-            break;
-        case 'SAVE':
-            console.log("保存消息-->>", parse.data)
-            ElMessage.success(parse.data)
-            window.location.href = '/';
-            break;
-        case 'PUBLISH':
-            console.log("发布消息-->>", parse.data)
-            ElMessage.success(parse.data)
-            window.location.href = '/';
-            break;
-        case 'SELECT':
-            console.log("查询消息-->>", parse.data)
-            html.value = parse.data.content;
-            title.value = parse.data.title;
-            break;
-    }
+    });
+
+    // 注册消息处理函数
+    socketService.on('USER', (data) => console.log("用户消息-->>", data));
+    socketService.on('SYSTEM', (data) => console.log("系统消息-->>", data));
+    socketService.on('CACHE', () => save.value = false);
+    socketService.on('SAVE', (data) => {
+        console.log("保存消息-->>", data);
+        ElMessage.success(data);
+        window.location.href = '/';
+    });
+    socketService.on('PUBLISH', (data) => {
+        console.log("发布消息-->>", data);
+        ElMessage.success(data);
+        window.location.href = '/';
+    });
+    socketService.on('SELECT', (data) => {
+        console.log("查询消息-->>", data);
+        html.value = data.content;
+        title.value = data.title;
+    });
+
+    socketService.connect();
 }
 
 // 监听标题输入事件
@@ -203,12 +182,12 @@ async function publishContent() {
 }
 
 const sendMessage = (type) => {
-    const messageJSON = JSON.stringify({type: type, data: {id: articleId, title: title.value, content: html.value}});
-    if (socket && socket.readyState === WebSocket.OPEN) {
-        socket.send(messageJSON);
+    const data = { id: articleId, title: title.value, content: html.value };
+    if (socketService && socketService.isConnected()) {
+        socketService.send(type, data);
     } else {
-        console.log('WebSocket 未打开,当前状态: ' + socket.readyState);
-        window.location.reload();
+        console.log('WebSocket 未打开');
+        // window.location.reload(); // 可选：是否重载页面
     }
 };
 
@@ -223,7 +202,25 @@ onMounted(() => {
 });
 
 onUnmounted(() => {
-    saveContent()
+    // 这里要注意：saveContent 有 timeout，如果组件卸载了 socketService 可能还在（如果是全局的），
+    // 但这里 socketService 是局部变量。
+    // 为了确保发送，我们应该立即发送而不是等待
+    // 或者，由于 socketService 是在 setup 中定义的，它会随着组件销毁而丢失引用，
+    // 但 WebSocket 连接本身如果是异步的，可能还会保持一小会儿？
+    // 最好的做法是不要在 unmounted 中做异步操作，或者使用 sendBeacon (但这是 ws)。
+    // 我们可以尝试直接调用 send 而不使用 timeout
+    // 不过原来的代码就是这样写的。保留原逻辑，但需要注意 socketService 实例。
+
+    // 如果想要确保发送，可以尝试直接发送:
+    // sendMessage('SAVE'); 
+    // 但原逻辑是 saveContent() -> setTimeout.
+    saveContent();
+    // 不要立即 close，否则 timeout 里的 send 会失败。
+    // 只有当确定不需要 socket 时才 close。
+    // 但如果不 close，会泄露连接。
+    // 鉴于原代码没有显式 close，这里也可以不显式 close，让浏览器处理。
+    // 或者在 saveContent 的 timeout 后 close? 比较复杂。
+    // 简单起见，暂不显式 close，或者仅在非 save 场景下 close。
 });
 
 // 监听路由变化
@@ -314,7 +311,9 @@ onBeforeRouteUpdate((to, from) => {
     padding: 8px;
     box-sizing: border-box;
     font-size: 1.5em;
-    border: none; /* 移除边框 */
-    outline: none; /* 移除选中时的黑框 */
+    border: none;
+    /* 移除边框 */
+    outline: none;
+    /* 移除选中时的黑框 */
 }
 </style>
