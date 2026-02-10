@@ -29,7 +29,7 @@
               </div>
               <div class="info-item">
                 <span class="dot secondary"></span>
-                {{ item.author }}
+                {{ item.userName }}
               </div>
             </div>
           </div>
@@ -338,7 +338,6 @@ onUnmounted(() => {
 }
 
 .info-list {
-  display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   gap: 12px;

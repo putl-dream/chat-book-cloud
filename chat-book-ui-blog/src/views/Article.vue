@@ -1,42 +1,44 @@
 <template>
     <div class="article-page">
         <div class="article-detail">
-            <div class="article-buttons glass-panel-mini">
-                <div class="action-item">
-                    <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }"
-                        @click="handleLike">
-                        <el-icon>
-                            <Pointer />
-                        </el-icon>
-                    </el-button>
-                    <span class="action-label">点赞</span>
-                </div>
-                <div class="action-item">
-                    <el-button class="action-btn" size="large" circle
-                        :class="{ 'is-active': activePanel === 'comment' }" @click="handleComment">
-                        <el-icon>
-                            <ChatLineRound />
-                        </el-icon>
-                    </el-button>
-                    <span class="action-label">评论</span>
-                </div>
-                <div class="action-item">
-                    <el-button class="action-btn ai-btn" size="large" circle
-                        :class="{ 'is-active': activePanel === 'ai' }" @click="handleAiChat">
-                        <el-icon>
-                            <Service />
-                        </el-icon>
-                    </el-button>
-                    <span class="action-label">AI助手</span>
-                </div>
-                <div class="action-item">
-                    <el-button class="action-btn" size="large" circle :class="{ 'is-active': collectStat !== 0 }"
-                        @click="handleFavorite">
-                        <el-icon>
-                            <Star />
-                        </el-icon>
-                    </el-button>
-                    <span class="action-label">收藏</span>
+            <div class="left-sidebar">
+                <div class="article-buttons glass-panel-mini">
+                    <div class="action-item">
+                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }"
+                            @click="handleLike">
+                            <el-icon>
+                                <Pointer />
+                            </el-icon>
+                        </el-button>
+                        <span class="action-label">点赞</span>
+                    </div>
+                    <div class="action-item">
+                        <el-button class="action-btn" size="large" circle
+                            :class="{ 'is-active': activePanel === 'comment' }" @click="handleComment">
+                            <el-icon>
+                                <ChatLineRound />
+                            </el-icon>
+                        </el-button>
+                        <span class="action-label">评论</span>
+                    </div>
+                    <div class="action-item">
+                        <el-button class="action-btn ai-btn" size="large" circle
+                            :class="{ 'is-active': activePanel === 'ai' }" @click="handleAiChat">
+                            <el-icon>
+                                <Service />
+                            </el-icon>
+                        </el-button>
+                        <span class="action-label">AI助手</span>
+                    </div>
+                    <div class="action-item">
+                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': collectStat !== 0 }"
+                            @click="handleFavorite">
+                            <el-icon>
+                                <Star />
+                            </el-icon>
+                        </el-button>
+                        <span class="action-label">收藏</span>
+                    </div>
                 </div>
             </div>
 
@@ -46,7 +48,7 @@
                     <div class="article-meta">
                         <div class="meta-item">
                             <span class="label">作者</span>
-                            <span class="value">{{ article.author }}</span>
+                            <span class="value">{{ article.userName }}</span>
                         </div>
                         <div class="meta-divider"></div>
                         <div class="meta-item">
@@ -65,7 +67,10 @@
                 </main>
             </div>
 
-            <div class="article-right" :class="{ 'expanded-panel glass-panel': activePanel !== 'default' }">
+            <div class="resize-handle" @mousedown="startResize"></div>
+
+            <div class="article-right" :style="{ width: rightSidebarWidth + 'px' }"
+                :class="{ 'expanded-panel glass-panel': activePanel !== 'default' }">
                 <transition name="fade-slide" mode="out-in">
                     <keep-alive>
                         <component :is="componentMap[activePanel]" :userId="article.authorId" :articleId="articleId" />
@@ -98,6 +103,42 @@ const article = ref({});
 const praiseStat = ref(0);
 const collectStat = ref(0);
 const activePanel = ref('default'); // default, comment, ai
+
+// 侧边栏宽度
+const rightSidebarWidth = ref(300);
+const isResizing = ref(false);
+
+const startResize = () => {
+    isResizing.value = true;
+    document.addEventListener('mousemove', handleResize);
+    document.addEventListener('mouseup', stopResize);
+    document.body.style.cursor = 'col-resize';
+    document.body.style.userSelect = 'none';
+};
+
+const handleResize = (e) => {
+    if (!isResizing.value) return;
+    const container = document.querySelector('.article-detail');
+    if (container) {
+        const containerRect = container.getBoundingClientRect();
+        // 计算右侧宽度：容器右边界 - 鼠标X坐标 - 容器右padding
+        let newWidth = containerRect.right - e.clientX - 24; // 24 is padding-right
+
+        // 限制最小和最大宽度
+        if (newWidth < 200) newWidth = 200;
+        if (newWidth > 600) newWidth = 600;
+
+        rightSidebarWidth.value = newWidth;
+    }
+};
+
+const stopResize = () => {
+    isResizing.value = false;
+    document.removeEventListener('mousemove', handleResize);
+    document.removeEventListener('mouseup', stopResize);
+    document.body.style.cursor = '';
+    document.body.style.userSelect = '';
+};
 
 const componentMap = {
     'default': SidebarDefault,
@@ -161,56 +202,79 @@ onMounted(() => {
 
 .article-detail {
     display: flex;
-    max-width: 1400px;
+    max-width: 1600px;
     margin: 0 auto;
-    gap: 12px;
+    gap: 0;
     padding: 24px var(--container-padding);
     position: relative;
-    align-items: flex-start;
+    align-items: stretch;
     height: 100%;
     overflow: hidden;
     box-sizing: border-box;
 }
 
-.glass-panel {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-    border-radius: 24px;
+.left-sidebar {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    flex-shrink: 0;
+    width: 84px; /* 固定宽度 */
 }
 
-.glass-panel-mini {
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
-    border-radius: 50px;
+.resize-handle {
+    width: 20px;
+    margin: 0 -9px;
+    cursor: col-resize;
+    position: relative;
+    z-index: 100;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* 视觉上的分割线 */
+.resize-handle::after {
+    content: '';
+    width: 4px;
+    height: 40px;
+    background-color: rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.resize-handle:hover::after,
+.resize-handle:active::after {
+    height: 100%;
+    background-color: var(--color-primary);
+    opacity: 0.5;
 }
 
 .content {
     flex: 1;
     min-width: 0;
-    padding: 40px 60px;
+    padding: 30px 50px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    margin-left: 96px;
+    margin-left: 0;
+    /* 移除原来的margin */
 }
 
 .article-header {
     border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding-bottom: 24px;
-    margin-bottom: 24px;
+    padding-bottom: 20px;
+    margin-bottom: 20px;
 }
 
 .article-title {
-    font-size: 2.5rem;
-    font-weight: 800;
+    font-size: 1.8rem;
+    font-weight: 700;
     color: var(--text-color-primary);
-    line-height: 1.3;
-    margin: 0 0 24px;
-    letter-spacing: -0.02em;
+    line-height: 1.4;
+    margin: 0 0 16px;
+    letter-spacing: -0.01em;
 }
 
 .article-meta {
@@ -224,7 +288,7 @@ onMounted(() => {
 .meta-item {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .meta-item .label {
@@ -257,10 +321,11 @@ onMounted(() => {
     gap: 24px;
     height: fit-content;
     padding: 24px 12px;
-    position: absolute;
-    left: var(--container-padding);
-    top: 50%;
-    transform: translateY(-50%);
+    position: relative;
+    /* 改回 relative */
+    left: auto;
+    top: auto;
+    transform: none;
     z-index: 10;
 }
 
@@ -268,7 +333,7 @@ onMounted(() => {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
 }
 
 .action-btn {
@@ -306,13 +371,13 @@ onMounted(() => {
 }
 
 .article-right {
-    width: 340px;
+    /* width由JS控制 */
     flex-shrink: 0;
     display: flex;
     flex-direction: column;
     gap: 8px;
     height: 100%;
-    transition: all 0.4s ease;
+    transition: width 0.1s linear; /* 减少过渡时间使拖拽更跟手，或者移除过渡 */
 }
 
 .article-right.expanded-panel {
