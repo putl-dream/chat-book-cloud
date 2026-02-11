@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.putl.userservice.common.enums.RoleEnum;
 import lombok.Builder;
 import lombok.Data;
 
@@ -37,7 +38,7 @@ public class UserInfoDO {
     private String profile;
 
     //角色(0普通用户，1管理员)
-    private Integer role;
+    private RoleEnum role;
 
     //创建时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")

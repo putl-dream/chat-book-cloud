@@ -3,6 +3,7 @@ package com.putl.articleservice.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.articleservice.controller.vo.ArticleVO;
+import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
@@ -161,7 +162,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      * @param status    新的状态值
      */
     @Override
-    public void updateArticleStatus(Integer articleId, Integer status) {
+    public void updateArticleStatus(Integer articleId, ArticleStatus status) {
         ArticleDO articleDO = articleMapper.selectById(articleId);
         if (articleDO != null) {
             articleDO.setStatus(status);
