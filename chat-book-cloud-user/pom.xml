@@ -19,6 +19,13 @@
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
+
+        <!-- Article API -->
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-api-article</artifactId>
+            <version>1.0.0</version>
+        </dependency>
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-test</artifactId>

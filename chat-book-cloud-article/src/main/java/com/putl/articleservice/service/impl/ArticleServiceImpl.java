@@ -32,7 +32,7 @@ import java.util.List;
 public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleService {
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
-    private final com.putl.articleservice.client.UserClient userClient;
+    private final com.putl.userservice.api.UserClient userClient;
 
     /**
      * 获取文章基本信息。
@@ -63,7 +63,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             String currentUserIdStr = UserContext.getUserId();
             Integer currentUserId = currentUserIdStr != null ? Integer.valueOf(currentUserIdStr) : 0;
             
-            com.putl.articleservice.client.result.UserFootVO userFoot = userClient.getUserFoot(articleId, currentUserId);
+            com.putl.userservice.api.dto.UserFootVO userFoot = userClient.getUserFoot(articleId, currentUserId);
             if (userFoot != null) {
                 articleVO.setViewCount(userFoot.getViewCount());
                 articleVO.setPraiseStat(userFoot.getPraiseStat() != null ? userFoot.getPraiseStat().intValue() : 0);

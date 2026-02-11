@@ -1,11 +1,15 @@
-package com.putl.articleservice.client.result;
+package com.putl.userservice.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Data;
+import lombok.AllArgsConstructor;
+import lombok.NoArgsConstructor;
 
 @Data
 @Builder
+@AllArgsConstructor
+@NoArgsConstructor
 @Schema(description = "文章数据信息")
 public class UserFootVO {
     @Schema(description = "文章id")
