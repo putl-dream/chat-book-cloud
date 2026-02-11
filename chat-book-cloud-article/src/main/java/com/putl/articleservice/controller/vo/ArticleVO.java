@@ -38,6 +38,18 @@ public class ArticleVO {
     @Schema(description = "文章内容")
     private String content;
 
+    @Schema(description = "文章封面")
+    private String cover;
+
+    @Schema(description = "文章分类")
+    private Integer category;
+
+    @Schema(description = "文章摘要")
+    private String abstractText;
+
+    @Schema(description = "文章状态")
+    private Integer status;
+
     @Schema(description = "点赞类型")
     private Integer praiseStat;
 

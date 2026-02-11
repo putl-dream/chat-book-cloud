@@ -13,9 +13,9 @@ public class UserFootVO {
     @Schema(description = "用户id")
     private Integer userId;
     @Schema(description = "点赞类型")
-    private Long praiseStat;
+    private Integer praiseStat;
     @Schema(description = "收藏类型")
-    private Long collectStat;
+    private Integer collectStat;
     @Schema(description = "阅读量")
     private Long viewCount;
 }

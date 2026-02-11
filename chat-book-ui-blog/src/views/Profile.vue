@@ -140,12 +140,7 @@ const fetchUserData = async () => {
 const fetchUserPosts = async () => {
     loading.value = true;
     try {
-        // 确保 userId 存在
-        if (!user.value || !user.value.id) {
-            console.warn('User ID is missing, cannot fetch posts');
-            return;
-        }
-        const res = await getUserArticlePage(1, 10, user.value.id);
+        const res = await getUserArticlePage(1, 10);
         if (res && res.list) {
             posts.value = res.list;
         }

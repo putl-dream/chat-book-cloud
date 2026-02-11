@@ -11,6 +11,7 @@ import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/user/foot")
 @RequiredArgsConstructor
+@Slf4j
 public class UserFootController {
     private final UserFootService userFootService;
 
@@ -78,7 +80,8 @@ public class UserFootController {
 
     @Operation(summary = "获取用户浏览记录")
     @GetMapping("/getHistory")
-    public CommonResult<List<ArticleListVO>> getHistory(@RequestParam Integer page, @RequestParam Integer size){
+    public CommonResult<List<ArticleListVO>> getHistory(@RequestParam("page") Integer page, @RequestParam("size") Integer size){
+        log.info("Entering getHistory interface: page={}, size={}", page, size);
         String userId = UserContext.getUserId();
         if (userId == null) {
             return CommonResult.error(ErrorType.ERROR_401);

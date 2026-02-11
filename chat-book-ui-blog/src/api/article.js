@@ -149,8 +149,8 @@ export function getUserCollectPage(pageNo, pageSize) {
  * @param {number} pageSize
  * @param {string} userId
  */
-export function getUserArticlePage(pageNo, pageSize, userId) {
-    return request.post('/page/userArticlePage', { pageNo, pageSize, userId });
+export function getUserArticlePage(pageNo, pageSize) {
+    return request.post('/page/userArticlePage', { pageNo, pageSize });
 }
 
 /**

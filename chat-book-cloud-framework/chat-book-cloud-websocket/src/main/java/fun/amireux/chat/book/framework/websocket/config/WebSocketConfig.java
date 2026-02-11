@@ -20,9 +20,13 @@ public class WebSocketConfig implements WebSocketConfigurer {
     @Resource
     private WebSocketHandler webSocketHandler;
 
+    @Resource
+    private fun.amireux.chat.book.framework.websocket.server.AuthHandshakeInterceptor authHandshakeInterceptor;
+
     @Override
     public void registerWebSocketHandlers(WebSocketHandlerRegistry registry) {
         registry.addHandler(webSocketHandler, WS_PATH)
+                .addInterceptors(authHandshakeInterceptor)
                 .setAllowedOrigins("*");
 //                .withSockJS()
 //                .setStreamBytesLimit(512 * 1024)

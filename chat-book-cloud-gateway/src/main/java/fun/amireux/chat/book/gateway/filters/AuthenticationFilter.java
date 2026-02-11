@@ -107,6 +107,27 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         if (token == null || token.isEmpty()) {
             token = request.getHeaders().getFirst("token");
         }
+        if (token == null || token.isEmpty()) {
+            token = request.getQueryParams().getFirst("token");
+        }
+        if (token == null || token.isEmpty()) {
+            List<String> protocols = request.getHeaders().get("Sec-WebSocket-Protocol");
+            if (!CollectionUtils.isEmpty(protocols)) {
+                for (String protocol : protocols) {
+                    if (protocol != null && !protocol.isEmpty()) {
+                        String[] parts = protocol.split(",");
+                        for (String part : parts) {
+                            String trimmed = part.trim();
+                            if (trimmed.length() > 20) {
+                                token = trimmed;
+                                break;
+                            }
+                        }
+                    }
+                    if (token != null) break;
+                }
+            }
+        }
         return token;
     }
 

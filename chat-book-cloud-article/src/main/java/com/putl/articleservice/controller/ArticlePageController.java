@@ -3,7 +3,6 @@ package com.putl.articleservice.controller;
 import com.putl.articleservice.controller.dto.CategoryPageRequestDTO;
 import com.putl.articleservice.controller.dto.PageRequestDTO;
 import com.putl.articleservice.controller.dto.SearchPageRequestDTO;
-import com.putl.articleservice.controller.dto.UserPageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.utils.PageResult;
@@ -86,16 +85,8 @@ public class ArticlePageController {
 
     @Operation(summary = "获取用户发布的文章列表")
     @PostMapping("/userArticlePage")
-    public CommonResult<PageResult<ArticleListVO>> getUserArticlePage(@Valid @RequestBody UserPageRequestDTO request) {
-        Integer userId = request.getUserId();
-        if (userId == null) {
-            String currentUserId = UserContext.getUserId();
-            if (currentUserId != null) {
-                userId = Integer.valueOf(currentUserId);
-            } else {
-                 throw new IllegalArgumentException("用户ID不能为空");
-            }
-        }
+    public CommonResult<PageResult<ArticleListVO>> getUserArticlePage(@Valid @RequestBody PageRequestDTO request) {
+        Integer userId = Integer.valueOf(UserContext.getUserId());
         return CommonResult.success(articlePageService.getUserArticlePage(request.getPageNo(), request.getPageSize(), userId));
     }
 
