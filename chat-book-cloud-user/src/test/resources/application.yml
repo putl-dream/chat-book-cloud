@@ -6,7 +6,7 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
   sql:
     init:
-      mode: always
+      mode: never
   data:
     redis:
       host: 127.0.0.1
@@ -16,3 +16,18 @@ spring:
     port: 5672
     username: guest
     password: guest
+  mail:
+    host: localhost
+    username: test@example.com
+    password: test
+    port: 1025
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 0
