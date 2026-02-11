@@ -20,7 +20,4 @@ public class AmqpTest {
 
         rabbitTemplate.convertAndSend(queueName, message);
     }
-
-
-
 }
