@@ -67,8 +67,8 @@ public class UserClientFallback implements FallbackFactory<UserClient> {
                 return UserFootVO.builder()
                         .articleId(articleId)
                         .userId(0)
-                        .praiseStat(0L)
-                        .collectStat(0L)
+                        .praiseStat(0)
+                        .collectStat(0)
                         .viewCount(0L)
                         .build();
             }

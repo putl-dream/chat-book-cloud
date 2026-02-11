@@ -4,7 +4,7 @@
             <h4 class="post-title">{{ post.title }}</h4>
         </div>
         <div class="post-summary">
-            <p class="summary-text">{{ post.summary }}</p>
+            <p class="summary-text">{{ post.abstractText }}</p>
         </div>
         <div class="post-footer">
             <div class="post-meta">

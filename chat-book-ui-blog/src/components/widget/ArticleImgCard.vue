@@ -1,14 +1,14 @@
 <template>
     <div class="post-card">
         <div class="post-picture" @click='openArticle(post.id)'>
-            <el-image :src="post.articleCover" fit="cover" style="width: 150px;height: 100px"/>
+            <el-image :src="post.cover" fit="cover" style="width: 150px;height: 100px"/>
         </div>
         <div class="post-context">
             <div class="post-header" @click="openArticle(post.id)">
                 <h4 class="post-title">{{ post.title }}</h4>
             </div>
             <div class="post-summary" @click="openArticle(post.id)">
-                <el-text truncated>{{ post.summary }}</el-text>
+                <el-text truncated>{{ post.abstractText }}</el-text>
             </div>
             <div class="post-footer">
                 <div class="post-meta" @click="openArticle(post.id)">

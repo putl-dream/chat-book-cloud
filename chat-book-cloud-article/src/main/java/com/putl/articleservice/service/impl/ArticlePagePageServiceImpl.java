@@ -211,7 +211,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     public PageResult<ArticleListVO> getUserArticlePage(Integer pageNo, Integer pageSize, Integer userId) {
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getUserId, userId)
-                .eq(ArticleDO::getStatus, 1)
+//                .eq(ArticleDO::getStatus, 1)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }
@@ -228,7 +228,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     public PageResult<ArticleListVO> getUserDraftArticlePage(Integer pageNo, Integer pageSize, Integer userId) {
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getUserId, userId)
-                .eq(ArticleDO::getStatus, 0)
+//                .eq(ArticleDO::getStatus, 0)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }
