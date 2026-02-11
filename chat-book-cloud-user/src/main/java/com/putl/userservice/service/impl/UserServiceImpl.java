@@ -38,7 +38,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userInfo == null) {
             throw new RuntimeException("用户信息未找到(user_info缺失)，请联系管理员");
         }
-        String role = Objects.equals(userInfo.getRole(), RoleEnum.USER.getCode()) ? "user" : "admin";
+        String role = (userInfo.getRole() == RoleEnum.USER) ? "user" : "admin";
         return UserVO.builder().id(userInfo.getId()).userId(id).username(userInfo.getUsername()).email(user.getEmail()).photo(userInfo.getPhoto()).profile(userInfo.getProfile()).role(role).build();
     }
 

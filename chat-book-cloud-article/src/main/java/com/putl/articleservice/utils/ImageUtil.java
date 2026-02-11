@@ -77,7 +77,13 @@ public class ImageUtil {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return "http://localhost:8080/images/" + ImgName;
+        return baseUrl + "/images/" + ImgName;
+    }
+
+    private static String baseUrl = "http://localhost:8080";
+
+    public static void setBaseUrl(String baseUrl) {
+        ImageUtil.baseUrl = baseUrl;
     }
 
     public static void main(String[] args){

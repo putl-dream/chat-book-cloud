@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: article-service
+  cloud:
+    nacos:
+      discovery:
+        enabled: false
+      config:
+        enabled: false
