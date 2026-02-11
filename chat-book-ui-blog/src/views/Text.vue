@@ -180,7 +180,7 @@ let save = ref(false);
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
     // 构建 WebSocket URL
-    let baseUrl = API_CONFIG.baseURL || 'http://localhost:8080';
+    let baseUrl = API_CONFIG.baseURL;
     let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
 
     socketService = new SocketService(`${wsUrl}/article/ws`, token);

@@ -6,6 +6,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -26,6 +27,9 @@ import java.util.UUID;
 @RestController
 @RequestMapping("/article/file")
 public class FileController {
+
+    @Value("${file.storage.base-url}")
+    private String fileBaseUrl;
 
     private static final String BASE_UPLOAD_DIR = "upload/";
     private static final Map<String, String> DIRECTORY_MAP = new HashMap<>();
@@ -71,7 +75,7 @@ public class FileController {
             Files.write(filePath, bytes);
 
             // 返回文件路径
-            String str = "http://localhost" + ":" + 8080 + "/" + directory + fileName;
+            String str = fileBaseUrl + "/" + directory + fileName;
             log.info("文件保存成功: {}", str);
             return ImageResult.success(new Img(str, file.getOriginalFilename(), null));
         } catch (IOException e) {
