@@ -1,7 +1,7 @@
 <template>
     <div class="post-card">
         <div class="post-picture" @click='openArticle(post.id)'>
-            <el-image :src="post.cover" fit="cover" style="width: 150px;height: 100px"/>
+            <el-image :src="post.cover" fit="cover" style="width: 150px;height: 100px" />
         </div>
         <div class="post-context">
             <div class="post-header" @click="openArticle(post.id)">
@@ -12,31 +12,31 @@
             </div>
             <div class="post-footer">
                 <div class="post-meta" @click="openArticle(post.id)">
-                    <el-avatar class="userInfo" :src="post.authorAvatar" size="small" style="margin-right: 10px"/>
+                    <el-avatar class="userInfo" :src="post.authorAvatar" size="small" style="margin-right: 10px" />
                     <div class="meta-details">
-                        <el-text class="userInfo"><b>{{ post.author }}</b></el-text>
-                        <el-text class="userInfo">{{ post.time }}</el-text>
+                        <el-text class="userInfo"><b>{{ post.userName }}</b></el-text>
+                        <el-text class="userInfo">{{ post.createTime }}</el-text>
                         <el-text class="userInfo">
                             <el-icon class="el-icon-img">
-                                <View/>
+                                <View />
                             </el-icon>
                             {{ post.viewCount }}
                         </el-text>
                         <el-text class="userInfo">
                             <el-icon class="el-icon-img">
-                                <ChatDotSquare/>
+                                <ChatDotSquare />
                             </el-icon>
                             {{ post.commentCount }}
                         </el-text>
                         <el-text class="userInfo">
                             <el-icon class="el-icon-img">
-                                <Star/>
+                                <Star />
                             </el-icon>
                             {{ post.collectCount }}
                         </el-text>
                         <el-text class="userInfo">
                             <el-icon class="el-icon-img">
-                                <Pointer/>
+                                <Pointer />
                             </el-icon>
                             {{ post.praiseCount }}
                         </el-text>
@@ -53,8 +53,8 @@
 
 
 <script setup>
-import {ChatDotSquare, Pointer, Star, View} from "@element-plus/icons-vue";
-import {ElAvatar} from "element-plus";
+import { ChatDotSquare, Pointer, Star, View } from "@element-plus/icons-vue";
+import { ElAvatar } from "element-plus";
 import router from "@/router/index.js";
 
 defineProps({
@@ -65,10 +65,10 @@ defineProps({
 })
 const openArticle = async (id) => {
     console.log("文章id->", id)
-    await router.push({name: 'Article', params: {id}})
+    await router.push({ name: 'Article', params: { id } })
 }
 const handleEdit = async (id) => {
-    await router.push({name: 'Edit', params: {id}})
+    await router.push({ name: 'Edit', params: { id } })
 }
 </script>
 
@@ -115,7 +115,8 @@ const handleEdit = async (id) => {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    min-width: 0; /* Fix flex child overflow */
+    min-width: 0;
+    /* Fix flex child overflow */
 }
 
 .post-header {

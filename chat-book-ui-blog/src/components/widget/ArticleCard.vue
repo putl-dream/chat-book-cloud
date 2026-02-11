@@ -10,7 +10,7 @@
             <div class="post-meta">
                 <div class="author-info">
                     <el-avatar class="user-avatar" :src="post.authorAvatar" :size="24" />
-                    <span class="author-name">{{ post.author }}</span>
+                    <span class="author-name">{{ post.userName }}</span>
                 </div>
 
                 <div class="meta-stats">
