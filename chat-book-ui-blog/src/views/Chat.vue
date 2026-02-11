@@ -151,7 +151,7 @@ let socketService;
 const newMessage = ref('')
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
-    let baseUrl = API_CONFIG.baseURL || 'http://localhost:8080';
+    let baseUrl = API_CONFIG.baseURL;
     let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
 
     socketService = new SocketService(`${wsUrl}/user/ws`, token);

@@ -1,6 +1,8 @@
 package com.putl.articleservice.controller.vo;
 
+import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.putl.articleservice.enums.ArticleStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
@@ -37,6 +39,18 @@ public class ArticleVO {
 
     @Schema(description = "文章内容")
     private String content;
+
+    @Schema(description = "文章封面")
+    private String cover;
+
+    @Schema(description = "文章分类")
+    private Integer category;
+
+    @Schema(description = "文章摘要")
+    private String abstractText;
+
+    @Schema(description = "文章状态")
+    private ArticleStatus status;
 
     @Schema(description = "点赞类型")
     private Integer praiseStat;

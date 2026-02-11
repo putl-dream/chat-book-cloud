@@ -33,6 +33,36 @@
                 <button class="action-btn publish" @click="publishContent">发布文章</button>
             </div>
         </div>
+        <el-dialog v-model="publishDialogVisible" title="发布文章" width="500px">
+            <el-form :model="publishForm" label-width="80px">
+                <el-form-item label="文章分类">
+                    <el-select v-model="publishForm.category" placeholder="请选择分类">
+                        <el-option v-for="(name, key) in categoryOptions" :key="key" :label="name"
+                            :value="parseInt(key)" />
+                    </el-select>
+                </el-form-item>
+                <el-form-item label="文章摘要">
+                    <el-input v-model="publishForm.abstractText" type="textarea" :rows="3" placeholder="请输入文章摘要" />
+                </el-form-item>
+                <el-form-item label="文章封面">
+                    <el-upload class="avatar-uploader" action="" :http-request="handleUpload" :show-file-list="false"
+                        :before-upload="beforeAvatarUpload">
+                        <img v-if="publishForm.cover" :src="publishForm.cover" class="avatar"
+                            style="width: 100px; height: 100px; object-fit: cover;" />
+                        <el-icon v-else class="avatar-uploader-icon"
+                            style="border: 1px dashed #d9d9d9; border-radius: 6px; cursor: pointer; position: relative; overflow: hidden; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center;">
+                            <Plus />
+                        </el-icon>
+                    </el-upload>
+                </el-form-item>
+            </el-form>
+            <template #footer>
+                <span class="dialog-footer">
+                    <el-button @click="publishDialogVisible = false">取消</el-button>
+                    <el-button type="primary" @click="confirmPublish">确定发布</el-button>
+                </span>
+            </template>
+        </el-dialog>
     </div>
 </template>
 
@@ -44,6 +74,10 @@ import { ElMessage } from "element-plus";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 import SocketService from "@/utils/websocket.js";
 import { API_CONFIG } from "@/config/index.js";
+import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon } from 'element-plus';
+import { CATEGORY_NAMES } from '@/constants';
+import { uploadFile } from '@/api/article.js';
+import { Plus } from '@element-plus/icons-vue';
 
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
@@ -58,6 +92,57 @@ import Highlight from '@tiptap/extension-highlight';
 let title = ref('');
 const html = ref('');
 const wordCount = ref(0);
+
+// Publish Dialog State
+const publishDialogVisible = ref(false);
+const publishForm = ref({
+    category: null,
+    abstractText: '',
+    cover: ''
+});
+const categoryOptions = CATEGORY_NAMES;
+
+const handleUpload = async (option) => {
+    try {
+        const res = await uploadFile(option.file);
+        if (res && res.url) {
+            publishForm.value.cover = res.url;
+            ElMessage.success('上传成功');
+        } else {
+            ElMessage.error('上传失败');
+        }
+    } catch (e) {
+        console.error(e);
+        ElMessage.error('上传出错');
+    }
+}
+
+const beforeAvatarUpload = (rawFile) => {
+    if (rawFile.type !== 'image/jpeg' && rawFile.type !== 'image/png') {
+        ElMessage.error('Avatar picture must be JPG format!');
+        return false;
+    } else if (rawFile.size / 1024 / 1024 > 2) {
+        ElMessage.error('Avatar picture size can not exceed 2MB!');
+        return false;
+    }
+    return true;
+}
+
+const confirmPublish = () => {
+    if (!title.value) {
+        ElMessage.warning('请输入标题');
+        return;
+    }
+    if (!publishForm.value.category) {
+        ElMessage.warning('请选择分类');
+        return;
+    }
+    publishDialogVisible.value = false;
+    ElMessage.success('文章正在发布中！');
+    setTimeout(() => {
+        sendMessage('PUBLISH');
+    }, 1000);
+}
 
 // Tiptap Editor Initialization
 const editor = useEditor({
@@ -95,7 +180,7 @@ let save = ref(false);
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
     // 构建 WebSocket URL
-    let baseUrl = API_CONFIG.baseURL || 'http://localhost:8080';
+    let baseUrl = API_CONFIG.baseURL;
     let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
 
     socketService = new SocketService(`${wsUrl}/article/ws`, token);
@@ -134,6 +219,9 @@ const connectWebSocket = () => {
         console.log("查询消息-->>", data);
         html.value = data.content;
         title.value = data.title;
+        publishForm.value.category = data.category;
+        publishForm.value.abstractText = data.abstractText;
+        publishForm.value.cover = data.cover;
         // Sync editor content
         if (editor.value) {
             editor.value.commands.setContent(data.content);
@@ -175,15 +263,18 @@ async function saveContent() {
 
 // 发布内容
 async function publishContent() {
-    // 等待1s
-    ElMessage.success('文章正在发布中！')
-    setTimeout(() => {
-        sendMessage('PUBLISH')
-    }, 1000);
+    publishDialogVisible.value = true;
 }
 
 const sendMessage = (type) => {
-    const data = { id: articleId, title: title.value, content: html.value };
+    const data = {
+        id: articleId,
+        title: title.value,
+        content: html.value,
+        category: publishForm.value.category,
+        abstractText: publishForm.value.abstractText,
+        cover: publishForm.value.cover
+    };
     if (socketService && socketService.isConnected()) {
         console.log("发送消息-->>", type, data);
         socketService.send(type, data);

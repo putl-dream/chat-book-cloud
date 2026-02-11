@@ -17,7 +17,7 @@
                     :style="{ animationDelay: `${index * 0.1}s` }">
                     <div class="article-main">
                         <h3 class="article-title">{{ article.title }}</h3>
-                        <p class="article-summary">{{ article.summary }}</p>
+                        <p class="article-summary">{{ article.abstractText }}</p>
                         <div class="article-meta">
                             <span class="date">{{ formatDate(article.createTime) }}</span>
                         </div>

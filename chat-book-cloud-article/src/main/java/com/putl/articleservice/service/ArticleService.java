@@ -1,7 +1,7 @@
 package com.putl.articleservice.service;
 
 import com.putl.articleservice.controller.vo.ArticleVO;
-
+import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.utils.PageResult;
 
 /**
@@ -27,6 +27,6 @@ public interface ArticleService {
 
     void deleteArticleBatch(Integer[] articleIds);
 
-    void updateArticleStatus(Integer articleId, Integer status);
+    void updateArticleStatus(Integer articleId, ArticleStatus status);
 }
 

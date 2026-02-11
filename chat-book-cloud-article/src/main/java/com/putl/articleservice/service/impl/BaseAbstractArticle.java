@@ -70,8 +70,8 @@ public abstract class BaseAbstractArticle {
             UserFootVO userFoot = userClient.getUserFoot(article.getId(), 0);
             if (userFoot != null) {
                 article.setViewCount(userFoot.getViewCount());
-                article.setPraiseCount(userFoot.getPraiseStat());
-                article.setCommentCount(userFoot.getCollectStat());
+                article.setPraiseCount(Long.valueOf(userFoot.getPraiseStat()));
+                article.setCommentCount(Long.valueOf(userFoot.getCollectStat()));
             } else {
                 // 设置默认值，避免空指针异常
                 article.setViewCount(0L);

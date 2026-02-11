@@ -24,13 +24,11 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "文章标题")
     private String title;
 
-    @JsonProperty("cover")
     @Schema(description = "文章封面图片URL")
-    private String articleCover;
+    private String cover;
 
-    @JsonProperty("abstractText")
     @Schema(description = "文章摘要")
-    private String summary;
+    private String abstractText;
 
     @Schema(description = "作者名称")
     private String userName;

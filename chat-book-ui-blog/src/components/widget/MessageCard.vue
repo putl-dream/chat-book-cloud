@@ -6,7 +6,7 @@
         <div class="message-content">
             <div class="message-header">
                 <div class="user-action">
-                    <span class="username">{{ message.author }}</span>
+                    <span class="username">{{ message.userName }}</span>
                     <span class="action-text">{{ actionText }}</span>
                     <span class="article-link" @click.stop>
                         《{{ message.title }}》
@@ -15,9 +15,9 @@
                 <span class="time">{{ message.createTime }}</span>
             </div>
             
-            <div class="message-body" v-if="message.summary">
+            <div class="message-body" v-if="message.abstractText">
                 <div class="quote-box">
-                    {{ message.summary }}
+                    {{ message.abstractText }}
                 </div>
             </div>
         </div>

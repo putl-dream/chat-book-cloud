@@ -3,6 +3,7 @@ package com.putl.articleservice.mapper.entity;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
+import com.putl.articleservice.enums.ArticleStatus;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -46,7 +47,7 @@ public class ArticleDO implements Serializable {
     private String abstractText;
 
     //文章状态 0-待审核 1-审核通过 -1审核失败
-    private Integer status;
+    private ArticleStatus status;
 
     //创建时间
     private LocalDateTime createTime;
