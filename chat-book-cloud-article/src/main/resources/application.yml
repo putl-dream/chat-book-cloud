@@ -1,6 +1,11 @@
 spring:
   config:
     import: nacos:article-service-dev.yml
+  rabbitmq:
+    host: 127.0.0.1
+    port: 5672
+    username: admin
+    password: admin@2026
 
   datasource:
     url: jdbc:mysql://127.0.0.1:3306/ice-article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
