@@ -38,6 +38,25 @@ jobs:
         distribution: 'temurin'
         cache: maven
         
+    - name: Start MinIO
+      run: |
+        docker run -d -p 9000:9000 -p 9001:9001 --name minio \
+          -e MINIO_ROOT_USER=admin -e MINIO_ROOT_PASSWORD=admin@2026 \
+          minio/minio server /data --console-address ":9001"
+        
+        # Wait for MinIO to be ready
+        echo "Waiting for MinIO..."
+        timeout=60
+        while ! curl -s http://localhost:9000/minio/health/live > /dev/null; do
+          timeout=$((timeout-1))
+          if [ $timeout -eq 0 ]; then
+            echo "MinIO startup timed out"
+            exit 1
+          fi
+          sleep 1
+        done
+        echo "MinIO is up!"
+
     - name: Initialize Databases
       run: |
         # Wait for MySQL to be ready (service container is ready but user creation might lag)
