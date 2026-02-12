@@ -9,7 +9,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @EnableAsync
 @SpringBootApplication
 @ServletComponentScan
-@EnableFeignClients(basePackages = {"com.putl.userservice", "com.putl.articleservice.api"})
+@EnableFeignClients
 public class UserServiceApplication {
 
     public static void main(String[] args) {

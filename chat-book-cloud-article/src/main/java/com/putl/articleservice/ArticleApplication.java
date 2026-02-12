@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@EnableFeignClients(basePackages = {"com.putl.articleservice", "com.putl.userservice.api"})
+@EnableFeignClients
 @SpringBootApplication
 @ServletComponentScan
 public class ArticleApplication {

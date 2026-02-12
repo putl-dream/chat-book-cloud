@@ -2,15 +2,32 @@ package fun.amireux.chat.book.minio.utils;
 
 import fun.amireux.chat.book.minio.pojo.FileInfo;
 import jakarta.servlet.http.HttpServletResponse;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
 
 public interface MinioUpdateUtil {
 
+    /**
+     * Upload file with specific file info and user id (legacy)
+     */
     String uploadFile(FileInfo fileInfo, Object userId, String fileName);
 
+    /**
+     * Upload multipart file to a specific path
+     * @param file The file to upload
+     * @param objectName The full object path in the bucket (e.g. "images/123.jpg")
+     * @return The object name if successful, null otherwise
+     */
+    String uploadFile(MultipartFile file, String objectName);
+
     String getFileUrl(String storagePath, int hours);
+    
+    /**
+     * Get the public URL for the file (if configured)
+     */
+    String getPublicFileUrl(String storagePath);
 
     void downloadFile(String storagePath, HttpServletResponse response);
 

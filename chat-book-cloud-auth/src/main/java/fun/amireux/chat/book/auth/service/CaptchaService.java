@@ -1,10 +1,12 @@
 package fun.amireux.chat.book.auth.service;
 
-import fun.amireux.chat.book.auth.component.EmailService;
+import fun.amireux.chat.book.auth.constant.MqConstant;
+import fun.amireux.chat.book.auth.model.dto.CaptchaEmailDTO;
 import fun.amireux.chat.book.auth.utils.RandomNumUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +17,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class CaptchaService {
     private final StringRedisTemplate redisTemplate;
-    private final EmailService emailService;
+    private final RabbitTemplate rabbitTemplate;
 
     private static final String CAPTCHA_PREFIX = "captcha:";
     private static final long CAPTCHA_EXPIRE_TIME = 5; // 5 minutes
@@ -25,9 +27,11 @@ public class CaptchaService {
         String key = CAPTCHA_PREFIX + email;
         redisTemplate.opsForValue().set(key, code, CAPTCHA_EXPIRE_TIME, TimeUnit.MINUTES);
         
-        // 使用 HTML 模板发送验证码
-        emailService.sendCaptchaMailMessage(email, code, (int) CAPTCHA_EXPIRE_TIME);
-        log.info("验证码发送成功: {} -> {}", email, code);
+        // 发送消息到 MQ
+        CaptchaEmailDTO captchaEmailDTO = new CaptchaEmailDTO(email, code, (int) CAPTCHA_EXPIRE_TIME);
+        rabbitTemplate.convertAndSend(MqConstant.EMAIL_EXCHANGE, MqConstant.EMAIL_CAPTCHA_ROUTING_KEY, captchaEmailDTO);
+        
+        log.info("验证码消息已发送到MQ: {} -> {}", email, code);
     }
 
     public boolean verifyCaptcha(String email, String code) {
