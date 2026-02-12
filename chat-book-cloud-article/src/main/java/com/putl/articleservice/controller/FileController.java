@@ -1,23 +1,19 @@
 package com.putl.articleservice.controller;
 
 import com.putl.articleservice.utils.ImageResult;
+import fun.amireux.chat.book.minio.utils.MinioUpdateUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -26,12 +22,11 @@ import java.util.UUID;
 @Tag(name = "文件上传接口")
 @RestController
 @RequestMapping("/article/file")
+@RequiredArgsConstructor
 public class FileController {
 
-    @Value("${file.storage.base-url}")
-    private String fileBaseUrl;
+    private final MinioUpdateUtil minioUpdateUtil;
 
-    private static final String BASE_UPLOAD_DIR = "upload/";
     private static final Map<String, String> DIRECTORY_MAP = new HashMap<>();
 
     static{
@@ -56,30 +51,32 @@ public class FileController {
             //查看文件类型
             String contentType = getTypeByFile(file);
             log.info("文件类型new: {}", contentType);
-            String directory = DIRECTORY_MAP.getOrDefault(contentType, "others");
-
-            if (directory == null || directory.isEmpty()) {
-                return ImageResult.error("不支持的文件类型");
+            String directory = DIRECTORY_MAP.getOrDefault(contentType, "others/");
+            if (!directory.endsWith("/")) {
+                directory += "/";
             }
 
-            Path savePath = Paths.get(BASE_UPLOAD_DIR, directory);
-            File uploadDir = savePath.toFile();
-            if (!uploadDir.exists() && !uploadDir.mkdirs()) {
-                return ImageResult.error("创建上传目录失败");
-            }
-
-            // 创建文件
-            byte[] bytes = file.getBytes();
             String fileName = UUID.randomUUID() + "." + contentType;
-            Path filePath = savePath.resolve(fileName);
-            Files.write(filePath, bytes);
+            String objectName = directory + fileName;
 
-            // 返回文件路径
-            String str = fileBaseUrl + "/" + directory + fileName;
-            log.info("文件保存成功: {}", str);
-            return ImageResult.success(new Img(str, file.getOriginalFilename(), null));
-        } catch (IOException e) {
-            log.error("文件上传过程中发生IO异常", e);
+            // 上传到MinIO
+            String resultPath = minioUpdateUtil.uploadFile(file, objectName);
+            
+            if (resultPath == null) {
+                return ImageResult.error("文件上传失败");
+            }
+
+            // 获取访问地址
+            String publicUrl = minioUpdateUtil.getPublicFileUrl(resultPath);
+            if (publicUrl == null) {
+                 // 如果未配置公共URL，则使用预签名URL（有效期24小时）
+                 publicUrl = minioUpdateUtil.getFileUrl(resultPath, 24);
+            }
+
+            log.info("文件保存成功: {}", publicUrl);
+            return ImageResult.success(new Img(publicUrl, file.getOriginalFilename(), null));
+        } catch (Exception e) {
+            log.error("文件上传过程中发生异常", e);
             return ImageResult.error("文件上传失败: " + e.getMessage());
         }
     }
@@ -95,9 +92,13 @@ public class FileController {
             String[] split = filename.split("\\.");
             contentType = split[split.length - 1];
         } else {
-            assert contentType != null;
-            String[] split = contentType.split("/");
-            contentType = split[split.length - 1];
+            // 简单的防空判断
+            if (contentType != null) {
+                String[] split = contentType.split("/");
+                contentType = split[split.length - 1];
+            } else {
+                contentType = "unknown";
+            }
         }
         return contentType;
     }

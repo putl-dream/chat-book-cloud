@@ -28,6 +28,25 @@ public class MinioUpdateUtilImpl implements MinioUpdateUtil {
     private final MinIOConfigProperties minIOConfigProperties;
     private final MinioClient minioClient;
 
+    @jakarta.annotation.PostConstruct
+    public void init() {
+        if (minIOConfigProperties.getBucket() == null) {
+            log.warn("MinIO bucket name is not configured.");
+            return;
+        }
+        try {
+            boolean found = minioClient.bucketExists(BucketExistsArgs.builder().bucket(minIOConfigProperties.getBucket()).build());
+            if (!found) {
+                minioClient.makeBucket(MakeBucketArgs.builder().bucket(minIOConfigProperties.getBucket()).build());
+                log.info("Bucket '{}' created.", minIOConfigProperties.getBucket());
+            } else {
+                log.info("Bucket '{}' already exists.", minIOConfigProperties.getBucket());
+            }
+        } catch (Exception e) {
+            log.error("Error checking/creating bucket: {}", e.getMessage());
+        }
+    }
+
     @Override
     public String uploadFile(FileInfo fileInfo, Object userId, String fileName) {
         if (fileName == null || fileName.isEmpty()) {
@@ -41,8 +60,30 @@ public class MinioUpdateUtilImpl implements MinioUpdateUtil {
     }
 
     @Override
+    public String uploadFile(MultipartFile file, String objectName) {
+        if (uploadFile(objectName, file)) {
+            return objectName;
+        }
+        return null;
+    }
+
+    @Override
     public String getFileUrl(String storagePath, int hours) {
         return selectFileUrl(storagePath, hours);
+    }
+
+    @Override
+    public String getPublicFileUrl(String storagePath) {
+        if (minIOConfigProperties.getPublicUrl() != null && !minIOConfigProperties.getPublicUrl().isEmpty()) {
+            String baseUrl = minIOConfigProperties.getPublicUrl();
+            if (!baseUrl.endsWith("/")) {
+                baseUrl += "/";
+            }
+            return baseUrl + minIOConfigProperties.getBucket() + "/" + storagePath;
+        }
+        // Fallback to presigned URL if public URL not configured, or return null?
+        // Let's return null to let caller decide or use presigned
+        return null;
     }
 
     @Override
