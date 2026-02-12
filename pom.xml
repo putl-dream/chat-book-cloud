@@ -18,6 +18,7 @@
         <module>chat-book-cloud-auth</module>
         <module>chat-book-cloud-article</module>
         <module>chat-book-cloud-user</module>
+        <module>chat-book-cloud-api</module>
     </modules>
 
     <properties>

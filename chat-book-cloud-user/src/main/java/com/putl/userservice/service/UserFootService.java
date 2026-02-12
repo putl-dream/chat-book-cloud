@@ -1,7 +1,7 @@
 package com.putl.userservice.service;
 
 import com.baomidou.mybatisplus.extension.service.IService;
-import com.putl.userservice.client.result.ArticleListVO;
+import com.putl.articleservice.api.dto.ArticleListVO;
 import com.putl.userservice.controller.vo.UserFootListVO;
 import com.putl.userservice.controller.vo.UserFootVO;
 import com.putl.userservice.mapper.entity.UserFootDO;

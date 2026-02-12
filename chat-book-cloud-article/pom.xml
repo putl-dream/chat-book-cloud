@@ -17,6 +17,13 @@
             <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- User API -->
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-api-user</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <dependency>
             <groupId>fun.amireux</groupId>
             <artifactId>chat-book-cloud-security-mvc</artifactId>

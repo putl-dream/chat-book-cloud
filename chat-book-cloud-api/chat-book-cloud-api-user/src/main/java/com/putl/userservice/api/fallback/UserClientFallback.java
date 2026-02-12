@@ -1,9 +1,9 @@
-package com.putl.articleservice.client.impl;
+package com.putl.userservice.api.fallback;
 
-import com.putl.articleservice.client.UserClient;
-import com.putl.articleservice.client.result.UserFootListVO;
-import com.putl.articleservice.client.result.UserFootVO;
-import com.putl.articleservice.client.result.UserResult;
+import com.putl.userservice.api.UserClient;
+import com.putl.userservice.api.dto.UserFootListVO;
+import com.putl.userservice.api.dto.UserFootVO;
+import com.putl.userservice.api.dto.UserResult;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;

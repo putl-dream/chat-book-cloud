@@ -1,8 +1,7 @@
-package com.putl.userservice.client;
+package com.putl.articleservice.api;
 
-
-import com.putl.userservice.client.result.ArticleListVO;
-import com.putl.userservice.client.result.ArticleVO;
+import com.putl.articleservice.api.dto.ArticleListVO;
+import com.putl.articleservice.api.dto.ArticleVO;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.PostMapping;

@@ -1,7 +1,7 @@
 package com.putl.userservice.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
-import com.putl.userservice.client.ArticleClient;
+import com.putl.articleservice.api.ArticleClient;
 import com.putl.userservice.controller.vo.DataCount;
 import com.putl.userservice.controller.vo.UserVO;
 import com.putl.userservice.service.MessageService;

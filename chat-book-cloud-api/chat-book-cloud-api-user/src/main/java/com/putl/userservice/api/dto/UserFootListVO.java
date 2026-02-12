@@ -1,4 +1,4 @@
-package com.putl.articleservice.client.result;
+package com.putl.userservice.api.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;

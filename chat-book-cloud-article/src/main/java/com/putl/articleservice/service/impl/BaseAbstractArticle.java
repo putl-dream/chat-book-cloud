@@ -2,8 +2,8 @@ package com.putl.articleservice.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
-import com.putl.articleservice.client.UserClient;
-import com.putl.articleservice.client.result.UserFootVO;
+import com.putl.userservice.api.UserClient;
+import com.putl.userservice.api.dto.UserFootVO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleMapper;

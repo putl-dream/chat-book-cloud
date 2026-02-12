@@ -1,7 +1,7 @@
 package com.putl.userservice.controller;
 
 
-import com.putl.userservice.client.result.ArticleListVO;
+import com.putl.articleservice.api.dto.ArticleListVO;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.controller.vo.UserFootListVO;
 import com.putl.userservice.controller.vo.UserFootVO;
