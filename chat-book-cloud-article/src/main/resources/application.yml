@@ -22,5 +22,5 @@ minio:
   endpoint: http://localhost:9000
   access-key: admin
   secret-key: admin@2026
-  bucket: chat-book-files
+  bucket: chat-book-images
   public-url: http://localhost:9000
