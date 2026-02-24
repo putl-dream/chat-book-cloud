@@ -2,29 +2,30 @@ name: Build and Deploy (Local Build)
 
 on:
   push:
-    branches: ["main"]
-  workflow_dispatch:
+    branches: ["main", "master"] # 兼容 main 或 master 分支
+  workflow_dispatch: # 支持手动触发
 
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v4
 
-      # --- 1. Java Build ---
+      # --- 1. Java 后端构建 ---
       - name: Set up JDK 17
-        uses: actions/setup-java@v3
+        uses: actions/setup-java@v4
         with:
           java-version: "17"
           distribution: "temurin"
           cache: maven
 
-      - name: Build with Maven
+      - name: Build Backend with Maven
         run: mvn clean package -DskipTests -B
 
-      # --- 2. Frontend Build ---
+      # --- 2. Vue 前端构建 ---
       - name: Set up Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
@@ -35,9 +36,8 @@ jobs:
           cd chat-book-ui-blog
           npm install
           npm run build
-        # Output is in chat-book-ui-blog/dist
 
-      # --- 3. Prepare Deploy Package ---
+      # --- 3. 整理部署包 (防止路径混乱) ---
       - name: Prepare Deployment Artifacts
         run: |
           mkdir -p deploy/chat-book-cloud-gateway/target
@@ -46,50 +46,48 @@ jobs:
           mkdir -p deploy/chat-book-cloud-article/target
           mkdir -p deploy/chat-book-ui-blog/dist
 
-          # Copy Jar files
+          # 复制 Jar 包
           cp chat-book-cloud-gateway/target/*.jar deploy/chat-book-cloud-gateway/target/
           cp chat-book-cloud-auth/target/*.jar deploy/chat-book-cloud-auth/target/
           cp chat-book-cloud-user/target/*.jar deploy/chat-book-cloud-user/target/
           cp chat-book-cloud-article/target/*.jar deploy/chat-book-cloud-article/target/
 
-          # Copy Dockerfiles
+          # 复制 Dockerfiles
           cp chat-book-cloud-gateway/Dockerfile deploy/chat-book-cloud-gateway/
           cp chat-book-cloud-auth/Dockerfile deploy/chat-book-cloud-auth/
           cp chat-book-cloud-user/Dockerfile deploy/chat-book-cloud-user/
           cp chat-book-cloud-article/Dockerfile deploy/chat-book-cloud-article/
           cp chat-book-ui-blog/Dockerfile deploy/chat-book-ui-blog/
 
-          # Copy Frontend Dist
+          # 复制前端编译结果
           cp -r chat-book-ui-blog/dist/* deploy/chat-book-ui-blog/dist/
 
-          # Copy Docker Compose
+          # 复制编排文件
           cp docker-compose.yml deploy/
 
-      # --- 4. Deploy to Server ---
+      # --- 4. 传输文件到服务器 (使用你截图中的变量名) ---
       - name: Copy files to server
-        uses: appleboy/scp-action@v0.1.4
+        uses: appleboy/scp-action@v0.1.7
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
           source: "deploy/*"
           target: "/home/${{ secrets.SERVER_USER }}/chat-book-cloud/"
           strip_components: 1
 
-      - name: Start Services
-        uses: appleboy/ssh-action@v0.1.10
+      # --- 5. SSH 远程执行容器更新 ---
+      - name: Start Services via SSH
+        uses: appleboy/ssh-action@v1.0.3
         with:
-          host: ${{ secrets.SERVER_HOST }}
+          host: ${{ secrets.SERVER_IP }}
           username: ${{ secrets.SERVER_USER }}
-          key: ${{ secrets.SERVER_SSH_KEY }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /home/${{ secrets.SERVER_USER }}/chat-book-cloud/
-
-            # Stop previous containers (optional, ensures clean state)
-            # docker-compose down
-
-            # Build and Start (rebuilds images using local context)
+            # 使用本地构建模式启动，--remove-orphans 清理旧配置
             docker-compose up -d --build --remove-orphans
-
-            # Clean up dangling images
+            # 清理构建过程中产生的临时镜像碎片
             docker image prune -f
