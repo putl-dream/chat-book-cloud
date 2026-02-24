@@ -77,6 +77,7 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
     depends_on:
       - nacos
     networks:
@@ -92,9 +93,12 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
     depends_on:
       - nacos
       - mysql
@@ -113,8 +117,12 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false
       - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
@@ -123,6 +131,7 @@ services:
       - nacos
       - mysql
       - redis
+      - rabbitmq
     networks:
       - chat-book-net
 
@@ -136,9 +145,12 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
       - MINIO_ENDPOINT=http://minio:9000
       - MINIO_ACCESS_KEY=minioadmin
       - MINIO_SECRET_KEY=minioadmin
