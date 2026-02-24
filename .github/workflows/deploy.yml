@@ -24,12 +24,20 @@ jobs:
         run: mvn clean package -DskipTests -B
 
       # --- 2. Vue 前端构建 ---
+      # --- 2. Vue 前端构建 ---
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
           node-version: "18"
           cache: "npm"
           cache-dependency-path: chat-book-ui-blog/package-lock.json
+
+      # 【关键：强制覆盖已有 .env 文件】
+      - name: Force Update Env File
+        run: |
+          cd chat-book-ui-blog
+          echo "VITE_API_BASE_URL=/" > .env
+          echo "VITE_API_BASE_URL=/" > .env.production
 
       - name: Build Frontend
         run: |
