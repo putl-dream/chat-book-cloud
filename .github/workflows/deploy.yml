@@ -59,11 +59,16 @@ jobs:
           cp chat-book-cloud-article/Dockerfile deploy/chat-book-cloud-article/
           cp chat-book-ui-blog/Dockerfile deploy/chat-book-ui-blog/
 
-          # 复制前端编译结果
+          # Copy Frontend Config
+          cp chat-book-ui-blog/nginx.conf deploy/chat-book-ui-blog/
+
+          # Copy Frontend Dist
           cp -r chat-book-ui-blog/dist/* deploy/chat-book-ui-blog/dist/
 
-          # 复制编排文件
+          # Copy Docker Compose and SQL scripts
           cp docker-compose.yml deploy/
+          cp init.sql deploy/
+          cp run_sql.sh deploy/
 
       # --- 4. 传输文件到服务器 (使用你截图中的变量名) ---
       - name: Copy files to server
