@@ -1,0 +1,1 @@
+mysql -uroot -proot chat_book_cloud < /tmp/init.sql

@@ -1,0 +1,186 @@
+services:
+  # --- 基础设施服务 ---
+
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: nacos
+    environment:
+      - MODE=standalone
+      - JVM_XMS=256m
+      - JVM_XMX=256m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    networks:
+      - chat-book-net
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+      - MYSQL_DATABASE=chat_book_cloud
+    ports:
+      - "3306:3306"
+    command: --default-authentication-plugin=mysql_native_password
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - chat-book-net
+
+  redis:
+    image: redis:7.0
+    container_name: redis
+    ports:
+      - "6379:6379"
+    networks:
+      - chat-book-net
+
+  rabbitmq:
+    image: rabbitmq:3.12-management
+    container_name: rabbitmq
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    networks:
+      - chat-book-net
+
+  minio:
+    image: minio/minio:RELEASE.2023-09-04T19-57-37Z
+    container_name: minio
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    environment:
+      - MINIO_ROOT_USER=minioadmin
+      - MINIO_ROOT_PASSWORD=minioadmin
+    command: server /data --console-address ":9001"
+    volumes:
+      - minio_data:/data
+    networks:
+      - chat-book-net
+
+  # --- 应用服务 ---
+
+  gateway:
+    build:
+      context: ./chat-book-cloud-gateway
+      dockerfile: Dockerfile
+    image: chat-book-cloud-gateway:local
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
+    depends_on:
+      - nacos
+    networks:
+      - chat-book-net
+
+  auth:
+    build:
+      context: ./chat-book-cloud-auth
+      dockerfile: Dockerfile
+    image: chat-book-cloud-auth:local
+    container_name: auth
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - chat-book-net
+
+  user:
+    build:
+      context: ./chat-book-cloud-user
+      dockerfile: Dockerfile
+    image: chat-book-cloud-user:local
+    container_name: user
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=chat-book
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - chat-book-net
+
+  article:
+    build:
+      context: ./chat-book-cloud-article
+      dockerfile: Dockerfile
+    image: chat-book-cloud-article:local
+    container_name: article
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - NACOS_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_cloud?useUnicode=true&characterEncoding=utf-8&useSSL=false
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=guest
+      - SPRING_RABBITMQ_PASSWORD=guest
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=minioadmin
+      - MINIO_SECRET_KEY=minioadmin
+      - MINIO_BUCKET=chat-book
+    depends_on:
+      - nacos
+      - mysql
+      - redis
+      - rabbitmq
+      - minio
+    networks:
+      - chat-book-net
+
+  frontend:
+    build:
+      context: ./chat-book-ui-blog
+      dockerfile: Dockerfile
+    image: chat-book-ui-blog:local
+    container_name: frontend
+    ports:
+      - "80:80"
+    depends_on:
+      - gateway
+    networks:
+      - chat-book-net
+
+networks:
+  chat-book-net:
+    driver: bridge
+
+volumes:
+  mysql_data:
+  minio_data:
