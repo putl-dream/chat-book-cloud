@@ -59,11 +59,16 @@ jobs:
           cp chat-book-cloud-article/Dockerfile deploy/chat-book-cloud-article/
           cp chat-book-ui-blog/Dockerfile deploy/chat-book-ui-blog/
 
+          # Copy Frontend Config
+          cp chat-book-ui-blog/nginx.conf deploy/chat-book-ui-blog/
+
           # Copy Frontend Dist
           cp -r chat-book-ui-blog/dist/* deploy/chat-book-ui-blog/dist/
 
-          # Copy Docker Compose
+          # Copy Docker Compose and SQL scripts
           cp docker-compose.yml deploy/
+          cp init.sql deploy/
+          cp run_sql.sh deploy/
 
       # --- 4. Deploy to Server ---
       - name: Copy files to server
