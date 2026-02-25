@@ -2,7 +2,7 @@ services:
   # --- 1. 注册中心与配置中心 ---
   nacos:
     image: nacos/nacos-server:v2.2.3
-    container_name: nacos-dev
+    container_name: nacos
     restart: always
     environment:
       - MODE=standalone
@@ -17,7 +17,7 @@ services:
   # --- 2. 数据库 (关键修正) ---
   mysql:
     image: mysql:8.0
-    container_name: mysql-dev
+    container_name: mysql
     restart: always
     # 强制容器使用 mysql 用户运行，确保有权读取宿主机 data 目录
     user: "999:999"
@@ -34,7 +34,7 @@ services:
   # --- 3. 缓存 ---
   redis:
     image: redis:7.0
-    container_name: redis-dev
+    container_name: redis
     restart: always
     ports:
       - "6379:6379"
@@ -68,6 +68,9 @@ services:
     environment:
       - MINIO_ROOT_USER=admin
       - MINIO_ROOT_PASSWORD=admin@2026
+    ports:
+      - "9000:9000" # API 端口
+      - "9001:9001" # Web 控制台端口 (新增)
     volumes:
       - ./data/minio/data:/data
       - ./data/minio/config:/root/.minio
@@ -78,13 +81,14 @@ services:
   gateway:
     image: chat-book-cloud-gateway:local
     container_name: gateway
+    restart: always
     build: ./chat-book-cloud-gateway
     ports:
       - "8080:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos-dev:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos-dev:8848
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
     depends_on:
       - nacos
     networks:
@@ -94,14 +98,15 @@ services:
   auth:
     image: chat-book-cloud-auth:local
     container_name: auth
+    restart: always
     build: ./chat-book-cloud-auth
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos-dev:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos-dev:8848
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
       # 修改为指向 ice_user 库
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-dev:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-      - SPRING_DATA_REDIS_HOST=redis-dev
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=admin
       - SPRING_RABBITMQ_PASSWORD=admin@2026
@@ -117,11 +122,11 @@ services:
     build: ./chat-book-cloud-user
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos-dev:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos-dev:8848
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
       # 修改为指向 ice_user 库
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-dev:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-      - SPRING_DATA_REDIS_HOST=redis-dev
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=admin
       - SPRING_RABBITMQ_PASSWORD=admin@2026
@@ -140,15 +145,15 @@ services:
     build: ./chat-book-cloud-article
     environment:
       - SPRING_PROFILES_ACTIVE=dev
-      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos-dev:8848
-      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos-dev:8848
-      # 修改为指向 ice-article 库
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql-dev:3306/ice-article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-      - SPRING_DATA_REDIS_HOST=redis-dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice-article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=admin
       - SPRING_RABBITMQ_PASSWORD=admin@2026
       - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_PUBLIC_URL=http://amireux.fun/chat-book-images
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=admin@2026
     depends_on:
@@ -160,6 +165,7 @@ services:
   frontend:
     image: chat-book-ui-blog:local
     container_name: frontend
+    restart: always
     build: ./chat-book-ui-blog
     ports:
       - "80:80"
