@@ -14,13 +14,12 @@ services:
     networks:
       - chat-book-net
 
-  # --- 2. 数据库 (关键修正) ---
+  # --- 2. 数据库 ---
   mysql:
     image: mysql:8.0
     container_name: mysql
     restart: always
-    # 强制容器使用 mysql 用户运行，确保有权读取宿主机 data 目录
-    user: "999:999"
+    user: "999:999" # 确保读取宿主机挂载的数据文件权限正确
     environment:
       - MYSQL_ROOT_PASSWORD=root
     ports:
@@ -70,7 +69,7 @@ services:
       - MINIO_ROOT_PASSWORD=admin@2026
     ports:
       - "9000:9000" # API 端口
-      - "9001:9001" # Web 控制台端口 (新增)
+      - "9001:9001" # 管理后台端口
     volumes:
       - ./data/minio/data:/data
       - ./data/minio/config:/root/.minio
@@ -94,7 +93,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 7. 认证服务 (连接用户库) ---
+  # --- 7. 认证服务 ---
   auth:
     image: chat-book-cloud-auth:local
     container_name: auth
@@ -104,28 +103,30 @@ services:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
-      # 修改为指向 ice_user 库
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      # 增加 allowPublicKeyRetrieval=true 解决连接异常
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=admin
       - SPRING_RABBITMQ_PASSWORD=admin@2026
     depends_on:
       - mysql
+      - redis
+      - rabbitmq
     networks:
       - chat-book-net
 
-  # --- 8. 用户服务 (连接用户库) ---
+  # --- 8. 用户服务 ---
   user:
     image: chat-book-cloud-user:local
     container_name: user
+    restart: always
     build: ./chat-book-cloud-user
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
-      # 修改为指向 ice_user 库
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=admin
@@ -135,19 +136,21 @@ services:
       - MINIO_SECRET_KEY=admin@2026
     depends_on:
       - mysql
+      - redis
     networks:
       - chat-book-net
 
-  # --- 9. 文章服务 (连接文章库) ---
+  # --- 9. 文章服务 ---
   article:
     image: chat-book-cloud-article:local
     container_name: article
+    restart: always
     build: ./chat-book-cloud-article
     environment:
       - SPRING_PROFILES_ACTIVE=dev
       - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
       - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
-      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice-article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ice-article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
       - SPRING_DATA_REDIS_HOST=redis
       - SPRING_RABBITMQ_HOST=rabbitmq
       - SPRING_RABBITMQ_USERNAME=admin
@@ -158,6 +161,7 @@ services:
       - MINIO_SECRET_KEY=admin@2026
     depends_on:
       - mysql
+      - redis
     networks:
       - chat-book-net
 
