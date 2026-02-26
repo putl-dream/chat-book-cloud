@@ -4,6 +4,8 @@
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.1-blue)](https://spring.io/projects/spring-cloud)
 [![Spring Cloud Alibaba](https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2023.0.1.0-orange)](https://github.com/alibaba/spring-cloud-alibaba)
 
+> 🌐 **在线体验**: [http://49.235.53.56/](http://49.235.53.56/) (基于 GitHub Actions 自动化部署)
+
 ## 📖 项目简介
 
 **Chat Book Cloud** 是一个基于 Spring Cloud 微服务架构的大模型知识库与博客平台。本项目以**插件化**、**高复用**为核心设计理念，致力于打造一套"兼容万物"的基础架构体系。
@@ -72,14 +74,14 @@ chat-book-cloud
 
 ### 1. 基础架构 (Infrastructure)
 
-| 模块名称                         | 说明         | 关键功能点                                                                                         |
-| :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------- |
+| 模块名称                         | 说明         | 关键功能点                                                                                               |
+| :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------- |
 | **chat-book-cloud-common**       | **通用基座** | `UserContext` 线程隔离上下文, `CommonResult` 统一响应, `GlobalExceptionHandler` 全局异常, `JwtUtil` 工具 |
-| **chat-book-cloud-security-mvc** | **安全插件** | 提供 `UserContextFilter`，自动拦截请求并填充 `UserContext`，实现微服务内部无感鉴权                 |
-| **chat-book-cloud-minio**        | **存储插件** | 封装 MinIO SDK，提供文件上传、下载、预览 URL 生成等一键式服务                                      |
-| **chat-book-cloud-parsing**      | **AI 解析**  | 集成 Apache Tika 和 LangChain4j，支持 PDF/Word/Txt 等多格式文档解析与分块                          |
-| **chat-book-cloud-websocket**    | **实时通信** | 基于 Netty/Tomcat 封装的 WebSocket 服务，支持点对点消息推送                                        |
-| **chat-book-cloud-excel**        | **数据导出** | 集成 EasyExcel，提供注解式导入导出功能                                                             |
+| **chat-book-cloud-security-mvc** | **安全插件** | 提供 `UserContextFilter`，自动拦截请求并填充 `UserContext`，实现微服务内部无感鉴权                       |
+| **chat-book-cloud-minio**        | **存储插件** | 封装 MinIO SDK，提供文件上传、下载、预览 URL 生成等一键式服务                                            |
+| **chat-book-cloud-parsing**      | **AI 解析**  | 集成 Apache Tika 和 LangChain4j，支持 PDF/Word/Txt 等多格式文档解析与分块                                |
+| **chat-book-cloud-websocket**    | **实时通信** | 基于 Netty/Tomcat 封装的 WebSocket 服务，支持点对点消息推送                                              |
+| **chat-book-cloud-excel**        | **数据导出** | 集成 EasyExcel，提供注解式导入导出功能                                                                   |
 
 ### 2. 网关与认证 (Gateway & Auth)
 
@@ -104,6 +106,17 @@ chat-book-cloud
 - **API 文档**: Knife4j 4.4.0
 - **AI 与大模型**: LangChain4j 0.31.0
 - **工具库**: Apache Commons, FastJSON2, Hutool, EasyExcel
+- **DevOps**: GitHub Actions, Docker, Docker Compose
+
+## 🔄 CI/CD 自动化部署
+
+本项目实现了基于 GitHub Actions 的完整自动化部署流程，代码提交至 `main` 分支后自动触发：
+
+1.  **环境准备**: 自动配置 JDK 17 和 Node.js 环境。
+2.  **后端构建**: Maven 并行构建所有微服务模块。
+3.  **前端构建**: 注入环境变量 (`VITE_API_BASE_URL`) 并执行 `npm run build`。
+4.  **制品整理**: 自动收集 Jar 包、Dist 文件及 Docker 配置。
+5.  **自动部署**: 通过 SSH 将构建制品传输至服务器，并使用 Docker Compose 零停机更新服务。
 
 ## 🚀 快速开始
 
