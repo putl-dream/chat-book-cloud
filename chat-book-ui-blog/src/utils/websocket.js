@@ -1,6 +1,36 @@
 
 import { ElMessage } from 'element-plus';
 
+/**
+ * 格式化 WebSocket URL
+ * 处理 http/https 替换和相对路径转换
+ * @param {string} baseUrl - 基础 URL
+ * @returns {string} WebSocket URL (无尾部斜杠)
+ */
+export const formatWsUrl = (baseUrl) => {
+    if (!baseUrl) return '';
+
+    let url = baseUrl;
+
+    // 处理以 http/https 开头的绝对路径
+    if (url.startsWith('http')) {
+        url = url.replace(/^http/, 'ws').replace(/^https/, 'wss');
+    }
+    // 处理以 / 开头的相对路径
+    else if (url.startsWith('/')) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        url = `${protocol}//${host}${url}`;
+    }
+
+    // 移除尾部斜杠
+    if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+
+    return url;
+};
+
 export default class SocketService {
     /**
      * @param {string} url - WebSocket URL
