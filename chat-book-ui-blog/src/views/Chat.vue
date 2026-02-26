@@ -99,7 +99,7 @@ import ChatUserCard from "@/components/widget/ChatUserCard.vue";
 import ChatMessage from "@/components/widget/ChatMsgCard.vue";
 import { getFriendList, queryUserMessage } from "@/api/user.js";
 import { API_CONFIG } from "@/config/index.js";
-import SocketService from "@/utils/websocket.js";
+import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 
 const friends = ref([])
 const messages = ref([])
@@ -151,8 +151,7 @@ let socketService;
 const newMessage = ref('')
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
-    let baseUrl = API_CONFIG.baseURL;
-    let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
+    let wsUrl = formatWsUrl(API_CONFIG.baseURL);
 
     socketService = new SocketService(`${wsUrl}/user/ws`, token);
 

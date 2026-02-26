@@ -72,7 +72,7 @@ import CreativeHeader from "@/components/CreativeHeader.vue";
 import TiptapToolbar from "@/components/TiptapToolbar.vue";
 import { ElMessage } from "element-plus";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
-import SocketService from "@/utils/websocket.js";
+import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 import { API_CONFIG } from "@/config/index.js";
 import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon } from 'element-plus';
 import { CATEGORY_NAMES } from '@/constants';
@@ -180,8 +180,7 @@ let save = ref(false);
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
     // 构建 WebSocket URL
-    let baseUrl = API_CONFIG.baseURL;
-    let wsUrl = baseUrl.replace(/^http/, 'ws').replace(/^https/, 'wss');
+    let wsUrl = formatWsUrl(API_CONFIG.baseURL);
 
     socketService = new SocketService(`${wsUrl}/article/ws`, token);
 

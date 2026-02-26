@@ -4,12 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.userservice.api.UserClient;
 import com.putl.userservice.api.dto.UserFootVO;
+import com.putl.userservice.api.dto.UserResult;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 
@@ -65,6 +67,14 @@ public abstract class BaseAbstractArticle {
 
     private void setArticleVO(ArticleListVO article) {
         try {
+            // 获取作者信息
+            if (article.getUserId() != null) {
+                CommonResult<UserResult> userResult = userClient.getUserById(article.getUserId());
+                if (userResult != null && userResult.getData() != null) {
+                    article.setAuthorAvatar(userResult.getData().getPhoto());
+                }
+            }
+
             // 调用带 userId 参数的方法，避免用户服务依赖 ReqInfoContext
             // 对于获取文章统计数据，当前用户 ID 不重要，传入 0 表示系统查询
             UserFootVO userFoot = userClient.getUserFoot(article.getId(), 0);
@@ -84,7 +94,7 @@ public abstract class BaseAbstractArticle {
             article.setViewCount(0L);
             article.setPraiseCount(0L);
             article.setCommentCount(0L);
-            log.error("获取文章统计数据失败，articleId: {}", article.getId(), e);
+            log.error("获取文章统计数据或用户信息失败，articleId: {}", article.getId(), e);
         }
     }
 }

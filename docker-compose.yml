@@ -156,7 +156,7 @@ services:
       - SPRING_RABBITMQ_USERNAME=admin
       - SPRING_RABBITMQ_PASSWORD=admin@2026
       - MINIO_ENDPOINT=http://minio:9000
-      - MINIO_PUBLIC_URL=http://amireux.fun/chat-book-images
+      - MINIO_PUBLIC_URL=http://amireux.fun
       - MINIO_ACCESS_KEY=admin
       - MINIO_SECRET_KEY=admin@2026
     depends_on:

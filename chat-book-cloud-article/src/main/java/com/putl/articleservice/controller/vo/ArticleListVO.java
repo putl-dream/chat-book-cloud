@@ -21,6 +21,9 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "文章ID")
     private Integer id;
 
+    @Schema(description = "作者ID")
+    private Integer userId;
+
     @Schema(description = "文章标题")
     private String title;
 
