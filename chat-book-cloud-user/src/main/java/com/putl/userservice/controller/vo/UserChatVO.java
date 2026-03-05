@@ -1,6 +1,7 @@
 package com.putl.userservice.controller.vo;
 
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.putl.userservice.config.FileUrlSerializer;
 import com.putl.userservice.util.CustomLocalDateTimeSerializer;
 import lombok.Builder;
 import lombok.Data;
@@ -13,6 +14,7 @@ public class UserChatVO {
     private Integer id;
     private Integer userId;
     private String username;
+    @JsonSerialize(using = FileUrlSerializer.class)
     private String photo;
     private String profile;
     private String lastChat;
