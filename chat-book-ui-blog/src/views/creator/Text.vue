@@ -314,7 +314,7 @@ onBeforeRouteUpdate((to, from) => {
 <style scoped>
 .editor-layout {
     height: 100vh;
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    background: var(--bg-color-base);
     /* Space for footer */
     display: flex;
     flex-direction: column;
@@ -334,11 +334,10 @@ onBeforeRouteUpdate((to, from) => {
 .text-toolbar {
     position: relative;
     z-index: 100;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.5);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-base);
+    border-bottom: 1px solid var(--border-color-glass);
+    transition: var(--transition-base);
 }
 
 .toolbar-wrapper {
@@ -395,15 +394,13 @@ onBeforeRouteUpdate((to, from) => {
 
 .main-content {
     max-width: 1100px;
-    /* Increased from 900px */
     width: 100%;
     margin: 24px auto;
-    padding: 40px 50px;
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
-    border-radius: 12px;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    padding: 60px 80px;
+    background: var(--bg-color-white);
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--box-shadow-base);
+    border: 1px solid var(--border-color-base);
     min-height: calc(100vh - 200px);
     box-sizing: border-box;
 }
@@ -418,7 +415,7 @@ onBeforeRouteUpdate((to, from) => {
     width: 100%;
     font-size: 28px;
     font-weight: 700;
-    color: #1f2937;
+    color: var(--text-color-primary);
     border: none;
     outline: none;
     background: transparent;
@@ -428,7 +425,7 @@ onBeforeRouteUpdate((to, from) => {
 }
 
 .title-input::placeholder {
-    color: #d1d5db;
+    color: var(--text-color-placeholder);
 }
 
 .main-content-editor {
@@ -440,9 +437,9 @@ onBeforeRouteUpdate((to, from) => {
 :deep(.ProseMirror) {
     outline: none;
     min-height: 60vh;
-    font-size: 17px;
+    font-size: 1.125rem;
     line-height: 1.8;
-    color: #1f2937;
+    color: var(--text-color-regular);
     padding-bottom: 40px;
 }
 
@@ -513,23 +510,19 @@ onBeforeRouteUpdate((to, from) => {
     position: fixed;
     bottom: 20px;
     right: 20px;
-    /* Moved to right corner */
-    left: auto;
-    transform: none;
     width: auto;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(10px);
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-base);
     padding: 10px 20px;
-    border-radius: 12px;
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: var(--border-radius-large);
+    box-shadow: var(--box-shadow-hover);
+    border: 1px solid var(--border-color-glass);
     display: flex;
     flex-direction: column;
-    /* Stacked layout for compact corner view */
     align-items: flex-end;
     z-index: 100;
     gap: 12px;
-    transition: opacity 0.3s;
+    transition: var(--transition-base);
 }
 
 .footer-card:hover {

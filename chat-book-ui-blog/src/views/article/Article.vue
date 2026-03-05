@@ -42,7 +42,7 @@
                 </div>
             </div>
 
-            <div class="content glass-panel">
+            <div class="content">
                 <header class="article-header">
                     <h1 class="article-title">{{ article.title }}</h1>
                     <div class="article-meta">
@@ -91,9 +91,9 @@ import { ElButton, ElMessage } from 'element-plus';
 import { checkLogin } from "@/utils/http.js";
 import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
 
-import SidebarDefault from '@/views/article-sidebar/SidebarDefault.vue';
-import SidebarComment from '@/views/article-sidebar/SidebarComment.vue';
-import SidebarAI from '@/views/article-sidebar/SidebarAI.vue';
+import SidebarDefault from '@/views/article/article-sidebar/SidebarDefault.vue';
+import SidebarComment from '@/views/article/article-sidebar/SidebarComment.vue';
+import SidebarAI from '@/views/article/article-sidebar/SidebarAI.vue';
 
 // 获取路由参数
 const route = useRoute();
@@ -219,7 +219,8 @@ onMounted(() => {
     justify-content: center;
     position: relative;
     flex-shrink: 0;
-    width: 84px; /* 固定宽度 */
+    width: 84px;
+    /* 固定宽度 */
 }
 
 .resize-handle {
@@ -254,18 +255,21 @@ onMounted(() => {
 .content {
     flex: 1;
     min-width: 0;
-    padding: 30px 50px;
+    padding: 40px 60px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    margin-left: 0;
-    /* 移除原来的margin */
+    background: transparent;
+    border: none;
+    box-shadow: none;
 }
 
 .article-header {
-    border-bottom: 1px solid rgba(0, 0, 0, 0.06);
-    padding-bottom: 20px;
-    margin-bottom: 20px;
+    border-bottom: 1px solid var(--border-color-base);
+    padding-bottom: 24px;
+    margin: 0 auto 32px;
+    max-width: 860px;
+    width: 100%;
 }
 
 .article-title {
@@ -309,24 +313,27 @@ onMounted(() => {
 .article-content {
     flex: 1;
     overflow-y: auto;
-    font-size: 1.1rem;
+    font-size: 1.125rem;
     line-height: 1.8;
     color: var(--text-color-regular);
-    padding-right: 10px;
+    padding-right: 16px;
+    max-width: 860px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .article-buttons {
     display: flex;
     flex-direction: column;
-    gap: 24px;
+    gap: 32px;
     height: fit-content;
-    padding: 24px 12px;
-    position: relative;
-    /* 改回 relative */
-    left: auto;
-    top: auto;
-    transform: none;
+    padding: 24px 16px;
     z-index: 10;
+    background: var(--bg-color-glass);
+    backdrop-filter: var(--blur-base);
+    border: 1px solid var(--border-color-glass);
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--box-shadow-glass);
 }
 
 .action-item {
@@ -377,7 +384,8 @@ onMounted(() => {
     flex-direction: column;
     gap: 8px;
     height: 100%;
-    transition: width 0.1s linear; /* 减少过渡时间使拖拽更跟手，或者移除过渡 */
+    transition: width 0.1s linear;
+    /* 减少过渡时间使拖拽更跟手，或者移除过渡 */
 }
 
 .article-right.expanded-panel {

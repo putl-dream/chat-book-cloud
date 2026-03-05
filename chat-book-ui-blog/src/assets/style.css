@@ -23,7 +23,7 @@ a, button, .clickable {
     background: var(--bg-color-glass);
     backdrop-filter: var(--blur-base);
     -webkit-backdrop-filter: var(--blur-base);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border-color-glass);
     box-shadow: var(--box-shadow-glass);
 }
 
@@ -34,7 +34,7 @@ a, button, .clickable {
 }
 
 .interactive-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: var(--box-shadow-hover);
     border-color: var(--color-primary-light);
 }

@@ -3,65 +3,43 @@
     <div class="home-container">
       <div class="section-header">
         <h2 class="section-title">
-          <span class="text-gradient">推荐阅读</span>
+          <span class="text-gradient">发现与探索</span>
         </h2>
         <div class="header-line"></div>
       </div>
 
-      <div class="recommended">
-        <div v-for="(item, index) in recommendations" :key="item.id || index" class="card glass-panel"
+      <div class="bento-waterfall">
+        <!-- Feature Card - 置顶大卡片跨两列 -->
+        <div v-if="recommendations.length > 0"
+          class="bento-item feature-span-2 interactive-card glass-effect hover-soft"
+          @click="openArticle(recommendations[0].id)">
+          <ArticleCard :post="recommendations[0]" variant="feature" />
+        </div>
+
+        <div v-for="(item, index) in recommendations.slice(1)"
+          class="bento-item interactive-card glass-effect hover-soft" :key="'rec-' + (item.id || index)"
           :style="{ '--delay': `${index * 0.1}s` }" @click="openArticle(item.id)">
-          <div class="card-image-wrapper">
-            <el-image src="https://img.shetu66.com/2023/06/26/1687770031227597.png" alt="Cover Image"
-              class="cover-image" fit="cover" />
-            <div class="card-overlay">
-              <span class="read-more-btn">阅读更多</span>
-            </div>
-          </div>
-          <div class="card-content">
-            <div class="title-wrapper">
-              <span class="title">{{ item.title }}</span>
-            </div>
-            <div class="info-list">
-              <div class="info-item">
-                <span class="dot primary"></span>
-                {{ getCategoryName(item.category) }}
-              </div>
-              <div class="info-item">
-                <span class="dot secondary"></span>
-                {{ item.userName }}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div class="content-wrapper">
-        <div class="list-life glass-panel">
-          <div class="list-header">
-            <h3>最新文章</h3>
-          </div>
-          <div class="post-list">
-            <transition-group name="list-anim">
-              <div v-for="(post, index) in posts" :key="post.id || index" class="post-item-wrapper"
-                :style="{ '--delay': `${index * 0.05}s` }" @click="openArticle(post.id)">
-                <ArticleCard :post="post" />
-              </div>
-            </transition-group>
-          </div>
-          <div v-if="loading" class="loading">
-            <div class="spinner"></div>
-          </div>
-          <div v-if="noMoreArticles" class="no-more">
-            <span>— 到底啦 —</span>
-          </div>
+          <ArticleCard :post="item" variant="image" />
         </div>
 
-        <div class="home-right">
-          <div class="home-right-card glass-panel">
+        <!-- 将 HotCard 组件化并融入瀑布流打破对称性 -->
+        <template v-for="(post, index) in posts" :key="'post-' + (post.id || index)">
+          <div v-if="index === 2" class="bento-item widget-span interactive-card glass-effect hover-soft">
             <HotCard />
           </div>
-        </div>
+
+          <div class="bento-item interactive-card glass-effect hover-soft" :style="{ '--delay': `${index * 0.05}s` }"
+            @click="openArticle(post.id)">
+            <ArticleCard :post="post" :variant="getPostVariant(post, index)" />
+          </div>
+        </template>
+      </div>
+
+      <div v-if="loading" class="loading">
+        <div class="spinner"></div>
+      </div>
+      <div v-if="noMoreArticles" class="no-more">
+        <span>— 到底啦 —</span>
       </div>
     </div>
   </div>
@@ -110,6 +88,12 @@ const apiStrategy = {
     list: (p, s) => getNewPage(p, s),
     recommend: () => getSystemRecommendPage(1, 5)
   }
+};
+
+const getPostVariant = (post, index) => {
+  if (index % 7 === 3 && post.cover) return 'large-image';
+  if (index % 5 === 1 || !post.cover) return 'text-only';
+  return 'default';
 };
 
 const fetchPosts = async () => {
@@ -203,7 +187,7 @@ onUnmounted(() => {
 }
 
 .section-header {
-  margin-bottom: 24px;
+  margin-bottom: 32px;
   position: relative;
   display: flex;
   align-items: center;
@@ -219,6 +203,7 @@ onUnmounted(() => {
 .text-gradient {
   background: linear-gradient(135deg, var(--text-color-primary) 0%, var(--color-primary) 100%);
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -230,181 +215,48 @@ onUnmounted(() => {
   opacity: 0.5;
 }
 
-.recommended {
+.bento-waterfall {
   display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  grid-auto-flow: dense;
   gap: 24px;
-  margin-bottom: 24px;
+  margin-bottom: 40px;
+  align-items: start;
 }
 
-.card {
-  border-radius: 16px;
+.bento-item {
+  border-radius: var(--border-radius-xl);
   overflow: hidden;
-  transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+  height: max-content;
+  animation: fadeInUp 0.6s backwards;
+  animation-delay: var(--delay, 0s);
   cursor: pointer;
   display: flex;
   flex-direction: column;
-  animation: fadeInUp 0.6s backwards;
-  animation-delay: var(--delay);
-  border: 1px solid rgba(255, 255, 255, 0.5);
 }
 
-.glass-panel {
-  background: rgba(255, 255, 255, 0.65);
-  backdrop-filter: blur(16px);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+/* 占据两列的 Feature 卡片 */
+.feature-span-2 {
+  grid-column: span 2;
+  grid-row: span 2;
 }
 
-.card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.1);
-  background: rgba(255, 255, 255, 0.9);
+/* 热榜小组件可能不占很多 row，自动适应即可 */
+.widget-span {
+  grid-column: span 1;
+  border-radius: var(--border-radius-xl);
+}
+
+/* 柔和阴影效果覆盖 override */
+.hover-soft {
+  transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+  border: 1px solid var(--border-color-glass);
+}
+
+.hover-soft:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.05), 0 0 24px -6px rgba(var(--color-primary-rgb), 0.2);
   border-color: var(--color-primary-light);
-}
-
-.card-image-wrapper {
-  position: relative;
-  overflow: hidden;
-  aspect-ratio: 16/9;
-}
-
-.cover-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.6s ease;
-}
-
-.card:hover .cover-image {
-  transform: scale(1.1);
-}
-
-.card-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.3);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.3s ease;
-}
-
-.card:hover .card-overlay {
-  opacity: 1;
-}
-
-.read-more-btn {
-  color: white;
-  border: 1px solid white;
-  padding: 6px 16px;
-  border-radius: 20px;
-  font-size: 12px;
-  backdrop-filter: blur(4px);
-  transform: translateY(10px);
-  transition: transform 0.3s ease;
-}
-
-.card:hover .read-more-btn {
-  transform: translateY(0);
-}
-
-.card-content {
-  padding: 16px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-}
-
-.title-wrapper {
-  margin-bottom: 12px;
-  flex: 1;
-}
-
-.title {
-  font-size: 15px;
-  font-weight: 700;
-  color: var(--text-color-primary);
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  line-height: 1.5;
-  transition: color 0.2s;
-}
-
-.card:hover .title {
-  color: var(--color-primary);
-}
-
-.info-list {
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 12px;
-  font-size: 12px;
-  color: var(--text-color-secondary);
-}
-
-.info-item {
-  display: flex;
-  align-items: center;
-}
-
-.dot {
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  margin-right: 6px;
-}
-
-.dot.primary {
-  background-color: var(--color-primary);
-  box-shadow: 0 0 8px var(--color-primary-light);
-}
-
-.dot.secondary {
-  background-color: var(--color-success);
-}
-
-.content-wrapper {
-  display: flex;
-  gap: 24px;
-  align-items: flex-start;
-}
-
-.list-life {
-  flex: 1;
-  border-radius: 24px;
-  padding: 24px;
-  min-height: 500px;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
-.list-header {
-  margin-bottom: 20px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.05);
-}
-
-.list-header h3 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 700;
-  color: var(--text-color-primary);
-}
-
-.post-item-wrapper {
-  margin-bottom: 16px;
-  border-radius: 16px;
-  transition: all 0.3s;
-  animation: fadeInUp 0.5s backwards;
-  animation-delay: var(--delay);
-}
-
-.post-item-wrapper:hover {
-  background: rgba(255, 255, 255, 0.5);
-  transform: translateX(4px);
 }
 
 .loading {
@@ -431,19 +283,6 @@ onUnmounted(() => {
   letter-spacing: 1px;
 }
 
-.home-right {
-  width: 320px;
-  flex-shrink: 0;
-  position: sticky;
-  top: 32px;
-}
-
-.home-right-card {
-  border-radius: 24px;
-  overflow: hidden;
-  border: 1px solid rgba(255, 255, 255, 0.5);
-}
-
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -453,7 +292,7 @@ onUnmounted(() => {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(20px);
+    transform: translateY(24px);
   }
 
   to {
@@ -463,39 +302,21 @@ onUnmounted(() => {
 }
 
 /* Responsive Design */
-@media (max-width: 1200px) {
-  .recommended {
-    grid-template-columns: repeat(4, 1fr);
-  }
-}
-
 @media (max-width: 992px) {
-  .recommended {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .content-wrapper {
-    flex-direction: column;
-  }
-
-  .home-right {
-    width: 100%;
-    margin-left: 0;
-  }
-
-  .list-life {
-    width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .recommended {
+  .bento-waterfall {
     grid-template-columns: repeat(2, 1fr);
   }
 }
 
+@media (max-width: 768px) {
+  .feature-span-2 {
+    grid-column: span 1;
+    grid-row: span 1;
+  }
+}
+
 @media (max-width: 480px) {
-  .recommended {
+  .bento-waterfall {
     grid-template-columns: 1fr;
   }
 }
