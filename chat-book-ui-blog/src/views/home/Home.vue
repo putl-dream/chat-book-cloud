@@ -1,32 +1,35 @@
 <template>
   <div class="home">
     <div class="home-container">
-      <div class="section-header">
-        <h2 class="section-title">
-          <span class="text-gradient">Bento 热点舞台</span>
-        </h2>
-        <div class="header-line"></div>
-      </div>
-
-      <div class="hot-bento-grid" v-if="recommendations && recommendations.length > 0">
-        <!-- 主热点 (Large) -->
-        <div class="hot-item main-feature interactive-card glass-effect hover-soft"
-          @click="openArticle(recommendations[0].id)">
-          <ArticleCard :post="recommendations[0]" variant="feature" />
+      <div class="island-container">
+        <div class="section-header">
+          <h2 class="section-title">
+            <span class="text-gradient">Bento 热点舞台</span>
+          </h2>
+          <div class="header-line"></div>
         </div>
 
-        <!-- 次热点 (Medium/Small) -->
-        <div class="hot-side-wrapper" v-if="recommendations.length > 1">
-          <div v-for="(item, index) in recommendations.slice(1, 4)"
-            class="hot-item interactive-card glass-effect hover-soft" :key="'hot-' + (item.id || index)"
-            :style="{ '--delay': `${index * 0.1}s` }" @click="openArticle(item.id)">
-            <ArticleCard :post="item" variant="image" />
+        <div class="hot-bento-grid" v-if="recommendations && recommendations.length > 0">
+          <!-- 主热点 (Large) -->
+          <div class="hot-item main-feature interactive-card glass-effect hover-soft animate-pop"
+            @click="openArticle(recommendations[0].id)">
+            <ArticleCard :post="recommendations[0]" variant="feature" />
           </div>
+
+          <!-- 次热点 -->
+          <template v-if="recommendations.length > 1">
+            <div v-for="(item, index) in recommendations.slice(1, 5)"
+              class="hot-item interactive-card glass-effect hover-soft animate-pop" :key="'hot-' + (item.id || index)"
+              :style="{ '--delay': `${index * 0.1 + 0.1}s` }" @click="openArticle(item.id)">
+              <ArticleCard :post="item" variant="image" />
+            </div>
+          </template>
         </div>
       </div>
 
       <div class="section-header" style="margin-top: 40px;" v-if="posts && posts.length > 0">
-        <h2 class="section-title">
+        <h2 class="section-title" style="display: flex; align-items: center; gap: 8px;">
+          <span class="animated-icon">🌊</span>
           <span class="text-gradient">最新流动流</span>
         </h2>
         <div class="header-line"></div>
@@ -34,8 +37,8 @@
 
       <div class="bento-waterfall">
         <template v-for="(post, index) in posts" :key="'post-' + (post.id || index)">
-          <div class="bento-item interactive-card glass-effect hover-soft" :style="{ '--delay': `${index * 0.05}s` }"
-            @click="openArticle(post.id)">
+          <div class="bento-item interactive-card glass-effect hover-soft animate-delayed"
+            :style="{ '--delay': `${index * 0.05}s` }" @click="openArticle(post.id)">
             <ArticleCard :post="post" :variant="getPostVariant(post, index)" />
           </div>
         </template>
@@ -152,17 +155,38 @@ onUnmounted(() => {
   opacity: 0.5;
 }
 
-.hot-bento-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr;
-  gap: 24px;
-  margin-bottom: 40px;
+.island-container {
+  padding: 32px;
+  margin: -16px -32px 40px;
+  background: radial-gradient(circle at top left, var(--color-primary-light), transparent 70%);
+  border-radius: var(--border-radius-xl);
+  border-bottom: 1px solid var(--border-color-base);
 }
 
-.hot-side-wrapper {
-  display: flex;
-  flex-direction: column;
+.animated-icon {
+  font-size: 20px;
+  animation: wave 2s infinite ease-in-out;
+}
+
+@keyframes wave {
+
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+
+  50% {
+    transform: translateY(-4px);
+  }
+}
+
+.hot-bento-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  grid-template-rows: repeat(2, 180px);
+  /* 扁平化锁死高度 */
   gap: 24px;
+  margin-bottom: 0px;
 }
 
 .hot-item {
@@ -174,9 +198,10 @@ onUnmounted(() => {
 }
 
 .main-feature {
+  grid-row: span 2;
   height: 100%;
   border-width: 1.5px;
-  animation: border-pulse 4s infinite, fadeInUp 0.6s backwards;
+  animation: border-pulse 4s infinite, popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
 /* 利用深层穿透应用色彩呼应的蒙版渐变 */
@@ -213,8 +238,6 @@ onUnmounted(() => {
   border-radius: var(--border-radius-xl);
   overflow: hidden;
   height: max-content;
-  animation: fadeInUp 0.6s backwards;
-  animation-delay: var(--delay, 0s);
   cursor: pointer;
   display: flex;
   flex-direction: column;
@@ -222,7 +245,17 @@ onUnmounted(() => {
   page-break-inside: avoid;
   margin-bottom: 24px;
   transform: translateZ(0);
-  /* 防止动画导致的断层闪烁 */
+}
+
+.animate-pop {
+  animation: popIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) backwards;
+  animation-delay: var(--delay, 0s);
+}
+
+.animate-delayed {
+  animation: fadeInUp 0.6s backwards;
+  /* Additional 0.2s delay for the entire waterfall layer */
+  animation-delay: calc(var(--delay, 0s) + 0.2s);
 }
 
 /* 占据两列的 Feature 卡片 - 多栏布局中建议全局占用或者使用默认流 */
@@ -280,7 +313,7 @@ onUnmounted(() => {
 @keyframes fadeInUp {
   from {
     opacity: 0;
-    transform: translateY(24px);
+    transform: translateY(40px);
   }
 
   to {
@@ -289,7 +322,27 @@ onUnmounted(() => {
   }
 }
 
+@keyframes popIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.95) translateY(20px);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
 /* Responsive Design */
+@media (max-width: 1200px) {
+  .hot-bento-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto;
+    grid-auto-rows: 200px;
+  }
+}
+
 @media (max-width: 992px) {
   .hot-bento-grid {
     grid-template-columns: 1fr;
