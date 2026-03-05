@@ -62,7 +62,7 @@
 import { markRaw, onMounted, reactive, ref } from "vue";
 import { HomeFilled, Monitor, Promotion } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
-import UserCard from "@/components/widget/UserCard.vue";
+import UserCard from "@/components/domain/UserCard.vue";
 import { getUserBySelf } from "@/api/user.js";
 
 const props = defineProps({

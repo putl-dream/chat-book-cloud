@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import MessageCard from "@/components/widget/MessageCard.vue";
+import MessageCard from "@/components/domain/MessageCard.vue";
 import { getMessage } from "@/api/user.js";
 import { onMounted, ref } from "vue";
 import router from "@/router/index.js";

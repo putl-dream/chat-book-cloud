@@ -23,7 +23,7 @@
 <script setup>
 import { ref } from 'vue';
 import { ElInput, ElButton, ElText } from 'element-plus';
-import MarkdownRenderer from "@/components/MarkdownRenderer.vue";
+import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
 
 const aiMessage = ref('');
 const aiChatHistory = ref([

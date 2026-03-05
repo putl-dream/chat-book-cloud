@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import CommonHeader from "@/components/CommonHeader.vue";
+import CommonHeader from "@/components/common/CommonHeader.vue";
 </script>
 
 <style scoped>

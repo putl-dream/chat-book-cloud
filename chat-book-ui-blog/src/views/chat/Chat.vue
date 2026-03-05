@@ -95,8 +95,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from "element-plus";
-import ChatUserCard from "@/components/widget/ChatUserCard.vue";
-import ChatMessage from "@/components/widget/ChatMsgCard.vue";
+import ChatUserCard from "@/components/domain/ChatUserCard.vue";
+import ChatMessage from "@/components/domain/ChatMsgCard.vue";
 import { getFriendList, queryUserMessage } from "@/api/user.js";
 import { API_CONFIG } from "@/config/index.js";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";

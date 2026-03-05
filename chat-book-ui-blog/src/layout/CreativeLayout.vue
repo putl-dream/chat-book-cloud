@@ -24,8 +24,8 @@
 </template>
 
 <script setup>
-import CreativeHeader from "@/components/CreativeHeader.vue";
-import CreativeAside from "@/components/CreativeAside.vue";
+import CreativeHeader from "@/components/domain/CreativeHeader.vue";
+import CreativeAside from "@/components/domain/CreativeAside.vue";
 </script>
 
 <style scoped>

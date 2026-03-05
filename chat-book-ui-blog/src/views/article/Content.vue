@@ -17,7 +17,7 @@
 
 <script setup>
 import { onMounted, ref } from 'vue';
-import ArticleImgCard from '@/components/widget/ArticleImgCard.vue';
+import ArticleImgCard from '@/components/domain/ArticleImgCard.vue';
 import { getUserArticlePage } from "@/api/article.js";
 
 

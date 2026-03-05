@@ -73,7 +73,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import UserDataCard from "@/components/widget/UserDataCard.vue";
+import UserDataCard from "@/components/domain/UserDataCard.vue";
 import { getUserArticlePage } from "@/api/article.js";
 import { View, ChatDotSquare, Star, Collection } from '@element-plus/icons-vue';
 

@@ -89,7 +89,7 @@ import { queryArticle } from "@/api/article.js";
 import { updateCollection, updatePraise } from "@/api/user.js";
 import { ElButton, ElMessage } from 'element-plus';
 import { checkLogin } from "@/utils/http.js";
-import MarkdownRenderer from "@/components/MarkdownRenderer.vue";
+import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
 
 import SidebarDefault from '@/views/article-sidebar/SidebarDefault.vue';
 import SidebarComment from '@/views/article-sidebar/SidebarComment.vue';

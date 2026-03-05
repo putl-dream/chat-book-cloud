@@ -46,7 +46,7 @@
 <script setup>
 import {onMounted, ref} from "vue";
 import router from "@/router/index.js";
-import UserCard from "@/components/widget/UserCard.vue";
+import UserCard from "@/components/domain/UserCard.vue";
 import {getUserBySelf} from "@/api/user.js";
 import { HomeFilled, Plus, CaretBottom, User, SwitchButton } from '@element-plus/icons-vue';
 

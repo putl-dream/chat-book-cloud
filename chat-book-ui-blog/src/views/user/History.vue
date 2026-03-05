@@ -38,7 +38,7 @@
 
 <script setup>
 import { ElSkeleton, ElEmpty } from "element-plus";
-import ArticleCard from "@/components/widget/ArticleCard.vue";
+import ArticleCard from "@/components/domain/ArticleCard.vue";
 import { onMounted, ref } from "vue";
 import { getHistory } from "@/api/user.js";
 import router from "@/router/index.js";

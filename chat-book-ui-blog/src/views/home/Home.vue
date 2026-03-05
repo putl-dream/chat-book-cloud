@@ -71,8 +71,8 @@
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { ElSkeleton } from 'element-plus';
-import HotCard from "@/components/widget/HotCard.vue";
-import ArticleCard from "@/components/widget/ArticleCard.vue";
+import HotCard from "@/components/domain/HotCard.vue";
+import ArticleCard from "@/components/domain/ArticleCard.vue";
 import router from "@/router/index.js";
 import { getCategoryName } from "@/utils/category.js";
 import { getCategoryPage, getNewPage, getSystemRecommendPage } from "@/api/article.js";

@@ -57,8 +57,8 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { ElSkeleton, ElIcon } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
-import ArticleCard from "@/components/widget/ArticleCard.vue";
-import HotCard from "@/components/widget/HotCard.vue";
+import ArticleCard from "@/components/domain/ArticleCard.vue";
+import HotCard from "@/components/domain/HotCard.vue";
 import { useRoute } from "vue-router";
 import { getLikePage } from "@/api/article.js";
 import router from "@/router/index.js";

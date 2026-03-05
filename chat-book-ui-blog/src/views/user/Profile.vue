@@ -115,7 +115,7 @@
 import { ref, onMounted } from 'vue';
 import { getUserBySelf } from "@/api/user.js";
 import { getUserArticlePage } from "@/api/article.js";
-import ArticleCard from "@/components/widget/ArticleCard.vue";
+import ArticleCard from "@/components/domain/ArticleCard.vue";
 import { Star, View } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 import { DEFAULT_AVATAR } from "@/constants/index.js";

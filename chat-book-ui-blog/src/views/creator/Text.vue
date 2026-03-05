@@ -68,8 +68,8 @@
 
 <script setup>
 import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import CreativeHeader from "@/components/CreativeHeader.vue";
-import TiptapToolbar from "@/components/TiptapToolbar.vue";
+import CreativeHeader from "@/components/domain/CreativeHeader.vue";
+import TiptapToolbar from "@/components/domain/TiptapToolbar.vue";
 import { ElMessage } from "element-plus";
 import { onBeforeRouteUpdate, useRoute } from "vue-router";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";

@@ -10,8 +10,8 @@
 </template>
 
 <script setup>
-import AuthorCard from "@/components/widget/AuthorCard.vue";
-import HotCard from "@/components/widget/HotCard.vue";
+import AuthorCard from "@/components/domain/AuthorCard.vue";
+import HotCard from "@/components/domain/HotCard.vue";
 
 defineProps({
     userId: {
