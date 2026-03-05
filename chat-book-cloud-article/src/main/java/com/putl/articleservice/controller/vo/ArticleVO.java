@@ -1,7 +1,8 @@
 package com.putl.articleservice.controller.vo;
 
-import com.baomidou.mybatisplus.annotation.EnumValue;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.putl.articleservice.config.FileUrlSerializer;
 import com.putl.articleservice.enums.ArticleStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;
@@ -41,6 +42,7 @@ public class ArticleVO {
     private String content;
 
     @Schema(description = "文章封面")
+    @JsonSerialize(using = FileUrlSerializer.class)
     private String cover;
 
     @Schema(description = "文章分类")

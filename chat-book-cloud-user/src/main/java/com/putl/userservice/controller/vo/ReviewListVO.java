@@ -1,6 +1,8 @@
 package com.putl.userservice.controller.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.putl.userservice.config.FileUrlSerializer;
 import lombok.Data;
 
 import java.time.LocalDateTime;
@@ -19,6 +21,7 @@ public class ReviewListVO {
     //用户名
     private String username;
     //用户头像
+    @JsonSerialize(using = FileUrlSerializer.class)
     private String headerImg;
     //评论时间
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
