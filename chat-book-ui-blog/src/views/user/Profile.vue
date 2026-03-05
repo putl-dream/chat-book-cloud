@@ -112,48 +112,25 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import { getUserBySelf } from "@/api/user.js";
-import { getUserArticlePage } from "@/api/article.js";
+import { onMounted } from 'vue';
 import ArticleCard from "@/components/domain/ArticleCard.vue";
 import { Star, View } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 import { DEFAULT_AVATAR } from "@/constants/index.js";
-
-const user = ref({});
-const posts = ref([]);
-const activeTab = ref('articles');
-const loading = ref(false);
-
-const fetchUserData = async () => {
-    try {
-        const res = await getUserBySelf();
-        // Axios 拦截器已经处理了 CommonResult，并返回了 .data
-        if (res) {
-            user.value = res;
-        }
-    } catch (error) {
-        console.error('获取用户信息失败', error);
-    }
-};
-
-const fetchUserPosts = async () => {
-    loading.value = true;
-    try {
-        const res = await getUserArticlePage(1, 10);
-        if (res && res.list) {
-            posts.value = res.list;
-        }
-    } catch (error) {
-        console.error('获取文章失败', error);
-    } finally {
-        loading.value = false;
-    }
-};
+import { useProfileLogic } from "./Profile/_hooks/useProfileLogic.js";
 
 const openArticle = (id) => {
     router.push({ name: 'Article', params: { id } });
 };
+
+const {
+    user,
+    posts,
+    activeTab,
+    loading,
+    fetchUserData,
+    fetchUserPosts
+} = useProfileLogic();
 
 onMounted(async () => {
     await fetchUserData();

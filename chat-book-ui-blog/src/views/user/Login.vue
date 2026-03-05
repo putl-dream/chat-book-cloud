@@ -9,7 +9,7 @@
             :class="{ 'right-panel-active': isSignUpPanelActive, 'email-sign-in-active': isEmailSignIn }"
             id="login-box">
             <div class="form-container sign-up-container">
-                <form @submit.prevent="handleSignUp">
+                <form @submit.prevent="handleSignUp().then(success => success && togglePanel(false))">
                     <h1>创建账户</h1>
                     <div class="social-container">
                         <a href="#" class="social"><el-icon><i-ep-platform /></el-icon></a>
@@ -122,122 +122,28 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { ElMessage } from "element-plus";
-import { captcha, login, signUp } from "@/api/user.js";
+import { ref } from 'vue';
 import { User, Lock, Message } from '@element-plus/icons-vue';
+import { useLoginLogic } from "./Login/_hooks/useLoginLogic.js";
 
 const isSignUpPanelActive = ref(false);
-const signupForm = reactive({
-    username: '',
-    email: '',
-    password: '',
-    captcha: ''
-});
-const signInForm = reactive({
-    email: '',
-    password: '',
-    captcha: ''
-});
 
-const countdown = ref(0); // 倒计时秒数
-const isCounting = ref(false); // 是否正在倒计时
-const isEmailSignIn = ref(false); // 是否显示邮箱验证码登录
+const {
+  signupForm,
+  signInForm,
+  countdown,
+  isCounting,
+  isEmailSignIn,
+  handleSignUp,
+  handleSignIn,
+  handleEmailSignIn,
+  getCode,
+  getEmailCode,
+  toggleEmailSignIn
+} = useLoginLogic();
 
 function togglePanel(isSignUp) {
     isSignUpPanelActive.value = isSignUp;
-}
-
-// 注册逻辑
-async function handleSignUp() {
-    if (!signupForm.captcha) {
-        ElMessage.warning('请填写验证码');
-        return;
-    }
-    try {
-        let params = await signUp(signupForm);
-        if (params) {
-            ElMessage.success('注册成功');
-            togglePanel(false);
-        }
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-// 登录逻辑
-async function handleSignIn() {
-    try {
-        let data = await login(signInForm);
-        if (data) {
-            ElMessage.success('登录成功');
-            localStorage.setItem("token", data);
-            window.location.href = '/';
-        }
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-// 邮箱验证码登录逻辑
-async function handleEmailSignIn() {
-    if (!signInForm.captcha) {
-        ElMessage.warning('请填写验证码');
-        return;
-    }
-    ElMessage.info('邮箱验证码登录功能开发中');
-}
-
-// 获取验证码逻辑
-async function getCode() {
-    if (signupForm.email === '') {
-        ElMessage.warning('请填写邮箱');
-        return;
-    }
-    try {
-        let params = await captcha(signupForm.email);
-        if (params) {
-            ElMessage.success('验证码发送成功');
-        }
-        startCountdown(120);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-function startCountdown(time) {
-    countdown.value = time;
-    isCounting.value = true;
-    const interval = setInterval(() => {
-        if (countdown.value > 0) {
-            countdown.value--;
-        } else {
-            clearInterval(interval);
-            isCounting.value = false;
-        }
-    }, 1000);
-}
-
-// 获取邮箱验证码逻辑
-async function getEmailCode() {
-    if (signInForm.email === '') {
-        ElMessage.warning('请填写邮箱');
-        return;
-    }
-    try {
-        let params = await captcha(signInForm.email);
-        if (params) {
-            ElMessage.success('验证码发送成功');
-        }
-        startCountdown(120);
-    } catch (e) {
-        console.error(e);
-    }
-}
-
-// 切换邮箱验证码登录
-function toggleEmailSignIn(isEmail) {
-    isEmailSignIn.value = isEmail;
 }
 </script>
 
