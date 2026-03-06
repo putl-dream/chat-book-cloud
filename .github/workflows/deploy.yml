@@ -2,7 +2,7 @@ name: Build and Deploy (Local Build)
 
 on:
   push:
-    branches: ["main", "master"] # 兼容 main 或 master 分支
+    branches: ["master"] # 兼容 main 或 master 分支
   workflow_dispatch: # 支持手动触发
 
 jobs:
@@ -24,7 +24,6 @@ jobs:
         run: mvn clean package -DskipTests -B
 
       # --- 2. Vue 前端构建 ---
-      # --- 2. Vue 前端构建 ---
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -32,12 +31,13 @@ jobs:
           cache: "npm"
           cache-dependency-path: chat-book-ui-blog/package-lock.json
 
-      # 【关键：强制覆盖已有 .env 文件】
-      - name: Force Update Env File
+      # 【关键：强制覆盖已有 .env 文件 - 生产环境】
+      - name: Force Update Env File (Production)
         run: |
           cd chat-book-ui-blog
-          echo "VITE_API_BASE_URL=/" > .env
-          echo "VITE_API_BASE_URL=/" > .env.production
+          echo "VITE_APP_BASE_URL=/api" > .env
+          echo "VITE_APP_BASE_URL=/api" > .env.production
+          echo "VITE_MINIO_PUBLIC_URL=https://your-domain.com" >> .env.production
 
       - name: Build Frontend
         run: |
