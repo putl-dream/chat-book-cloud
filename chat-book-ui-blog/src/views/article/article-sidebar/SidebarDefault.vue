@@ -1,5 +1,6 @@
 <template>
     <div class="default-sidebar">
+        <!-- 点击文章头部作者名时，右侧切换为此 default 模块（作者卡片 + 热门） -->
         <div class="article-right-card">
             <AuthorCard :userId="userId" />
         </div>

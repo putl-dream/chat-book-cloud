@@ -37,7 +37,7 @@ jobs:
           cd chat-book-ui-blog
           echo "VITE_APP_BASE_URL=/api" > .env
           echo "VITE_APP_BASE_URL=/api" > .env.production
-          echo "VITE_MINIO_PUBLIC_URL=https://your-domain.com" >> .env.production
+          echo "VITE_MINIO_PUBLIC_URL=http://putl.online" >> .env.production
 
       - name: Build Frontend
         run: |
