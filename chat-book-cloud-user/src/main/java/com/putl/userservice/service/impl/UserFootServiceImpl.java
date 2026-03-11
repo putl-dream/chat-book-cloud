@@ -43,7 +43,10 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
 
     @Override
     public int updateCollection(Integer articleId, Integer userId){
-        if (dataNULL(articleId, userId)) return -1;
+        // upsert: 若无足迹记录则先初始化，再切换收藏状态
+        if (dataNULL(articleId, userId)) {
+            addBrowse(articleId, userId);
+        }
         UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
         int status = foot.getCollectionStat() == 1 ? 0 : 1;
         userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate().set(UserFootDO::getCollectionStat, status).eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
@@ -52,9 +55,11 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
 
     @Override
     public int updateComment(Integer articleId, Integer userId){
-        if (dataNULL(articleId, userId)) return -1;
+        // upsert: 若无足迹记录则先初始化，再切换评论状态
+        if (dataNULL(articleId, userId)) {
+            addBrowse(articleId, userId);
+        }
         UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        if (foot == null) return -1;
         int status = foot.getCommentStat() == 1 ? 0 : 1;
         userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate().set(UserFootDO::getCommentStat, status).eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
         return status;
@@ -62,8 +67,10 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
 
     @Override
     public int updatePraise(Integer articleId, Integer userId){
-        if (dataNULL(articleId, userId)) return -1;
-        System.err.println("articleId => " + articleId);
+        // upsert: 若无足迹记录则先初始化，再切换点赞状态
+        if (dataNULL(articleId, userId)) {
+            addBrowse(articleId, userId);
+        }
         UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
         int status = foot.getPraiseStat() == 1 ? 0 : 1;
         userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate().set(UserFootDO::getPraiseStat, status).eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
@@ -121,9 +128,12 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         return articleClient.selectIds(list.stream().map(UserFootDO::getDocumentId).toList()).getData();
     }
 
-    public boolean dataNULL(Integer articleId, Integer userId){
+    /**
+     * 判断用户足迹记录是否不存在
+     * @return true = 记录不存在; false = 记录已存在
+     */
+    private boolean dataNULL(Integer articleId, Integer userId){
         UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        System.out.println("foot = " + foot);
         return foot == null;
     }
 }
