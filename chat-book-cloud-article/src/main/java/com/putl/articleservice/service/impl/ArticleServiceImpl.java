@@ -116,6 +116,17 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             articleDO.setUserId(Integer.valueOf(userId));
         }
         articleMapper.insert(articleDO);
+
+        if (articleVO.getContent() != null) {
+            ArticleInfoDO articleInfoDO = ArticleInfoDO.builder()
+                .articleId(articleDO.getId())
+                .content(articleVO.getContent())
+                .userId(userId != null ? Integer.valueOf(userId) : null)
+                .userName(articleVO.getUserName())
+                .title(articleVO.getTitle())
+                .build();
+            articleInfoMapper.insert(articleInfoDO);
+        }
     }
 
     /**
