@@ -15,6 +15,15 @@ public class FileUrlSerializer extends JsonSerializer<String> {
 
     private final MinIOConfigProperties minIOConfigProperties;
 
+    /**
+     * Jackson 反序列化时需要无参构造函数。
+     * 此时 minIOConfigProperties 为 null，serialize 方法中已有 null 检查，
+     * 会直接返回原始值（不拼接前缀），这对于反序列化场景是正确的行为。
+     */
+    public FileUrlSerializer() {
+        this.minIOConfigProperties = null;
+    }
+
     @Override
     public void serialize(String value, JsonGenerator gen, SerializerProvider serializers) throws IOException {
         if (value == null || value.isEmpty()) {
