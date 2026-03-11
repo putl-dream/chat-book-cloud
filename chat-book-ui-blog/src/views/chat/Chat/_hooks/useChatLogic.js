@@ -25,14 +25,19 @@ export function useChatLogic() {
     selectedFriend.value = friend;
     const res = await queryUserMessage(selectedFriend.value.userId);
     if (res) {
+      // P0 Fix: 以当前登录用户的 userId 为基准判断发送方
+      // 原代码错误：senderId === selectedFriend.userId 判断为 self，实为对方发的
+      const currentUserId = parseInt(localStorage.getItem('userId'));
       for (let i = 0; i < res.length; i++) {
-        if (res[i].senderId === selectedFriend.value.userId) {
+        if (res[i].senderId === currentUserId) {
+          // 发送者是自己
           messages.value.push({
             sender: 'self',
             content: res[i].content,
             avatar: localStorage.getItem('avatar'),
           });
-        } else if (res[i].receiverId === selectedFriend.value.userId) {
+        } else {
+          // 发送者是对方（selectedFriend）
           messages.value.push({
             sender: 'other',
             content: res[i].content,

@@ -1,24 +1,19 @@
 <template>
     <div class="message-card">
         <div class="avatar-wrapper">
-            <el-avatar class="user-avatar" :size="40" :src="message.authorAvatar"></el-avatar>
+            <!-- NotificationVO 暂未包含头像，使用默认图标 -->
+            <el-avatar class="user-avatar" :size="40" :src="null" />
         </div>
         <div class="message-content">
             <div class="message-header">
                 <div class="user-action">
-                    <span class="username">{{ message.userName }}</span>
+                    <span class="username">用户&nbsp;{{ message.senderId }}</span>
                     <span class="action-text">{{ actionText }}</span>
                     <span class="article-link" @click.stop>
-                        《{{ message.title }}》
+                        《{{ message.articleTitle || '未知文章' }}》
                     </span>
                 </div>
                 <span class="time">{{ message.createTime }}</span>
-            </div>
-            
-            <div class="message-body" v-if="message.abstractText">
-                <div class="quote-box">
-                    {{ message.abstractText }}
-                </div>
             </div>
         </div>
         <div class="action-icon">
@@ -39,11 +34,17 @@ const props = defineProps({
     }
 });
 
+// P0 Fix: 直接读取后端返回的 actionType 字段（PRAISE/COLLECT/COMMENT/BROWSE）
+// 原来通过 collectCount/praiseCount 数量猜测类型的逻辑已废弃
+const ACTION_TYPE_MAP = {
+    COLLECT: 'collect',
+    PRAISE:  'like',
+    COMMENT: 'comment',
+    BROWSE:  'view',
+};
+
 const messageType = computed(() => {
-    if (props.message.collectCount === 1) return 'collect';
-    if (props.message.praiseCount === 1) return 'like';
-    if (props.message.reviewCount === 1) return 'comment';
-    return 'view';
+    return ACTION_TYPE_MAP[props.message.actionType] || 'view';
 });
 
 const actionText = computed(() => {
