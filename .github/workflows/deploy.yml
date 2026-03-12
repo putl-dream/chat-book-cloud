@@ -1,18 +1,105 @@
-name: Build and Deploy
+name: CI and Deploy
 
 on:
+  pull_request:
+    branches: ["master"]
   push:
     branches: ["master"]
   workflow_dispatch:
 
 jobs:
+  qodana:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+      - name: Qodana Scan
+        uses: JetBrains/qodana-action@v2025.3
+        env:
+          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
+        with:
+          pr-mode: false
+          use-caches: true
+          post-pr-comment: true
+          use-annotations: true
+          upload-result: false
+          push-fixes: "none"
+
+  java-ci:
+    if: github.event_name == 'pull_request'
+    needs: qodana
+    runs-on: ubuntu-latest
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: root
+        ports:
+          - 3306:3306
+        options: --health-cmd="mysqladmin ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      redis:
+        image: redis:alpine
+        ports:
+          - 6379:6379
+        options: --health-cmd="redis-cli ping" --health-interval=10s --health-timeout=5s --health-retries=3
+      rabbitmq:
+        image: rabbitmq:management
+        env:
+          RABBITMQ_DEFAULT_USER: admin
+          RABBITMQ_DEFAULT_PASS: admin@2026
+        ports:
+          - 5672:5672
+          - 15672:15672
+        options: --health-cmd "rabbitmq-diagnostics -q ping" --health-interval 10s --health-timeout 5s --health-retries 5
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: "17"
+          distribution: "temurin"
+          cache: maven
+
+      - name: Start MinIO
+        run: |
+          docker run -d -p 9000:9000 -p 9001:9001 --name minio \
+            -e MINIO_ROOT_USER=admin -e MINIO_ROOT_PASSWORD=admin@2026 \
+            minio/minio server /data --console-address ":9001"
+
+          echo "Waiting for MinIO..."
+          timeout=60
+          while ! curl -s http://localhost:9000/minio/health/live > /dev/null; do
+            timeout=$((timeout-1))
+            if [ $timeout -eq 0 ]; then
+              echo "MinIO startup timed out"
+              exit 1
+            fi
+            sleep 1
+          done
+          echo "MinIO is up!"
+
+      - name: Initialize Databases
+        run: |
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`ice_user\`; CREATE DATABASE IF NOT EXISTS \`ice-article\`;"
+
+      - name: Build with Maven
+        run: mvn -B test --file pom.xml
+
   build-and-deploy:
+    if: github.event_name == 'push'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # 1) Build backend (Maven)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -23,10 +110,6 @@ jobs:
       - name: Build Backend with Maven
         run: mvn clean package -DskipTests -B
 
-      # 2) Build frontend (Vite)
-      # Backend address is managed by env files:
-      # - Local dev: chat-book-ui-blog/.env.development
-      # - Production: chat-book-ui-blog/.env.production
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -40,7 +123,6 @@ jobs:
           npm install
           npm run build
 
-      # 3) Prepare deployment artifacts
       - name: Prepare Deployment Artifacts
         run: |
           mkdir -p deploy/chat-book-cloud-gateway/target
@@ -67,7 +149,6 @@ jobs:
           cp init.sql deploy/
           cp run_sql.sh deploy/
 
-      # 4) Upload to server
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -79,7 +160,6 @@ jobs:
           target: "/home/${{ secrets.SERVER_USER }}/chat-book-cloud/"
           strip_components: 1
 
-      # 5) Restart services
       - name: Start Services via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
