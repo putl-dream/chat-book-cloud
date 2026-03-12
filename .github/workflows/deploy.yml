@@ -1,9 +1,9 @@
-name: Build and Deploy (Local Build)
+name: Build and Deploy
 
 on:
   push:
-    branches: ["master"] # 兼容 main 或 master 分支
-  workflow_dispatch: # 支持手动触发
+    branches: ["master"]
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -12,7 +12,7 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
-      # --- 1. Java 后端构建 ---
+      # 1) Build backend (Maven)
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
@@ -23,7 +23,10 @@ jobs:
       - name: Build Backend with Maven
         run: mvn clean package -DskipTests -B
 
-      # --- 2. Vue 前端构建 ---
+      # 2) Build frontend (Vite)
+      # Backend address is managed by env files:
+      # - Local dev: chat-book-ui-blog/.env.development
+      # - Production: chat-book-ui-blog/.env.production
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -31,21 +34,13 @@ jobs:
           cache: "npm"
           cache-dependency-path: chat-book-ui-blog/package-lock.json
 
-      # 【关键：强制覆盖已有 .env 文件 - 生产环境】
-      - name: Force Update Env File (Production)
-        run: |
-          cd chat-book-ui-blog
-          echo "VITE_APP_BASE_URL=/api" > .env
-          echo "VITE_APP_BASE_URL=/api" > .env.production
-          echo "VITE_MINIO_PUBLIC_URL=http://putl.online" >> .env.production
-
       - name: Build Frontend
         run: |
           cd chat-book-ui-blog
           npm install
           npm run build
 
-      # --- 3. 整理部署包 (防止路径混乱) ---
+      # 3) Prepare deployment artifacts
       - name: Prepare Deployment Artifacts
         run: |
           mkdir -p deploy/chat-book-cloud-gateway/target
@@ -54,31 +49,25 @@ jobs:
           mkdir -p deploy/chat-book-cloud-article/target
           mkdir -p deploy/chat-book-ui-blog/dist
 
-          # 复制 Jar 包
           cp chat-book-cloud-gateway/target/*.jar deploy/chat-book-cloud-gateway/target/
           cp chat-book-cloud-auth/target/*.jar deploy/chat-book-cloud-auth/target/
           cp chat-book-cloud-user/target/*.jar deploy/chat-book-cloud-user/target/
           cp chat-book-cloud-article/target/*.jar deploy/chat-book-cloud-article/target/
 
-          # 复制 Dockerfiles
           cp chat-book-cloud-gateway/Dockerfile deploy/chat-book-cloud-gateway/
           cp chat-book-cloud-auth/Dockerfile deploy/chat-book-cloud-auth/
           cp chat-book-cloud-user/Dockerfile deploy/chat-book-cloud-user/
           cp chat-book-cloud-article/Dockerfile deploy/chat-book-cloud-article/
           cp chat-book-ui-blog/Dockerfile deploy/chat-book-ui-blog/
 
-          # Copy Frontend Config
           cp chat-book-ui-blog/nginx.conf deploy/chat-book-ui-blog/
-
-          # Copy Frontend Dist
           cp -r chat-book-ui-blog/dist/* deploy/chat-book-ui-blog/dist/
 
-          # Copy Docker Compose and SQL scripts
           cp docker-compose.yml deploy/
           cp init.sql deploy/
           cp run_sql.sh deploy/
 
-      # --- 4. 传输文件到服务器 (使用你截图中的变量名) ---
+      # 4) Upload to server
       - name: Copy files to server
         uses: appleboy/scp-action@v0.1.7
         with:
@@ -90,7 +79,7 @@ jobs:
           target: "/home/${{ secrets.SERVER_USER }}/chat-book-cloud/"
           strip_components: 1
 
-      # --- 5. SSH 远程执行容器更新 ---
+      # 5) Restart services
       - name: Start Services via SSH
         uses: appleboy/ssh-action@v1.0.3
         with:
@@ -100,7 +89,5 @@ jobs:
           port: ${{ secrets.SERVER_PORT }}
           script: |
             cd /home/${{ secrets.SERVER_USER }}/chat-book-cloud/
-            # 使用本地构建模式启动，--remove-orphans 清理旧配置
             docker-compose up -d --build --remove-orphans
-            # 清理构建过程中产生的临时镜像碎片
             docker image prune -f
