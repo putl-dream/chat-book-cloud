@@ -4,18 +4,14 @@
       <el-tooltip content="加粗 (Ctrl+B)" placement="bottom" :show-after="500">
         <button class="toolbar-btn" :class="{ 'is-active': editor.isActive('bold') }"
           @click="editor.chain().focus().toggleBold().run()">
-          <el-icon>
-            <Bold />
-          </el-icon>
+          <span style="font-weight: bold;">B</span>
         </button>
       </el-tooltip>
 
       <el-tooltip content="斜体 (Ctrl+I)" placement="bottom" :show-after="500">
         <button class="toolbar-btn" :class="{ 'is-active': editor.isActive('italic') }"
           @click="editor.chain().focus().toggleItalic().run()">
-          <el-icon>
-            <Italic />
-          </el-icon>
+          <span style="font-style: italic; font-family: serif; font-weight: bold;">I</span>
         </button>
       </el-tooltip>
 
@@ -169,9 +165,11 @@
     <div class="toolbar-group">
       <el-tooltip content="插入图片" placement="bottom" :show-after="500">
         <button class="toolbar-btn" @click="triggerImageUpload">
-          <el-icon>
-            <Picture />
-          </el-icon>
+          <svg viewBox="0 0 24 24" width="16" height="16" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect>
+            <circle cx="8.5" cy="8.5" r="1.5"></circle>
+            <polyline points="21 15 16 10 5 21"></polyline>
+          </svg>
         </button>
       </el-tooltip>
       <input type="file" ref="fileInput" style="display: none" accept="image/*" @change="handleImageUpload">

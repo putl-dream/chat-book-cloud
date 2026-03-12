@@ -2,6 +2,7 @@ package com.putl.userservice.controller;
 
 
 import com.putl.articleservice.api.dto.ArticleListVO;
+import com.putl.userservice.controller.vo.NotificationVO;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import com.putl.userservice.controller.vo.UserFootListVO;
 import com.putl.userservice.controller.vo.UserFootVO;
@@ -90,14 +91,14 @@ public class UserFootController {
         return CommonResult.success(history);
     }
 
-    @Operation(summary = "获取消息")
-    @GetMapping("/getMessage")
-    public CommonResult<List<ArticleListVO>> getMessage(){
+    @Operation(summary = "获取互动通知（点赞/收藏/评论/浏览）")
+    @GetMapping("/getNotifications")
+    public CommonResult<List<NotificationVO>> getNotifications(){
         String userId = UserContext.getUserId();
         if (userId == null) {
             return CommonResult.error(ErrorType.ERROR_401);
         }
-        List<ArticleListVO> message = userFootService.getMessage(Integer.parseInt(userId));
-        return CommonResult.success(message);
+        List<NotificationVO> notifications = userFootService.getNotifications(Integer.parseInt(userId));
+        return CommonResult.success(notifications);
     }
 }

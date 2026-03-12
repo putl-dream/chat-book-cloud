@@ -141,9 +141,10 @@ export function saveReview(params) {
 }
 
 /**
- * 获取消息
- * @returns
+ * 获取互动通知（点赞/收藏/评论/浏览）
+ * P0 Fix: 原 /getMessage 接口返回数据有误，已修复为 /getNotifications
+ * @returns {Promise<NotificationVO[]>}
  */
-export function getMessage() {
-    return request.get(`/user/foot/getMessage`);
+export function getNotifications() {
+    return request.get(`/user/foot/getNotifications`);
 }

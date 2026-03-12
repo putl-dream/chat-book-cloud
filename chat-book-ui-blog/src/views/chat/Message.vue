@@ -17,7 +17,7 @@
                     <transition-group name="list-fade" tag="div" class="message-grid">
                         <div v-for="(message, index) in messages" :key="message.id || index"
                             class="message-card-wrapper" :style="{ '--delay': `${index * 0.1}s` }"
-                            @click="openArticle(message.id)">
+                            @click="openArticle(message.articleId)">
                             <div class="message-card glass-panel">
                                 <div class="message-icon-box">
                                     <el-icon :size="24">
@@ -47,7 +47,7 @@
 
 <script setup>
 import MessageCard from "@/components/domain/MessageCard.vue";
-import { getMessage } from "@/api/user.js";
+import { getNotifications } from "@/api/user.js";
 import { onMounted, ref } from "vue";
 import router from "@/router/index.js";
 import { ElSkeleton, ElEmpty } from 'element-plus';
@@ -58,7 +58,8 @@ const loading = ref(false);
 const messageRequest = async () => {
     loading.value = true;
     try {
-        const res = await getMessage();
+        // P0 Fix: 原 getMessage 接口返回数据错误，已更换为 getNotifications
+        const res = await getNotifications();
         if (res) {
             messages.value = res;
         }
@@ -69,8 +70,9 @@ const messageRequest = async () => {
     }
 }
 
-const openArticle = async (id) => {
-    await router.push({ name: 'Article', params: { id: id } });
+const openArticle = async (articleId) => {
+    // P0 Fix: 使用 message.articleId 跳转（NotificationVO 的 id 是足迹记录ID，非文章ID）
+    await router.push({ name: 'Article', params: { id: articleId } });
 };
 
 onMounted(() => {
@@ -121,6 +123,7 @@ onMounted(() => {
 .text-gradient {
     background: linear-gradient(135deg, var(--text-color-primary) 30%, var(--color-primary) 100%);
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
 }
 

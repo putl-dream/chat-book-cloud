@@ -9,8 +9,10 @@ export function useArticleLogic(articleId) {
   const praiseStat = ref(0);
   const collectStat = ref(0);
   const activePanel = ref('default');
+  /** 右侧面板是否展开（default 时也需为 true 才能显示作者等） */
+  const showRightPanel = ref(false);
 
-  const rightSidebarWidth = ref(300);
+  const rightSidebarWidth = ref(400);
   const isResizing = ref(false);
 
   const componentMap = {
@@ -35,11 +37,34 @@ export function useArticleLogic(articleId) {
   };
 
   const handleComment = () => {
-    activePanel.value = activePanel.value === 'comment' ? 'default' : 'comment';
+    if (activePanel.value === 'comment') {
+      showRightPanel.value = false;
+      activePanel.value = 'default';
+    } else {
+      showRightPanel.value = true;
+      activePanel.value = 'comment';
+    }
   };
 
   const handleAiChat = () => {
-    activePanel.value = activePanel.value === 'ai' ? 'default' : 'ai';
+    if (activePanel.value === 'ai') {
+      showRightPanel.value = false;
+      activePanel.value = 'default';
+    } else {
+      showRightPanel.value = true;
+      activePanel.value = 'ai';
+    }
+  };
+
+  /** 点击作者名：右侧切换为 default 模块（作者卡片等） */
+  const openAuthorPanel = () => {
+    if (showRightPanel.value && activePanel.value === 'default') {
+      showRightPanel.value = false;
+      activePanel.value = 'default';
+    } else {
+      showRightPanel.value = true;
+      activePanel.value = 'default';
+    }
   };
 
   const handleFavorite = async () => {
@@ -68,8 +93,8 @@ export function useArticleLogic(articleId) {
       const containerRect = container.getBoundingClientRect();
       let newWidth = containerRect.right - e.clientX - 24;
 
-      if (newWidth < 200) newWidth = 200;
-      if (newWidth > 600) newWidth = 600;
+      if (newWidth < 280) newWidth = 280;
+      if (newWidth > 700) newWidth = 700;
 
       rightSidebarWidth.value = newWidth;
     }
@@ -88,6 +113,7 @@ export function useArticleLogic(articleId) {
     praiseStat,
     collectStat,
     activePanel,
+    showRightPanel,
     rightSidebarWidth,
     isResizing,
     componentMap,
@@ -96,6 +122,7 @@ export function useArticleLogic(articleId) {
     handleComment,
     handleAiChat,
     handleFavorite,
+    openAuthorPanel,
     startResize
   };
 }

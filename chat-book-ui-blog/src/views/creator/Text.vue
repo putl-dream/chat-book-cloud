@@ -71,12 +71,12 @@ import { onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CreativeHeader from "@/components/domain/CreativeHeader.vue";
 import TiptapToolbar from "@/components/domain/TiptapToolbar.vue";
 import { ElMessage } from "element-plus";
-import { onBeforeRouteUpdate, useRoute } from "vue-router";
+import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 import { API_CONFIG } from "@/config/index.js";
 import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon } from 'element-plus';
 import { CATEGORY_NAMES } from '@/constants';
-import { uploadFile } from '@/api/article.js';
+import { uploadFile, updateArticle, addArticle } from '@/api/article.js';
 import { Plus } from '@element-plus/icons-vue';
 
 import { EditorContent, useEditor } from '@tiptap/vue-3';
@@ -203,16 +203,21 @@ const connectWebSocket = () => {
     // 注册消息处理函数
     socketService.on('USER', (data) => console.log("用户消息-->>", data));
     socketService.on('SYSTEM', (data) => console.log("系统消息-->>", data));
-    socketService.on('CACHE', () => save.value = false);
+    socketService.on('CACHE', () => {
+        save.value = false;
+        hasUnsavedChanges.value = false;
+    });
     socketService.on('SAVE', (data) => {
         console.log("保存消息-->>", data);
         ElMessage.success(data);
-        window.location.href = '/';
+        hasUnsavedChanges.value = false;
+        router.push('/');
     });
     socketService.on('PUBLISH', (data) => {
         console.log("发布消息-->>", data);
         ElMessage.success(data);
-        window.location.href = '/';
+        hasUnsavedChanges.value = false;
+        router.push('/');
     });
     socketService.on('SELECT', (data) => {
         console.log("查询消息-->>", data);
@@ -235,6 +240,7 @@ const connectWebSocket = () => {
 let typingTimer = null;
 const onInput = () => {
     clearTimeout(typingTimer); // 清除之前的定时器
+    hasUnsavedChanges.value = true;
     typingTimer = setTimeout(() => {
         sendMessage('CACHE')
     }, 1500);
@@ -245,6 +251,7 @@ watch(html, (newVal, oldVal) => {
     clearTimeout(typingTimer); // 清除之前的定时器
     if (newVal !== oldVal && newVal !== '') { // 如果输入框不为空
         save.value = true;
+        hasUnsavedChanges.value = true;
         typingTimer = setTimeout(() => {
             sendMessage('CACHE')
         }, 500);
@@ -257,7 +264,30 @@ async function saveContent() {
     setTimeout(() => {
         sendMessage('SAVE')
     }, 1000);
+}
 
+/**
+ * 通过 HTTP API 降级保存文章（当 WS 不可用时）
+ */
+async function saveContentViaHttp() {
+    const data = {
+        id: articleId,
+        title: title.value,
+        content: html.value,
+        category: publishForm.value.category,
+        abstractText: publishForm.value.abstractText,
+        cover: publishForm.value.cover
+    };
+    try {
+        if (articleId) {
+            await updateArticle(data);
+        } else {
+            await addArticle(data);
+        }
+        console.log('HTTP 降级保存成功');
+    } catch (e) {
+        console.error('HTTP 降级保存失败:', e);
+    }
 }
 
 // 发布内容
@@ -279,26 +309,72 @@ const sendMessage = (type) => {
         socketService.send(type, data);
     } else {
         console.log('WebSocket 未打开');
-        // window.location.reload(); // 可选：是否重载页面
     }
 };
 
 
 // 获取路由参数
 const route = useRoute();
+const router = useRouter();
 const articleId = route.params.id;
+
+// 跟踪内容是否有修改
+const hasUnsavedChanges = ref(false);
+
+// 提取为命名函数，以便正确移除监听器
+const handleBeforeUnload = (e) => {
+    if (hasUnsavedChanges.value) {
+        e.preventDefault();
+        e.returnValue = '';
+    }
+};
 
 // 绑定按钮点击事件
 onMounted(() => {
     connectWebSocket();
+    // 监听浏览器关闭/刷新事件，提示用户保存
+    window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
+    // 1. 清理所有定时器
+    clearTimeout(typingTimer);
+    clearTimeout(debounceTimeout);
+
+    // 2. 如果有未保存的更改，尝试保存
+    if (hasUnsavedChanges.value) {
+        if (socketService && socketService.isConnected()) {
+            // WS 仍然可用，直接发送 CACHE 保存（非 SAVE，避免触发页面跳转）
+            const data = {
+                id: articleId,
+                title: title.value,
+                content: html.value,
+                category: publishForm.value.category,
+                abstractText: publishForm.value.abstractText,
+                cover: publishForm.value.cover
+            };
+            console.log('离开页面，通过 WS 保存缓存');
+            socketService.send('CACHE', data);
+        } else {
+            // WS 已关闭，降级使用 HTTP API 保存
+            console.log('WS 已关闭，降级使用 HTTP 保存');
+            saveContentViaHttp();
+        }
+    }
+
+    // 3. 销毁编辑器
     if (editor.value) {
         editor.value.destroy();
     }
-    // Handle socket logic (same as original)
-    saveContent();
+
+    // 4. 移除 beforeunload 监听器（使用命名函数引用）
+    window.removeEventListener('beforeunload', handleBeforeUnload);
+
+    // 5. 关闭 WebSocket 连接
+    if (socketService) {
+        socketService.close();
+        socketService = null;
+    }
 });
 
 // 监听路由变化

@@ -1,6 +1,6 @@
 package com.putl.articleservice.controller;
 
-import com.putl.articleservice.utils.ImageResult;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import com.putl.articleservice.config.FileUrlSerializer;
 import fun.amireux.chat.book.minio.utils.MinioUpdateUtil;
 import io.swagger.v3.oas.annotations.Operation;
@@ -46,10 +46,10 @@ public class FileController {
 
     @Operation(summary = "上传文件")
     @PostMapping("/upload")
-    public ImageResult<Img> uploadFile(@RequestParam("file") MultipartFile file) {
+    public CommonResult<ImageVO> uploadFile(@RequestParam("file") MultipartFile file) {
         log.info("开始上传文件: {}", file.getOriginalFilename());
         if (file.isEmpty())
-            return ImageResult.error("请上传文件");
+            return CommonResult.error(500, "请上传文件");
 
         try {
             // 查看文件类型
@@ -67,14 +67,14 @@ public class FileController {
             String resultPath = minioUpdateUtil.uploadFile(file, objectName);
 
             if (resultPath == null) {
-                return ImageResult.error("文件上传失败");
+                return CommonResult.error(500, "文件上传失败");
             }
 
             log.info("文件保存成功: {}", resultPath);
-            return ImageResult.success(new Img(resultPath, file.getOriginalFilename(), null));
+            return CommonResult.success(new ImageVO(resultPath, file.getOriginalFilename(), null));
         } catch (Exception e) {
             log.error("文件上传过程中发生异常", e);
-            return ImageResult.error("文件上传失败: " + e.getMessage());
+            return CommonResult.error(500, "文件上传失败: " + e.getMessage());
         }
     }
 
@@ -102,7 +102,7 @@ public class FileController {
 
     @Data
     @AllArgsConstructor
-    public static class Img {
+    public static class ImageVO {
         @JsonSerialize(using = FileUrlSerializer.class)
         private String url;
         private String alt;

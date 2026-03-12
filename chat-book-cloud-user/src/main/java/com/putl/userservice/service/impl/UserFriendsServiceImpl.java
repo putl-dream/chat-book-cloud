@@ -52,7 +52,22 @@ public class UserFriendsServiceImpl extends ServiceImpl<UserFriendsMapper, UserF
     // 查询本人与对方的关系
     @Override
     public FriendRelationEnum checkFriendRelation(Integer userId, Integer friendId){
-        return null;
+        // 查询 userId → friendId 的关注记录
+        UserFriendsDO myFollow = userFriendsMapper.selectOne(
+                Wrappers.<UserFriendsDO>lambdaQuery()
+                        .eq(UserFriendsDO::getUserId1, userId)
+                        .eq(UserFriendsDO::getUserId2, friendId));
+
+        if (myFollow == null) {
+            // 我没有关注对方，直接返回陌生人
+            return FriendRelationEnum.Not_Friend;
+        }
+
+        // status=1 代表互相关注（好友），status=0 代表我单向关注对方
+        if (myFollow.getStatus() != null && myFollow.getStatus() == 1) {
+            return FriendRelationEnum.Friend;
+        }
+        return FriendRelationEnum.Follow;
     }
 
     @Override
