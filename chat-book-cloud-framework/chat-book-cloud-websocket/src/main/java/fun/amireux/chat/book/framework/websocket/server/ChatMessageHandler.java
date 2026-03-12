@@ -2,9 +2,11 @@ package fun.amireux.chat.book.framework.websocket.server;
 
 
 import fun.amireux.chat.book.framework.websocket.domain.ChatMessage;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+@Slf4j
 @Component
 public class ChatMessageHandler implements MessageHandler<ChatMessage> {
 
@@ -23,7 +25,7 @@ public class ChatMessageHandler implements MessageHandler<ChatMessage> {
 
     @Override
     public void handleMessage(String userId, ChatMessage message) {
-        System.out.println("用户：" + userId + " 发送了消息：" + message.getContent());
+        log.info("用户：{} 发送了消息：{}", userId, message.getContent());
         messagePublisher.sendToUser(userId, message);
     }
 

@@ -16,6 +16,7 @@ import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -109,6 +110,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      * @return 包含新增文章信息的ArticleVO对象
      */
     @Override
+    @Transactional
     public void addArticle(ArticleVO articleVO) {
         ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
         String userId = UserContext.getUserId();
@@ -136,6 +138,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      * @return 包含更新后文章信息的ArticleVO对象
      */
     @Override
+    @Transactional
     public void updateArticle(ArticleVO articleVO) {
         ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
         // 更新时也可以校验一下权限，或者确保 userId 不被串改
@@ -152,6 +155,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      * @param articleId 文章ID
      */
     @Override
+    @Transactional
     public void deleteArticle(Integer articleId) {
         articleMapper.deleteById(articleId);
     }
@@ -162,6 +166,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      * @param articleIds 文章ID数组
      */
     @Override
+    @Transactional
     public void deleteArticleBatch(Integer[] articleIds) {
         articleMapper.deleteBatchIds(List.of(articleIds));
     }
@@ -173,6 +178,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      * @param status    新的状态值
      */
     @Override
+    @Transactional
     public void updateArticleStatus(Integer articleId, ArticleStatus status) {
         ArticleDO articleDO = articleMapper.selectById(articleId);
         if (articleDO != null) {

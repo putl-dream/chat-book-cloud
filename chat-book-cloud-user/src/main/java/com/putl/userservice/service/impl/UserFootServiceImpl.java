@@ -14,6 +14,7 @@ import com.putl.userservice.mapper.entity.UserFootDO;
 import com.putl.userservice.service.UserFootService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -37,6 +38,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     private final ArticleClient articleClient;
 
     @Override
+    @Transactional
     public boolean addBrowse(Integer articleId, Integer userId){
         if (!dataNULL(articleId, userId)) return false;
         ArticleVO article = articleClient.queryArticle(articleId).getData();
@@ -46,6 +48,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
 
 
     @Override
+    @Transactional
     public int updateCollection(Integer articleId, Integer userId){
         // upsert: 若无足迹记录则先初始化，再切换收藏状态
         if (dataNULL(articleId, userId)) {
@@ -58,6 +61,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     }
 
     @Override
+    @Transactional
     public int updateComment(Integer articleId, Integer userId){
         // upsert: 若无足迹记录则先初始化，再切换评论状态
         if (dataNULL(articleId, userId)) {
@@ -70,6 +74,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     }
 
     @Override
+    @Transactional
     public int updatePraise(Integer articleId, Integer userId){
         // upsert: 若无足迹记录则先初始化，再切换点赞状态
         if (dataNULL(articleId, userId)) {

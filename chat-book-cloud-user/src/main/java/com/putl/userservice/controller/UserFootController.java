@@ -14,6 +14,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -29,13 +30,13 @@ public class UserFootController {
     private final UserFootService userFootService;
 
     @Operation(summary = "添加浏览记录")
-    @GetMapping("/browse")
+    @PostMapping("/browse")
     public boolean addBrowse(@RequestParam Integer articleId, @RequestParam Integer userId){
         return userFootService.addBrowse(articleId, userId);
     }
 
     @Operation(summary = "更新点赞记录")
-    @GetMapping("/praise")
+    @PostMapping("/praise")
     public CommonResult<Integer> updatePraise(@RequestParam Integer articleId){
         String userId = UserContext.getUserId();
         if (userId == null) {
@@ -46,7 +47,7 @@ public class UserFootController {
     }
 
     @Operation(summary = "更新收藏记录")
-    @GetMapping("/collection")
+    @PostMapping("/collection")
     public CommonResult<Integer> updateCollection(@RequestParam Integer articleId){
         String userId = UserContext.getUserId();
         if (userId == null) {
@@ -57,7 +58,7 @@ public class UserFootController {
     }
 
     @Operation(summary = "更新评论记录")
-    @GetMapping("/comment")
+    @PostMapping("/comment")
     public CommonResult<Integer> updateComment(@RequestParam Integer articleId){
         String userId = UserContext.getUserId();
         if (userId == null) {

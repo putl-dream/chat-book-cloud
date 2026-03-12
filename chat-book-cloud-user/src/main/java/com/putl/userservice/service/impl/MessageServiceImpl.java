@@ -9,6 +9,7 @@ import com.putl.userservice.service.MessageService;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
@@ -35,6 +36,7 @@ public class MessageServiceImpl extends ServiceImpl<MessageMapper, MessageDO> im
     }
 
     @Override
+    @Transactional
     public boolean save(MessageVO message){
         MessageDO messageDO = BeanUtil.toBean(message, MessageDO.class);
         return this.save(messageDO);

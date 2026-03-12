@@ -9,6 +9,7 @@ import com.putl.userservice.service.UserFriendsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.HashSet;
 import java.util.List;
@@ -28,6 +29,7 @@ public class UserFriendsServiceImpl extends ServiceImpl<UserFriendsMapper, UserF
     private final UserFriendsMapper userFriendsMapper;
 
     @Override
+    @Transactional
     public String addFriend(Integer userId, Integer friendId){
         if (userId == null || friendId == null) {
             return "参数错误";
