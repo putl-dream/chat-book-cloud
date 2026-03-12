@@ -31,3 +31,10 @@ spring:
 
 server:
   port: 0
+
+minio:
+  endpoint: http://127.0.0.1:9000
+  accessKey: test
+  secretKey: test
+  publicUrl: http://127.0.0.1:9000
+  bucket: test
