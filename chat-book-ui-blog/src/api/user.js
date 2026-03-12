@@ -69,7 +69,7 @@ export function getFriendList() {
  * @returns
  */
 export function addFriend(userId, friendId) {
-    return request.get(`/user/friends`, { params: { userId, friendId } });
+    return request.post(`/user/friends`, null, { params: { userId, friendId } });
 }
 
 /**
@@ -116,7 +116,7 @@ export function getHistory(page, size) {
  * @returns
  */
 export function updateCollection(articleId) {
-    return request.get(`/user/foot/collection`, { params: { articleId } });
+    return request.post(`/user/foot/collection`, null, { params: { articleId } });
 }
 
 /**
@@ -125,7 +125,7 @@ export function updateCollection(articleId) {
  * @returns
  */
 export function updatePraise(articleId) {
-    return request.get(`/user/foot/praise`, { params: { articleId } });
+    return request.post(`/user/foot/praise`, null, { params: { articleId } });
 }
 
 /**

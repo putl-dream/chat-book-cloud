@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -101,6 +102,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
+    @Transactional
     public String signIn(UserDTO signInVO) {
         // Verify Captcha for registration
         if (!captchaService.verifyCaptcha(signInVO.getEmail(), signInVO.getVerificationCode())) {

@@ -36,6 +36,8 @@ jobs:
     if: github.event_name == 'pull_request'
     needs: qodana
     runs-on: ubuntu-latest
+    env:
+      FILE_STORAGE_BASE_URL: ${{ vars.FILE_STORAGE_BASE_URL || '' }}
     services:
       mysql:
         image: mysql:8.0
@@ -96,6 +98,9 @@ jobs:
   build-and-deploy:
     if: github.event_name == 'push'
     runs-on: ubuntu-latest
+    env:
+      FILE_STORAGE_BASE_URL: ${{ vars.FILE_STORAGE_BASE_URL || '' }}
+      VITE_APP_BASE_URL: ${{ vars.VITE_APP_BASE_URL || '' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4

@@ -4,7 +4,9 @@ import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class HtmlUtil {
 
     //从html中获取文本
@@ -47,6 +49,6 @@ public class HtmlUtil {
     public static void main(String[] args) {
         String html = "<html><body><img src='https://example.com/image1.jpg'><img src='https://example.com/image2.jpg'></body></html>";
         String firstImgUrl = getFirstImg(html);
-        System.out.println("First Image URL: " + firstImgUrl);
+        log.info("First Image URL: {}", firstImgUrl);
     }
 }

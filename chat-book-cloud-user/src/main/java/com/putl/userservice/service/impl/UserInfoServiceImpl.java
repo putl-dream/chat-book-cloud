@@ -6,6 +6,7 @@ import com.putl.userservice.mapper.entity.UserInfoDO;
 import com.putl.userservice.service.UserInfoService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 @Service
 @RequiredArgsConstructor
@@ -14,6 +15,7 @@ public class UserInfoServiceImpl implements UserInfoService {
 
 
     @Override
+    @Transactional
     public void save(UserInfoDO info){
         userInfoMapper.insert(info);
     }
@@ -24,6 +26,7 @@ public class UserInfoServiceImpl implements UserInfoService {
     }
 
     @Override
+    @Transactional
     public void update(UserInfoDO info) {
         userInfoMapper.updateById(info);
     }

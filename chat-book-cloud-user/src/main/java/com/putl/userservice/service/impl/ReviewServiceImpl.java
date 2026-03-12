@@ -14,6 +14,7 @@ import com.putl.userservice.service.UserInfoService;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.*;
 
@@ -68,6 +69,7 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
 
 
     @Override
+    @Transactional
     public boolean save(ReviewVO reviewVO){
         String userId = UserContext.getUserId();
         if (userId == null) {

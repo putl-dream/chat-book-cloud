@@ -17,13 +17,16 @@ import com.putl.userservice.service.UserFriendsService;
 import com.putl.userservice.service.UserInfoService;
 import com.putl.userservice.service.UserService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
     private final UserMapper userMapper;
     private final UserInfoService userInfoService;
@@ -33,7 +36,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     public UserVO selectById(int id){
         UserInfoDO userInfo = userInfoService.getByUserId(id);
-        System.out.println("userInfo = " + userInfo);
+        log.debug("userInfo = {}", userInfo);
         UserDO user = this.getById(id);
         if (userInfo == null) {
             throw new RuntimeException("用户信息未找到(user_info缺失)，请联系管理员");
@@ -48,7 +51,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         List<UserVO> userInfo = list.stream().map(this::selectById).toList();
         return userInfo.stream().map(userVO -> {
             MessageDO messageDO = messageService.queryLastMessage(userId, userVO.getUserId());
-            System.err.println("messageDO = " + messageDO);
+            log.debug("messageDO = {}", messageDO);
             if (messageDO == null) {
                 messageDO = new MessageDO();
             }
@@ -69,6 +72,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
+    @Transactional
     public void updateUser(UserVO userVO) {
         String userId = UserContext.getUserId();
         if (userId == null || !userId.equals(String.valueOf(userVO.getUserId()))) {
