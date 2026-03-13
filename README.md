@@ -67,6 +67,7 @@ chat-book-cloud
 ├── chat-book-cloud-auth           # 认证中心 (登录、注册、Token颁发)
 ├── chat-book-cloud-user           # 用户服务 (用户信息、关注、消息)
 ├── chat-book-cloud-article        # 文章服务 (博客、分类、评论)
+  |- chat-book-cloud-interaction    # Interaction service (foot/review/notification)
 └── chat-book-ui-blog              # 前端工程 (Vue 3 + Vite)
 ```
 
@@ -110,7 +111,7 @@ chat-book-cloud
 
 ## 🔄 CI/CD 自动化部署
 
-本项目实现了基于 GitHub Actions 的完整自动化部署流程，代码提交至 `main` 分支后自动触发：
+本项目实现了基于 GitHub Actions 的完整自动化部署流程，代码提交至 `master` 分支后自动触发：
 
 1.  **环境准备**: 自动配置 JDK 17 和 Node.js 环境。
 2.  **后端构建**: Maven 并行构建所有微服务模块。
@@ -145,6 +146,7 @@ chat-book-cloud
     2.  `AuthenticationApplication` (认证)
     3.  `UserServiceApplication` (用户)
     4.  `ArticleApplication` (文章)
+    5.  `InteractionServiceApplication` (interaction)
 3.  **前端应用**:
     ```bash
     cd chat-book-ui-blog
