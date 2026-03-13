@@ -166,7 +166,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 11. ?????? ---
+  # --- 10. ?????? ---
   frontend:
     image: chat-book-ui-blog:local
     container_name: frontend
@@ -179,7 +179,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 10. ?????? ---
+  # --- 11. ?????? ---
   interaction:
     image: chat-book-cloud-interaction:local
     container_name: interaction
