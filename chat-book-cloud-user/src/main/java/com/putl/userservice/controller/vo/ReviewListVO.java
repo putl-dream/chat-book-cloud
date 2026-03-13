@@ -2,7 +2,7 @@ package com.putl.userservice.controller.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.putl.userservice.config.FileUrlSerializer;
+import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import lombok.Data;
 
 import java.time.LocalDateTime;

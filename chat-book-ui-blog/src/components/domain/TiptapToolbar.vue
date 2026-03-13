@@ -180,8 +180,7 @@
 <script setup>
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
-import axios from 'axios';
-import { API_CONFIG } from "@/config/index.js";
+import { uploadFile } from '@/api/article.js';
 
 const props = defineProps({
   editor: {
@@ -211,27 +210,14 @@ const handleImageUpload = async (event) => {
 
   try {
     ElMessage.info('正在上传图片...');
-    // Assuming API structure based on previous Text.vue config
-    const token = localStorage.getItem('token');
-    const response = await axios.post(`${API_CONFIG.baseURL}/article/file/upload`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-        'token': token
-      }
-    });
-
-    if (response.data && response.data.code === 0) { // Assuming 0 is success code
-      const url = response.data.data; // Adjust based on actual response structure
-      props.editor.chain().focus().setImage({ src: url }).run();
+    // 统一走封装的请求与返回结构：后端返回 CommonResult<ImageVO>，
+    // 响应拦截器会直接把 data 解包成 ImageVO（包含 url/alt/href）
+    const res = await uploadFile(file);
+    if (res && res.url) {
+      props.editor.chain().focus().setImage({ src: res.url }).run();
       ElMessage.success('图片上传成功');
     } else {
-      // Fallback for different response structure, maybe direct url or code 200
-      if (response.data.data) {
-        props.editor.chain().focus().setImage({ src: response.data.data }).run();
-        ElMessage.success('图片上传成功');
-      } else {
-        ElMessage.error('图片上传失败: ' + (response.data.msg || '未知错误'));
-      }
+      ElMessage.error('图片上传失败');
     }
   } catch (error) {
     console.error('Upload error:', error);
