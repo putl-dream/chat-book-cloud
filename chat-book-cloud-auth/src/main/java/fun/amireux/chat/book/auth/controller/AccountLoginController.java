@@ -27,7 +27,7 @@ public class AccountLoginController {
         return CommonResult.success(userService.signIn(user));
     }
 
-    @GetMapping("/captcha")
+    @PostMapping("/captcha")
     public CommonResult<String> captcha(@RequestParam String email) {
         captchaService.sendCaptcha(email);
         return CommonResult.success("验证码已发送");

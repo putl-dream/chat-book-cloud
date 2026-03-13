@@ -1,7 +1,7 @@
 package com.putl.articleservice.controller;
 
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
-import com.putl.articleservice.config.FileUrlSerializer;
+import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import fun.amireux.chat.book.minio.utils.MinioUpdateUtil;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

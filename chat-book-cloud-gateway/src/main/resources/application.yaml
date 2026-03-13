@@ -43,3 +43,7 @@ spring:
           uri: lb://user-service
           predicates:
             - Path=/user/**
+        - id: interaction-service
+          uri: lb://interaction-service
+          predicates:
+            - Path=/interaction/**

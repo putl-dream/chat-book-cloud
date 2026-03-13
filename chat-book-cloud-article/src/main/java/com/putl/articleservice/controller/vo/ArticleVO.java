@@ -2,7 +2,7 @@ package com.putl.articleservice.controller.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.putl.articleservice.config.FileUrlSerializer;
+import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import com.putl.articleservice.enums.ArticleStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotNull;

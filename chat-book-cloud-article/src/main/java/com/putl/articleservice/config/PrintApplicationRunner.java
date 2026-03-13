@@ -13,9 +13,12 @@ public class PrintApplicationRunner {
     @Value("${server.port}")
     private String port;
 
+    @Value("${server.address:localhost}")
+    private String host;
+
     @EventListener(WebServerInitializedEvent.class)
     public void onWebServerReady(WebServerInitializedEvent event) {
         // 这时候 Web 服务器已经准备好了，端口也确定了
-        log.info("\n------------------------------------------------------------------\n\t\t 项目启动成功！请求地址：http://localhost:{}\n------------------------------------------------------------------\n", port);
+        log.info("\n------------------------------------------------------------------\n\t\t 项目启动成功！请求地址：http://{}:{}\n------------------------------------------------------------------\n", host, port);
     }
 }

@@ -10,6 +10,7 @@ import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.mapper.entity.ArticleInfoDO;
 import com.putl.articleservice.service.ArticleService;
 import com.putl.articleservice.utils.PageResult;
+import com.putl.interactionservice.api.InteractionClient;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 
@@ -33,7 +34,7 @@ import java.util.List;
 public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleService {
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
-    private final com.putl.userservice.api.UserClient userClient;
+    private final InteractionClient interactionClient;
 
     /**
      * 获取文章基本信息。
@@ -64,7 +65,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             String currentUserIdStr = UserContext.getUserId();
             Integer currentUserId = currentUserIdStr != null ? Integer.valueOf(currentUserIdStr) : 0;
             
-            com.putl.userservice.api.dto.UserFootVO userFoot = userClient.getUserFoot(articleId, currentUserId);
+            com.putl.interactionservice.api.dto.UserFootVO userFoot = interactionClient.getUserFoot(articleId, currentUserId);
             if (userFoot != null) {
                 articleVO.setViewCount(userFoot.getViewCount());
                 articleVO.setPraiseStat(userFoot.getPraiseStat() != null ? userFoot.getPraiseStat().intValue() : 0);

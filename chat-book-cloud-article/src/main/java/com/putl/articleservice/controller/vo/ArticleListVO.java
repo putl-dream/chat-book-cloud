@@ -1,9 +1,8 @@
 package com.putl.articleservice.controller.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.putl.articleservice.config.FileUrlSerializer;
+import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;

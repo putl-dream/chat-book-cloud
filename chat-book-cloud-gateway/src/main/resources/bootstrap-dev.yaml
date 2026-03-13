@@ -3,8 +3,8 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: 127.0.0.1:8848 # 注册中心地址
-        namespace: public # 命名空间
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848} # 注册中心地址
+        namespace: ${NACOS_NAMESPACE:putl} # 命名空间
 #        username: nacos # 用户名
 #        password: nacos # 密码
 
@@ -15,12 +15,12 @@ spring:
       config:
         import-check:
           enabled: true
-        server-addr: 127.0.0.1:8848  # 配置中心地址
-        namespace: public            # 命名空间
-        group: DEFAULT_GROUP  # 组名
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}  # 配置中心地址
+        namespace: ${NACOS_CONFIG_NAMESPACE:public}        # 命名空间
+        group: ${NACOS_GROUP:DEFAULT_GROUP}                # 组名
         shared-configs:
           - data-id: feature-toggle.yaml
-            group: DEFAULT_GROUP
+            group: ${NACOS_GROUP:DEFAULT_GROUP}
             refresh: true
 #        username: nacos
 #        password: nacos
