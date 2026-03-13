@@ -2,8 +2,9 @@ package com.putl.articleservice.service.impl;
 
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.putl.interactionservice.api.InteractionClient;
+import com.putl.interactionservice.api.dto.UserFootVO;
 import com.putl.userservice.api.UserClient;
-import com.putl.userservice.api.dto.UserFootVO;
 import com.putl.userservice.api.dto.UserResult;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
@@ -41,6 +42,9 @@ public abstract class BaseAbstractArticle {
     @Resource
     private UserClient userClient;
 
+    @Resource
+    private InteractionClient interactionClient;
+
     protected PageResult<ArticleListVO> toBean(Integer pageNo, Integer pageSize, Wrapper<ArticleDO> wrapper) {
         PageResult<ArticleDO> articleDOPageResult = articleMapper.selectCustomizePage(new Page<>(pageNo, pageSize), wrapper);
         List<ArticleListVO> bean = BeanUtil.toBean(articleDOPageResult.getList(), ArticleListVO.class);
@@ -77,7 +81,7 @@ public abstract class BaseAbstractArticle {
 
             // 调用带 userId 参数的方法，避免用户服务依赖 ReqInfoContext
             // 对于获取文章统计数据，当前用户 ID 不重要，传入 0 表示系统查询
-            UserFootVO userFoot = userClient.getUserFoot(article.getId(), 0);
+            UserFootVO userFoot = interactionClient.getUserFoot(article.getId(), 0);
             if (userFoot != null) {
                 article.setViewCount(userFoot.getViewCount());
                 article.setPraiseCount(Long.valueOf(userFoot.getPraiseStat()));

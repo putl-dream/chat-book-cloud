@@ -9,8 +9,9 @@ import com.putl.interactionservice.service.ReviewService;
 import com.putl.interactionservice.vo.ReviewListVO;
 import com.putl.interactionservice.vo.ReviewVO;
 import com.putl.userservice.api.UserClient;
-import com.putl.userservice.api.dto.UserInfoDTO;
+import com.putl.userservice.api.dto.UserResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -66,15 +67,18 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
     }
 
     private ReviewListVO getReviewVO(ReviewDO item) {
-        UserInfoDTO user = userClient.getUserInfo(item.getUserId()).getData();
+        CommonResult<UserResult> userResult = userClient.getUserById(item.getUserId());
+        UserResult user = userResult != null ? userResult.getData() : null;
         ReviewListVO rspVO = new ReviewListVO();
         rspVO.setId(item.getId());
         rspVO.setArticleId(item.getTextId());
         rspVO.setContent(item.getContent());
         rspVO.setParentId(item.getParentId());
         rspVO.setCreateTime(item.getCreateTime());
-        rspVO.setUsername(user.getUsername());
-        rspVO.setHeaderImg(user.getPhoto());
+        if (user != null) {
+            rspVO.setUsername(user.getUsername());
+            rspVO.setHeaderImg(user.getPhoto());
+        }
         rspVO.setChildren(new ArrayList<>());
         return rspVO;
     }
