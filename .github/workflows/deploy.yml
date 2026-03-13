@@ -38,6 +38,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FILE_STORAGE_BASE_URL: ${{ vars.FILE_STORAGE_BASE_URL || '' }}
+      MINIO_ENDPOINT: ${{ vars.MINIO_ENDPOINT || 'http://localhost:9000' }}
+      MINIO_ACCESS_KEY: ${{ vars.MINIO_ACCESS_KEY || 'admin' }}
+      MINIO_SECRET_KEY: ${{ vars.MINIO_SECRET_KEY || 'admin@2026' }}
+      MINIO_BUCKET: ${{ vars.MINIO_BUCKET || 'chat-book-images' }}
+      MINIO_PUBLIC_URL: ${{ vars.MINIO_PUBLIC_URL || 'http://localhost:9000' }}
     services:
       mysql:
         image: mysql:8.0
@@ -90,7 +95,10 @@ jobs:
 
       - name: Initialize Databases
         run: |
-          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`ice_user\`; CREATE DATABASE IF NOT EXISTS \`ice-article\`;"
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`ice_user\`; CREATE DATABASE IF NOT EXISTS \`ice-article\`; CREATE DATABASE IF NOT EXISTS \`chat_book_interaction\`; CREATE DATABASE IF NOT EXISTS \`chat_book_user\`;"
+          mysql -h 127.0.0.1 -u root -proot -e "USE chat_book_user; CREATE TABLE IF NOT EXISTS user_foot (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, document_id INT, document_type INT, document_user_id INT, collection_stat INT, read_stat INT, comment_stat INT, praise_stat INT, create_time DATETIME, update_time DATETIME); CREATE TABLE IF NOT EXISTS review (id INT AUTO_INCREMENT PRIMARY KEY, text_id INT, user_id INT, parent_id INT, content TEXT, create_time DATETIME, update_time DATETIME);"
+          mysql -h 127.0.0.1 -u root -proot < chat-book-cloud-interaction/src/main/resources/db/migration/V1__init_interaction_database.sql
+          mysql -h 127.0.0.1 -u root -proot < chat-book-cloud-interaction/src/main/resources/db/migration/V2__migrate_data_from_user_service.sql
 
       - name: Build with Maven
         run: mvn -B test --file pom.xml
@@ -101,6 +109,11 @@ jobs:
     env:
       FILE_STORAGE_BASE_URL: ${{ vars.FILE_STORAGE_BASE_URL || '' }}
       VITE_APP_BASE_URL: ${{ vars.VITE_APP_BASE_URL || '' }}
+      MINIO_ENDPOINT: ${{ vars.MINIO_ENDPOINT || '' }}
+      MINIO_ACCESS_KEY: ${{ vars.MINIO_ACCESS_KEY || '' }}
+      MINIO_SECRET_KEY: ${{ vars.MINIO_SECRET_KEY || '' }}
+      MINIO_BUCKET: ${{ vars.MINIO_BUCKET || '' }}
+      MINIO_PUBLIC_URL: ${{ vars.MINIO_PUBLIC_URL || '' }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
@@ -134,17 +147,20 @@ jobs:
           mkdir -p deploy/chat-book-cloud-auth/target
           mkdir -p deploy/chat-book-cloud-user/target
           mkdir -p deploy/chat-book-cloud-article/target
+          mkdir -p deploy/chat-book-cloud-interaction/target
           mkdir -p deploy/chat-book-ui-blog/dist
 
           cp chat-book-cloud-gateway/target/*.jar deploy/chat-book-cloud-gateway/target/
           cp chat-book-cloud-auth/target/*.jar deploy/chat-book-cloud-auth/target/
           cp chat-book-cloud-user/target/*.jar deploy/chat-book-cloud-user/target/
           cp chat-book-cloud-article/target/*.jar deploy/chat-book-cloud-article/target/
+          cp chat-book-cloud-interaction/target/*.jar deploy/chat-book-cloud-interaction/target/
 
           cp chat-book-cloud-gateway/Dockerfile deploy/chat-book-cloud-gateway/
           cp chat-book-cloud-auth/Dockerfile deploy/chat-book-cloud-auth/
           cp chat-book-cloud-user/Dockerfile deploy/chat-book-cloud-user/
           cp chat-book-cloud-article/Dockerfile deploy/chat-book-cloud-article/
+          cp chat-book-cloud-interaction/Dockerfile deploy/chat-book-cloud-interaction/
           cp chat-book-ui-blog/Dockerfile deploy/chat-book-ui-blog/
 
           cp chat-book-ui-blog/nginx.conf deploy/chat-book-ui-blog/

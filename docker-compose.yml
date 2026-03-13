@@ -166,7 +166,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 10. 前端服务 ---
+  # --- 11. ?????? ---
   frontend:
     image: chat-book-ui-blog:local
     container_name: frontend
@@ -176,6 +176,32 @@ services:
       - "80:80"
     depends_on:
       - gateway
+    networks:
+      - chat-book-net
+
+  # --- 10. ?????? ---
+  interaction:
+    image: chat-book-cloud-interaction:local
+    container_name: interaction
+    restart: always
+    build: ./chat-book-cloud-interaction
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_interaction?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      - SPRING_DATA_REDIS_HOST=redis
+      - SPRING_RABBITMQ_HOST=rabbitmq
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=admin@2026
+      - MINIO_ENDPOINT=http://minio:9000
+      - MINIO_ACCESS_KEY=admin
+      - MINIO_SECRET_KEY=admin@2026
+      - MINIO_BUCKET=chat-book-images
+      - MINIO_PUBLIC_URL=http://minio:9000
+    depends_on:
+      - mysql
+      - redis
     networks:
       - chat-book-net
 
