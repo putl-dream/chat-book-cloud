@@ -67,7 +67,7 @@ chat-book-cloud
 ├── chat-book-cloud-auth           # 认证中心 (登录、注册、Token颁发)
 ├── chat-book-cloud-user           # 用户服务 (用户信息、关注、消息)
 ├── chat-book-cloud-article        # 文章服务 (博客、分类、评论)
-  |- chat-book-cloud-interaction    # Interaction service (foot/review/notification)
+├── chat-book-cloud-interaction    # Interaction service (foot/review/notification)
 └── chat-book-ui-blog              # 前端工程 (Vue 3 + Vite)
 ```
 
