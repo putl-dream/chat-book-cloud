@@ -17,6 +17,11 @@ target/
 .settings
 .springBeans
 .sts4-cache
+.qoder/**
+.qoder/skills/frontend-design
+.claude
+.agents
+*.md
 
 ### IntelliJ IDEA ###
 .idea
