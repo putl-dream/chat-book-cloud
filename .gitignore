@@ -1,43 +1,52 @@
-### Maven ###
+### Java & Maven ###
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 **/target/
-
-### Maven flatten plugin 生成的文件 ###
+.mvn/wrapper/maven-wrapper.jar
 .flattened-pom.xml
 **/.flattened-pom.xml
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+### Node.js & Vue (前端通用) ###
+node_modules/
+dist/
+.npm/
+# 本地环境变量文件（保护敏感配置）
+.env.local
+.env.*.local
 
-### IntelliJ IDEA ###
-.idea
+### IDE & 编辑器 ###
+# IntelliJ IDEA
+.idea/
 *.iws
 *.iml
 *.ipr
+*.md
 out/
 
-### NetBeans ###
+# VS Code
+.vscode/
+.history/
+
+# STS / Eclipse
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
+
+# NetBeans
 /nbproject/private/
 /nbbuild/
-/chat-book-ui-blog/node_modules
-chat-book-ui-blog/dist/**
 /nbdist/
 /.nb-gradle/
 build/
-!**/src/main/**/build/
-!**/src/test/**/build/
+**/build/
 
-### VS Code ###
-.vscode/
+### AI & Agent 本地缓存 ###
+.qoder/
+.claude/
+.agents/
 
 ### 日志文件 ###
 *.log
@@ -59,4 +68,3 @@ application-local.yml
 application-local.yaml
 bootstrap-local.yml
 bootstrap-local.yaml
-

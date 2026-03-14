@@ -15,6 +15,8 @@
         <module>chat-book-cloud-api-user</module>
         <module>chat-book-cloud-api-article</module>
         <module>chat-book-cloud-api-interaction</module>
+        <module>chat-book-cloud-api-social</module>
+        <module>chat-book-cloud-api-chat</module>
     </modules>
 
     <dependencies>

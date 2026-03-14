@@ -6,7 +6,7 @@
 
 -- 注意：执行前请再次备份数据库！
 
-USE chat_book_user;
+USE ice_user;
 
 -- 1. 删除 user_foot 表（可选：先重命名为备份表）
 -- RENAME TABLE user_foot TO user_foot_backup_20260313;

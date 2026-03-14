@@ -30,20 +30,80 @@ spring:
         add-to-simple-url-handler-mapping: true
       default-filters:
       routes:
-        # 鉴权服务路由
-        - id: auth-service # 路由id
-          uri: lb://auth-server # 路由地址
+        # ==================== 统一前缀路由配置 ====================
+        # 格式规范: /api/{service-name}/* → StripPrefix=1
+        # 路由规则: Path=/api/xxx/** → 裁剪后传递 /xxx/** 给下游服务
+
+        # 认证服务 - /api/auth/**
+        - id: auth-service
+          uri: lb://auth-server
           predicates:
-            - Path=/auth/** # 路由匹配
-        - id: article-service # 路由id
-          uri: lb://article-service # 路由地址
-          predicates: # 路由断言
-            - Path=/page/**, /article/**, /images/**, /videos/** # 路由路径
+            - Path=/api/auth/**
+          filters:
+            - StripPrefix=1
+
+        # 文章服务核心业务 - /api/article/**, /api/page/**
+        - id: article-service
+          uri: lb://article-service
+          predicates:
+            - Path=/api/article/**,/api/page/**
+          filters:
+            - StripPrefix=1
+
+        # 文章静态资源服务 - /api/file/**, /api/images/**, /api/videos/**
+        - id: article-service-static
+          uri: lb://article-service
+          predicates:
+            - Path=/api/file/**,/api/images/**,/api/videos/**
+          filters:
+            - StripPrefix=1
+            - RewritePath=/api/file/(?<segment>.*),/article/file/$\{segment}
+
+        # 用户服务 - /api/user/**
         - id: user-service
           uri: lb://user-service
           predicates:
-            - Path=/user/**
+            - Path=/api/user/**
+          filters:
+            - StripPrefix=1
+
+        # 聊天服务 - /api/chat/**
+        - id: chat-service
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/chat/**
+          filters:
+            - StripPrefix=1
+
+        # 互动服务 - /api/interaction/**
         - id: interaction-service
           uri: lb://interaction-service
           predicates:
-            - Path=/interaction/**
+            - Path=/api/interaction/**
+          filters:
+            - StripPrefix=1
+
+        # 社交服务 - /api/social/**
+        - id: social-service
+          uri: lb://social-service
+          predicates:
+            - Path=/api/social/**
+          filters:
+            - StripPrefix=1
+
+        # ==================== WebSocket 路由配置 ====================
+        # Article 服务 WebSocket
+        - id: article-service-websocket
+          uri: lb://article-service
+          predicates:
+            - Path=/api/article/ws
+          filters:
+            - StripPrefix=1
+
+        # Chat 服务 WebSocket
+        - id: chat-service-websocket
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/chat/ws
+          filters:
+            - StripPrefix=1

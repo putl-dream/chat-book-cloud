@@ -1,7 +1,0 @@
-{
-  "permissions": {
-    "allow": [
-      "Bash(find /mnt/e/Java/chat-book-cloud/chat-book-cloud-user/src/main/resources -name \"*.xml\" 2>/dev/null | head -5)"
-    ]
-  }
-}

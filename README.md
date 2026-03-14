@@ -59,14 +59,22 @@ chat-book-cloud
 │   ├── chat-book-cloud-common     # 通用工具、上下文、全局异常、Result封装
 │   ├── chat-book-cloud-security-mvc # 微服务安全组件 (Token解析、上下文填充)
 │   ├── chat-book-cloud-redis      # Redis 增强配置 (CacheManager, RedisTemplate)
-│   ├── chat-book-cloud-minio      # 对象存储服务封装 (MinioTemplate)
+│   ├── chat-book-cloud-minio      # 对象存储服务封装 (MinIO)
 │   ├── chat-book-cloud-websocket  # WebSocket 通信基座
 │   ├── chat-book-cloud-parsing    # 文档解析与 AI 上下文处理 (Tika, LangChain4j)
-│   └── chat-book-cloud-excel      # Excel 导入导出工具 (EasyExcel)
+│   ├── chat-book-cloud-excel      # Excel 导入导出工具 (EasyExcel)
+│   └── chat-book-cloud-rabbitmq   # RabbitMQ 消息队列封装
 ├── chat-book-cloud-gateway        # API 网关 (路由、鉴权、限流)
 ├── chat-book-cloud-auth           # 认证中心 (登录、注册、Token颁发)
 ├── chat-book-cloud-user           # 用户服务 (用户信息、关注、消息)
 ├── chat-book-cloud-article        # 文章服务 (博客、分类、评论)
+├── chat-book-cloud-interaction    # 互动服务 (点赞、收藏、评论、通知)
+├── chat-book-cloud-social         # 社交服务 (关注、粉丝、好关系)
+├── chat-book-cloud-api            # Feign API 客户端模块 (跨服务调用)
+│   ├── chat-book-cloud-api-user       # 用户服务 API 客户端
+│   ├── chat-book-cloud-api-article   # 文章服务 API 客户端
+│   ├── chat-book-cloud-api-interaction # 互动服务 API 客户端
+│   └── chat-book-cloud-api-social    # 社交服务 API 客户端
 └── chat-book-ui-blog              # 前端工程 (Vue 3 + Vite)
 ```
 
@@ -82,6 +90,16 @@ chat-book-cloud
 | **chat-book-cloud-parsing**      | **AI 解析**  | 集成 Apache Tika 和 LangChain4j，支持 PDF/Word/Txt 等多格式文档解析与分块                                |
 | **chat-book-cloud-websocket**    | **实时通信** | 基于 Netty/Tomcat 封装的 WebSocket 服务，支持点对点消息推送                                              |
 | **chat-book-cloud-excel**        | **数据导出** | 集成 EasyExcel，提供注解式导入导出功能                                                                   |
+| **chat-book-cloud-rabbitmq**     | **消息队列** | RabbitMQ 配置与模板封装，支持消息发布与订阅                                                             |
+
+### 3. 业务服务层 (Business Services)
+
+| 模块名称                    | 说明             | 关键功能点                                                                                          |
+| :------------------------- | :--------------- | :-------------------------------------------------------------------------------------------------- |
+| **chat-book-cloud-user**    | **用户服务**     | 用户信息管理、好友关系、消息系统                                                                    |
+| **chat-book-cloud-article** | **文章服务**    | 博客发布、分类管理、标签系统、搜索功能                                                              |
+| **chat-book-cloud-interaction** | **互动服务** | 点赞、收藏、评论、通知中心                                                                         |
+| **chat-book-cloud-social** | **社交服务**     | 关注/粉丝管理、好关系判定、关注统计                                                                |
 
 ### 2. 网关与认证 (Gateway & Auth)
 
@@ -93,6 +111,19 @@ chat-book-cloud
 - **chat-book-cloud-auth**:
   - 负责用户的登录认证与 Token 颁发。
   - 与 User 服务交互验证用户身份。
+
+### 3. Feign API 客户端模块 (API Layer)
+
+项目采用 **Feign + OpenFeign** 实现微服务之间的声明式调用，将跨服务 HTTP 请求封装为本地接口调用：
+
+| 模块名称                            | 说明             | 关键功能点                                                                                          |
+| :--------------------------------- | :--------------- | :-------------------------------------------------------------------------------------------------- |
+| **chat-book-cloud-api-user**       | **用户 API**     | 提供用户信息查询、好友关系等服务的 Feign 客户端                                              |
+| **chat-book-cloud-api-article**   | **文章 API**     | 提供文章查询、分类等服务的 Feign 客户端                                                    |
+| **chat-book-cloud-api-interaction** | **互动 API**    | 提供点赞、收藏、评论等服务的 Feign 客户端                                                    |
+| **chat-book-cloud-api-social**    | **社交 API**     | 提供关注、粉丝、好关系等服务的 Feign 客户端                                                   |
+
+业务服务只需引入对应的 API 模块依赖，即可像调用本地方法一样调用其他微服务。
 
 ## 🛠 技术栈 (Dependencies)
 
@@ -110,7 +141,7 @@ chat-book-cloud
 
 ## 🔄 CI/CD 自动化部署
 
-本项目实现了基于 GitHub Actions 的完整自动化部署流程，代码提交至 `main` 分支后自动触发：
+本项目实现了基于 GitHub Actions 的完整自动化部署流程，代码提交至 `master` 分支后自动触发：
 
 1.  **环境准备**: 自动配置 JDK 17 和 Node.js 环境。
 2.  **后端构建**: Maven 并行构建所有微服务模块。
@@ -124,10 +155,24 @@ chat-book-cloud
 
 - **JDK**: 17+
 - **Maven**: 3.8+
-- **MySQL**: 8.0+ (导入各服务下的 SQL 脚本)
+- **Node.js**: 18+
+- **MySQL**: 8.0+ (各服务对应数据库)
 - **Redis**: 启动默认端口 6379
 - **Nacos**: 2.x (启动并导入配置)
 - **MinIO**: (可选，涉及文件上传时需要)
+- **RabbitMQ**: (可选，涉及消息队列时需要)
+
+### 数据库说明
+
+| 服务                   | 数据库名称             | 说明                      |
+| :--------------------- | :-------------------- | :------------------------ |
+| chat-book-cloud-auth  | ice_user              | 用户认证数据              |
+| chat-book-cloud-user  | ice_user              | 用户信息、好友、消息      |
+| chat-book-cloud-article | ice_article         | 文章、分类、标签          |
+| chat-book-cloud-interaction | chat_book_interaction | 点赞、收藏、评论、通知    |
+| chat-book-cloud-social | chat_book_social    | 关注、粉丝、好关系        |
+
+> 各服务数据库初始化脚本位于 `src/main/resources/db/migration/` 目录，使用 Flyway 管理。
 
 ### 配置中心 (Nacos) 设置
 
@@ -145,6 +190,8 @@ chat-book-cloud
     2.  `AuthenticationApplication` (认证)
     3.  `UserServiceApplication` (用户)
     4.  `ArticleApplication` (文章)
+    5.  `InteractionServiceApplication` (互动)
+    6.  `SocialServiceApplication` (社交)
 3.  **前端应用**:
     ```bash
     cd chat-book-ui-blog
@@ -157,7 +204,6 @@ chat-book-cloud
 
 - [ ] **AI 能力增强**: 集成 RAG (检索增强生成) 流程，支持知识库问答。
 - [ ] **全文检索**: 引入 ElasticSearch 替代 MySQL 模糊查询。
-- [ ] **社区功能**: 增加点赞、评论、收藏等互动功能 (已部分实现)。
 - [ ] **监控告警**: 完善 Prometheus + Grafana 监控体系。
 
 ---

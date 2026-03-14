@@ -179,10 +179,10 @@ let save = ref(false);
 
 const connectWebSocket = () => {
     const token = localStorage.getItem('token');
-    // 构建 WebSocket URL
+    // 构建 WebSocket URL，使用 /api 前缀以便网关路由
     let wsUrl = formatWsUrl(API_CONFIG.baseURL);
 
-    socketService = new SocketService(`${wsUrl}/article/ws`, token);
+    socketService = new SocketService(`${wsUrl}/api/article/ws`, token);
 
     socketService.onOpen(() => {
         console.log('已连接到服务器');
