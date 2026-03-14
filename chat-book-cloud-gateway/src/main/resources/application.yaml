@@ -47,3 +47,7 @@ spring:
           uri: lb://interaction-service
           predicates:
             - Path=/interaction/**
+        - id: social-service
+          uri: lb://social-service
+          predicates:
+            - Path=/social/**

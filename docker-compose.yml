@@ -166,7 +166,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 10. ?????? ---
+  # --- 10. 前端服务 ---
   frontend:
     image: chat-book-ui-blog:local
     container_name: frontend
@@ -179,7 +179,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 11. ?????? ---
+  # --- 11. 互动服务 ---
   interaction:
     image: chat-book-cloud-interaction:local
     container_name: interaction
@@ -202,6 +202,23 @@ services:
     depends_on:
       - mysql
       - redis
+    networks:
+      - chat-book-net
+
+  # --- 12. 社交服务 ---
+  social:
+    image: chat-book-cloud-social:local
+    container_name: social
+    restart: always
+    build: ./chat-book-cloud-social
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_social?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      - mysql
     networks:
       - chat-book-net
 

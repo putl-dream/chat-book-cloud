@@ -11,7 +11,7 @@ INSERT INTO chat_book_interaction.user_foot
     (id, user_id, document_id, document_type, document_user_id, collection_stat, read_stat, comment_stat, praise_stat, create_time, update_time)
 SELECT
     id, user_id, document_id, document_type, document_user_id, collection_stat, read_stat, comment_stat, praise_stat, create_time, update_time
-FROM chat_book_user.user_foot
+FROM ice_user.user_foot
 ON DUPLICATE KEY UPDATE
     update_time = VALUES(update_time);
 
@@ -20,15 +20,15 @@ INSERT INTO chat_book_interaction.review
     (id, text_id, user_id, parent_id, content, create_time, update_time)
 SELECT
     id, text_id, user_id, parent_id, content, create_time, update_time
-FROM chat_book_user.review
+FROM ice_user.review
 ON DUPLICATE KEY UPDATE
     update_time = VALUES(update_time);
 
 -- 3. 验证数据迁移结果
 SELECT 'user_foot 迁移完成' AS status,
-    (SELECT COUNT(*) FROM chat_book_user.user_foot) AS source_count,
+    (SELECT COUNT(*) FROM ice_user.user_foot) AS source_count,
     (SELECT COUNT(*) FROM chat_book_interaction.user_foot) AS target_count;
 
 SELECT 'review 迁移完成' AS status,
-    (SELECT COUNT(*) FROM chat_book_user.review) AS source_count,
+    (SELECT COUNT(*) FROM ice_user.review) AS source_count,
     (SELECT COUNT(*) FROM chat_book_interaction.review) AS target_count;
