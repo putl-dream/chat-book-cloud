@@ -16,6 +16,21 @@ export function login(params) {
 }
 
 /**
+ * 验证码登录
+ * @param {object} params 登录
+ * @param {string} params.email 邮箱
+ * @param {string} params.verificationCode 验证码
+ * @returns
+ */
+export function loginByEmailCode(params) {
+    return request.post(`/api/auth/account/login`, {
+        email: params.email,
+        loginMethod: 'VERIFICATION_CODE',
+        verificationCode: params.verificationCode
+    });
+}
+
+/**
  * signIn
  * @param {object} params 注册
  * @param {string} params.username 用户名

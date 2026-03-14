@@ -1,6 +1,6 @@
 import { ref, reactive } from 'vue';
 import { ElMessage } from "element-plus";
-import { captcha, login, signUp } from "@/api/user.js";
+import { captcha, login, signUp, loginByEmailCode } from "@/api/user.js";
 
 export function useLoginLogic() {
   const signupForm = reactive({
@@ -65,12 +65,26 @@ export function useLoginLogic() {
     return false;
   };
 
-  const handleEmailSignIn = () => {
+  const handleEmailSignIn = async () => {
     if (!signInForm.captcha) {
       ElMessage.warning('请填写验证码');
       return;
     }
-    ElMessage.info('邮箱验证码登录功能开发中');
+    try {
+      const data = await loginByEmailCode({
+        email: signInForm.email,
+        verificationCode: signInForm.captcha
+      });
+      if (data) {
+        ElMessage.success('登录成功');
+        localStorage.setItem("token", data);
+        window.location.href = '/';
+        return true;
+      }
+    } catch (e) {
+      console.error(e);
+    }
+    return false;
   };
 
   const getCode = async () => {
