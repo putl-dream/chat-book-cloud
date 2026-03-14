@@ -23,25 +23,22 @@ public class FeignClientsConfig {
      */
     @Bean
     public RequestInterceptor requestInterceptor() {
-        return new RequestInterceptor() {
-            @Override
-            public void apply(RequestTemplate template) {
-                String userId = UserContext.getUserId();
-                if (userId != null) {
-                    // 传递用户ID
-                    template.header("X-User-Id", userId);
-                    // 传递用户名
-                    String username = UserContext.getUsername();
-                    if (username != null) {
-                        template.header("X-User-Name", username);
-                    }
-                    // 传递客户端IP
-                    String clientIp = UserContext.getClientIp();
-                    if (clientIp != null) {
-                        template.header("X-Client-IP", clientIp);
-                    }
-                    log.debug("[Feign] 传递用户上下文: userId={}, path={}", userId, template.path());
+        return template -> {
+            String userId = UserContext.getUserId();
+            if (userId != null) {
+                // 传递用户ID
+                template.header("X-User-Id", userId);
+                // 传递用户名
+                String username = UserContext.getUsername();
+                if (username != null) {
+                    template.header("X-User-Name", username);
                 }
+                // 传递客户端IP
+                String clientIp = UserContext.getClientIp();
+                if (clientIp != null) {
+                    template.header("X-Client-IP", clientIp);
+                }
+                log.debug("[Feign] 传递用户上下文: userId={}, path={}", userId, template.path());
             }
         };
     }

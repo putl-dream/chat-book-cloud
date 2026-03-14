@@ -80,6 +80,10 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             throw new AuthenticationException("未找到有效认证信息");
         }
 
+        // 解析设备信息
+        String userAgent = request.getHeaders().getFirst("User-Agent");
+        String deviceInfo = DeviceUtil.getDeviceInfo(userAgent);
+
         // 无论是否必选，只要有身份信息，就传递给下游
         if (userId != null) {
             // 生成内部签名，防止篡改
@@ -90,14 +94,21 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             ServerHttpRequest.Builder builder = exchange.getRequest().mutate()
                     .header("X-User-Id", userId)
                     .header("X-User-Name", username)
-                    .header("X-Internal-Token", internalToken);
-            
+                    .header("X-Internal-Token", internalToken)
+                    .header("X-Device-Info", deviceInfo);
+
             if (roles != null) {
                 builder.header("X-User-Roles", roles);
             }
 
             return chain.filter(exchange.mutate().request(builder.build()).build());
         }
+
+        // 即使没有身份信息，也传递设备信息
+        ServerHttpRequest.Builder builder = exchange.getRequest().mutate()
+                .header("X-Device-Info", deviceInfo);
+
+        return chain.filter(exchange.mutate().request(builder.build()).build());
 
         return chain.filter(exchange);
     }
