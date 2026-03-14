@@ -15,3 +15,4 @@ websocket:
 logging:
   level:
     org.springframework.cloud.gateway: info
+    fun.amireux.chat.book.framework.websocket: info
