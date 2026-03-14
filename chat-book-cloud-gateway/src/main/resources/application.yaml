@@ -90,3 +90,20 @@ spring:
             - Path=/api/social/**
           filters:
             - StripPrefix=1
+
+        # ==================== WebSocket 路由配置 ====================
+        # Article 服务 WebSocket
+        - id: article-service-websocket
+          uri: lb://article-service
+          predicates:
+            - Path=/api/article/ws
+          filters:
+            - StripPrefix=1
+
+        # Chat 服务 WebSocket
+        - id: chat-service-websocket
+          uri: lb://chat-service
+          predicates:
+            - Path=/api/chat/ws
+          filters:
+            - StripPrefix=1
