@@ -26,11 +26,11 @@ public class CaptchaService {
         String code = RandomNumUtil.getCaptchaByLen(6);
         String key = CAPTCHA_PREFIX + email;
         redisTemplate.opsForValue().set(key, code, CAPTCHA_EXPIRE_TIME, TimeUnit.MINUTES);
-        
+
         // 发送消息到 MQ
         CaptchaEmailDTO captchaEmailDTO = new CaptchaEmailDTO(email, code, (int) CAPTCHA_EXPIRE_TIME);
         rabbitTemplate.convertAndSend(MqConstant.EMAIL_EXCHANGE, MqConstant.EMAIL_CAPTCHA_ROUTING_KEY, captchaEmailDTO);
-        
+
         log.info("验证码消息已发送到MQ: {} -> {}", email, code);
     }
 
