@@ -9,7 +9,7 @@ import request from '@/utils/http.js'
  * @returns
  */
 export function login(params) {
-    return request.post(`/auth/account/login`, {
+    return request.post(`/api/auth/account/login`, {
         ...params,
         loginMethod: 'PASSWORD'
     });
@@ -25,7 +25,7 @@ export function login(params) {
  * @returns
  */
 export function signUp(params) {
-    return request.post(`/auth/account/registered`, params);
+    return request.post(`/api/auth/account/registered`, params);
 }
 
 /**
@@ -34,7 +34,7 @@ export function signUp(params) {
  * @returns
  */
 export function captcha(email) {
-    return request.get(`/auth/account/captcha`, { params: { email } });
+    return request.get(`/api/auth/account/captcha`, { params: { email } });
 }
 
 /**
@@ -42,7 +42,7 @@ export function captcha(email) {
  * @returns
  */
 export function getUserBySelf() {
-    return request.get(`/user/bySelf`);
+    return request.get(`/api/user/bySelf`);
 }
 
 /**
@@ -51,7 +51,7 @@ export function getUserBySelf() {
  * @returns
  */
 export function getUserById(id) {
-    return request.get(`/user/byId`, { params: { id } });
+    return request.get(`/api/user/byId`, { params: { id } });
 }
 
 /**

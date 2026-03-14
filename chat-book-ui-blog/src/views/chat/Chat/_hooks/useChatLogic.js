@@ -1,6 +1,7 @@
 import { ref } from 'vue';
 import { ElMessage } from "element-plus";
-import { getFriendList, queryUserMessage } from "@/api/user.js";
+import { getFriendList } from "@/api/user.js";
+import { getChatHistory, getUnreadCount, markAsRead } from "@/api/chat.js";
 import { API_CONFIG } from "@/config/index.js";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 
@@ -23,24 +24,25 @@ export function useChatLogic() {
     if (selectedFriend.value?.userId === friend.userId) return;
     messages.value = [];
     selectedFriend.value = friend;
-    const res = await queryUserMessage(selectedFriend.value.userId);
-    if (res) {
+    // 调用新的 chat-service API
+    const res = await getChatHistory(selectedFriend.value.userId, 1, 50);
+    if (res && res.data) {
       // P0 Fix: 以当前登录用户的 userId 为基准判断发送方
       // 原代码错误：senderId === selectedFriend.userId 判断为 self，实为对方发的
       const currentUserId = parseInt(localStorage.getItem('userId'));
-      for (let i = 0; i < res.length; i++) {
-        if (res[i].senderId === currentUserId) {
+      for (let i = 0; i < res.data.length; i++) {
+        if (res.data[i].senderId === currentUserId) {
           // 发送者是自己
           messages.value.push({
             sender: 'self',
-            content: res[i].content,
+            content: res.data[i].content,
             avatar: localStorage.getItem('avatar'),
           });
         } else {
           // 发送者是对方（selectedFriend）
           messages.value.push({
             sender: 'other',
-            content: res[i].content,
+            content: res.data[i].content,
             avatar: selectedFriend.value.photo,
           });
         }
@@ -58,7 +60,7 @@ export function useChatLogic() {
     const token = localStorage.getItem('token');
     let wsUrl = formatWsUrl(API_CONFIG.baseURL);
 
-    socketService = new SocketService(`${wsUrl}/user/ws`, token);
+    socketService = new SocketService(`${wsUrl}/chat/ws`, token);
 
     socketService.onOpen(() => {
       console.log('已连接到服务器');
