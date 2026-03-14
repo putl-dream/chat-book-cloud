@@ -6,7 +6,7 @@ spring:
     active: dev
 
 server:
-  port: 9091
+  port: 8082
 
 websocket:
   path: /article/ws

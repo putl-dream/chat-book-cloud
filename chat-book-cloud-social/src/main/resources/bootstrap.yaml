@@ -1,6 +1,7 @@
 spring:
   profiles:
     active: dev
+
   cloud:
     nacos:
       discovery:
@@ -8,3 +9,6 @@ spring:
       config:
         server-addr: ${NACOS_SERVER:localhost:8848}
         file-extension: yaml
+
+server:
+  port: 8086
