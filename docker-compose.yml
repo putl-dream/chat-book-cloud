@@ -225,6 +225,24 @@ services:
     networks:
       - chat-book-net
 
+  # --- 13. 聊天服务 ---
+  chat:
+    image: chat-book-cloud-chat:local
+    container_name: chat
+    restart: always
+    build: ./chat-book-cloud-chat
+    environment:
+      - SPRING_PROFILES_ACTIVE=dev
+      - SPRING_CLOUD_NACOS_DISCOVERY_SERVER_ADDR=nacos:8848
+      - SPRING_CLOUD_NACOS_CONFIG_SERVER_ADDR=nacos:8848
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/chat_book_chat?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true
+      - SPRING_DATA_REDIS_HOST=redis
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - chat-book-net
+
 networks:
   chat-book-net:
     driver: bridge
