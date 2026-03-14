@@ -59,7 +59,7 @@ export function getUserById(id) {
  * @returns
  */
 export function getFriendList() {
-    return request.get(`/user/friendList`);
+    return request.get(`/api/user/friendList`);
 }
 
 /**
@@ -69,7 +69,7 @@ export function getFriendList() {
  * @returns
  */
 export function addFriend(userId, friendId) {
-    return request.post(`/user/friends`, null, { params: { userId, friendId } });
+    return request.post(`/api/social/follow`, null, { params: { userId, friendId } });
 }
 
 /**
@@ -78,7 +78,7 @@ export function addFriend(userId, friendId) {
  * @returns
  */
 export function updateUser(data) {
-    return request.post(`/user/update`, data);
+    return request.post(`/api/user/update`, data);
 }
 
 /**
@@ -87,7 +87,7 @@ export function updateUser(data) {
  * @returns
  */
 export function queryUserMessage(receiveId) {
-    return request.get(`/user/message/queryUserMessage`, { params: { receiveId } });
+    return request.get(`/api/user/message/queryUserMessage`, { params: { receiveId } });
 }
 
 /**
@@ -97,7 +97,7 @@ export function queryUserMessage(receiveId) {
  * @returns
  */
 export function queryArticlePage(pageNum, pageSize) {
-    return request.post(`/article/queryPage?pageNum=${pageNum}&pageSize=${pageSize}`);
+    return request.post(`/api/article/queryPage?pageNum=${pageNum}&pageSize=${pageSize}`);
 }
 
 /**
@@ -107,7 +107,7 @@ export function queryArticlePage(pageNum, pageSize) {
  * @returns
  */
 export function getHistory(page, size) {
-    return request.get(`/user/foot/getHistory`, { params: { page, size } });
+    return request.get(`/api/interaction/foot/getHistory`, { params: { page, size } });
 }
 
 /**
@@ -116,7 +116,7 @@ export function getHistory(page, size) {
  * @returns
  */
 export function updateCollection(articleId) {
-    return request.post(`/user/foot/collection`, null, { params: { articleId } });
+    return request.post(`/api/interaction/foot/collection`, null, { params: { articleId } });
 }
 
 /**
@@ -125,7 +125,7 @@ export function updateCollection(articleId) {
  * @returns
  */
 export function updatePraise(articleId) {
-    return request.post(`/user/foot/praise`, null, { params: { articleId } });
+    return request.post(`/api/interaction/foot/praise`, null, { params: { articleId } });
 }
 
 /**
@@ -137,7 +137,7 @@ export function updatePraise(articleId) {
  * @returns
  */
 export function saveReview(params) {
-    return request.post(`/user/review/save`, params);
+    return request.post(`/api/interaction/review/save`, params);
 }
 
 /**
@@ -146,5 +146,5 @@ export function saveReview(params) {
  * @returns {Promise<NotificationVO[]>}
  */
 export function getNotifications() {
-    return request.get(`/user/foot/getNotifications`);
+    return request.get(`/api/interaction/foot/getNotifications`);
 }
