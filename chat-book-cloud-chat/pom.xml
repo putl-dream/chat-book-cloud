@@ -84,17 +84,6 @@
             <artifactId>chat-book-cloud-common</artifactId>
         </dependency>
 
-        <!-- Flyway -->
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-core</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.flywaydb</groupId>
-            <artifactId>flyway-mysql</artifactId>
-        </dependency>
-
         <!-- Knife4j API Docs -->
         <dependency>
             <groupId>com.github.xiaoymin</groupId>
