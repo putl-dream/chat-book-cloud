@@ -96,15 +96,6 @@ export function updateUser(data) {
 }
 
 /**
- * 查询用户消息
- * @param {string} receiveId
- * @returns
- */
-export function queryUserMessage(receiveId) {
-    return request.get(`/api/user/message/queryUserMessage`, { params: { receiveId } });
-}
-
-/**
  * 分页查询文章
  * @param {string} pageNum
  * @param {string} pageSize
