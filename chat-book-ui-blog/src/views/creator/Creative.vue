@@ -121,29 +121,19 @@ const handleEdit = (article) => {
 
 // 删除文章
 const handleDelete = async (article) => {
-    try {
-        await ElMessageBox.confirm(
-            `确定要删除文章 "${article.title}" 吗？`,
-            '删除确认',
-            {
-                confirmButtonText: '确定删除',
-                cancelButtonText: '取消',
-                type: 'warning',
-            }
-        );
+    await ElMessageBox.confirm(
+        `确定要删除文章 "${article.title}" 吗？`,
+        '删除确认',
+        {
+            confirmButtonText: '确定删除',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    );
 
-        const response = await deleteArticle(article.id);
-        if (response) {
-            ElMessage.success('文章删除成功');
-            // 刷新列表
-            fetchArticles();
-        }
-    } catch (error) {
-        if (error !== 'cancel') {
-            console.error('删除文章失败:', error);
-            ElMessage.error('删除文章失败，请重试');
-        }
-    }
+    await deleteArticle(article.id);
+    ElMessage.success('文章删除成功');
+    fetchArticles();
 };
 
 // 初始化时获取文章列表
