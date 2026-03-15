@@ -86,7 +86,8 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
      */
     @Override
     public ArticleVO getArticleDetail(Integer articleId) {
-        return toBean(Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getId, articleId));
+        // 详情需要包含文章内容，直接复用带内容填充的查询逻辑
+        return getArticleInfo(articleId);
     }
 
     /**
@@ -148,6 +149,37 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             articleDO.setUserId(Integer.valueOf(userId));
         }
         articleMapper.updateById(articleDO);
+
+        // 同步更新文章内容表（article_info）
+        if (articleVO.getContent() != null || articleVO.getTitle() != null || articleVO.getUserName() != null) {
+            ArticleInfoDO articleInfoDO = articleInfoMapper.selectOne(Wrappers.<ArticleInfoDO>lambdaQuery()
+                .eq(ArticleInfoDO::getArticleId, articleVO.getId()));
+            if (articleInfoDO == null) {
+                // 若详情表不存在则补录
+                articleInfoDO = ArticleInfoDO.builder()
+                    .articleId(articleVO.getId())
+                    .content(articleVO.getContent())
+                    .userId(userId != null ? Integer.valueOf(userId) : null)
+                    .userName(articleVO.getUserName())
+                    .title(articleVO.getTitle())
+                    .build();
+                articleInfoMapper.insert(articleInfoDO);
+            } else {
+                if (articleVO.getContent() != null) {
+                    articleInfoDO.setContent(articleVO.getContent());
+                }
+                if (articleVO.getTitle() != null) {
+                    articleInfoDO.setTitle(articleVO.getTitle());
+                }
+                if (articleVO.getUserName() != null) {
+                    articleInfoDO.setUserName(articleVO.getUserName());
+                }
+                if (userId != null) {
+                    articleInfoDO.setUserId(Integer.valueOf(userId));
+                }
+                articleInfoMapper.updateById(articleInfoDO);
+            }
+        }
     }
 
     /**
