@@ -158,6 +158,9 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     @Override
     @Transactional
     public void deleteArticle(Integer articleId) {
+        // 先删除关联的 article_info 数据
+        articleInfoMapper.deleteById(articleId);
+        // 再删除 article 数据
         articleMapper.deleteById(articleId);
     }
 
@@ -169,6 +172,9 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     @Override
     @Transactional
     public void deleteArticleBatch(Integer[] articleIds) {
+        // 先批量删除关联的 article_info 数据
+        articleInfoMapper.deleteBatchIds(List.of(articleIds));
+        // 再批量删除 article 数据
         articleMapper.deleteBatchIds(List.of(articleIds));
     }
 

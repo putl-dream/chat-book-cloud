@@ -83,6 +83,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         // 解析设备信息
         String userAgent = request.getHeaders().getFirst("User-Agent");
         String deviceInfo = DeviceUtil.getDeviceInfo(userAgent);
+        log.info("[ 身份认证 ]: 用户 {}，设备 {}", userId, deviceInfo);
 
         // 无论是否必选，只要有身份信息，就传递给下游
         if (userId != null) {
@@ -109,8 +110,6 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                 .header("X-Device-Info", deviceInfo);
 
         return chain.filter(exchange.mutate().request(builder.build()).build());
-
-        return chain.filter(exchange);
     }
 
     private String extractToken(ServerHttpRequest request) {

@@ -163,3 +163,19 @@ export function saveReview(params) {
 export function getNotifications() {
     return request.get(`/api/interaction/foot/getNotifications`);
 }
+
+/**
+ * 上传头像
+ * @param {File} file
+ * @returns
+ */
+export function uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const config = {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    };
+    return request.post(`/api/user/file/avatar/upload`, formData, config);
+}
