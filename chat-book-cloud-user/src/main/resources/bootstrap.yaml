@@ -1,6 +1,6 @@
 spring:
   application:
-    name: user-service
+    name: chat-book-cloud-user
 
   profiles:
     active: dev
@@ -10,8 +10,3 @@ server:
 
 websocket:
   path: /user/ws
-
---- ## 日志
-logging:
-  level:
-    org.springframework.cloud.gateway: info

@@ -53,9 +53,8 @@
 
         <!-- User-Agent 解析 -->
         <dependency>
-            <groupId>com.github.ua</groupId>
-            <artifactId>user-agent-utils</artifactId>
-            <version>1.21</version>
+            <groupId>eu.bitwalker</groupId>
+            <artifactId>UserAgentUtils</artifactId>
         </dependency>
     </dependencies>
     <build>

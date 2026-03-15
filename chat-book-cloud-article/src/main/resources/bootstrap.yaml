@@ -1,6 +1,6 @@
 spring:
   application:
-    name: article-service
+    name: chat-book-cloud-article
 
   profiles:
     active: dev

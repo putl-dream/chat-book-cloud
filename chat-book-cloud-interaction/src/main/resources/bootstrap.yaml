@@ -1,14 +1,9 @@
 spring:
+  application:
+    name: chat-book-cloud-interaction
+
   profiles:
     active: dev
-
-  cloud:
-    nacos:
-      discovery:
-        server-addr: ${NACOS_SERVER:localhost:8848}
-      config:
-        server-addr: ${NACOS_SERVER:localhost:8848}
-        file-extension: yaml
 
 server:
   port: 8084

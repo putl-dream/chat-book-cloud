@@ -1,13 +1,21 @@
+--- ###==================== Nacos 注册中心 ====================
 spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
-        namespace: dev
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848} # 注册中心地址
+        namespace: ${NACOS_NAMESPACE:putl} # 命名空间
+#        username: nacos # 用户名
+#        password: nacos # 密码
+
+--- ###==================== Nacos 配置中心 ====================
+spring:
+  cloud:
+    nacos:
       config:
-        server-addr: localhost:8848
-        namespace: dev
-        file-extension: yaml
-  config:
-    import:
-      - optional:nacos:interaction-service-dev.yaml
+        #        username: nacos # 用户名
+        #        password: nacos # 密码
+        server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}  # 配置中心地址
+        namespace: ${NACOS_CONFIG_NAMESPACE:public}        # 命名空间
+#        group: DEFAULT_GROUP  # 组名
+#        file-extension: yaml  # 文件后缀
