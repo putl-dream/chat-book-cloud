@@ -16,7 +16,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "interaction-service", configuration = InteractionFeignConfig.class)
+@FeignClient(name = "chat-book-cloud-interaction", configuration = InteractionFeignConfig.class)
 public interface InteractionClient {
 
     @PostMapping("/interaction/foot/browse")

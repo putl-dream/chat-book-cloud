@@ -7,7 +7,7 @@ import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 
-@FeignClient(name = "user-service", fallbackFactory = UserClientFallback.class)
+@FeignClient(name = "chat-book-cloud-user", fallbackFactory = UserClientFallback.class)
 public interface UserClient {
 
     String USER_SERVICE_URL = "user/";

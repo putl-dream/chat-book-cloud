@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
-@FeignClient(name = "social-service", configuration = SocialFeignConfig.class)
+@FeignClient(name = "chat-book-cloud-social", configuration = SocialFeignConfig.class)
 public interface SocialClient {
 
     @PostMapping("/social/follow/{followId}")
