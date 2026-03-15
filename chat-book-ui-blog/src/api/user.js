@@ -70,88 +70,12 @@ export function getUserById(id) {
 }
 
 /**
- * 根据id查询用户好友列表
- * @returns
- */
-export function getFriendList() {
-    return request.get(`/social/friends/detailed`);
-}
-
-/**
- * 添加关注
- * @param {string} friendId
- * @returns
- */
-export function addFriend(friendId) {
-    return request.post(`/social/follow/${friendId}`);
-}
-
-/**
  * 更新用户信息
  * @param {object} data
  * @returns
  */
 export function updateUser(data) {
     return request.post(`/user/update`, data);
-}
-
-/**
- * 分页查询文章
- * @param {string} pageNum
- * @param {string} pageSize
- * @returns
- */
-export function queryArticlePage(pageNum, pageSize) {
-    return request.post(`/article/queryPage?pageNum=${pageNum}&pageSize=${pageSize}`);
-}
-
-/**
- * 获取用户浏览记录
- * @param {string} page
- * @param {string} size
- * @returns
- */
-export function getHistory(page, size) {
-    return request.get(`/interaction/foot/getHistory`, { params: { page, size } });
-}
-
-/**
- * 更新收藏记录
- * @param {string} articleId
- * @returns
- */
-export function updateCollection(articleId) {
-    return request.post(`/interaction/foot/collection`, null, { params: { articleId } });
-}
-
-/**
- * 更新点赞记录
- * @param {string} articleId
- * @returns
- */
-export function updatePraise(articleId) {
-    return request.post(`/interaction/foot/praise`, null, { params: { articleId } });
-}
-
-/**
- * 添加评论
- * @param {object} params 评论参数
- * @param {number} params.articleId 文章id
- * @param {number} params.parentId 父评论id
- * @param {string} params.content 评论内容
- * @returns
- */
-export function saveReview(params) {
-    return request.post(`/interaction/review/save`, params);
-}
-
-/**
- * 获取互动通知（点赞/收藏/评论/浏览）
- * P0 Fix: 原 /getMessage 接口返回数据有误，已修复为 /getNotifications
- * @returns {Promise<NotificationVO[]>}
- */
-export function getNotifications() {
-    return request.get(`/interaction/foot/getNotifications`);
 }
 
 /**

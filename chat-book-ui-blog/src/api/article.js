@@ -25,7 +25,7 @@ export function uploadFile(file) {
  * @returns
  */
 export function queryArticle(id) {
-    return request.post(`/article/query?id=${id}`);
+    return request.get(`/article/query`, { params: { id } });
 }
 
 /**
@@ -55,7 +55,7 @@ export function updateArticle(params) {
  * @returns
  */
 export function deleteArticle(id) {
-    return request.post(`/article/delete?id=${id}`);
+    return request.delete(`/article/delete`, { params: { id } });
 }
 
 /**
@@ -170,13 +170,4 @@ export function getUserDraftArticlePage(pageNo, pageSize) {
  */
 export function getAdminArticlePage(pageNo, pageSize) {
     return request.post('/page/adminArticlePage', { pageNo, pageSize });
-}
-
-/**
- * 查询文章评论
- * @param {string} articleId
- * @returns
- */
-export function getByArticleId(articleId) {
-    return request.get(`/interaction/review/getByArticleId?articleId=${articleId}`);
 }

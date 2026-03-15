@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { queryArticle } from "@/api/article.js";
-import { updateCollection, updatePraise } from "@/api/user.js";
+import { updateCollection, updatePraise } from "@/api/interaction.js";
 import { checkLogin } from "@/utils/http.js";
 
 export function useArticleLogic(articleId) {

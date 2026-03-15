@@ -1,6 +1,6 @@
 import { ref } from 'vue';
 import { ElMessage } from "element-plus";
-import { getFriendList } from "@/api/user.js";
+import { getFriendList } from "@/api/social.js";
 import { getChatHistory, getUnreadCount, markAsRead } from "@/api/chat.js";
 import { API_CONFIG } from "@/config/index.js";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";
