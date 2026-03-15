@@ -126,8 +126,12 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     public void addArticle(ArticleVO articleVO) {
         ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
         String userId = UserContext.getUserId();
+        String userName = UserContext.getUsername();
         if (userId != null) {
             articleDO.setUserId(Integer.valueOf(userId));
+        }
+        if (userName != null) {
+            articleDO.setUserName(userName);
         }
         articleMapper.insert(articleDO);
 
@@ -136,7 +140,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                     .articleId(articleDO.getId())
                     .content(articleVO.getContent())
                     .userId(userId != null ? Integer.valueOf(userId) : null)
-                    .userName(articleVO.getUserName())
+                    .userName(userName != null ? userName : articleVO.getUserName())
                     .title(articleVO.getTitle())
                     .build();
             articleInfoMapper.insert(articleInfoDO);
