@@ -27,6 +27,13 @@
             <version>1.0.0</version>
         </dependency>
 
+        <!-- User API -->
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-api-user</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
         <!-- Interaction API -->
         <dependency>
             <groupId>fun.amireux</groupId>

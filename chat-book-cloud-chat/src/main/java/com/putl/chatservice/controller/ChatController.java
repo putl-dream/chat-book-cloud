@@ -60,4 +60,11 @@ public class ChatController {
         messageService.markAsRead(userId, targetUserId);
         return CommonResult.success(null);
     }
+
+    @GetMapping("/messages/last")
+    @Operation(summary = "查询最后一条消息")
+    public CommonResult<MessageVO> getLastMessage(@RequestParam Integer userId, @RequestParam Integer targetUserId) {
+        MessageVO messageVO = messageService.queryLastMessage(userId, targetUserId);
+        return CommonResult.success(messageVO);
+    }
 }

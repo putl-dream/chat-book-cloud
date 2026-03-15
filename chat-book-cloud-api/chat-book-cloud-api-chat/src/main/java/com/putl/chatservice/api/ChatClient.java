@@ -35,4 +35,10 @@ public interface ChatClient {
      */
     @PutMapping("/messages/read")
     CommonResult<Void> markAsRead(@RequestParam("targetUserId") Integer targetUserId);
+
+    /**
+     * 查询最后一条消息
+     */
+    @GetMapping("/messages/last")
+    CommonResult<Map<String, Object>> getLastMessage(@RequestParam("userId") Integer userId, @RequestParam("targetUserId") Integer targetUserId);
 }

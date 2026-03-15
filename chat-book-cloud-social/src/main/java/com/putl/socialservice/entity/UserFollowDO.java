@@ -29,7 +29,22 @@ public class UserFollowDO {
     private Integer followId;
 
     /**
+     * 状态：0-关注 1-好友 2-拉黑
+     */
+    private Integer status;
+
+    /**
      * 创建时间
      */
     private LocalDateTime createTime;
+
+    /**
+     * 更新时间
+     */
+    private LocalDateTime updateTime;
+
+    /**
+     * 是否删除
+     */
+    private Boolean deleted;
 }

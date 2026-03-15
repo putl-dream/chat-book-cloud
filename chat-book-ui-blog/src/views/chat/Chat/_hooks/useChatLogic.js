@@ -60,7 +60,7 @@ export function useChatLogic() {
     const token = localStorage.getItem('token');
     let wsUrl = formatWsUrl(API_CONFIG.baseURL);
 
-    socketService = new SocketService(`${wsUrl}/chat/ws`, token);
+    socketService = new SocketService(`${wsUrl}/api/chat/ws`, token);
 
     socketService.onOpen(() => {
       console.log('已连接到服务器');

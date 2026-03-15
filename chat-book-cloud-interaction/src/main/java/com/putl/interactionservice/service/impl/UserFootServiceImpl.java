@@ -1,12 +1,15 @@
 package com.putl.interactionservice.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.update.UpdateWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.putl.articleservice.api.ArticleClient;
 import com.putl.articleservice.api.dto.ArticleListVO;
 import com.putl.articleservice.api.dto.ArticleVO;
+import com.putl.interactionservice.entity.ArticleStatDO;
 import com.putl.interactionservice.entity.UserFootDO;
+import com.putl.interactionservice.mapper.ArticleStatMapper;
 import com.putl.interactionservice.mapper.UserFootMapper;
 import com.putl.interactionservice.service.UserFootService;
 import com.putl.interactionservice.vo.NotificationVO;
@@ -16,6 +19,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -24,72 +28,138 @@ import java.util.stream.Collectors;
 public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO> implements UserFootService {
     private final UserFootMapper userFootMapper;
     private final ArticleClient articleClient;
+    private final ArticleStatMapper articleStatMapper;
 
     @Override
     @Transactional
     public boolean addBrowse(Integer articleId, Integer userId) {
-        if (!dataNULL(articleId, userId)) return false;
-        ArticleVO article = articleClient.queryArticle(articleId).getData();
-        UserFootDO build = UserFootDO.builder().userId(userId).documentId(articleId).documentUserId(article.getUserId()).build();
-        return this.save(build);
+        if (articleId == null) return false;
+        if (userId == null || userId <= 0) {
+            incrementViewCount(articleId);
+            return true;
+        }
+
+        UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getUserId, userId));
+
+        if (foot == null) {
+            ArticleVO article = articleClient.queryArticle(articleId).getData();
+            Integer documentUserId = article != null ? article.getUserId() : null;
+            UserFootDO build = UserFootDO.builder()
+                .userId(userId)
+                .documentId(articleId)
+                .documentUserId(documentUserId)
+                .collectionStat(0)
+                .commentStat(0)
+                .praiseStat(0)
+                .readStat(1)
+                .build();
+            boolean saved = this.save(build);
+            if (saved) {
+                incrementViewCount(articleId);
+            }
+            return saved;
+        }
+
+        Integer readStat = foot.getReadStat() == null ? 0 : foot.getReadStat();
+        if (readStat == 0) {
+            userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate()
+                .set(UserFootDO::getReadStat, 1)
+                .set(UserFootDO::getUpdateTime, LocalDateTime.now())
+                .eq(UserFootDO::getDocumentId, articleId)
+                .eq(UserFootDO::getUserId, userId));
+            incrementViewCount(articleId);
+        }
+        return true;
     }
 
     @Override
     @Transactional
     public int updateCollection(Integer articleId, Integer userId) {
-        if (dataNULL(articleId, userId)) {
-            addBrowse(articleId, userId);
-        }
-        UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        int status = foot.getCollectionStat() == 1 ? 0 : 1;
-        userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate().set(UserFootDO::getCollectionStat, status).eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
+        UserFootDO foot = ensureUserFoot(articleId, userId);
+        int current = foot.getCollectionStat() == null ? 0 : foot.getCollectionStat();
+        int status = current == 1 ? 0 : 1;
+        userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate()
+            .set(UserFootDO::getCollectionStat, status)
+            .set(UserFootDO::getUpdateTime, LocalDateTime.now())
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getUserId, userId));
+        changeCollectCount(articleId, status == 1 ? 1 : -1);
         return status;
     }
 
     @Override
     @Transactional
     public int updateComment(Integer articleId, Integer userId) {
-        if (dataNULL(articleId, userId)) {
-            addBrowse(articleId, userId);
+        UserFootDO foot = ensureUserFoot(articleId, userId);
+        int current = foot.getCommentStat() == null ? 0 : foot.getCommentStat();
+        if (current == 1) {
+            return 1;
         }
-        UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        int status = foot.getCommentStat() == 1 ? 0 : 1;
-        userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate().set(UserFootDO::getCommentStat, status).eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        return status;
+        userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate()
+            .set(UserFootDO::getCommentStat, 1)
+            .set(UserFootDO::getUpdateTime, LocalDateTime.now())
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getUserId, userId));
+        changeCommentCount(articleId, 1);
+        return 1;
     }
 
     @Override
     @Transactional
     public int updatePraise(Integer articleId, Integer userId) {
-        if (dataNULL(articleId, userId)) {
-            addBrowse(articleId, userId);
-        }
-        UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        int status = foot.getPraiseStat() == 1 ? 0 : 1;
-        userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate().set(UserFootDO::getPraiseStat, status).eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
+        UserFootDO foot = ensureUserFoot(articleId, userId);
+        int current = foot.getPraiseStat() == null ? 0 : foot.getPraiseStat();
+        int status = current == 1 ? 0 : 1;
+        userFootMapper.update(Wrappers.<UserFootDO>lambdaUpdate()
+            .set(UserFootDO::getPraiseStat, status)
+            .set(UserFootDO::getUpdateTime, LocalDateTime.now())
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getUserId, userId));
+        changePraiseCount(articleId, status == 1 ? 1 : -1);
         return status;
     }
 
     @Override
     public UserFootVO getUserFoot(Integer articleId, Integer userId) {
         UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
-        long viewCount = this.count(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId));
-        if (foot == null) foot = UserFootDO.builder().praiseStat(0).collectionStat(0).build();
-        return UserFootVO.builder().articleId(articleId).userId(userId).praiseStat(foot.getPraiseStat()).collectStat(foot.getCollectionStat()).viewCount(viewCount).build();
+        ArticleStatDO stat = getArticleStat(articleId);
+        long viewCount = stat != null && stat.getViewCount() != null ? stat.getViewCount() : 0L;
+        if (foot == null) {
+            foot = UserFootDO.builder().praiseStat(0).collectionStat(0).build();
+        }
+        return UserFootVO.builder()
+            .articleId(articleId)
+            .userId(userId)
+            .praiseStat(foot.getPraiseStat())
+            .collectStat(foot.getCollectionStat())
+            .viewCount(viewCount)
+            .build();
     }
 
     @Override
     public UserFootListVO getUserFootList(Integer articleId) {
-        long viewCount = this.count(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId));
-        long collectCount = this.count(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getCollectionStat, 1));
-        long praiseCount = this.count(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getPraiseStat, 1));
-        long commentCount = this.count(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getCommentStat, 1));
-        return UserFootListVO.builder().articleId(articleId).viewCount(viewCount).collectCount(collectCount).praiseCount(praiseCount).commentCount(commentCount).build();
+        ArticleStatDO stat = getArticleStat(articleId);
+        long viewCount = stat != null && stat.getViewCount() != null ? stat.getViewCount() : 0L;
+        long collectCount = stat != null && stat.getCollectCount() != null ? stat.getCollectCount() : 0L;
+        long praiseCount = stat != null && stat.getPraiseCount() != null ? stat.getPraiseCount() : 0L;
+        long commentCount = stat != null && stat.getCommentCount() != null ? stat.getCommentCount() : 0L;
+        return UserFootListVO.builder()
+            .articleId(articleId)
+            .viewCount(viewCount)
+            .collectCount(collectCount)
+            .praiseCount(praiseCount)
+            .commentCount(commentCount)
+            .build();
     }
 
     @Override
     public List<ArticleListVO> getHistory(Integer userId, Integer page, Integer size) {
-        Page<UserFootDO> pages = userFootMapper.selectPage(new Page<>(page, size), Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getUserId, userId));
+        Page<UserFootDO> pages = userFootMapper.selectPage(new Page<>(page, size), Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getUserId, userId)
+            .eq(UserFootDO::getReadStat, 1)
+            .orderByDesc(UserFootDO::getUpdateTime, UserFootDO::getCreateTime));
         if (pages == null || pages.getRecords().isEmpty()) return null;
         List<Integer> ids = pages.getRecords().stream().map(UserFootDO::getDocumentId).toList();
         return articleClient.selectIds(ids).getData();
@@ -135,5 +205,97 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     private boolean dataNULL(Integer articleId, Integer userId) {
         UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId).eq(UserFootDO::getUserId, userId));
         return foot == null;
+    }
+
+    private UserFootDO ensureUserFoot(Integer articleId, Integer userId) {
+        if (articleId == null || userId == null) {
+            throw new IllegalArgumentException("articleId/userId is null");
+        }
+        UserFootDO foot = userFootMapper.selectOne(Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getUserId, userId));
+        if (foot != null) {
+            return foot;
+        }
+        ArticleVO article = articleClient.queryArticle(articleId).getData();
+        Integer documentUserId = article != null ? article.getUserId() : null;
+        UserFootDO build = UserFootDO.builder()
+            .userId(userId)
+            .documentId(articleId)
+            .documentUserId(documentUserId)
+            .collectionStat(0)
+            .commentStat(0)
+            .praiseStat(0)
+            .readStat(0)
+            .build();
+        userFootMapper.insert(build);
+        return build;
+    }
+
+    private ArticleStatDO getArticleStat(Integer articleId) {
+        if (articleId == null) return null;
+        return articleStatMapper.selectOne(Wrappers.<ArticleStatDO>lambdaQuery().eq(ArticleStatDO::getArticleId, articleId));
+    }
+
+    private ArticleStatDO ensureArticleStat(Integer articleId) {
+        ArticleStatDO stat = getArticleStat(articleId);
+        if (stat != null) return stat;
+        long viewCount = this.count(Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getReadStat, 1));
+        if (viewCount == 0) {
+            viewCount = this.count(Wrappers.<UserFootDO>lambdaQuery().eq(UserFootDO::getDocumentId, articleId));
+        }
+        long praiseCount = this.count(Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getPraiseStat, 1));
+        long collectCount = this.count(Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getCollectionStat, 1));
+        long commentCount = this.count(Wrappers.<UserFootDO>lambdaQuery()
+            .eq(UserFootDO::getDocumentId, articleId)
+            .eq(UserFootDO::getCommentStat, 1));
+        ArticleStatDO build = ArticleStatDO.builder()
+            .articleId(articleId)
+            .viewCount(viewCount)
+            .praiseCount(praiseCount)
+            .commentCount(commentCount)
+            .collectCount(collectCount)
+            .createTime(LocalDateTime.now())
+            .updateTime(LocalDateTime.now())
+            .build();
+        try {
+            articleStatMapper.insert(build);
+        } catch (Exception ignored) {
+            // ignore duplicate insert in concurrent scenarios
+        }
+        return build;
+    }
+
+    private void incrementViewCount(Integer articleId) {
+        ensureArticleStat(articleId);
+        articleStatMapper.update(null, new UpdateWrapper<ArticleStatDO>()
+            .eq("article_id", articleId)
+            .setSql("view_count = view_count + 1, update_time = NOW()"));
+    }
+
+    private void changePraiseCount(Integer articleId, int delta) {
+        changeCount(articleId, "praise_count", delta);
+    }
+
+    private void changeCollectCount(Integer articleId, int delta) {
+        changeCount(articleId, "collect_count", delta);
+    }
+
+    private void changeCommentCount(Integer articleId, int delta) {
+        changeCount(articleId, "comment_count", delta);
+    }
+
+    private void changeCount(Integer articleId, String column, int delta) {
+        if (delta == 0) return;
+        ensureArticleStat(articleId);
+        articleStatMapper.update(null, new UpdateWrapper<ArticleStatDO>()
+            .eq("article_id", articleId)
+            .setSql(column + " = GREATEST(" + column + " + (" + delta + "), 0), update_time = NOW()"));
     }
 }

@@ -48,6 +48,7 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
         UserFollowDO userFollowDO = UserFollowDO.builder()
                 .userId(userId)
                 .followId(followId)
+                .status(0) // 默认关注
                 .build();
         baseMapper.insert(userFollowDO);
 
@@ -58,6 +59,13 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
                         .eq(UserFollowDO::getFollowId, userId));
 
         if (reverseFollow != null) {
+            // 更新双方状态为好友
+            userFollowDO.setStatus(1);
+            baseMapper.updateById(userFollowDO);
+            
+            reverseFollow.setStatus(1);
+            baseMapper.updateById(reverseFollow);
+            
             return "恭喜成为好友";
         }
         return "关注成功";
@@ -70,16 +78,27 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
             return "参数错误";
         }
 
-        // 删除关注记录
-        int deleted = baseMapper.delete(
+        // 检查是否是好友关系，如果是，需要降级对方的状态
+        UserFollowDO existing = baseMapper.selectOne(
                 Wrappers.<UserFollowDO>lambdaQuery()
                         .eq(UserFollowDO::getUserId, userId)
                         .eq(UserFollowDO::getFollowId, followId));
-
-        if (deleted > 0) {
-            return "取消关注成功";
+        
+        if (existing == null) {
+            return "未关注该用户";
         }
-        return "未关注该用户";
+
+        if (existing.getStatus() != null && existing.getStatus() == 1) {
+            // 对方原本是好友，现在降级为关注我的人
+            baseMapper.update(Wrappers.<UserFollowDO>lambdaUpdate()
+                    .set(UserFollowDO::getStatus, 0)
+                    .eq(UserFollowDO::getUserId, followId)
+                    .eq(UserFollowDO::getFollowId, userId));
+        }
+
+        // 删除我的关注记录
+        baseMapper.deleteById(existing.getId());
+        return "取消关注成功";
     }
 
     @Override
@@ -98,13 +117,8 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
             return FriendRelationEnum.Not_Friend;
         }
 
-        // 查询 targetUserId → userId 的关注记录（互相关注）
-        UserFollowDO reverseFollow = baseMapper.selectOne(
-                Wrappers.<UserFollowDO>lambdaQuery()
-                        .eq(UserFollowDO::getUserId, targetUserId)
-                        .eq(UserFollowDO::getFollowId, userId));
-
-        if (reverseFollow != null) {
+        // 使用 status 字段判断是否为好友
+        if (myFollow.getStatus() != null && myFollow.getStatus() == 1) {
             return FriendRelationEnum.Friend;
         }
         return FriendRelationEnum.Follow;
@@ -130,28 +144,11 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
 
     @Override
     public List<Integer> getFriendList(Integer userId) {
-        // 获取我关注的用户
-        List<UserFollowDO> myFollows = baseMapper.selectList(
+        List<UserFollowDO> list = baseMapper.selectList(
                 Wrappers.<UserFollowDO>lambdaQuery()
-                        .eq(UserFollowDO::getUserId, userId));
-        Set<Integer> myFollowing = new HashSet<>();
-        for (UserFollowDO follow : myFollows) {
-            myFollowing.add(follow.getFollowId());
-        }
-
-        // 获取关注我的用户
-        List<UserFollowDO> myFans = baseMapper.selectList(
-                Wrappers.<UserFollowDO>lambdaQuery()
-                        .eq(UserFollowDO::getFollowId, userId));
-
-        // 交集即为互相关注（好友）
-        Set<Integer> friends = new HashSet<>();
-        for (UserFollowDO fan : myFans) {
-            if (myFollowing.contains(fan.getUserId())) {
-                friends.add(fan.getUserId());
-            }
-        }
-        return friends.stream().toList();
+                        .eq(UserFollowDO::getUserId, userId)
+                        .eq(UserFollowDO::getStatus, 1));
+        return list.stream().map(UserFollowDO::getFollowId).toList();
     }
 
     @Override

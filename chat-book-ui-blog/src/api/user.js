@@ -74,17 +74,16 @@ export function getUserById(id) {
  * @returns
  */
 export function getFriendList() {
-    return request.get(`/api/user/friendList`);
+    return request.get(`/api/social/friends/detailed`);
 }
 
 /**
  * 添加关注
- * @param {string} userId
  * @param {string} friendId
  * @returns
  */
-export function addFriend(userId, friendId) {
-    return request.post(`/api/social/follow`, null, { params: { userId, friendId } });
+export function addFriend(friendId) {
+    return request.post(`/api/social/follow/${friendId}`);
 }
 
 /**
