@@ -43,7 +43,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getNewPage(Integer pageNo, Integer pageSize) {
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getStatus, ArticleStatus.UNPUBLISHED).orderByDesc(ArticleDO::getCreateTime));
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED).orderByDesc(ArticleDO::getCreateTime));
     }
 
     /**
@@ -63,7 +63,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         // 获取最近30天内的已发布文章
         LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getStatus, ArticleStatus.UNPUBLISHED)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
                 .ge(ArticleDO::getCreateTime, thirtyDaysAgo)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
@@ -86,7 +86,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         // 获取今天开始时间
         LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getStatus, ArticleStatus.UNPUBLISHED)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
                 .ge(ArticleDO::getCreateTime, todayStart)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
@@ -137,7 +137,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     public PageResult<ArticleListVO> getSystemRecommendPage(Integer pageNo, Integer pageSize) {
         // 降级策略：返回所有审核通过的文章
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getStatus, ArticleStatus.UNPUBLISHED)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
 //                .ge(ArticleDO::getCreateTime, weekStart)
 //                .le(ArticleDO::getCreateTime, weekEnd)
                 .orderByDesc(ArticleDO::getCreateTime)
@@ -164,7 +164,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         // 降级策略：返回最近7天内的已发布文章
         LocalDateTime sevenDaysAgo = LocalDateTime.now().minusDays(7);
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getStatus, ArticleStatus.UNPUBLISHED)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
                 .ge(ArticleDO::getCreateTime, sevenDaysAgo)
                 .orderByDesc(ArticleDO::getCreateTime)
         );

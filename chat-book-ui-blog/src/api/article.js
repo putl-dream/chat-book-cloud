@@ -16,7 +16,7 @@ export function uploadFile(file) {
             'Content-Type': 'multipart/form-data' // 重要：让浏览器自动设置 multipart/form-data 的边界
         }
     };
-    return request.post(`/api/article/file/upload`, formData, config);
+    return request.post(`/article/file/upload`, formData, config);
 }
 
 /**
@@ -25,7 +25,7 @@ export function uploadFile(file) {
  * @returns
  */
 export function queryArticle(id) {
-    return request.post(`/api/article/query?id=${id}`);
+    return request.get(`/article/query`, { params: { id } });
 }
 
 /**
@@ -37,7 +37,7 @@ export function queryArticle(id) {
  * @returns
  */
 export function addArticle(params) {
-    return request.post(`/api/article/add`, params);
+    return request.post(`/article/add`, params);
 }
 
 /**
@@ -46,7 +46,7 @@ export function addArticle(params) {
  * @returns
  */
 export function updateArticle(params) {
-    return request.post(`/api/article/update`, params);
+    return request.post(`/article/update`, params);
 }
 
 /**
@@ -55,7 +55,7 @@ export function updateArticle(params) {
  * @returns
  */
 export function deleteArticle(id) {
-    return request.post(`/api/article/delete?id=${id}`);
+    return request.delete(`/article/delete`, { params: { id } });
 }
 
 /**
@@ -64,7 +64,7 @@ export function deleteArticle(id) {
  * @param {number} pageSize
  */
 export function getNewPage(pageNo, pageSize) {
-    return request.post('/api/page/newPage', { pageNo, pageSize });
+    return request.post('/page/newPage', { pageNo, pageSize });
 }
 
 /**
@@ -73,7 +73,7 @@ export function getNewPage(pageNo, pageSize) {
  * @param {number} pageSize
  */
 export function getHotPage(pageNo, pageSize) {
-    return request.post('/api/page/hotPage', { pageNo, pageSize });
+    return request.post('/page/hotPage', { pageNo, pageSize });
 }
 
 /**
@@ -82,7 +82,7 @@ export function getHotPage(pageNo, pageSize) {
  * @param {number} pageSize
  */
 export function getTodayHotPage(pageNo, pageSize) {
-    return request.post('/api/page/todayHotPage', { pageNo, pageSize });
+    return request.post('/page/todayHotPage', { pageNo, pageSize });
 }
 
 /**
@@ -92,7 +92,7 @@ export function getTodayHotPage(pageNo, pageSize) {
  * @param {string} category
  */
 export function getCategoryPage(pageNo, pageSize, category) {
-    return request.post('/api/page/categoryPage', { pageNo, pageSize, category });
+    return request.post('/page/categoryPage', { pageNo, pageSize, category });
 }
 
 /**
@@ -102,7 +102,7 @@ export function getCategoryPage(pageNo, pageSize, category) {
  * @param {string} keyword
  */
 export function getLikePage(pageNo, pageSize, keyword) {
-    return request.post('/api/page/likePage', { pageNo, pageSize, keyword });
+    return request.post('/page/likePage', { pageNo, pageSize, keyword });
 }
 
 /**
@@ -111,7 +111,7 @@ export function getLikePage(pageNo, pageSize, keyword) {
  * @param {number} pageSize
  */
 export function getSystemRecommendPage(pageNo, pageSize) {
-    return request.post('/api/page/systemRecommendPage', { pageNo, pageSize });
+    return request.post('/page/systemRecommendPage', { pageNo, pageSize });
 }
 
 /**
@@ -120,7 +120,7 @@ export function getSystemRecommendPage(pageNo, pageSize) {
  * @param {number} pageSize
  */
 export function getPersonalRecommendPage(pageNo, pageSize) {
-    return request.post('/api/page/personalRecommendPage', { pageNo, pageSize });
+    return request.post('/page/personalRecommendPage', { pageNo, pageSize });
 }
 
 /**
@@ -130,7 +130,7 @@ export function getPersonalRecommendPage(pageNo, pageSize) {
  * @param {string} userId
  */
 export function getUserHistoryPage(pageNo, pageSize) {
-    return request.post('/api/page/userHistoryPage', { pageNo, pageSize });
+    return request.post('/page/userHistoryPage', { pageNo, pageSize });
 }
 
 /**
@@ -140,7 +140,7 @@ export function getUserHistoryPage(pageNo, pageSize) {
  * @param {string} userId
  */
 export function getUserCollectPage(pageNo, pageSize) {
-    return request.post('/api/page/userCollectPage', { pageNo, pageSize });
+    return request.post('/page/userCollectPage', { pageNo, pageSize });
 }
 
 /**
@@ -150,7 +150,7 @@ export function getUserCollectPage(pageNo, pageSize) {
  * @param {string} userId
  */
 export function getUserArticlePage(pageNo, pageSize) {
-    return request.post('/api/page/userArticlePage', { pageNo, pageSize });
+    return request.post('/page/userArticlePage', { pageNo, pageSize });
 }
 
 /**
@@ -160,7 +160,7 @@ export function getUserArticlePage(pageNo, pageSize) {
  * @param {string} userId
  */
 export function getUserDraftArticlePage(pageNo, pageSize) {
-    return request.post('/api/page/userDraftArticlePage', { pageNo, pageSize });
+    return request.post('/page/userDraftArticlePage', { pageNo, pageSize });
 }
 
 /**
@@ -169,14 +169,5 @@ export function getUserDraftArticlePage(pageNo, pageSize) {
  * @param {number} pageSize
  */
 export function getAdminArticlePage(pageNo, pageSize) {
-    return request.post('/api/page/adminArticlePage', { pageNo, pageSize });
-}
-
-/**
- * 查询文章评论
- * @param {string} articleId
- * @returns
- */
-export function getByArticleId(articleId) {
-    return request.get(`/api/interaction/review/getByArticleId?articleId=${articleId}`);
+    return request.post('/page/adminArticlePage', { pageNo, pageSize });
 }

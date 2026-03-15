@@ -47,7 +47,7 @@
 
 <script setup>
 import MessageCard from "@/components/domain/MessageCard.vue";
-import { getNotifications } from "@/api/user.js";
+import { getNotifications } from "@/api/interaction.js";
 import { onMounted, ref } from "vue";
 import router from "@/router/index.js";
 import { ElSkeleton, ElEmpty } from 'element-plus';

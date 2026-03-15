@@ -40,7 +40,7 @@
 import { ElSkeleton, ElEmpty } from "element-plus";
 import ArticleCard from "@/components/domain/ArticleCard.vue";
 import { onMounted, ref } from "vue";
-import { getHistory } from "@/api/user.js";
+import { getHistory } from "@/api/interaction.js";
 import router from "@/router/index.js";
 
 // 初始化为空数组，修复之前初始化为 [{}] 导致的空卡片问题

@@ -17,5 +17,9 @@ spring:
         #        password: nacos # 密码
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}  # 配置中心地址
         namespace: ${NACOS_CONFIG_NAMESPACE:public}        # 命名空间
-#        group: DEFAULT_GROUP  # 组名
-#        file-extension: yaml  # 文件后缀
+        group: ${NACOS_GROUP:DEFAULT_GROUP}  # 组名
+        file-extension: yaml  # 文件后缀
+        shared-configs:
+          - data-id: common.yaml
+            group: ${NACOS_GROUP:DEFAULT_GROUP}
+            refresh: true

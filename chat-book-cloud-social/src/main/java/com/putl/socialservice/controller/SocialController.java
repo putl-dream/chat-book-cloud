@@ -1,8 +1,6 @@
 package com.putl.socialservice.controller;
 
-import com.putl.socialservice.enums.FriendRelationEnum;
 import com.putl.socialservice.service.UserFollowService;
-import com.putl.socialservice.vo.FollowStatVO;
 import com.putl.userservice.api.UserClient;
 import com.putl.userservice.api.dto.UserResult;
 import com.putl.userservice.api.vo.UserChatVO;
@@ -16,7 +14,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -58,43 +55,6 @@ public class SocialController {
         Integer userId = Integer.parseInt(userIdStr);
         String result = userFollowService.unfollow(userId, followId);
         return CommonResult.success(result);
-    }
-
-    @Operation(summary = "检查好友关系")
-    @GetMapping("/relation/{targetUserId}")
-    public CommonResult<Integer> checkFriendRelation(
-            @Parameter(description = "目标用户ID") @PathVariable Integer targetUserId) {
-        String userIdStr = UserContext.getUserId();
-        if (userIdStr == null) {
-            return CommonResult.error(401, "用户未登录");
-        }
-        Integer userId = Integer.parseInt(userIdStr);
-        FriendRelationEnum relation = userFollowService.checkFriendRelation(userId, targetUserId);
-        return CommonResult.success(relation.getCode());
-    }
-
-    @Operation(summary = "获取关注列表")
-    @GetMapping("/follows")
-    public CommonResult<List<Integer>> getFollowList() {
-        String userIdStr = UserContext.getUserId();
-        if (userIdStr == null) {
-            return CommonResult.error(401, "用户未登录");
-        }
-        Integer userId = Integer.parseInt(userIdStr);
-        List<Integer> list = userFollowService.getFollowList(userId);
-        return CommonResult.success(list);
-    }
-
-    @Operation(summary = "获取粉丝列表")
-    @GetMapping("/fans")
-    public CommonResult<List<Integer>> getFanList() {
-        String userIdStr = UserContext.getUserId();
-        if (userIdStr == null) {
-            return CommonResult.error(401, "用户未登录");
-        }
-        Integer userId = Integer.parseInt(userIdStr);
-        List<Integer> list = userFollowService.getFanList(userId);
-        return CommonResult.success(list);
     }
 
     @Operation(summary = "获取好友列表")
@@ -149,25 +109,5 @@ public class SocialController {
         }).filter(Objects::nonNull).toList();
         
         return CommonResult.success(detailedList);
-    }
-
-    @Operation(summary = "获取关注统计")
-    @GetMapping("/stat")
-    public CommonResult<FollowStatVO> getFollowStat() {
-        String userIdStr = UserContext.getUserId();
-        if (userIdStr == null) {
-            return CommonResult.error(401, "用户未登录");
-        }
-        Integer userId = Integer.parseInt(userIdStr);
-        FollowStatVO stat = userFollowService.getFollowStat(userId);
-        return CommonResult.success(stat);
-    }
-
-    @Operation(summary = "获取指定用户的关注统计")
-    @GetMapping("/stat/{userId}")
-    public CommonResult<FollowStatVO> getUserFollowStat(
-            @Parameter(description = "用户ID") @PathVariable Integer userId) {
-        FollowStatVO stat = userFollowService.getFollowStat(userId);
-        return CommonResult.success(stat);
     }
 }

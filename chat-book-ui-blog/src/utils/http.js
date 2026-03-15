@@ -44,7 +44,7 @@ function removePending(config) {
  * 创建 Axios 实例
  */
 const service = axios.create({
-    baseURL: API_CONFIG.baseURL,
+    baseURL: API_CONFIG.baseURL + '/api',
     timeout: API_CONFIG.timeout || 10000,
     headers: {
         'Content-Type': 'application/json',
