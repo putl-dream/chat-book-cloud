@@ -19,13 +19,15 @@ public class ArticleController {
     private final ArticleService articleService;
 
     @PostMapping("/add")
-    public void addArticle(@RequestBody ArticleVO articleVO) {
+    public CommonResult<Void> addArticle(@RequestBody ArticleVO articleVO) {
         articleService.addArticle(articleVO);
+        return CommonResult.success();
     }
 
     @PostMapping("/update")
-    public void updateArticle(@RequestBody ArticleVO articleVO) {
+    public CommonResult<Void> updateArticle(@RequestBody ArticleVO articleVO) {
         articleService.updateArticle(articleVO);
+        return CommonResult.success();
     }
 
     @PostMapping("/queryPage")
@@ -41,7 +43,8 @@ public class ArticleController {
     }
 
     @PostMapping("/delete")
-    public void deleteArticle(Integer id) {
+    public CommonResult<Void> deleteArticle(Integer id) {
         articleService.deleteArticle(id);
+        return CommonResult.success();
     }
 }

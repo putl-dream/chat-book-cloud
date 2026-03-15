@@ -1,6 +1,6 @@
 spring:
   application:
-    name: article-service
+    name: chat-book-cloud-article
 
   profiles:
     active: dev
@@ -15,3 +15,4 @@ websocket:
 logging:
   level:
     org.springframework.cloud.gateway: info
+    fun.amireux.chat.book.framework.websocket: info

@@ -4,38 +4,36 @@ import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import fun.amireux.chat.book.minio.config.MinIOConfigProperties;
-import jakarta.annotation.PostConstruct;
-import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.context.properties.bind.Binder;
+import org.springframework.context.EnvironmentAware;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
 
 /**
  * 将 MinIO 存储路径（如 images/xxx.png）序列化为可访问的完整 URL。
- *
- * <p>注意：@JsonSerialize(using=...) 场景下，序列化器实例常由 Jackson 自行创建，
- * 不会走 Spring 注入，导致配置为空。这里用静态缓存兜底：Spring 创建的组件实例会在启动时
- * 将配置写入 STATIC_CONFIG，Jackson 自建实例也能读取到配置，从而稳定拼接 URL。</p>
  */
 @Component
-@RequiredArgsConstructor
-public class FileUrlSerializer extends JsonSerializer<String> {
+public class FileUrlSerializer extends JsonSerializer<String> implements EnvironmentAware {
 
-    private static volatile MinIOConfigProperties STATIC_CONFIG;
+    private static String STATIC_PUBLIC_URL;
+    private static String STATIC_ENDPOINT;
+    private static String STATIC_BUCKET;
 
-    private final MinIOConfigProperties minIOConfigProperties;
+    private Environment environment;
 
-    /**
-     * 供 Jackson 在 @JsonSerialize(using=...) 场景下自行实例化使用。
-     */
-    public FileUrlSerializer() {
-        this.minIOConfigProperties = null;
-    }
-
-    @PostConstruct
-    public void initStaticConfig() {
-        if (this.minIOConfigProperties != null) {
-            STATIC_CONFIG = this.minIOConfigProperties;
+    @Override
+    public void setEnvironment(Environment environment) {
+        this.environment = environment;
+        // 从 Environment 直接绑定配置
+        Binder binder = Binder.get(environment);
+        MinIOConfigProperties props = binder.bind("minio", MinIOConfigProperties.class).orElse(null);
+        if (props != null) {
+            STATIC_PUBLIC_URL = props.getPublicUrl();
+            STATIC_ENDPOINT = props.getEndpoint();
+            STATIC_BUCKET = props.getBucket();
         }
     }
 
@@ -51,15 +49,10 @@ public class FileUrlSerializer extends JsonSerializer<String> {
             return;
         }
 
-        MinIOConfigProperties config = minIOConfigProperties != null ? minIOConfigProperties : STATIC_CONFIG;
-        if (config == null) {
-            gen.writeString(value);
-            return;
-        }
-
-        String baseUrl = config.getPublicUrl();
+        // 使用静态配置
+        String baseUrl = STATIC_PUBLIC_URL;
         if (baseUrl == null || baseUrl.isEmpty()) {
-            baseUrl = config.getEndpoint();
+            baseUrl = STATIC_ENDPOINT;
         }
 
         if (baseUrl == null || baseUrl.isEmpty()) {
@@ -71,12 +64,12 @@ public class FileUrlSerializer extends JsonSerializer<String> {
             baseUrl += "/";
         }
 
-        String bucket = config.getBucket();
-        if (bucket != null && !bucket.isEmpty()) {
-            if (!bucket.endsWith("/")) {
-                bucket += "/";
+        if (STATIC_BUCKET != null && !STATIC_BUCKET.isEmpty()) {
+            if (!STATIC_BUCKET.endsWith("/")) {
+                baseUrl += STATIC_BUCKET + "/";
+            } else {
+                baseUrl += STATIC_BUCKET;
             }
-            baseUrl += bucket;
         }
 
         gen.writeString(baseUrl + value);

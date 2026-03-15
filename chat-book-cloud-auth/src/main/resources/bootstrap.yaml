@@ -1,14 +1,9 @@
 spring:
   application:
-    name: auth-server
+    name: chat-book-cloud-auth
 
   profiles:
     active: dev
 
 server:
   port: 8081
-
---- ## 日志
-logging:
-  level:
-    org.springframework.cloud.gateway: info

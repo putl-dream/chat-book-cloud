@@ -6,6 +6,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.putl.interactionservice.entity.ReviewDO;
 import com.putl.interactionservice.mapper.ReviewMapper;
 import com.putl.interactionservice.service.ReviewService;
+import com.putl.interactionservice.service.UserFootService;
 import com.putl.interactionservice.vo.ReviewListVO;
 import com.putl.interactionservice.vo.ReviewVO;
 import com.putl.userservice.api.UserClient;
@@ -23,6 +24,7 @@ import java.util.*;
 public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> implements ReviewService {
     private final ReviewMapper reviewMapper;
     private final UserClient userClient;
+    private final UserFootService userFootService;
 
     @Override
     public List<ReviewListVO> getByArticleId(Integer articleId) {
@@ -63,7 +65,11 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
         bean.setTextId(reviewVO.getArticleId());
         bean.setParentId(reviewVO.getParentId());
         bean.setContent(reviewVO.getContent());
-        return reviewMapper.insert(bean) == 1;
+        boolean saved = reviewMapper.insert(bean) == 1;
+        if (saved) {
+            userFootService.updateComment(reviewVO.getArticleId(), Integer.parseInt(userId));
+        }
+        return saved;
     }
 
     private ReviewListVO getReviewVO(ReviewDO item) {

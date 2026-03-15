@@ -1,8 +1,4 @@
-server:
-
 spring:
-  application:
-    name: social-service
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/chat_book_social?useUnicode=true&characterEncoding=utf8&serverTimezone=Asia/Shanghai

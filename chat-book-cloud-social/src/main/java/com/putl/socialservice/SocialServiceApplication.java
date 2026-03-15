@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @SpringBootApplication
 @EnableDiscoveryClient
-@EnableFeignClients
+@EnableFeignClients(basePackages = {"com.putl.userservice.api", "com.putl.chatservice.api"})
 @MapperScan("com.putl.socialservice.mapper")
 public class SocialServiceApplication {
     public static void main(String[] args) {

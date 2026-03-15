@@ -64,6 +64,19 @@ CREATE TABLE IF NOT EXISTS user_foot (
     update_time DATETIME
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
+-- Table: article_stat
+CREATE TABLE IF NOT EXISTS article_stat (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    article_id INT NOT NULL,
+    view_count BIGINT DEFAULT 0,
+    praise_count BIGINT DEFAULT 0,
+    comment_count BIGINT DEFAULT 0,
+    collect_count BIGINT DEFAULT 0,
+    create_time DATETIME,
+    update_time DATETIME,
+    UNIQUE KEY uk_article_id (article_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
 -- Table: user_friends
 CREATE TABLE IF NOT EXISTS user_friends (
     id INT AUTO_INCREMENT PRIMARY KEY,

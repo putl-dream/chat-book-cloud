@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 
 import java.util.List;
 
-@FeignClient(name = "social-service", configuration = SocialFeignConfig.class)
+@FeignClient(name = "chat-book-cloud-social", configuration = SocialFeignConfig.class)
 public interface SocialClient {
 
     @PostMapping("/social/follow/{followId}")
@@ -32,6 +32,9 @@ public interface SocialClient {
 
     @GetMapping("/social/friends")
     CommonResult<List<Integer>> getFriendList();
+
+    @GetMapping("/social/friends/detailed")
+    CommonResult<List<com.putl.userservice.api.vo.UserChatVO>> getFriendListDetailed();
 
     @GetMapping("/social/stat")
     CommonResult<FollowStatDTO> getFollowStat();

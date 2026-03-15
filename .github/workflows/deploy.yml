@@ -148,6 +148,8 @@ jobs:
           mkdir -p deploy/chat-book-cloud-user/target
           mkdir -p deploy/chat-book-cloud-article/target
           mkdir -p deploy/chat-book-cloud-interaction/target
+          mkdir -p deploy/chat-book-cloud-social/target
+          mkdir -p deploy/chat-book-cloud-chat/target
           mkdir -p deploy/chat-book-ui-blog/dist
 
           cp chat-book-cloud-gateway/target/*.jar deploy/chat-book-cloud-gateway/target/
@@ -155,12 +157,16 @@ jobs:
           cp chat-book-cloud-user/target/*.jar deploy/chat-book-cloud-user/target/
           cp chat-book-cloud-article/target/*.jar deploy/chat-book-cloud-article/target/
           cp chat-book-cloud-interaction/target/*.jar deploy/chat-book-cloud-interaction/target/
+          cp chat-book-cloud-social/target/*.jar deploy/chat-book-cloud-social/target/
+          cp chat-book-cloud-chat/target/*.jar deploy/chat-book-cloud-chat/target/
 
           cp chat-book-cloud-gateway/Dockerfile deploy/chat-book-cloud-gateway/
           cp chat-book-cloud-auth/Dockerfile deploy/chat-book-cloud-auth/
           cp chat-book-cloud-user/Dockerfile deploy/chat-book-cloud-user/
           cp chat-book-cloud-article/Dockerfile deploy/chat-book-cloud-article/
           cp chat-book-cloud-interaction/Dockerfile deploy/chat-book-cloud-interaction/
+          cp chat-book-cloud-social/Dockerfile deploy/chat-book-cloud-social/
+          cp chat-book-cloud-chat/Dockerfile deploy/chat-book-cloud-chat/
           cp chat-book-ui-blog/Dockerfile deploy/chat-book-ui-blog/
 
           cp chat-book-ui-blog/nginx.conf deploy/chat-book-ui-blog/

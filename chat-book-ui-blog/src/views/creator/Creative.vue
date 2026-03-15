@@ -55,8 +55,8 @@
                     </div>
 
                     <div class="card-actions">
-                        <el-button link type="primary">编辑</el-button>
-                        <el-button link type="danger">删除</el-button>
+                        <el-button link type="primary" @click="handleEdit(article)">编辑</el-button>
+                        <el-button link type="danger" @click="handleDelete(article)">删除</el-button>
                     </div>
                 </div>
             </div>
@@ -74,8 +74,10 @@
 <script setup>
 import { ref, onMounted } from 'vue';
 import UserDataCard from "@/components/domain/UserDataCard.vue";
-import { getUserArticlePage } from "@/api/article.js";
+import { getUserArticlePage, deleteArticle } from "@/api/article.js";
 import { View, ChatDotSquare, Star, Collection } from '@element-plus/icons-vue';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import router from "@/router/index.js";
 
 // 文章列表数据
 const articles = ref([]);
@@ -109,6 +111,28 @@ const fetchArticles = async () => {
 // 分页变化处理
 const handlePageChange = (newPage) => {
     currentPage.value = newPage;
+    fetchArticles();
+};
+
+// 编辑文章
+const handleEdit = (article) => {
+    router.push(`/text/${article.id}`);
+};
+
+// 删除文章
+const handleDelete = async (article) => {
+    await ElMessageBox.confirm(
+        `确定要删除文章 "${article.title}" 吗？`,
+        '删除确认',
+        {
+            confirmButtonText: '确定删除',
+            cancelButtonText: '取消',
+            type: 'warning',
+        }
+    );
+
+    await deleteArticle(article.id);
+    ElMessage.success('文章删除成功');
     fetchArticles();
 };
 

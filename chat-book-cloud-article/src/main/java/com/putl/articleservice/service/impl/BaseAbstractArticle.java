@@ -3,7 +3,7 @@ package com.putl.articleservice.service.impl;
 import com.baomidou.mybatisplus.core.conditions.Wrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.interactionservice.api.InteractionClient;
-import com.putl.interactionservice.api.dto.UserFootVO;
+import com.putl.interactionservice.api.dto.UserFootListVO;
 import com.putl.userservice.api.UserClient;
 import com.putl.userservice.api.dto.UserResult;
 import com.putl.articleservice.controller.vo.ArticleListVO;
@@ -20,7 +20,7 @@ import java.util.List;
 
 /**
  * 文章列表功能
- * - 获取最新文章列表
+ * - 获取最新文章列�?
  * - 获取热门文章列表
  * - 分类/标签下的文章列表
  * - 搜索结果文章列表
@@ -28,8 +28,8 @@ import java.util.List;
  * - 个性化推荐文章列表
  * - 我的历史阅读列表
  * - 收藏文章列表
- * - 管理员审核文章列表
- * - 草稿箱文章列表
+ * - 管理员审核文章列�?
+ * - 草稿箱文章列�?
  *
  * @since 2025-01-13 20:46:01
  */
@@ -71,7 +71,7 @@ public abstract class BaseAbstractArticle {
 
     private void setArticleVO(ArticleListVO article) {
         try {
-            // 获取作者信息
+            // 获取作者信�?
             if (article.getUserId() != null) {
                 CommonResult<UserResult> userResult = userClient.getUserById(article.getUserId());
                 if (userResult != null && userResult.getData() != null) {
@@ -79,25 +79,28 @@ public abstract class BaseAbstractArticle {
                 }
             }
 
-            // 调用带 userId 参数的方法，避免用户服务依赖 ReqInfoContext
-            // 对于获取文章统计数据，当前用户 ID 不重要，传入 0 表示系统查询
-            UserFootVO userFoot = interactionClient.getUserFoot(article.getId(), 0);
-            if (userFoot != null) {
-                article.setViewCount(userFoot.getViewCount());
-                article.setPraiseCount(Long.valueOf(userFoot.getPraiseStat()));
-                article.setCommentCount(Long.valueOf(userFoot.getCollectStat()));
+            // 调用�?userId 参数的方法，避免用户服务依赖 ReqInfoContext
+            // 对于获取文章统计数据，当前用�?ID 不重要，传入 0 表示系统查询
+            UserFootListVO stat = interactionClient.getUserFootList(article.getId());
+            if (stat != null) {
+                article.setViewCount(stat.getViewCount());
+                article.setPraiseCount(stat.getPraiseCount());
+                article.setCommentCount(stat.getCommentCount());
+                article.setCollectCount(stat.getCollectCount());
             } else {
-                // 设置默认值，避免空指针异常
+                // 设置默认值，避免空指针异�?
                 article.setViewCount(0L);
                 article.setPraiseCount(0L);
                 article.setCommentCount(0L);
-                log.warn("UserFootVO is null for articleId: {}", article.getId());
+                article.setCollectCount(0L);
+                log.warn("UserFootListVO is null for articleId: {}", article.getId());
             }
         } catch (Exception e) {
-            // Feign 调用失败时设置默认值
+            // Feign 调用失败时设置默认�?
             article.setViewCount(0L);
             article.setPraiseCount(0L);
             article.setCommentCount(0L);
+            article.setCollectCount(0L);
             log.error("获取文章统计数据或用户信息失败，articleId: {}", article.getId(), e);
         }
     }

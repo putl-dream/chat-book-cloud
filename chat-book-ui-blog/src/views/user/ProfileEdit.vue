@@ -70,8 +70,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getUserBySelf, updateUser } from "@/api/user.js";
-import { uploadFile } from "@/api/article.js";
+import { getUserBySelf, updateUser, uploadAvatar } from "@/api/user.js";
 import { ElMessage } from 'element-plus';
 import { Camera, User, ArrowLeft } from '@element-plus/icons-vue';
 import router from "@/router/index.js";
@@ -109,7 +108,7 @@ const fetchUserData = async () => {
 
 const handleUpload = async (options) => {
     try {
-        const res = await uploadFile(options.file);
+        const res = await uploadAvatar(options.file);
         // 根据后端 ImageResult 结构，成功返回 ImageResult<Img>，其中 data 是 Img 对象
         // Img 对象包含 url 字段
         if (res && res.url) {

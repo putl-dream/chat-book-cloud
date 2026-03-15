@@ -1,4 +1,4 @@
-package com.putl.userservice.mapper.entity;
+package com.putl.interactionservice.entity;
 
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableId;
@@ -8,32 +8,17 @@ import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * [UserFriends]实体类
- *
- * @since 2025-01-15 16:49:34
- */
-
 @Data
 @Builder
-@TableName("user_friends")
-public class UserFriendsDO {
+@TableName("article_stat")
+public class ArticleStatDO {
     @TableId(value = "id", type = IdType.AUTO)
-    //主键
     private Integer id;
-
-    //当前用户
-    private Integer userId1;
-
-    //被关注用户
-    private Integer userId2;
-
-    //0-关注 1-好友 2-拉黑
-    private Integer status;
-
+    private Integer articleId;
+    private Long viewCount;
+    private Long praiseCount;
+    private Long commentCount;
+    private Long collectCount;
     private LocalDateTime createTime;
-
     private LocalDateTime updateTime;
-
 }
-

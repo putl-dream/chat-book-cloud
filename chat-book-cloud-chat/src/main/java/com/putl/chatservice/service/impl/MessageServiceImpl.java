@@ -61,6 +61,15 @@ public class MessageServiceImpl implements MessageService {
         messageMapper.markMessagesAsRead(userId, targetUserId);
     }
 
+    @Override
+    public MessageVO queryLastMessage(Integer userId, Integer targetUserId) {
+        List<MessageDO> messages = messageMapper.selectHistoryMessages(userId, targetUserId, 1, 0);
+        if (messages != null && !messages.isEmpty()) {
+            return convertToVO(messages.get(0), userId);
+        }
+        return null;
+    }
+
     /**
      * 转换为 VO
      */

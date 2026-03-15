@@ -46,4 +46,12 @@ public interface MessageService {
      * @param targetUserId 对方用户ID
      */
     void markAsRead(Integer userId, Integer targetUserId);
+
+    /**
+     * 查询最后一条消息
+     * @param userId 当前用户ID
+     * @param targetUserId 对方用户ID
+     * @return 消息VO
+     */
+    MessageVO queryLastMessage(Integer userId, Integer targetUserId);
 }

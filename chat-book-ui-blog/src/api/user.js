@@ -74,17 +74,16 @@ export function getUserById(id) {
  * @returns
  */
 export function getFriendList() {
-    return request.get(`/api/user/friendList`);
+    return request.get(`/api/social/friends/detailed`);
 }
 
 /**
  * 添加关注
- * @param {string} userId
  * @param {string} friendId
  * @returns
  */
-export function addFriend(userId, friendId) {
-    return request.post(`/api/social/follow`, null, { params: { userId, friendId } });
+export function addFriend(friendId) {
+    return request.post(`/api/social/follow/${friendId}`);
 }
 
 /**
@@ -162,4 +161,20 @@ export function saveReview(params) {
  */
 export function getNotifications() {
     return request.get(`/api/interaction/foot/getNotifications`);
+}
+
+/**
+ * 上传头像
+ * @param {File} file
+ * @returns
+ */
+export function uploadAvatar(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+    const config = {
+        headers: {
+            'Content-Type': 'multipart/form-data'
+        }
+    };
+    return request.post(`/api/user/file/avatar/upload`, formData, config);
 }
