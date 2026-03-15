@@ -8,7 +8,7 @@ import request from "@/utils/http.js";
  * @returns
  */
 export function getChatHistory(targetUserId, page = 1, size = 50) {
-    return request.get(`/api/chat/messages`, { params: { targetUserId, page, size } });
+    return request.get(`/chat/messages`, { params: { targetUserId, page, size } });
 }
 
 /**
@@ -16,7 +16,7 @@ export function getChatHistory(targetUserId, page = 1, size = 50) {
  * @returns
  */
 export function getUnreadCount() {
-    return request.get(`/api/chat/unread/count`);
+    return request.get(`/chat/unread/count`);
 }
 
 /**
@@ -25,5 +25,5 @@ export function getUnreadCount() {
  * @returns
  */
 export function markAsRead(targetUserId) {
-    return request.put(`/api/chat/messages/read`, null, { params: { targetUserId } });
+    return request.put(`/chat/messages/read`, null, { params: { targetUserId } });
 }

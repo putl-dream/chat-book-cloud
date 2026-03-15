@@ -9,7 +9,7 @@ import request from '@/utils/http.js'
  * @returns
  */
 export function login(params) {
-    return request.post(`/api/auth/account/login`, {
+    return request.post(`/auth/account/login`, {
         ...params,
         loginMethod: 'PASSWORD'
     });
@@ -23,7 +23,7 @@ export function login(params) {
  * @returns
  */
 export function loginByEmailCode(params) {
-    return request.post(`/api/auth/account/login`, {
+    return request.post(`/auth/account/login`, {
         email: params.email,
         loginMethod: 'VERIFICATION_CODE',
         verificationCode: params.verificationCode
@@ -40,7 +40,7 @@ export function loginByEmailCode(params) {
  * @returns
  */
 export function signUp(params) {
-    return request.post(`/api/auth/account/registered`, params);
+    return request.post(`/auth/account/registered`, params);
 }
 
 /**
@@ -49,7 +49,7 @@ export function signUp(params) {
  * @returns
  */
 export function captcha(email) {
-    return request.get(`/api/auth/account/captcha`, { params: { email } });
+    return request.get(`/auth/account/captcha`, { params: { email } });
 }
 
 /**
@@ -57,7 +57,7 @@ export function captcha(email) {
  * @returns
  */
 export function getUserBySelf() {
-    return request.get(`/api/user/bySelf`);
+    return request.get(`/user/bySelf`);
 }
 
 /**
@@ -66,7 +66,7 @@ export function getUserBySelf() {
  * @returns
  */
 export function getUserById(id) {
-    return request.get(`/api/user/byId`, { params: { id } });
+    return request.get(`/user/byId`, { params: { id } });
 }
 
 /**
@@ -74,7 +74,7 @@ export function getUserById(id) {
  * @returns
  */
 export function getFriendList() {
-    return request.get(`/api/social/friends/detailed`);
+    return request.get(`/social/friends/detailed`);
 }
 
 /**
@@ -83,7 +83,7 @@ export function getFriendList() {
  * @returns
  */
 export function addFriend(friendId) {
-    return request.post(`/api/social/follow/${friendId}`);
+    return request.post(`/social/follow/${friendId}`);
 }
 
 /**
@@ -92,7 +92,7 @@ export function addFriend(friendId) {
  * @returns
  */
 export function updateUser(data) {
-    return request.post(`/api/user/update`, data);
+    return request.post(`/user/update`, data);
 }
 
 /**
@@ -102,7 +102,7 @@ export function updateUser(data) {
  * @returns
  */
 export function queryArticlePage(pageNum, pageSize) {
-    return request.post(`/api/article/queryPage?pageNum=${pageNum}&pageSize=${pageSize}`);
+    return request.post(`/article/queryPage?pageNum=${pageNum}&pageSize=${pageSize}`);
 }
 
 /**
@@ -112,7 +112,7 @@ export function queryArticlePage(pageNum, pageSize) {
  * @returns
  */
 export function getHistory(page, size) {
-    return request.get(`/api/interaction/foot/getHistory`, { params: { page, size } });
+    return request.get(`/interaction/foot/getHistory`, { params: { page, size } });
 }
 
 /**
@@ -121,7 +121,7 @@ export function getHistory(page, size) {
  * @returns
  */
 export function updateCollection(articleId) {
-    return request.post(`/api/interaction/foot/collection`, null, { params: { articleId } });
+    return request.post(`/interaction/foot/collection`, null, { params: { articleId } });
 }
 
 /**
@@ -130,7 +130,7 @@ export function updateCollection(articleId) {
  * @returns
  */
 export function updatePraise(articleId) {
-    return request.post(`/api/interaction/foot/praise`, null, { params: { articleId } });
+    return request.post(`/interaction/foot/praise`, null, { params: { articleId } });
 }
 
 /**
@@ -142,7 +142,7 @@ export function updatePraise(articleId) {
  * @returns
  */
 export function saveReview(params) {
-    return request.post(`/api/interaction/review/save`, params);
+    return request.post(`/interaction/review/save`, params);
 }
 
 /**
@@ -151,7 +151,7 @@ export function saveReview(params) {
  * @returns {Promise<NotificationVO[]>}
  */
 export function getNotifications() {
-    return request.get(`/api/interaction/foot/getNotifications`);
+    return request.get(`/interaction/foot/getNotifications`);
 }
 
 /**
@@ -167,5 +167,5 @@ export function uploadAvatar(file) {
             'Content-Type': 'multipart/form-data'
         }
     };
-    return request.post(`/api/user/file/avatar/upload`, formData, config);
+    return request.post(`/user/file/avatar/upload`, formData, config);
 }

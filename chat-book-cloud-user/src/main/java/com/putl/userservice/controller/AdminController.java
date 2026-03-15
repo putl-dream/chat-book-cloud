@@ -4,7 +4,6 @@ import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.putl.articleservice.api.ArticleClient;
 import com.putl.userservice.controller.vo.DataCount;
 import com.putl.userservice.controller.vo.UserVO;
-import com.putl.userservice.service.MessageService;
 import com.putl.userservice.service.UserService;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -18,7 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 @RequestMapping("/user/admin")
 public class AdminController {
-    private final MessageService messageService;
+
     private final UserService userService;
     private final ArticleClient articleClient;
 
@@ -27,7 +26,7 @@ public class AdminController {
         DataCount dataCount = new DataCount();
         dataCount.setUserCount(userService.count());
         dataCount.setArticleCount(articleClient.queryCount());
-        dataCount.setReviewCount(messageService.count());
+        dataCount.setReviewCount(0L); // TODO: 从 interaction-service 获取评论数
         return CommonResult.success(dataCount);
     }
 
