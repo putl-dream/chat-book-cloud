@@ -29,24 +29,39 @@ export function queryArticle(id) {
 }
 
 /**
- * 添加文章
+ * 保存草稿
  * @param {object} params ArticleVO
- * @param {Number} params.id
- * @param {string} params.title
- * @param {string} params.content
  * @returns
  */
-export function addArticle(params) {
-    return request.post(`/article/add`, params);
+export function saveDraftArticle(params) {
+    return request.post(`/article/saveDraft`, params);
 }
 
 /**
- * 更新文章
+ * 发布文章
+ * @param {object} params ArticleVO
+ * @returns
+ */
+export function publishArticle(params) {
+    return request.post(`/article/publish`, params);
+}
+
+/**
+ * 兼容旧接口：统一映射到草稿保存
+ * @param {object} params ArticleVO
+ * @returns
+ */
+export function addArticle(params) {
+    return saveDraftArticle(params);
+}
+
+/**
+ * 兼容旧接口：统一映射到草稿保存
  * @param {object} params ArticleVO
  * @returns
  */
 export function updateArticle(params) {
-    return request.post(`/article/update`, params);
+    return saveDraftArticle(params);
 }
 
 /**
