@@ -90,7 +90,8 @@
                         <img v-if="publishForm.cover" :src="publishForm.cover" class="avatar"
                             style="width: 100px; height: 100px; object-fit: cover;" />
                         <el-icon v-else class="avatar-uploader-icon"
-                            style="border: 1px dashed #d9d9d9; border-radius: 6px; cursor: pointer; position: relative; overflow: hidden; width: 100px; height: 100px; display: flex; justify-content: center; align-items: center;">
+                            style="border: 1px dashed #d9d9d9; border-radius: 8px; cursor: pointer; position: relative; overflow: hidden; width: 100px; height: 100px; display:
+                            flex; justify-content: center; align-items: center;">
                             <Plus />
                         </el-icon>
                     </el-upload>
@@ -579,7 +580,7 @@ onBeforeRouteUpdate((to, from) => {
     height: 100%;
     overflow: hidden;
     transition: width 0.2s ease;
-    border-radius: var(--border-radius-xl, 16px);
+    border-radius: var(--border-radius-xl, 8px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
     background: var(--bg-color-white);
     /* Give space around islands */
@@ -625,7 +626,7 @@ onBeforeRouteUpdate((to, from) => {
     transform: translate(-50%, -50%);
     width: 4px;
     height: 30px;
-    border-radius: 2px;
+    border-radius: 8px;
     background: var(--border-color-base);
     transition: background-color 0.2s;
 }
@@ -713,7 +714,7 @@ onBeforeRouteUpdate((to, from) => {
 
 .main-content {
     width: 100%;
-    padding: 60px 80px 0 80px;
+    padding: 30px 40px 0 40px;
     /* Remove bottom padding to let content reach bottom */
     background: transparent;
     /* Use container's background */
