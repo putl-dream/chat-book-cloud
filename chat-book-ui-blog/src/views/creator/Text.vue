@@ -4,27 +4,62 @@
 
         <div class="text-toolbar">
             <div class="toolbar-wrapper">
-                <TiptapToolbar :editor="editor" class="glass-toolbar" v-if="editor" @toggle-toc="toggleToc"
-                    :tocVisible="tocVisible" />
+                <TiptapToolbar :editor="editor" class="glass-toolbar" v-if="editor" @toggle-toc="toggleLeft"
+                    :tocVisible="layoutState.leftOpen" />
                 <div class="status-bar">
                     <div class="status-indicator" :class="{ 'saving': save }"></div>
                     <el-text class="status-text">{{ statusText }}</el-text>
                 </div>
+                <el-button @click="toggleRight" :disabled="layoutState.isMobile" size="small"
+                    style="margin-left: auto;">
+                    {{ layoutState.rightOpen ? '关闭侧边' : '打开侧边' }}
+                </el-button>
             </div>
         </div>
 
-        <div class="editor-container">
-            <ArticleToc v-if="editor && tocVisible" :editor="editor" />
+        <div class="editor-container" ref="containerRef" @mousemove="onMouseMove" @mouseup="onMouseUp"
+            @mouseleave="onMouseUp">
+            <!-- Left Column -->
+            <div class="layout-left" :class="{ 'is-dragging': dragging === 'left' }" v-show="layoutState.leftOpen"
+                :style="{ width: layoutState.leftWidth + '%' }">
+                <ArticleToc v-if="editor" :editor="editor" />
+            </div>
 
-            <div class="scroll-area">
-                <div class="main-content">
-                    <!-- 标题区域 -->
-                    <div class="title-area">
-                        <input type="text" v-model="title" placeholder="请输入文章标题" class="title-input" @input="onInput" />
+            <!-- Left Splitter -->
+            <div class="layout-splitter" v-show="layoutState.leftOpen" @mousedown.prevent="startDrag('left')"></div>
+
+            <!-- Content Column -->
+            <div class="layout-content" :class="{ 'is-dragging': dragging }" :style="{ width: contentWidth + '%' }">
+                <div class="scroll-area">
+                    <div class="main-content">
+                        <!-- 标题区域 -->
+                        <div class="title-area">
+                            <input type="text" v-model="title" placeholder="请输入文章标题" class="title-input"
+                                @input="onInput" />
+                        </div>
+
+                        <!-- 内容区域 -->
+                        <editor-content :editor="editor" class="main-content-editor" />
                     </div>
+                </div>
+            </div>
 
-                    <!-- 内容区域 -->
-                    <editor-content :editor="editor" class="main-content-editor" />
+            <!-- Right Splitter -->
+            <div class="layout-splitter" v-show="layoutState.rightOpen" @mousedown.prevent="startDrag('right')"></div>
+
+            <!-- Right Column -->
+            <div class="layout-right" :class="{ 'is-dragging': dragging === 'right' }" v-show="layoutState.rightOpen"
+                :style="{ width: layoutState.rightWidth + '%' }">
+                <div class="right-sidebar">
+                    <div class="right-sidebar-header">
+                        <span class="right-sidebar-title">属性设置</span>
+                        <el-icon class="close-icon" @click="toggleRight">
+                            <Close />
+                        </el-icon>
+                    </div>
+                    <div class="right-sidebar-body">
+                        <el-text type="info" size="small">此处可以放置文章设置、标签等</el-text>
+                    </div>
                 </div>
             </div>
         </div>
@@ -83,14 +118,15 @@ import { API_CONFIG } from "@/config/index.js";
 import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon } from 'element-plus';
 import { CATEGORY_NAMES } from '@/constants';
 import { publishArticle, saveDraftArticle, uploadFile } from '@/api/article.js';
-import { Plus } from '@element-plus/icons-vue';
+import { Plus, Close } from '@element-plus/icons-vue';
+import { reactive } from 'vue';
 
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
-import Underline from '@tiptap/extension-underline';
+// import Underline from '@tiptap/extension-underline';
 import TextAlign from '@tiptap/extension-text-align';
 import Highlight from '@tiptap/extension-highlight';
 import { Color } from '@tiptap/extension-color';
@@ -121,10 +157,78 @@ const categoryOptions = CATEGORY_NAMES;
 const cacheTimer = ref(null);
 const autosaveTimer = ref(null);
 const hydrating = ref(false);
-const tocVisible = ref(true);
 
-const toggleToc = () => {
-    tocVisible.value = !tocVisible.value;
+const layoutState = reactive({
+    leftOpen: true,
+    rightOpen: false,
+    leftWidth: 20,
+    rightWidth: 20,
+    isMobile: false
+});
+
+const dragging = ref(null);
+const containerRef = ref(null);
+
+const contentWidth = computed(() => {
+    let width = 100;
+    if (layoutState.leftOpen) width -= layoutState.leftWidth;
+    if (layoutState.rightOpen) width -= layoutState.rightWidth;
+    return Math.max(width, 0);
+});
+
+const enforceConstraints = () => {
+    if (layoutState.leftOpen && layoutState.rightOpen && layoutState.leftWidth + layoutState.rightWidth > 70) {
+        layoutState.rightWidth = 70 - layoutState.leftWidth;
+        if (layoutState.rightWidth < 15) {
+            layoutState.rightWidth = 15;
+            layoutState.leftWidth = 70 - 15;
+        }
+    }
+};
+
+const toggleLeft = () => {
+    layoutState.leftOpen = !layoutState.leftOpen;
+    enforceConstraints();
+};
+
+const toggleRight = () => {
+    if (layoutState.isMobile) return;
+    layoutState.rightOpen = !layoutState.rightOpen;
+    enforceConstraints();
+};
+
+const startDrag = (side) => {
+    dragging.value = side;
+    document.body.style.cursor = 'col-resize';
+};
+
+const onMouseMove = (e) => {
+    if (!dragging.value || !containerRef.value) return;
+
+    const containerRect = containerRef.value.getBoundingClientRect();
+    const containerWidth = containerRect.width;
+    const mouseX = e.clientX - containerRect.left;
+    let percentage = (mouseX / containerWidth) * 100;
+
+    if (dragging.value === 'left') {
+        const maxLeft = 100 - (layoutState.rightOpen ? layoutState.rightWidth : 0) - 30;
+        if (percentage < 15) percentage = 15;
+        if (percentage > maxLeft) percentage = maxLeft;
+        layoutState.leftWidth = percentage;
+    } else if (dragging.value === 'right') {
+        const maxRight = 100 - (layoutState.leftOpen ? layoutState.leftWidth : 0) - 30;
+        let rightPercent = 100 - percentage;
+        if (rightPercent < 15) rightPercent = 15;
+        if (rightPercent > maxRight) rightPercent = maxRight;
+        layoutState.rightWidth = rightPercent;
+    }
+};
+
+const onMouseUp = () => {
+    if (dragging.value) {
+        dragging.value = null;
+        document.body.style.cursor = '';
+    }
 };
 
 const statusText = computed(() => {
@@ -175,7 +279,7 @@ const editor = useEditor({
     extensions: [
         StarterKit,
         Image,
-        Underline,
+        // Underline,
         Highlight.configure({ multicolor: true }),
         TextStyle,
         Color,
@@ -409,12 +513,28 @@ const handleBeforeUnload = (e) => {
     }
 };
 
+// Check screen size on mount
+const checkMobile = () => {
+    const isMobile = window.innerWidth <= 768;
+    layoutState.isMobile = isMobile;
+    if (isMobile) {
+        layoutState.rightOpen = false;
+    }
+};
+
 onMounted(() => {
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
     connectWebSocket();
     window.addEventListener('beforeunload', handleBeforeUnload);
 });
 
 onBeforeUnmount(() => {
+    window.removeEventListener('resize', checkMobile);
+    window.removeEventListener('mousemove', onMouseMove);
+    window.removeEventListener('mouseup', onMouseUp);
     clearTimeout(cacheTimer.value);
     clearTimeout(autosaveTimer.value);
     if (editor.value) {
@@ -439,13 +559,38 @@ onBeforeRouteUpdate((to, from) => {
 </script>
 
 <style scoped>
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
 .editor-layout {
     height: 100vh;
     background: var(--bg-color-base);
-    /* Space for footer */
     display: flex;
     flex-direction: column;
     overflow: hidden;
+}
+
+.layout-left,
+.layout-content,
+.layout-right {
+    height: 100%;
+    overflow: hidden;
+    transition: width 0.2s ease;
+    border-radius: var(--border-radius-xl, 16px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+    background: var(--bg-color-white);
+    /* Give space around islands */
+    display: flex;
+    flex-direction: column;
+}
+
+.layout-left.is-dragging,
+.layout-content.is-dragging,
+.layout-right.is-dragging {
+    transition: none;
 }
 
 .editor-container {
@@ -453,16 +598,52 @@ onBeforeRouteUpdate((to, from) => {
     display: flex;
     overflow: hidden;
     position: relative;
-    max-width: 1400px;
-    margin: 0 auto;
     width: 100%;
+    padding: 8px;
+    /* Container padding */
+    background: var(--bg-color-base);
+    /* Ensure base background shows between islands */
+}
+
+.layout-splitter {
+    width: 4px;
+    /* Thicker splitter to act as margin */
+    background: transparent;
+    cursor: col-resize;
+    position: relative;
+    z-index: 10;
+    flex-shrink: 0;
+    margin: 0;
+    /* Remove extra margin */
+}
+
+.layout-splitter::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 30px;
+    border-radius: 2px;
+    background: var(--border-color-base);
+    transition: background-color 0.2s;
+}
+
+.layout-splitter:hover::after,
+.layout-splitter:active::after {
+    background: #3b82f6;
 }
 
 .scroll-area {
-    flex: 1;
-    overflow-y: auto;
     width: 100%;
+    flex: 1;
+    /* Take up remaining height in layout-content */
+    overflow-y: auto;
     scroll-behavior: smooth;
+    /* Ensure scroll-area also acts as a flex column to push content */
+    display: flex;
+    flex-direction: column;
 }
 
 .site-header {
@@ -531,22 +712,23 @@ onBeforeRouteUpdate((to, from) => {
 }
 
 .main-content {
-    max-width: 900px;
     width: 100%;
-    margin: 24px auto;
-    padding: 60px 80px;
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-base);
-    min-height: calc(100vh - 200px);
+    padding: 60px 80px 0 80px;
+    /* Remove bottom padding to let content reach bottom */
+    background: transparent;
+    /* Use container's background */
+    min-height: 100%;
+    /* Change from calc(100vh - 200px) to fill flex parent */
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
 }
 
 .title-area {
     margin-bottom: 20px;
     border-bottom: 1px solid rgba(0, 0, 0, 0.05);
     padding-bottom: 12px;
+    flex-shrink: 0;
 }
 
 .title-input {
@@ -567,18 +749,26 @@ onBeforeRouteUpdate((to, from) => {
 }
 
 .main-content-editor {
-    min-height: 60vh;
-    /* Responsive height */
+    flex: 1;
+    /* Allow editor to grow and fill remaining space */
+    min-height: 100%;
+    /* Change from 60vh */
+    display: flex;
+    flex-direction: column;
 }
 
 /* Tiptap Customization */
 :deep(.ProseMirror) {
     outline: none;
-    min-height: 60vh;
+    flex: 1;
+    /* Allow ProseMirror to fill the editor container */
+    min-height: 100%;
+    /* Change from 60vh to let it expand */
     font-size: 1.125rem;
     line-height: 1.8;
     color: var(--text-color-regular);
-    padding-bottom: 40px;
+    padding-bottom: 20px;
+    /* Keep a small padding inside the editor for visual breathing room, but remove large container padding */
 }
 
 :deep(.ProseMirror p.is-editor-empty:first-child::before) {
@@ -736,11 +926,47 @@ onBeforeRouteUpdate((to, from) => {
     box-shadow: 0 4px 10px rgba(37, 99, 235, 0.4);
 }
 
-/* Responsive */
-@media (max-width: 1200px) {
+.right-sidebar {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+.right-sidebar-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border-color-base);
+}
+
+.right-sidebar-title {
+    font-weight: 600;
+    color: var(--text-color-primary);
+}
+
+.close-icon {
+    cursor: pointer;
+    font-size: 18px;
+    color: var(--text-color-regular);
+    transition: color 0.2s;
+}
+
+.close-icon:hover {
+    color: var(--text-color-primary);
+}
+
+.right-sidebar-body {
+    padding: 20px;
+    flex: 1;
+    overflow-y: auto;
+}
+
+/* Responsive constraints */
+@media (max-width: 768px) {
     .main-content {
-        max-width: 95%;
-        padding: 30px;
+        padding: 20px 10px;
     }
 }
 </style>
