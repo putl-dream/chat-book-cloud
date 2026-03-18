@@ -25,5 +25,8 @@ create table user_info
 )
     comment '用户信息表' row_format = DYNAMIC;
 
-create index user_info_user_id_fk
+create unique index uk_user_info_user_id
     on user_info (user_id);
+
+create unique index uk_user_info_username
+    on user_info (username);

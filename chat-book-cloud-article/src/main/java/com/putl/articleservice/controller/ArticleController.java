@@ -1,5 +1,6 @@
 package com.putl.articleservice.controller;
 
+import com.putl.articleservice.controller.vo.ArticleCommandResult;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.service.ArticleService;
 import com.putl.articleservice.utils.PageResult;
@@ -24,18 +25,28 @@ public class ArticleController {
 
     private final ArticleService articleService;
 
-    @Operation(summary = "添加文章")
-    @PostMapping("/add")
-    public CommonResult<Void> addArticle(@RequestBody ArticleVO articleVO) {
-        articleService.addArticle(articleVO);
-        return CommonResult.success();
+    @Operation(summary = "保存草稿")
+    @PostMapping("/saveDraft")
+    public CommonResult<ArticleCommandResult> saveDraft(@RequestBody ArticleVO articleVO) {
+        return CommonResult.success(articleService.saveDraft(articleVO));
     }
 
-    @Operation(summary = "更新文章")
+    @Operation(summary = "发布文章")
+    @PostMapping("/publish")
+    public CommonResult<ArticleCommandResult> publish(@RequestBody ArticleVO articleVO) {
+        return CommonResult.success(articleService.publish(articleVO));
+    }
+
+    @Operation(summary = "兼容旧版添加文章接口")
+    @PostMapping("/add")
+    public CommonResult<ArticleCommandResult> addArticle(@RequestBody ArticleVO articleVO) {
+        return CommonResult.success(articleService.saveDraft(articleVO));
+    }
+
+    @Operation(summary = "兼容旧版更新文章接口")
     @PostMapping("/update")
-    public CommonResult<Void> updateArticle(@RequestBody ArticleVO articleVO) {
-        articleService.updateArticle(articleVO);
-        return CommonResult.success();
+    public CommonResult<ArticleCommandResult> updateArticle(@RequestBody ArticleVO articleVO) {
+        return CommonResult.success(articleService.saveDraft(articleVO));
     }
 
     @Operation(summary = "分页查询文章")

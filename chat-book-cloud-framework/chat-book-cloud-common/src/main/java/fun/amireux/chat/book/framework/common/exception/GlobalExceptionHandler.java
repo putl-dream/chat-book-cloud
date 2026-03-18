@@ -24,6 +24,11 @@ public class GlobalExceptionHandler {
         return CommonResult.error(ErrorType.ERROR_401.code(), ex.getMessage());
     }
 
+    @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
+    public CommonResult<Void> handleBadRequest(RuntimeException ex) {
+        log.warn("请求参数或状态异常: {}", ex.getMessage());
+        return CommonResult.error(ErrorType.ERROR_400.code(), ex.getMessage());
+    }
 
     /**
      * 兜底异常处理

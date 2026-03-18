@@ -10,6 +10,7 @@ import com.putl.articleservice.api.dto.ArticleVO;
 import com.putl.interactionservice.entity.ArticleStatDO;
 import com.putl.interactionservice.entity.UserFootDO;
 import com.putl.interactionservice.mapper.ArticleStatMapper;
+import com.putl.interactionservice.mapper.ReviewMapper;
 import com.putl.interactionservice.mapper.UserFootMapper;
 import com.putl.interactionservice.service.UserFootService;
 import com.putl.interactionservice.vo.NotificationVO;
@@ -29,6 +30,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     private final UserFootMapper userFootMapper;
     private final ArticleClient articleClient;
     private final ArticleStatMapper articleStatMapper;
+    private final ReviewMapper reviewMapper;
 
     @Override
     @Transactional
@@ -69,8 +71,8 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
                 .set(UserFootDO::getUpdateTime, LocalDateTime.now())
                 .eq(UserFootDO::getDocumentId, articleId)
                 .eq(UserFootDO::getUserId, userId));
-            incrementViewCount(articleId);
         }
+        incrementViewCount(articleId);
         return true;
     }
 
@@ -102,8 +104,14 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
             .set(UserFootDO::getUpdateTime, LocalDateTime.now())
             .eq(UserFootDO::getDocumentId, articleId)
             .eq(UserFootDO::getUserId, userId));
-        changeCommentCount(articleId, 1);
         return 1;
+    }
+
+    @Override
+    @Transactional
+    public void recordComment(Integer articleId, Integer userId) {
+        updateComment(articleId, userId);
+        changeCommentCount(articleId, 1);
     }
 
     @Override
@@ -252,9 +260,8 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         long collectCount = this.count(Wrappers.<UserFootDO>lambdaQuery()
             .eq(UserFootDO::getDocumentId, articleId)
             .eq(UserFootDO::getCollectionStat, 1));
-        long commentCount = this.count(Wrappers.<UserFootDO>lambdaQuery()
-            .eq(UserFootDO::getDocumentId, articleId)
-            .eq(UserFootDO::getCommentStat, 1));
+        long commentCount = reviewMapper.selectCount(Wrappers.<com.putl.interactionservice.entity.ReviewDO>lambdaQuery()
+            .eq(com.putl.interactionservice.entity.ReviewDO::getTextId, articleId));
         ArticleStatDO build = ArticleStatDO.builder()
             .articleId(articleId)
             .viewCount(viewCount)

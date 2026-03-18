@@ -67,7 +67,7 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
         bean.setContent(reviewVO.getContent());
         boolean saved = reviewMapper.insert(bean) == 1;
         if (saved) {
-            userFootService.updateComment(reviewVO.getArticleId(), Integer.parseInt(userId));
+            userFootService.recordComment(reviewVO.getArticleId(), Integer.parseInt(userId));
         }
         return saved;
     }

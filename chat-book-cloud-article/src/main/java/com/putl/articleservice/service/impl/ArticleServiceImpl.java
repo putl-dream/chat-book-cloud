@@ -2,8 +2,11 @@ package com.putl.articleservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.putl.articleservice.controller.vo.ArticleCommandResult;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.enums.ArticleStatus;
+import com.putl.articleservice.exception.ArticleNotFoundException;
+import com.putl.articleservice.exception.BusinessException;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
@@ -12,7 +15,11 @@ import com.putl.articleservice.service.ArticleService;
 import com.putl.articleservice.utils.PageResult;
 import com.putl.interactionservice.api.InteractionClient;
 import com.putl.interactionservice.api.dto.UserFootListVO;
+import com.putl.interactionservice.api.dto.UserFootVO;
+import com.putl.userservice.api.UserClient;
+import com.putl.userservice.api.dto.UserResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,53 +28,197 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
-/**
- * 文章基础功能实现�?
- * - 文章详情
- * - 文章增删改查
- *
- * @since 2025-01-13 20:46:01
- */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleService {
+    private static final boolean REVIEW_REQUIRED = true;
+
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
     private final InteractionClient interactionClient;
+    private final UserClient userClient;
 
-    /**
-     * 获取文章基本信息�?
-     *
-     * @param articleId 文章ID
-     * @return 包含文章基本信息的ArticleVO对象
-     */
     @Override
     public ArticleVO getArticleInfo(Integer articleId) {
         ArticleDO articleDO = articleMapper.selectById(articleId);
-        if (articleDO == null) {
+        if (articleDO == null || articleDO.getStatus() == ArticleStatus.DELETED) {
             return null;
         }
-        ArticleVO articleVO = BeanUtil.toBean(articleDO, ArticleVO.class);
+        if (!canAccess(articleDO)) {
+            throw new BusinessException(403, "文章暂不可见");
+        }
 
-        // 填充文章详情内容
+        ArticleVO articleVO = BeanUtil.toBean(articleDO, ArticleVO.class);
+        articleVO.setUpdatedAt(articleDO.getUpdateTime());
+
         ArticleInfoDO articleInfoDO = articleInfoMapper.selectOne(Wrappers.<ArticleInfoDO>lambdaQuery()
                 .eq(ArticleInfoDO::getArticleId, articleId));
         if (articleInfoDO != null) {
             articleVO.setContent(articleInfoDO.getContent());
-            if ((articleVO.getUserName() == null || articleVO.getUserName().isEmpty()) && articleInfoDO.getUserName() != null) {
+            if ((articleVO.getUserName() == null || articleVO.getUserName().isBlank()) && articleInfoDO.getUserName() != null) {
                 articleVO.setUserName(articleInfoDO.getUserName());
             }
         }
 
-        // 填充统计数据
+        articleVO.setUserName(resolveUserName(articleDO.getUserId(), articleVO.getUserName()));
+        fillInteractionState(articleId, articleVO);
+        return articleVO;
+    }
+
+    @Override
+    public ArticleVO getArticleDetail(Integer articleId) {
+        return getArticleInfo(articleId);
+    }
+
+    @Override
+    @Transactional
+    public ArticleCommandResult saveDraft(ArticleVO articleVO) {
+        return upsertArticle(articleVO, ArticleStatus.DRAFT);
+    }
+
+    @Override
+    @Transactional
+    public ArticleCommandResult publish(ArticleVO articleVO) {
+        return upsertArticle(articleVO, REVIEW_REQUIRED ? ArticleStatus.PENDING_REVIEW : ArticleStatus.PUBLISHED);
+    }
+
+    @Override
+    public PageResult<ArticleVO> queryPage(Integer pageNum, Integer pageSize) {
+        Page<ArticleDO> page = new Page<>(pageNum, pageSize);
+        Page<ArticleDO> articleDOPage = articleMapper.selectPage(page, Wrappers.<ArticleDO>lambdaQuery()
+                .ne(ArticleDO::getStatus, ArticleStatus.DELETED));
+        List<ArticleVO> articleVOS = BeanUtil.toBean(articleDOPage.getRecords(), ArticleVO.class);
+        for (int i = 0; i < articleVOS.size(); i++) {
+            articleVOS.get(i).setUpdatedAt(articleDOPage.getRecords().get(i).getUpdateTime());
+        }
+        return new PageResult<>(articleVOS, articleDOPage.getTotal());
+    }
+
+    @Override
+    @Transactional
+    public void addArticle(ArticleVO articleVO) {
+        saveDraft(articleVO);
+    }
+
+    @Override
+    @Transactional
+    public void updateArticle(ArticleVO articleVO) {
+        saveDraft(articleVO);
+    }
+
+    @Override
+    @Transactional
+    public void deleteArticle(Integer articleId) {
+        updateArticleStatus(articleId, ArticleStatus.DELETED);
+    }
+
+    @Override
+    @Transactional
+    public void deleteArticleBatch(Integer[] articleIds) {
+        for (Integer articleId : articleIds) {
+            updateArticleStatus(articleId, ArticleStatus.DELETED);
+        }
+    }
+
+    @Override
+    @Transactional
+    public void updateArticleStatus(Integer articleId, ArticleStatus status) {
+        ArticleDO articleDO = articleMapper.selectById(articleId);
+        if (articleDO == null) {
+            throw new ArticleNotFoundException(articleId);
+        }
+        validateOwnership(articleDO);
+        articleMapper.updateById(ArticleDO.builder()
+                .id(articleId)
+                .status(status)
+                .build());
+    }
+
+    private ArticleCommandResult upsertArticle(ArticleVO command, ArticleStatus targetStatus) {
+        Integer currentUserId = currentUserId();
+        UserResult currentUser = queryCurrentUser(currentUserId);
+        String usernameSnapshot = currentUser != null ? currentUser.getUsername() : command.getUserName();
+
+        ArticleDO savedArticle;
+        if (command.getId() == null) {
+            savedArticle = createArticle(command, currentUserId, usernameSnapshot, targetStatus);
+        } else {
+            savedArticle = updateExistingArticle(command, currentUserId, usernameSnapshot, targetStatus);
+        }
+
+        return ArticleCommandResult.builder()
+                .articleId(savedArticle.getId())
+                .status(savedArticle.getStatus())
+                .updatedAt(savedArticle.getUpdateTime())
+                .build();
+    }
+
+    private ArticleDO createArticle(ArticleVO command, Integer currentUserId, String usernameSnapshot, ArticleStatus targetStatus) {
+        ArticleDO articleDO = ArticleDO.builder()
+                .userId(currentUserId)
+                .userName(usernameSnapshot)
+                .title(command.getTitle())
+                .cover(command.getCover())
+                .category(command.getCategory())
+                .abstractText(command.getAbstractText())
+                .status(targetStatus)
+                .build();
+        articleMapper.insert(articleDO);
+        upsertArticleInfo(articleDO, command.getContent(), usernameSnapshot);
+        return articleMapper.selectById(articleDO.getId());
+    }
+
+    private ArticleDO updateExistingArticle(ArticleVO command, Integer currentUserId, String usernameSnapshot, ArticleStatus targetStatus) {
+        ArticleDO existing = articleMapper.selectById(command.getId());
+        if (existing == null || existing.getStatus() == ArticleStatus.DELETED) {
+            throw new ArticleNotFoundException(command.getId());
+        }
+        validateOwnership(existing);
+        validateOptimisticLock(existing, command);
+
+        ArticleDO articleDO = ArticleDO.builder()
+                .id(existing.getId())
+                .userId(currentUserId)
+                .userName(usernameSnapshot != null ? usernameSnapshot : existing.getUserName())
+                .title(command.getTitle())
+                .cover(command.getCover())
+                .category(command.getCategory())
+                .abstractText(command.getAbstractText())
+                .status(targetStatus)
+                .build();
+        articleMapper.updateById(articleDO);
+        upsertArticleInfo(articleMapper.selectById(existing.getId()), command.getContent(), articleDO.getUserName());
+        return articleMapper.selectById(existing.getId());
+    }
+
+    private void upsertArticleInfo(ArticleDO articleDO, String content, String usernameSnapshot) {
+        ArticleInfoDO articleInfoDO = articleInfoMapper.selectOne(Wrappers.<ArticleInfoDO>lambdaQuery()
+                .eq(ArticleInfoDO::getArticleId, articleDO.getId()));
+        if (articleInfoDO == null) {
+            articleInfoMapper.insert(ArticleInfoDO.builder()
+                    .articleId(articleDO.getId())
+                    .userId(articleDO.getUserId())
+                    .userName(usernameSnapshot)
+                    .title(articleDO.getTitle())
+                    .content(content == null ? "" : content)
+                    .build());
+            return;
+        }
+
+        articleInfoDO.setUserId(articleDO.getUserId());
+        articleInfoDO.setUserName(usernameSnapshot);
+        articleInfoDO.setTitle(articleDO.getTitle());
+        if (content != null) {
+            articleInfoDO.setContent(content);
+        }
+        articleInfoMapper.updateById(articleInfoDO);
+    }
+
+    private void fillInteractionState(Integer articleId, ArticleVO articleVO) {
         try {
             String currentUserIdStr = UserContext.getUserId();
-            Integer currentUserId = currentUserIdStr != null ? Integer.valueOf(currentUserIdStr) : 0;
-
-            if (currentUserId > 0) {
-                interactionClient.addBrowse(articleId, currentUserId);
-            }
+            Integer currentUserId = currentUserIdStr != null ? Integer.valueOf(currentUserIdStr) : null;
 
             UserFootListVO stat = interactionClient.getUserFootList(articleId);
             if (stat != null) {
@@ -76,174 +227,78 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 articleVO.setViewCount(0L);
             }
 
-            com.putl.interactionservice.api.dto.UserFootVO userFoot = interactionClient.getUserFoot(articleId, currentUserId);
-            if (userFoot != null) {
-                articleVO.setPraiseStat(userFoot.getPraiseStat() != null ? userFoot.getPraiseStat().intValue() : 0);
-                articleVO.setCollectStat(userFoot.getCollectStat() != null ? userFoot.getCollectStat().intValue() : 0);
+            if (currentUserId != null && currentUserId > 0) {
+                UserFootVO userFoot = interactionClient.getUserFoot(articleId, currentUserId);
+                if (userFoot != null) {
+                    articleVO.setPraiseStat(userFoot.getPraiseStat() != null ? userFoot.getPraiseStat() : 0);
+                    articleVO.setCollectStat(userFoot.getCollectStat() != null ? userFoot.getCollectStat() : 0);
+                }
+            } else {
+                articleVO.setPraiseStat(0);
+                articleVO.setCollectStat(0);
             }
         } catch (Exception e) {
-            log.error("获取用户足迹信息失败: articleId={}", articleId, e);
+            articleVO.setViewCount(0L);
+            articleVO.setPraiseStat(0);
+            articleVO.setCollectStat(0);
+            log.error("获取互动信息失败: articleId={}", articleId, e);
         }
-
-        return articleVO;
     }
 
-    /**
-     * 获取文章详细信息�?
-     *
-     * @param articleId 文章ID
-     * @return 包含文章详细信息的ArticleVO对象
-     */
-    @Override
-    public ArticleVO getArticleDetail(Integer articleId) {
-        // 详情需要包含文章内容，直接复用带内容填充的查询逻辑
-        return getArticleInfo(articleId);
+    private String resolveUserName(Integer userId, String fallback) {
+        if (userId == null) {
+            return fallback;
+        }
+        try {
+            CommonResult<UserResult> response = userClient.getUserById(userId);
+            if (response != null && response.getData() != null && response.getData().getUsername() != null) {
+                return response.getData().getUsername();
+            }
+        } catch (Exception e) {
+            log.warn("查询作者实时信息失败，回退快照: userId={}", userId, e);
+        }
+        return fallback;
     }
 
-    /**
-     * 分页查询文章�?
-     *
-     * @param pageNum  页码
-     * @param pageSize 每页大小
-     * @return 分页结果
-     */
-    @Override
-    public PageResult<ArticleVO> queryPage(Integer pageNum, Integer pageSize) {
-        Page<ArticleDO> page = new Page<>(pageNum, pageSize);
-        Page<ArticleDO> articleDOPage = articleMapper.selectPage(page, Wrappers.emptyWrapper());
-        List<ArticleVO> articleVOS = BeanUtil.toBean(articleDOPage.getRecords(), ArticleVO.class);
-        return new PageResult<>(articleVOS, articleDOPage.getTotal());
+    private UserResult queryCurrentUser(Integer currentUserId) {
+        try {
+            CommonResult<UserResult> response = userClient.getUserById(currentUserId);
+            return response != null ? response.getData() : null;
+        } catch (Exception e) {
+            log.warn("查询当前用户失败，继续使用快照字段: userId={}", currentUserId, e);
+            return null;
+        }
     }
 
-    /**
-     * 添加新文章�?
-     *
-     * @param articleVO 包含新文章信息的ArticleVO对象
-     * @return 包含新增文章信息的ArticleVO对象
-     */
-    @Override
-    @Transactional
-    public void addArticle(ArticleVO articleVO) {
-        ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
+    private void validateOwnership(ArticleDO articleDO) {
+        Integer currentUserId = currentUserId();
+        if (!currentUserId.equals(articleDO.getUserId())) {
+            throw new BusinessException(403, "无权修改他人文章");
+        }
+    }
+
+    private boolean canAccess(ArticleDO articleDO) {
+        if (articleDO.getStatus() == ArticleStatus.PUBLISHED) {
+            return true;
+        }
+        String currentUserId = UserContext.getUserId();
+        return currentUserId != null && Integer.valueOf(currentUserId).equals(articleDO.getUserId());
+    }
+
+    private void validateOptimisticLock(ArticleDO existing, ArticleVO command) {
+        if (command.getUpdatedAt() == null || existing.getUpdateTime() == null) {
+            return;
+        }
+        if (!existing.getUpdateTime().equals(command.getUpdatedAt())) {
+            throw new BusinessException(409, "内容已被更新，请刷新后重试");
+        }
+    }
+
+    private Integer currentUserId() {
         String userId = UserContext.getUserId();
-        String userName = UserContext.getUsername();
-        if (userId != null) {
-            articleDO.setUserId(Integer.valueOf(userId));
+        if (userId == null) {
+            throw new IllegalStateException("用户信息未找到，请重新登录");
         }
-        if (userName != null) {
-            articleDO.setUserName(userName);
-        }
-        articleMapper.insert(articleDO);
-
-        if (articleVO.getContent() != null) {
-            ArticleInfoDO articleInfoDO = ArticleInfoDO.builder()
-                    .articleId(articleDO.getId())
-                    .content(articleVO.getContent())
-                    .userId(userId != null ? Integer.valueOf(userId) : null)
-                    .userName(userName != null ? userName : articleVO.getUserName())
-                    .title(articleVO.getTitle())
-                    .build();
-            articleInfoMapper.insert(articleInfoDO);
-        }
-    }
-
-    /**
-     * 更新文章信息�?
-     *
-     * @param articleVO 包含更新后文章信息的ArticleVO对象
-     * @return 包含更新后文章信息的ArticleVO对象
-     */
-    @Override
-    @Transactional
-    public void updateArticle(ArticleVO articleVO) {
-        ArticleDO articleDO = BeanUtil.toBean(articleVO, ArticleDO.class);
-        // 更新时也可以校验一下权限，或者确�?userId 不被串改
-        String userId = UserContext.getUserId();
-        if (userId != null) {
-            articleDO.setUserId(Integer.valueOf(userId));
-        }
-        articleMapper.updateById(articleDO);
-
-        // 同步更新文章内容表（article_info�?        if (articleVO.getContent() != null || articleVO.getTitle() != null || articleVO.getUserName() != null) {
-        ArticleInfoDO articleInfoDO = articleInfoMapper.selectOne(Wrappers.<ArticleInfoDO>lambdaQuery()
-                .eq(ArticleInfoDO::getArticleId, articleVO.getId()));
-        if (articleInfoDO == null) {
-            // 若详情表不存在则补录
-            articleInfoDO = ArticleInfoDO.builder()
-                    .articleId(articleVO.getId())
-                    .content(articleVO.getContent())
-                    .userId(userId != null ? Integer.valueOf(userId) : null)
-                    .userName(articleVO.getUserName())
-                    .title(articleVO.getTitle())
-                    .build();
-            articleInfoMapper.insert(articleInfoDO);
-        } else {
-            if (articleVO.getContent() != null) {
-                articleInfoDO.setContent(articleVO.getContent());
-            }
-            if (articleVO.getTitle() != null) {
-                articleInfoDO.setTitle(articleVO.getTitle());
-            }
-            if (articleVO.getUserName() != null) {
-                articleInfoDO.setUserName(articleVO.getUserName());
-            }
-            if (userId != null) {
-                articleInfoDO.setUserId(Integer.valueOf(userId));
-            }
-            articleInfoMapper.updateById(articleInfoDO);
-        }
-    }
-
-    /**
-     * 删除指定ID的文章�?
-     *
-     * @param articleId 文章ID
-     */
-    @Override
-    @Transactional
-    public void deleteArticle(Integer articleId) {
-        // 先删除关联的 article_info 数据（根�?article_id 删除�?
-        articleInfoMapper.delete(Wrappers.<ArticleInfoDO>lambdaQuery()
-                .eq(ArticleInfoDO::getArticleId, articleId));
-        // 再删�?article 数据
-        articleMapper.deleteById(articleId);
-    }
-
-    /**
-     * 批量删除指定ID的文章�?
-     *
-     * @param articleIds 文章ID数组
-     */
-    @Override
-    @Transactional
-    public void deleteArticleBatch(Integer[] articleIds) {
-        // 先批量删除关联的 article_info 数据（根�?article_id 删除�?
-        articleInfoMapper.delete(Wrappers.<ArticleInfoDO>lambdaQuery()
-                .in(ArticleInfoDO::getArticleId, List.of(articleIds)));
-        // 再批量删�?article 数据
-        articleMapper.deleteBatchIds(List.of(articleIds));
-    }
-
-    /**
-     * 更新文章状态�?
-     *
-     * @param articleId 文章ID
-     * @param status    新的状态�?
-     */
-    @Override
-    @Transactional
-    public void updateArticleStatus(Integer articleId, ArticleStatus status) {
-        ArticleDO articleDO = articleMapper.selectById(articleId);
-        if (articleDO != null) {
-            articleDO.setStatus(status);
-            articleMapper.updateById(articleDO);
-        }
+        return Integer.valueOf(userId);
     }
 }
-
-
-
-
-
-
-

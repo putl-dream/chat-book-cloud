@@ -1,5 +1,6 @@
 package com.putl.articleservice.service;
 
+import com.putl.articleservice.controller.vo.ArticleCommandResult;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.utils.PageResult;
@@ -16,6 +17,10 @@ public interface ArticleService {
     ArticleVO getArticleInfo(Integer articleId);
 
     ArticleVO getArticleDetail(Integer articleId);
+
+    ArticleCommandResult saveDraft(ArticleVO articleVO);
+
+    ArticleCommandResult publish(ArticleVO articleVO);
 
     PageResult<ArticleVO> queryPage(Integer pageNum, Integer pageSize);
 

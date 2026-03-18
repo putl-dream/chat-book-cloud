@@ -25,6 +25,8 @@ create table article_info
     content     text                                   not null comment '内容',
     create_time datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
     update_time datetime     default CURRENT_TIMESTAMP not null,
+    constraint uk_article_info_article_id
+        unique (article_id),
     constraint article_data_article_id_fk
         foreign key (article_id) references article (id)
 )
