@@ -28,6 +28,14 @@ public class UserInfoServiceImpl implements UserInfoService {
     @Override
     @Transactional
     public void update(UserInfoDO info) {
-        userInfoMapper.updateById(info);
+        UserInfoDO update = UserInfoDO.builder()
+                .userId(info.getUserId())
+                .username(info.getUsername())
+                .photo(info.getPhoto())
+                .profile(info.getProfile())
+                .role(info.getRole())
+                .build();
+        userInfoMapper.update(update, Wrappers.<UserInfoDO>lambdaUpdate()
+                .eq(UserInfoDO::getUserId, info.getUserId()));
     }
 }

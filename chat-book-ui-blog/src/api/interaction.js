@@ -29,6 +29,15 @@ export function updatePraise(articleId) {
 }
 
 /**
+ * 记录浏览
+ * @param {string|number} articleId
+ * @returns
+ */
+export function addBrowse(articleId) {
+    return request.post(`/interaction/foot/browse`, null, { params: { articleId } });
+}
+
+/**
  * 添加评论
  * @param {object} params 评论参数
  * @param {number} params.articleId 文章id

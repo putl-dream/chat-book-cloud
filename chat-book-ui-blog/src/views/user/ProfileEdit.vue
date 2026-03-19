@@ -78,8 +78,6 @@ import router from "@/router/index.js";
 const loading = ref(false);
 const submitting = ref(false);
 const form = ref({
-    id: null,
-    userId: null,
     username: '',
     photo: '',
     profile: ''
@@ -91,8 +89,6 @@ const fetchUserData = async () => {
         const res = await getUserBySelf();
         if (res) {
             form.value = {
-                id: res.id,
-                userId: res.userId,
                 username: res.username,
                 photo: res.photo,
                 profile: res.profile || res.introduction || ''
@@ -155,7 +151,11 @@ const onSubmit = async () => {
 
     submitting.value = true;
     try {
-        await updateUser(form.value);
+        await updateUser({
+            username: form.value.username,
+            photo: form.value.photo,
+            profile: form.value.profile
+        });
         ElMessage.success('保存成功');
         setTimeout(() => {
             router.push('/profile');

@@ -13,6 +13,7 @@ public interface UserFootService extends IService<UserFootDO> {
     boolean addBrowse(Integer articleId, Integer userId);
     int updateCollection(Integer articleId, Integer userId);
     int updateComment(Integer articleId, Integer userId);
+    void recordComment(Integer articleId, Integer userId);
     int updatePraise(Integer articleId, Integer userId);
     UserFootVO getUserFoot(Integer articleId, Integer userId);
     UserFootListVO getUserFootList(Integer articleId);

@@ -26,8 +26,15 @@ public class UserFootController {
 
     @Operation(summary = "添加浏览记录")
     @PostMapping("/browse")
-    public boolean addBrowse(@RequestParam Integer articleId, @RequestParam Integer userId) {
-        return userFootService.addBrowse(articleId, userId);
+    public boolean addBrowse(@RequestParam Integer articleId, @RequestParam(required = false) Integer userId) {
+        Integer browseUserId = userId;
+        if (browseUserId == null) {
+            String contextUserId = UserContext.getUserId();
+            if (contextUserId != null) {
+                browseUserId = Integer.parseInt(contextUserId);
+            }
+        }
+        return userFootService.addBrowse(articleId, browseUserId);
     }
 
     @Operation(summary = "更新点赞记录")

@@ -102,7 +102,10 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getCategoryPage(Integer pageNo, Integer pageSize, Integer category) {
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().eq(ArticleDO::getCategory, category).orderByDesc(ArticleDO::getCreateTime));
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getCategory, category)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                .orderByDesc(ArticleDO::getCreateTime));
     }
 
     /**
@@ -115,7 +118,10 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getLikePage(Integer pageNo, Integer pageSize, String like) {
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().like(ArticleDO::getTitle, like).or().like(ArticleDO::getAbstractText, like).orderByDesc(ArticleDO::getCreateTime));
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                .and(wrapper -> wrapper.like(ArticleDO::getTitle, like).or().like(ArticleDO::getAbstractText, like))
+                .orderByDesc(ArticleDO::getCreateTime));
     }
 
     /**
@@ -212,7 +218,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     public PageResult<ArticleListVO> getUserArticlePage(Integer pageNo, Integer pageSize, Integer userId) {
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getUserId, userId)
-//                .eq(ArticleDO::getStatus, 1)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }
@@ -229,7 +235,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     public PageResult<ArticleListVO> getUserDraftArticlePage(Integer pageNo, Integer pageSize, Integer userId) {
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getUserId, userId)
-//                .eq(ArticleDO::getStatus, 0)
+                .eq(ArticleDO::getStatus, ArticleStatus.DRAFT)
                 .orderByDesc(ArticleDO::getCreateTime)
         );
     }
@@ -243,7 +249,9 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getAdminArticlePage(Integer pageNo, Integer pageSize) {
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery().orderByDesc(ArticleDO::getCreateTime));
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getStatus, ArticleStatus.PENDING_REVIEW)
+                .orderByDesc(ArticleDO::getCreateTime));
     }
 
     /**

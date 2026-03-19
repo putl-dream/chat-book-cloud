@@ -5,7 +5,6 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import com.putl.articleservice.enums.ArticleStatus;
 import io.swagger.v3.oas.annotations.media.Schema;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -22,15 +21,12 @@ public class ArticleVO {
     @Schema(description = "文章ID")
     private Integer id;
 
-    @NotNull
     @Schema(description = "文章标题")
     private String title;
 
-    @NotNull
-    @Schema(description = "作者用户名")
+    @Schema(description = "作者用户名快照")
     private String userName;
 
-    @NotNull
     @Schema(description = "作者ID")
     private Integer userId;
 
@@ -53,6 +49,10 @@ public class ArticleVO {
 
     @Schema(description = "文章状态")
     private ArticleStatus status;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    @Schema(description = "最近一次更新时间，用于乐观校验")
+    private LocalDateTime updatedAt;
 
     @Schema(description = "点赞类型")
     private Integer praiseStat;

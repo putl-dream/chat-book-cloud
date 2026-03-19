@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { queryArticle } from "@/api/article.js";
-import { updateCollection, updatePraise } from "@/api/interaction.js";
+import { addBrowse, updateCollection, updatePraise } from "@/api/interaction.js";
 import { checkLogin } from "@/utils/http.js";
 
 export function useArticleLogic(articleId) {
@@ -27,6 +27,12 @@ export function useArticleLogic(articleId) {
       article.value = res;
       praiseStat.value = article.value.praiseStat;
       collectStat.value = article.value.collectStat;
+      try {
+        await addBrowse(articleId);
+        article.value.viewCount = (article.value.viewCount || 0) + 1;
+      } catch (error) {
+        console.error('Failed to record browse:', error);
+      }
     }
   };
 

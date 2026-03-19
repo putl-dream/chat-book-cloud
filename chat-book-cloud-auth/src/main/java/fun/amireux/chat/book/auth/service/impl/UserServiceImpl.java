@@ -66,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
         UserDO userDO = getUserInfo(user);
         log.info("用户登录成功: {}", userDO.getEmail());
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "email", userDO.getEmail()));
+        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
     }
 
 
@@ -79,11 +79,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             log.error("密码错误");
             throw new AuthenticationException("密码错误");
         }
-        // 从 user_info 表获取用户名
         UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userDO.getId()));
         String username = userInfo != null ? userInfo.getUsername() : "";
         log.info("用户登录成功: {}", username);
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", username));
+        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
     }
 
     @Override
@@ -140,6 +139,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .build();
         userInfoMapper.insert(userInfo);
 
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", signInVO.getUsername()));
+        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
     }
 }

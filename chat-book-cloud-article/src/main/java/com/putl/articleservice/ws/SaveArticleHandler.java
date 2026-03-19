@@ -1,5 +1,6 @@
 package com.putl.articleservice.ws;
 
+import com.putl.articleservice.controller.vo.ArticleCommandResult;
 import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import org.springframework.stereotype.Component;
 
@@ -8,18 +9,18 @@ public class SaveArticleHandler extends AbstractArticleHandler {
 
     @Override
     public String getType() {
-        return "SAVE";
+        return "SAVE_DRAFT";
     }
 
     @Override
     protected void doHandle(String userId, ArticleMessage message) {
         if (message.getData() == null) return;
-        
-        if (message.getData().getId() == null) {
-            articleService.addArticle(message.getData());
-        } else {
-            articleService.updateArticle(message.getData());
-        }
-        messagePublisher.sendToUser(userId, WebSocketResult.of("SAVE", "文章保存至草稿成功！！"));
+
+        ArticleCommandResult result = articleService.saveDraft(message.getData());
+        message.getData().setId(result.getArticleId());
+        message.getData().setStatus(result.getStatus());
+        message.getData().setUpdatedAt(result.getUpdatedAt());
+        articleCache.put(userId, message);
+        messagePublisher.sendToUser(userId, WebSocketResult.of("SAVE_DRAFT", result));
     }
 }
