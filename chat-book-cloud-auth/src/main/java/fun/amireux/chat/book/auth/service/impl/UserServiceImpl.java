@@ -141,4 +141,50 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
         return jwtUtil.generateToken(Map.of("id", userDO.getId()));
     }
+
+    @Override
+    @Transactional
+    public Integer oauth2Login(UserDTO user) {
+        // Check if user exists by email
+        UserDO existingUser = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
+
+        if (existingUser != null) {
+            // Update user info if changed
+            UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, existingUser.getId()));
+            if (userInfo != null) {
+                boolean updated = false;
+                if (user.getUsername() != null && !user.getUsername().equals(userInfo.getUsername())) {
+                    userInfo.setUsername(user.getUsername());
+                    updated = true;
+                }
+                if (user.getPhoto() != null && !user.getPhoto().equals(userInfo.getPhoto())) {
+                    userInfo.setPhoto(user.getPhoto());
+                    updated = true;
+                }
+                if (updated) {
+                    userInfoMapper.updateById(userInfo);
+                }
+            }
+            return existingUser.getId();
+        }
+
+        // Create new OAuth user
+        UserDO newUser = UserDO.builder()
+                .email(user.getEmail())
+                .password(PwdUtil.hashPassword("")) // OAuth users have no password
+                .build();
+        userMapper.insert(newUser);
+
+        // Create user info
+        UserInfoDO userInfo = UserInfoDO.builder()
+                .userId(newUser.getId())
+                .username(user.getUsername() != null ? user.getUsername() : "user_" + newUser.getId())
+                .photo(user.getPhoto())
+                .role(0)
+                .build();
+        userInfoMapper.insert(userInfo);
+
+        log.info("OAuth用户注册成功: {}, provider: {}", user.getEmail(), user.getLoginMethod());
+        return newUser.getId();
+    }
 }
