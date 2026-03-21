@@ -58,7 +58,34 @@
                         </el-icon>
                     </div>
                     <div class="right-sidebar-body">
-                        <el-text type="info" size="small">此处可以放置文章设置、标签等</el-text>
+                        <el-form label-width="80px" size="small">
+                            <el-form-item label="内容类型">
+                                <el-select v-model="publishForm.contentType" placeholder="请选择内容类型">
+                                    <el-option label="学习/教程" :value="0" />
+                                    <el-option label="实战/项目" :value="1" />
+                                </el-select>
+                            </el-form-item>
+                            <el-form-item label="文章标签">
+                                <div class="tag-selection">
+                                    <div class="tag-group">
+                                        <span class="tag-group-label">技术栈（可选1-3个）</span>
+                                        <el-checkbox-group v-model="selectedTechTags" @change="updateTagIds">
+                                            <el-checkbox v-for="tag in techTags" :key="tag.id" :value="tag.id">
+                                                <el-tag :color="tag.color" size="small" effect="dark">{{ tag.name }}</el-tag>
+                                            </el-checkbox>
+                                        </el-checkbox-group>
+                                    </div>
+                                    <div class="tag-group">
+                                        <span class="tag-group-label">学习路径（可选1个）</span>
+                                        <el-radio-group v-model="selectedPathTag" @change="updateTagIds">
+                                            <el-radio v-for="tag in pathTags" :key="tag.id" :value="tag.id">
+                                                <el-tag :color="tag.color" size="small" effect="dark">{{ tag.name }}</el-tag>
+                                            </el-radio>
+                                        </el-radio-group>
+                                    </div>
+                                </div>
+                            </el-form-item>
+                        </el-form>
                     </div>
                 </div>
             </div>
@@ -116,9 +143,10 @@ import { ElMessage } from "element-plus";
 import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 import { API_CONFIG } from "@/config/index.js";
-import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon } from 'element-plus';
-import { CATEGORY_NAMES } from '@/constants';
+import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon, ElCheckbox, ElCheckboxGroup, ElRadio, ElRadioGroup, ElTag } from 'element-plus';
+import { CATEGORY_NAMES, TAG_TYPE_ENUM } from '@/constants';
 import { publishArticle, saveDraftArticle, uploadFile } from '@/api/article.js';
+import { getTagsByType } from '@/api/tag.js';
 import { Plus, Close } from '@element-plus/icons-vue';
 import { reactive } from 'vue';
 
@@ -151,6 +179,8 @@ const hasUnsavedChanges = ref(false);
 const publishDialogVisible = ref(false);
 const publishForm = ref({
     category: null,
+    contentType: 0,
+    tagIds: [],
     abstractText: '',
     cover: ''
 });
@@ -158,6 +188,31 @@ const categoryOptions = CATEGORY_NAMES;
 const cacheTimer = ref(null);
 const autosaveTimer = ref(null);
 const hydrating = ref(false);
+
+// 标签相关
+const techTags = ref([]);
+const pathTags = ref([]);
+const selectedTechTags = ref([]);
+const selectedPathTag = ref(null);
+
+const loadTags = async () => {
+    try {
+        const [techRes, pathRes] = await Promise.all([
+            getTagsByType(TAG_TYPE_ENUM.TECH),
+            getTagsByType(TAG_TYPE_ENUM.PATH)
+        ]);
+        techTags.value = techRes || [];
+        pathTags.value = pathRes || [];
+    } catch (error) {
+        console.error('加载标签失败:', error);
+    }
+};
+
+const updateTagIds = () => {
+    const techIds = selectedTechTags.value || [];
+    const pathId = selectedPathTag.value ? [selectedPathTag.value] : [];
+    publishForm.value.tagIds = [...techIds, ...pathId];
+};
 
 const layoutState = reactive({
     leftOpen: true,
@@ -318,6 +373,8 @@ function buildPayload() {
         title: title.value,
         content: html.value,
         category: publishForm.value.category,
+        contentType: publishForm.value.contentType,
+        tagIds: publishForm.value.tagIds,
         abstractText: publishForm.value.abstractText,
         cover: publishForm.value.cover,
         updatedAt: lastSavedAt.value
@@ -474,11 +531,21 @@ const connectWebSocket = () => {
         html.value = data.content || '';
         title.value = data.title || '';
         publishForm.value.category = data.category ?? null;
+        publishForm.value.contentType = data.contentType ?? 0;
         publishForm.value.abstractText = data.abstractText || '';
         publishForm.value.cover = data.cover || '';
+        publishForm.value.tagIds = data.tagIds || [];
         lastSavedAt.value = data.updatedAt || null;
         saveState.value = data.status === 0 ? 'draft' : 'published';
         hasUnsavedChanges.value = false;
+        // 恢复标签选择状态
+        if (data.tagIds && data.tagIds.length > 0) {
+            const techIds = techTags.value.filter(t => t.type === 1).map(t => t.id);
+            const pathIds = techTags.value.filter(t => t.type === 2).map(t => t.id);
+            selectedTechTags.value = data.tagIds.filter(id => techIds.includes(id));
+            const pathTag = data.tagIds.find(id => pathIds.includes(id));
+            selectedPathTag.value = pathTag || null;
+        }
         if (editor.value) {
             editor.value.commands.setContent(data.content || '', false);
             wordCount.value = editor.value.storage.characterCount.characters();
@@ -530,6 +597,7 @@ onMounted(() => {
     window.addEventListener('mouseup', onMouseUp);
     connectWebSocket();
     window.addEventListener('beforeunload', handleBeforeUnload);
+    loadTags();
 });
 
 onBeforeUnmount(() => {
@@ -962,6 +1030,23 @@ onBeforeRouteUpdate((to, from) => {
     padding: 20px;
     flex: 1;
     overflow-y: auto;
+}
+
+.tag-selection {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.tag-group {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.tag-group-label {
+    font-size: 12px;
+    color: var(--text-color-secondary);
 }
 
 /* Responsive constraints */

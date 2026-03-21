@@ -1,23 +1,27 @@
 <template>
     <div class="default-sidebar">
-        <!-- 点击文章头部作者名时，右侧切换为此 default 模块（作者卡片 + 热门） -->
+        <!-- 点击文章头部作者名时，右侧切换为此 default 模块（作者卡片 + 相关推荐） -->
         <div class="article-right-card">
             <AuthorCard :userId="userId" />
         </div>
         <div class="article-right-card">
-            <HotCard />
+            <RelatedCard :articleId="articleId" />
         </div>
     </div>
 </template>
 
 <script setup>
 import AuthorCard from "@/components/domain/AuthorCard.vue";
-import HotCard from "@/components/domain/HotCard.vue";
+import RelatedCard from "@/components/domain/RelatedCard.vue";
 
 defineProps({
     userId: {
         type: [Number, String],
         required: false
+    },
+    articleId: {
+        type: [Number, String],
+        required: true
     }
 });
 </script>

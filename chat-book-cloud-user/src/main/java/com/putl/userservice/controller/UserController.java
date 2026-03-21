@@ -10,6 +10,8 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Tag(name = "用户服务")
 @RestController
 @RequestMapping("/user")
@@ -40,5 +42,12 @@ public class UserController {
     public CommonResult<Void> updateUser(@RequestBody UserVO userVO) {
         userService.updateUser(userVO);
         return CommonResult.success();
+    }
+
+    @Operation(summary = "根据ids批量查询用户")
+    @PostMapping("/byIds")
+    public CommonResult<List<UserVO>> getUsersByIds(@RequestBody List<Integer> ids) {
+        List<UserVO> users = userService.selectByIds(ids);
+        return CommonResult.success(users);
     }
 }

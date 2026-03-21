@@ -18,6 +18,12 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -47,6 +53,44 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .profile(userInfo.getProfile())
                 .role(role)
                 .build();
+    }
+
+    @Override
+    public List<UserVO> selectByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        // 批量查询用户信息
+        List<UserInfoDO> userInfos = userInfoMapper.selectList(
+                Wrappers.<UserInfoDO>lambdaQuery().in(UserInfoDO::getUserId, ids));
+        Map<Integer, UserInfoDO> userInfoMap = userInfos.stream()
+                .collect(Collectors.toMap(UserInfoDO::getUserId, Function.identity()));
+
+        // 批量查询账号信息
+        List<UserDO> users = this.listByIds(ids);
+        Map<Integer, UserDO> userMap = users.stream()
+                .collect(Collectors.toMap(UserDO::getId, Function.identity()));
+
+        // 组装结果
+        List<UserVO> result = new ArrayList<>();
+        for (Integer id : ids) {
+            UserInfoDO userInfo = userInfoMap.get(id);
+            UserDO user = userMap.get(id);
+            if (userInfo == null || user == null) {
+                continue;
+            }
+            String role = (userInfo.getRole() == RoleEnum.USER) ? "user" : "admin";
+            result.add(UserVO.builder()
+                    .id(userInfo.getId())
+                    .userId(id)
+                    .username(userInfo.getUsername())
+                    .email(user.getEmail())
+                    .photo(userInfo.getPhoto())
+                    .profile(userInfo.getProfile())
+                    .role(role)
+                    .build());
+        }
+        return result;
     }
 
     @Override

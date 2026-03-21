@@ -37,6 +37,9 @@ public interface InteractionClient {
     @GetMapping("/interaction/foot/getUserFootList")
     UserFootListVO getUserFootList(@RequestParam("articleId") Integer articleId);
 
+    @PostMapping("/interaction/foot/getUserFootListByArticleIds")
+    CommonResult<List<UserFootListVO>> getUserFootListByArticleIds(@RequestBody List<Integer> articleIds);
+
     @GetMapping("/interaction/foot/getHistory")
     CommonResult<List<ArticleListVO>> getHistory(@RequestParam("page") Integer page, @RequestParam("size") Integer size);
 

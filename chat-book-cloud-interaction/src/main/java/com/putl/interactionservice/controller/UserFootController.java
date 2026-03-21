@@ -82,6 +82,13 @@ public class UserFootController {
         return userFootService.getUserFootList(articleId);
     }
 
+    @Operation(summary = "批量获取文章列表数据")
+    @PostMapping("/getUserFootListByArticleIds")
+    public CommonResult<List<UserFootListVO>> getUserFootListByArticleIds(@RequestBody List<Integer> articleIds) {
+        List<UserFootListVO> result = userFootService.getUserFootListByArticleIds(articleIds);
+        return CommonResult.success(result);
+    }
+
     @Operation(summary = "获取用户浏览记录")
     @GetMapping("/getHistory")
     public CommonResult<List<ArticleListVO>> getHistory(@RequestParam("page") Integer page, @RequestParam("size") Integer size) {

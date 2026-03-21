@@ -46,7 +46,7 @@ spring:
         - id: article-service
           uri: lb://chat-book-cloud-article
           predicates:
-            - Path=/api/article/**,/api/page/**
+            - Path=/api/article/**,/api/page/**,/api/tag/**
           filters:
             - StripPrefix=1
 

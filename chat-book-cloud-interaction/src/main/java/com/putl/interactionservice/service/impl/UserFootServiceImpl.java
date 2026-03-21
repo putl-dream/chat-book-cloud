@@ -163,6 +163,30 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     }
 
     @Override
+    public List<UserFootListVO> getUserFootListByArticleIds(List<Integer> articleIds) {
+        if (articleIds == null || articleIds.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<ArticleStatDO> stats = articleStatMapper.selectList(
+                Wrappers.<ArticleStatDO>lambdaQuery().in(ArticleStatDO::getArticleId, articleIds));
+        Map<Integer, ArticleStatDO> statMap = stats.stream()
+                .collect(Collectors.toMap(ArticleStatDO::getArticleId, Function.identity()));
+
+        List<UserFootListVO> result = new ArrayList<>();
+        for (Integer articleId : articleIds) {
+            ArticleStatDO stat = statMap.get(articleId);
+            result.add(UserFootListVO.builder()
+                    .articleId(articleId)
+                    .viewCount(stat != null && stat.getViewCount() != null ? stat.getViewCount() : 0L)
+                    .collectCount(stat != null && stat.getCollectCount() != null ? stat.getCollectCount() : 0L)
+                    .praiseCount(stat != null && stat.getPraiseCount() != null ? stat.getPraiseCount() : 0L)
+                    .commentCount(stat != null && stat.getCommentCount() != null ? stat.getCommentCount() : 0L)
+                    .build());
+        }
+        return result;
+    }
+
+    @Override
     public List<ArticleListVO> getHistory(Integer userId, Integer page, Integer size) {
         Page<UserFootDO> pages = userFootMapper.selectPage(new Page<>(page, size), Wrappers.<UserFootDO>lambdaQuery()
             .eq(UserFootDO::getUserId, userId)
