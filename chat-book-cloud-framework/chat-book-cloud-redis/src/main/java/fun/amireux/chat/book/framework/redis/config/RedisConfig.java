@@ -64,11 +64,19 @@ public class RedisConfig {
 
         RedisCacheConfiguration articleCacheConfig = defaultCacheConfig.entryTtl(Duration.ofHours(1));
         RedisCacheConfiguration userCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(15));
+        RedisCacheConfiguration tagListCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(30));
+        RedisCacheConfiguration reviewListCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(30));
+        RedisCacheConfiguration followStatCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(15));
+        RedisCacheConfiguration articleListCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(5));
 
         return RedisCacheManager.builder(connectionFactory)
                 .cacheDefaults(defaultCacheConfig)
                 .withCacheConfiguration("articleCache", articleCacheConfig)
                 .withCacheConfiguration("userCache", userCacheConfig)
+                .withCacheConfiguration("tagListCache", tagListCacheConfig)
+                .withCacheConfiguration("reviewListCache", reviewListCacheConfig)
+                .withCacheConfiguration("followStatCache", followStatCacheConfig)
+                .withCacheConfiguration("articleListCache", articleListCacheConfig)
                 .build();
     }
 

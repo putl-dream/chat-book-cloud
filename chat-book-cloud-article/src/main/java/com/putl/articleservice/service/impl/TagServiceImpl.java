@@ -12,6 +12,8 @@ import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -47,6 +49,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Cacheable(value = "tagListCache", key = "'all'", unless = "#result == null || #result.isEmpty()")
     public List<TagVO> getAllTags() {
         List<TagDO> list = tagMapper.selectList(
                 new LambdaQueryWrapper<TagDO>()
@@ -56,6 +59,7 @@ public class TagServiceImpl implements TagService {
     }
 
     @Override
+    @Cacheable(value = "tagListCache", key = "#type == null ? 'all' : #type.toString()", unless = "#result == null || #result.isEmpty()")
     public List<TagVO> getTagsByType(Integer type) {
         List<TagDO> list = tagMapper.selectList(
                 new LambdaQueryWrapper<TagDO>()
@@ -67,6 +71,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tagListCache", allEntries = true)
     public TagVO createTag(TagVO tagVO) {
         TagDO tagDO = BeanUtil.toBean(tagVO, TagDO.class);
         tagMapper.insert(tagDO);
@@ -75,6 +80,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tagListCache", allEntries = true)
     public void updateTag(TagVO tagVO) {
         TagDO tagDO = BeanUtil.toBean(tagVO, TagDO.class);
         tagMapper.updateById(tagDO);
@@ -82,6 +88,7 @@ public class TagServiceImpl implements TagService {
 
     @Override
     @Transactional
+    @CacheEvict(value = "tagListCache", allEntries = true)
     public void deleteTag(Integer tagId) {
         tagMapper.deleteById(tagId);
     }

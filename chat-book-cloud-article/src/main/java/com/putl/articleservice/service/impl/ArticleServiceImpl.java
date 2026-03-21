@@ -24,6 +24,8 @@ import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -42,6 +44,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     private final TagService tagService;
 
     @Override
+    @Cacheable(value = "articleCache", key = "#articleId", unless = "#result == null")
     public ArticleVO getArticleInfo(Integer articleId) {
         ArticleDO articleDO = articleMapper.selectById(articleId);
         if (articleDO == null || articleDO.getStatus() == ArticleStatus.DELETED) {
@@ -107,18 +110,21 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
 
     @Override
     @Transactional
+    @CacheEvict(value = "articleCache", key = "#articleVO.id")
     public void updateArticle(ArticleVO articleVO) {
         saveDraft(articleVO);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "articleCache", key = "#articleId")
     public void deleteArticle(Integer articleId) {
         updateArticleStatus(articleId, ArticleStatus.DELETED);
     }
 
     @Override
     @Transactional
+    @CacheEvict(value = "articleCache", allEntries = true)
     public void deleteArticleBatch(Integer[] articleIds) {
         for (Integer articleId : articleIds) {
             updateArticleStatus(articleId, ArticleStatus.DELETED);

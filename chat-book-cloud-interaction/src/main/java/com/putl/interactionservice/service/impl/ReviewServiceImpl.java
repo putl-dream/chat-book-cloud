@@ -14,6 +14,8 @@ import com.putl.userservice.api.dto.UserResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,6 +29,7 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
     private final UserFootService userFootService;
 
     @Override
+    @Cacheable(value = "reviewListCache", key = "#articleId", unless = "#result == null || #result.isEmpty()")
     public List<ReviewListVO> getByArticleId(Integer articleId) {
         List<ReviewDO> dos = reviewMapper.selectList(Wrappers.<ReviewDO>lambdaQuery().eq(ReviewDO::getTextId, articleId));
         if (CollectionUtils.isEmpty(dos)) {
@@ -67,6 +70,7 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
 
     @Override
     @Transactional
+    @CacheEvict(value = "reviewListCache", key = "#reviewVO.articleId")
     public boolean save(ReviewVO reviewVO) {
         String userId = UserContext.getUserId();
         if (userId == null) {
