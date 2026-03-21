@@ -45,8 +45,8 @@
 
         <!-- Redis -->
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-redis</artifactId>
         </dependency>
 
         <!-- WebSocket -->
