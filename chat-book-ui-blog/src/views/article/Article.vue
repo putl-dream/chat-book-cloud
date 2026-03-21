@@ -1,85 +1,115 @@
 <template>
     <div class="article-page">
-        <!-- 左侧导航侧栏 -->
-        <aside class="sidebar" :class="{ 'is-collapsed': isSidebarCollapsed, 'is-expanded': isSidebarExpanded }"
-            @mouseenter="handleSidebarHover(true)" @mouseleave="handleSidebarHover(false)"
+        <aside
+            class="sidebar"
+            :class="{ 'is-collapsed': isSidebarCollapsed, 'is-expanded': isSidebarExpanded }"
+            @mouseenter="handleSidebarHover(true)"
+            @mouseleave="handleSidebarHover(false)"
             @click="handleSidebarClick">
             <div class="sidebar-inner">
-                <!-- 内部组件，流式排�?-->
                 <div class="article-buttons">
                     <div class="action-item">
-                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }"
-                            @click.stop="handleLike">
+                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }" @click.stop="handleLike">
                             <el-icon><Pointer /></el-icon>
                         </el-button>
                         <span class="action-label" title="点赞">点赞</span>
                     </div>
                     <div class="action-item">
-                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': collectStat !== 0 }"
-                            @click.stop="handleFavorite">
+                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': collectStat !== 0 }" @click.stop="handleFavorite">
                             <el-icon><Star /></el-icon>
                         </el-button>
                         <span class="action-label" title="收藏">收藏</span>
                     </div>
                     <div class="action-item">
-                        <el-button class="action-btn" size="large" circle
-                            :class="{ 'is-active': activePanel === 'comment' }" @click.stop="handleComment">
+                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': activePanel === PANEL_TYPE.COMMENT }" @click.stop="handleComment">
                             <el-icon><ChatLineRound /></el-icon>
                         </el-button>
                         <span class="action-label" title="评论">评论</span>
+                    </div>
+
+                    <div class="action-divider" aria-hidden="true"></div>
+
+                    <div v-if="!isSelfAuthor" class="action-item">
+                        <el-button
+                            class="action-btn"
+                            size="large"
+                            circle
+                            :loading="authorActionLoading"
+                            :class="{ 'is-active': isFollowing }"
+                            @click.stop="handleFollow">
+                            <el-icon><UserFilled /></el-icon>
+                        </el-button>
+                        <span class="action-label" :title="followLabel">{{ followLabel }}</span>
+                    </div>
+                    <div class="action-item">
+                        <el-button class="action-btn" size="large" circle :class="{ 'is-active': activePanel === PANEL_TYPE.AI }" @click.stop="handleAiChat">
+                            <el-icon><Service /></el-icon>
+                        </el-button>
+                        <span class="action-label" title="AI 助手">AI</span>
                     </div>
                 </div>
             </div>
         </aside>
 
-        <!-- 主内容区与右侧面�?-->
         <div class="main-container">
-            <!-- 右下�?AI 助手悬浮�?-->
-            <button type="button" class="fab-ai" :class="{ 'is-active': activePanel === 'ai' }" @click="handleAiChat"
-                title="AI 助手">
-                <el-icon><Service /></el-icon>
-            </button>
-
             <div class="article-detail" :class="{ 'panel-open': showRightPanel }">
-                <div class="content">
+                <div ref="contentRef" class="content custom-scrollbar">
                     <header class="article-header">
                         <h1 class="article-title">{{ article.title }}</h1>
-                        <div class="article-meta">
-                            <div class="meta-item">
-                                <span class="label">作者</span>
-                                <span class="value meta-author" @click="openAuthorPanel">{{ article.userName }}</span>
+
+                        <div class="article-header-meta">
+                            <div class="author-strip">
+                                <el-avatar :size="42" :src="article.authorAvatar" class="author-avatar">
+                                    {{ (article.userName || '作').slice(0, 1) }}
+                                </el-avatar>
+                                <div class="author-copy">
+                                    <span class="author-kicker">Author</span>
+                                    <span class="author-name">{{ article.userName || '作者' }}</span>
+                                </div>
                             </div>
-                            <div class="meta-divider"></div>
-                            <div class="meta-item">
-                                <span class="label">发布于</span>
-                                <span class="value">{{ article.createTime }}</span>
-                            </div>
-                            <div class="meta-divider"></div>
-                            <div class="meta-item">
-                                <span class="label">阅读</span>
-                                <span class="value">{{ article.viewCount }}</span>
+
+                            <div class="meta-cluster">
+                                <button
+                                    type="button"
+                                    class="meta-panel-btn"
+                                    :class="{ 'is-active': activePanel === PANEL_TYPE.DEFAULT && showRightPanel }"
+                                    @click="openDefaultPanel">
+                                    目录
+                                </button>
+                                <div class="article-meta">
+                                    <div class="meta-item">
+                                        <span class="label">发布于</span>
+                                        <span class="value">{{ article.createTime }}</span>
+                                    </div>
+                                    <div class="meta-divider"></div>
+                                    <div class="meta-item">
+                                        <span class="label">阅读</span>
+                                        <span class="value">{{ article.viewCount }}</span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                     </header>
-                    <main class="article-content custom-scrollbar">
-                        <MarkdownRenderer :content="article.content" />
+
+                    <main class="article-content">
+                        <div class="article-body">
+                            <RichTextViewer :html="articleHtml" variant="article" :theme="articleTheme" as="article" />
+                        </div>
                     </main>
                 </div>
 
-                <!-- 仅在有侧边面板时显示拖拽条（一条缝�?-->
                 <div v-if="showRightPanel" class="resize-handle" @mousedown="startResize"></div>
 
-                <div class="article-right" :style="{ width: effectiveRightWidth + 'px' }"
-                    :class="{ 'expanded-panel glass-panel': showRightPanel }">
+                <div
+                    class="article-right"
+                    :style="{ width: effectiveRightWidth + 'px' }"
+                    :class="{ 'expanded-panel': showRightPanel, 'glass-panel': showRightPanel }">
                     <transition name="fade-slide" mode="out-in">
-                        <keep-alive>
-                            <component
-                                v-if="showRightPanel"
-                                :is="componentMap[activePanel]"
-                                :userId="article.authorId"
-                                :articleId="articleId"
-                                :tagIds="article.tagIds || []" />
-                        </keep-alive>
+                        <component
+                            v-if="showRightPanel"
+                            :is="activePanelComponent"
+                            :key="activePanelKey"
+                            v-bind="activePanelProps" />
                     </transition>
                 </div>
             </div>
@@ -88,23 +118,21 @@
 </template>
 
 <script setup>
-/**
- * @file Article.vue
- * @description 文章详情页面，采�?10% 宽度的左侧边栏布局，响应式下支持折叠抽屉功能�? */
-import { computed, onMounted, onUnmounted, ref, provide, watch } from 'vue';
-import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { ChatLineRound, Pointer, Service, Star, UserFilled } from '@element-plus/icons-vue';
 import { useRoute } from "vue-router";
-import { ElButton } from 'element-plus';
-import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
-
+import RichTextViewer from "@/components/common/rich-text/RichTextViewer.vue";
+import { buildRichTextHtml } from "@/components/common/rich-text/content-pipeline.js";
 import SidebarDefault from '@/views/article/article-sidebar/SidebarDefault.vue';
 import SidebarComment from '@/views/article/article-sidebar/SidebarComment.vue';
 import SidebarAI from '@/views/article/article-sidebar/SidebarAI.vue';
 import { useArticleLogic } from "./_hooks/useArticleLogic.js";
 import { PANEL_TYPE } from "./_utils/config.js";
+import { useSiteTheme } from '@/composables/useSiteTheme.js';
 
 const route = useRoute();
 const articleId = computed(() => route.params.id);
+const contentRef = ref(null);
 
 const componentMap = {
     [PANEL_TYPE.DEFAULT]: SidebarDefault,
@@ -118,6 +146,9 @@ const {
     collectStat,
     activePanel,
     showRightPanel,
+    authorRelation,
+    isSelfAuthor,
+    authorActionLoading,
     rightSidebarWidth,
     startResize,
     queryArticleRequest,
@@ -125,10 +156,44 @@ const {
     handleComment,
     handleAiChat,
     handleFavorite,
-    openAuthorPanel
+    handleFollow,
+    openDefaultPanel
 } = useArticleLogic(articleId);
 
-// 统一通过路由参数驱动文章加载，避免首次挂载和路由同步各触发一次
+const articleHtml = computed(() => buildRichTextHtml(article.value?.content || '', 'html'));
+const { articleTheme } = useSiteTheme();
+
+const isFollowing = computed(() => authorRelation.value >= 0);
+const followLabel = computed(() => {
+    if (authorRelation.value === 1) {
+        return '互关';
+    }
+    if (authorRelation.value === 0) {
+        return '已关注';
+    }
+    return '关注';
+});
+
+const activePanelProps = computed(() => {
+    const baseProps = {
+        articleId: articleId.value,
+        tagIds: article.value?.tagIds || []
+    };
+
+    if (activePanel.value === PANEL_TYPE.DEFAULT) {
+        return {
+            ...baseProps,
+            articleHtml: articleHtml.value,
+            contentTarget: contentRef.value
+        };
+    }
+
+    return baseProps;
+});
+
+const activePanelComponent = computed(() => componentMap[activePanel.value] || SidebarDefault);
+const activePanelKey = computed(() => `${activePanel.value}-${articleId.value}`);
+
 watch(articleId, async (newId, oldId) => {
     if (!newId || newId === oldId) {
         return;
@@ -136,18 +201,12 @@ watch(articleId, async (newId, oldId) => {
     await queryArticleRequest();
 }, { immediate: true });
 
-/** 右侧展开时显示可拖拽宽度，否则为 0 */
-const effectiveRightWidth = computed(() =>
+const effectiveRightWidth = computed(() => (
     showRightPanel.value ? rightSidebarWidth.value : 0
-);
+));
 
-/**
- * 侧栏响应式逻辑
- */
 const isSidebarCollapsed = ref(false);
 const isSidebarExpanded = ref(false);
-
-// 向下提供侧边栏状态，使子组件能够响应侧边栏的折叠状�?provide('isSidebarCollapsed', isSidebarCollapsed);
 
 const checkViewport = () => {
     isSidebarCollapsed.value = window.innerWidth <= 1024;
@@ -181,19 +240,16 @@ onUnmounted(() => {
 <style scoped>
 .article-page {
     display: grid;
-    /* 1. 左侧固定�?10%，主区域 1fr */
     grid-template-columns: 10% 1fr;
     height: 100%;
-    background-color: #f9fafb;
+    background: var(--article-page-radial), var(--article-page-bg);
     position: relative;
     overflow: hidden;
 }
 
-/* 左侧边栏 */
 .sidebar {
     position: relative;
     height: 100%;
-    /* 6. 动画�?transform 优化，保障流畅度 */
     transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -203,7 +259,6 @@ onUnmounted(() => {
     overflow: hidden;
 }
 
-/* 2. 内部嵌套容器：宽度占父级�?70% */
 .sidebar-inner {
     width: 70%;
     margin: 0 auto;
@@ -213,7 +268,6 @@ onUnmounted(() => {
     transition: width 0.3s ease;
 }
 
-/* 3. 流式排布防溢�?*/
 .article-buttons {
     display: flex;
     flex-direction: column;
@@ -232,13 +286,19 @@ onUnmounted(() => {
     overflow: hidden;
 }
 
+.action-divider {
+    width: 30px;
+    height: 1px;
+    background: linear-gradient(90deg, rgba(15, 23, 42, 0), rgba(15, 23, 42, 0.22), rgba(15, 23, 42, 0));
+}
+
 .action-btn {
     width: 40px;
     height: 40px;
     border: 1px solid var(--border-color-base);
-    background: rgba(255, 255, 255, 0.9);
+    background: rgba(255, 255, 255, 0.92);
     box-shadow: none;
-    transition: color 0.2s, background 0.2s, border-color 0.2s;
+    transition: color 0.2s, background 0.2s, border-color 0.2s, transform 0.2s;
     font-size: 18px;
     color: var(--text-color-secondary);
     flex-shrink: 0;
@@ -247,6 +307,7 @@ onUnmounted(() => {
 .action-btn:hover {
     color: var(--color-primary);
     border-color: var(--color-primary);
+    transform: translateY(-1px);
     background: rgba(255, 255, 255, 1);
 }
 
@@ -260,52 +321,11 @@ onUnmounted(() => {
     font-size: 11px;
     color: var(--text-color-secondary);
     opacity: 0.85;
-    /* 文本截断兜底 */
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 100%;
     text-align: center;
-}
-
-/* 4. 断点：小�?1024px 时自动折叠为图标抽屉 */
-@media (max-width: 1024px) {
-    .article-page {
-        /* 主内容区保持 100% 可用宽度 */
-        display: block;
-    }
-
-    .sidebar {
-        position: fixed;
-        left: 0;
-        top: 0;
-        width: 60px; /* 折叠状态的图标抽屉宽度 */
-        background-color: rgba(255, 255, 255, 0.8);
-        backdrop-filter: blur(8px);
-        border-right: 1px solid rgba(0, 0, 0, 0.05);
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
-        cursor: pointer;
-    }
-
-    .sidebar.is-collapsed .sidebar-inner {
-        width: 100%;
-    }
-
-    /* Hover �?点击后展开�?70% 覆盖�?*/
-    .sidebar.is-expanded {
-        width: 70%;
-        background-color: #fff;
-        box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
-        cursor: default;
-    }
-
-    .sidebar.is-expanded .sidebar-inner {
-        width: 70%;
-    }
-
-    .main-container {
-        padding-left: 60px; /* 给折叠栏留出空间 */
-    }
 }
 
 .main-container {
@@ -318,14 +338,13 @@ onUnmounted(() => {
     transition: padding-left 0.3s ease;
 }
 
-/* 主内容与侧边面板区域 */
 .article-detail {
     display: flex;
     width: 100%;
     max-width: 1600px;
     margin: 0 auto;
     gap: 0;
-    padding: 24px var(--container-padding);
+    padding: var(--container-padding) var(--container-padding) 0 0;
     align-items: stretch;
     height: 100%;
     overflow: hidden;
@@ -337,49 +356,121 @@ onUnmounted(() => {
     margin-right: auto;
 }
 
-/* 中间内容区：纸张�?*/
 .content {
     min-width: 0;
     flex: 1;
     margin: 0 auto;
-    padding: 40px 56px 48px;
+    padding: 32px clamp(18px, 3vw, 44px) 36px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: #ffffff;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    background: var(--article-paper-bg);
+    border-radius: 20px 20px 0 0;
+    border: 1px solid var(--article-paper-border);
+    box-shadow: var(--article-paper-shadow);
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    scroll-padding-top: 28px;
+    overscroll-behavior: contain;
 }
 
 .article-header {
-    border-bottom: 1px solid var(--border-color-base);
-    padding-bottom: 24px;
-    margin: 0 0 32px;
-    width: 100%;
+    border-bottom: 1px solid var(--article-header-divider);
+    padding-bottom: 18px;
+    margin: 0 0 18px;
+    width: min(100%, 900px);
+    margin-inline: auto;
 }
 
 .article-title {
-    font-size: 1.8rem;
+    font-size: clamp(1.74rem, 1.62rem + 0.48vw, 2.08rem);
     font-weight: 700;
-    color: var(--text-color-primary);
-    line-height: 1.4;
+    font-family: "Iowan Old Style", "Palatino Linotype", "Source Han Serif SC", "Songti SC", serif;
+    color: var(--article-title-color);
+    line-height: 1.18;
     margin: 0 0 16px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.03em;
 }
 
-@media (min-width: 1200px) {
-    .article-title {
-        font-size: 2.25rem;
-    }
+.article-header-meta {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 18px 24px;
+    flex-wrap: wrap;
+}
+
+.author-strip {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-width: 0;
+}
+
+.author-avatar {
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+    flex-shrink: 0;
+}
+
+.author-copy {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+}
+
+.author-kicker {
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.22em;
+    color: var(--text-color-secondary);
+    opacity: 0.7;
+}
+
+.author-name {
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--article-meta-value);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.meta-cluster {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.meta-panel-btn {
+    border: 1px solid rgba(15, 23, 42, 0.1);
+    background: rgba(255, 255, 255, 0.84);
+    color: var(--text-color-secondary);
+    padding: 8px 14px;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+    font-size: 0.82rem;
+    font-weight: 600;
+}
+
+.meta-panel-btn:hover,
+.meta-panel-btn.is-active {
+    background: rgba(59, 130, 246, 0.1);
+    color: var(--color-primary);
+    border-color: rgba(59, 130, 246, 0.18);
 }
 
 .article-meta {
     display: flex;
     align-items: center;
-    gap: 16px;
-    font-size: 0.875rem;
-    color: var(--text-color-secondary);
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.8125rem;
+    color: var(--article-meta-color);
 }
 
 .meta-item {
@@ -394,36 +485,26 @@ onUnmounted(() => {
 
 .meta-item .value {
     font-weight: 500;
-    color: var(--text-color-primary);
+    color: var(--article-meta-value);
 }
 
 .meta-divider {
     width: 1px;
     height: 12px;
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--article-meta-divider);
 }
 
 .article-content {
     flex: 1;
-    overflow-y: auto;
-    font-size: 1.125rem;
-    line-height: 1.8;
-    color: var(--text-color-regular);
-    padding-right: 12px;
     width: 100%;
 }
 
-.meta-author {
-    cursor: pointer;
-    text-decoration: underline;
-    text-underline-offset: 2px;
+.article-body {
+    width: 100%;
+    min-height: 100%;
+    padding-bottom: 28px;
 }
 
-.meta-author:hover {
-    color: var(--color-primary);
-}
-
-/* 展开右侧时显示一条缝的拖拽条 */
 .resize-handle {
     width: 6px;
     margin: 0 -3px;
@@ -479,12 +560,12 @@ onUnmounted(() => {
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
+    background: var(--article-scrollbar);
     border-radius: 10px;
 }
 
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--article-scrollbar-hover);
 }
 
 .fade-slide-enter-active,
@@ -498,37 +579,56 @@ onUnmounted(() => {
     transform: translateX(20px);
 }
 
-/* 右下�?AI 悬浮�?*/
-.fab-ai {
-    position: fixed;
-    right: 32px;
-    bottom: 32px;
-    z-index: 20;
-    width: 56px;
-    height: 56px;
-    border-radius: 50%;
-    border: 1px solid var(--border-color-base);
-    background: rgba(255, 255, 255, 0.95);
-    color: var(--text-color-secondary);
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 24px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-    transition: color 0.2s, background 0.2s, transform 0.2s, bottom 0.25s ease;
+@media (max-width: 1024px) {
+    .article-page {
+        display: block;
+    }
+
+    .sidebar {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 60px;
+        background-color: rgba(255, 255, 255, 0.8);
+        backdrop-filter: blur(8px);
+        border-right: 1px solid rgba(0, 0, 0, 0.05);
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05);
+        cursor: pointer;
+    }
+
+    .sidebar.is-collapsed .sidebar-inner {
+        width: 100%;
+    }
+
+    .sidebar.is-expanded {
+        width: 70%;
+        background-color: #fff;
+        box-shadow: 4px 0 16px rgba(0, 0, 0, 0.1);
+        cursor: default;
+    }
+
+    .sidebar.is-expanded .sidebar-inner {
+        width: 70%;
+    }
+
+    .main-container {
+        padding-left: 60px;
+    }
 }
 
-.fab-ai:hover {
-    color: #8b5cf6;
-    background: #fff;
-    transform: scale(1.05);
-}
+@media (max-width: 900px) {
+    .article-detail {
+        padding-inline: 12px;
+    }
 
-.fab-ai.is-active {
-    background: #8b5cf6;
-    color: white;
-    border-color: #8b5cf6;
-    bottom: 160px;
+    .content {
+        padding-inline: 18px;
+    }
+
+    .article-header-meta,
+    .meta-cluster {
+        align-items: flex-start;
+        justify-content: flex-start;
+    }
 }
 </style>

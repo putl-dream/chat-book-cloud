@@ -6,6 +6,7 @@ import Text from './Text.vue';
 vi.mock('vue-router', () => ({
     useRoute: () => ({ params: { id: null } }),
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+    onBeforeRouteLeave: vi.fn(),
     onBeforeRouteUpdate: vi.fn()
 }));
 
@@ -25,12 +26,18 @@ vi.mock('@/views/article/_domain/article.js', () => ({
 // Mock Element Plus and Tiptap dependencies to prevent mount errors
 vi.mock('element-plus', () => ({
     ElMessage: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+    ElMessageBox: { confirm: vi.fn() },
     ElDialog: { template: '<div><slot></slot><slot name="footer"></slot></div>' },
     ElForm: { template: '<div><slot></slot></div>' },
     ElFormItem: { template: '<div><slot></slot></div>' },
     ElSelect: { template: '<select><slot></slot></select>' },
     ElOption: { template: '<option></option>' },
     ElInput: { template: '<input />' },
+    ElCheckboxGroup: { template: '<div><slot></slot></div>' },
+    ElCheckbox: { template: '<label><slot></slot></label>' },
+    ElRadioGroup: { template: '<div><slot></slot></div>' },
+    ElRadio: { template: '<label><slot></slot></label>' },
+    ElTag: { template: '<span><slot></slot></span>' },
     ElUpload: { template: '<div><slot></slot></div>' },
     ElButton: { template: '<button><slot></slot></button>' },
     ElIcon: { template: '<i><slot></slot></i>' },

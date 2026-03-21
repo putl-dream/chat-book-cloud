@@ -21,7 +21,7 @@
                     </div>
                 </el-col>
 
-                <!-- 对话�?-->
+                <!-- 对话框 -->
                 <el-col :span="17" class="chat-main-area">
                     <template v-if="selectedFriend">
                         <div class="chat-header glass-header">

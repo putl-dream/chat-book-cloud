@@ -1,5 +1,6 @@
 package com.putl.socialservice.controller;
 
+import com.putl.socialservice.enums.FriendRelationEnum;
 import com.putl.socialservice.service.UserFollowService;
 import com.putl.userservice.api.UserClient;
 import com.putl.userservice.api.dto.UserResult;
@@ -55,6 +56,19 @@ public class SocialController {
         Integer userId = Integer.parseInt(userIdStr);
         String result = userFollowService.unfollow(userId, followId);
         return CommonResult.success(result);
+    }
+
+    @Operation(summary = "查询与目标用户的关注关系")
+    @GetMapping("/relation/{targetUserId}")
+    public CommonResult<Integer> getRelation(
+            @Parameter(description = "目标用户ID") @PathVariable Integer targetUserId) {
+        String userIdStr = UserContext.getUserId();
+        if (userIdStr == null) {
+            return CommonResult.error(401, "用户未登录");
+        }
+        Integer userId = Integer.parseInt(userIdStr);
+        FriendRelationEnum relation = userFollowService.checkFriendRelation(userId, targetUserId);
+        return CommonResult.success(relation.getCode());
     }
 
     @Operation(summary = "获取好友列表")

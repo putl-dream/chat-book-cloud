@@ -1,7 +1,7 @@
 <template>
     <div class="message-card">
         <div class="avatar-wrapper">
-            <!-- NotificationVO 暂未包含头像，使用默认图�?-->
+            <!-- NotificationVO 暂未包含头像，使用默认图片 -->
             <el-avatar class="user-avatar" :size="40" :src="null" />
         </div>
         <div class="message-content">
@@ -10,7 +10,7 @@
                     <span class="username">用户&nbsp;{{ message.senderId }}</span>
                     <span class="action-text">{{ actionText }}</span>
                     <span class="article-link" @click.stop>
-                        《{{ message.articleTitle || '未知文章' }}�?
+                        《{{ message.articleTitle || '未知文章' }}》
                     </span>
                 </div>
                 <span class="time">{{ message.createTime }}</span>
@@ -34,8 +34,8 @@ const props = defineProps({
     }
 });
 
-// P0 Fix: 直接读取后端返回�?actionType 字段（PRAISE/COLLECT/COMMENT/BROWSE�?
-// 原来通过 collectCount/praiseCount 数量猜测类型的逻辑已废�?
+// P0 Fix: 直接读取后端返回的 actionType 字段（PRAISE/COLLECT/COMMENT/BROWSE）
+// 原来通过 collectCount/praiseCount 数量猜测类型的逻辑已废弃
 const ACTION_TYPE_MAP = {
     COLLECT: 'collect',
     PRAISE:  'like',

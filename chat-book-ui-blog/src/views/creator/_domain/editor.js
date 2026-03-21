@@ -7,14 +7,14 @@ export function isValidCoverFile(file) {
     if (file.type !== 'image/jpeg' && file.type !== 'image/png') {
         return false;
     }
-    if (file.size / 1024 / 1024 > 2) {
+    if (file.size / 1024 / 1024 > 10) {
         return false;
     }
     return true;
 }
 
 /**
- * 校验是否有实际内�? * @param {number|string} articleId 
+ * 校验是否有实际内�? * @param {number|string} articleId 
  * @param {string} title 
  * @param {string} html 
  * @returns {boolean}
@@ -24,7 +24,7 @@ export function hasMeaningfulContent(articleId, title, html) {
 }
 
 /**
- * 构造保�?发布的请�?Payload
+ * 构造保�?发布的请�?Payload
  * @param {object} rawData 
  * @returns {object}
  */

@@ -1,0 +1,29 @@
+:root,
+[data-theme="light"] {
+    --color-primary-rgb: 79, 70, 229;
+    --bg-color-light: rgba(255, 255, 255, 0.72);
+    --app-shell-bg: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    --app-shell-radial: radial-gradient(circle at top right, rgba(79, 70, 229, 0.14), transparent 34%);
+    --app-header-bg: rgba(255, 255, 255, 0.68);
+    --app-header-bg-hover: rgba(255, 255, 255, 0.82);
+    --app-header-border: rgba(255, 255, 255, 0.42);
+    --app-search-bg: rgba(248, 250, 252, 0.88);
+    --app-search-bg-focus: rgba(255, 255, 255, 0.96);
+    --app-search-ring: rgba(79, 70, 229, 0.14);
+    --app-dropdown-bg: rgba(255, 255, 255, 0.98);
+    --profile-cover-gradient: linear-gradient(120deg, #a5f3fc, #c4b5fd, #fbcfe8);
+    --article-page-bg: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    --article-page-radial: radial-gradient(circle at top, rgba(79, 70, 229, 0.12), transparent 34%);
+    --article-paper-bg: linear-gradient(180deg, rgba(255, 255, 255, 0.98) 0%, #fbfdff 100%);
+    --article-paper-border: rgba(226, 232, 240, 0.92);
+    --article-paper-shadow: 0 18px 40px rgba(15, 23, 42, 0.08), 0 2px 8px rgba(15, 23, 42, 0.04);
+    --article-header-divider: rgba(148, 163, 184, 0.24);
+    --article-title-color: #0f172a;
+    --article-meta-color: #64748b;
+    --article-meta-value: #334155;
+    --article-meta-divider: rgba(148, 163, 184, 0.24);
+    --article-scrollbar: rgba(148, 163, 184, 0.28);
+    --article-scrollbar-hover: rgba(79, 70, 229, 0.38);
+    --theme-card-bg: rgba(255, 255, 255, 0.68);
+    --theme-card-border: rgba(255, 255, 255, 0.82);
+}

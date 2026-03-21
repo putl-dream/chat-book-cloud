@@ -1,8 +1,7 @@
 <template>
     <div class="default-sidebar">
-        <!-- 点击文章头部作者名时，右侧切换为此 default 模块（作者卡�?+ 相关推荐�?-->
-        <div class="article-right-card">
-            <AuthorCard :userId="userId" />
+        <div class="article-right-card toc-card">
+            <ArticleViewerToc :articleHtml="articleHtml" :contentTarget="contentTarget" />
         </div>
         <div class="article-right-card">
             <ArticleTagCard :articleId="articleId" :tagIds="tagIds" />
@@ -14,15 +13,11 @@
 </template>
 
 <script setup>
-import AuthorCard from "@/views/user/components/AuthorCard.vue";
+import ArticleViewerToc from "@/views/article/components/ArticleViewerToc.vue";
 import ArticleTagCard from "@/views/article/components/ArticleTagCard.vue";
 import RelatedCard from "@/views/article/components/RelatedCard.vue";
 
 defineProps({
-    userId: {
-        type: [Number, String],
-        required: false
-    },
     articleId: {
         type: [Number, String],
         required: true
@@ -30,6 +25,14 @@ defineProps({
     tagIds: {
         type: Array,
         default: () => []
+    },
+    articleHtml: {
+        type: String,
+        default: ''
+    },
+    contentTarget: {
+        type: Object,
+        default: null
     }
 });
 </script>
@@ -42,7 +45,7 @@ defineProps({
     height: 100%;
     overflow-y: auto;
     padding-right: 4px;
-    /* 防止滚动条遮挡内�?*/
+    /* 防止滚动条遮挡内?*/
 }
 
 /* 隐藏滚动条但保留功能 (Chrome/Safari/Webkit) */
@@ -70,6 +73,10 @@ defineProps({
     border: 1px solid var(--border-color-light);
     overflow: hidden;
     flex-shrink: 0;
-    /* 防止卡片被压�?*/
+    /* 防止卡片被压缩 */
+}
+
+.toc-card {
+    min-height: 240px;
 }
 </style>

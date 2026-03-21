@@ -58,7 +58,7 @@ const loading = ref(false);
 const messageRequest = async () => {
     loading.value = true;
     try {
-        // P0 Fix: �?getMessage 接口返回数据错误，已更换�?getNotifications
+        // P0 Fix: getMessage 接口返回数据错误，已更换为 getNotifications
         const res = await getNotifications();
         if (res) {
             messages.value = res;
@@ -71,7 +71,7 @@ const messageRequest = async () => {
 }
 
 const openArticle = async (articleId) => {
-    // P0 Fix: 使用 message.articleId 跳转（NotificationVO �?id 是足迹记录ID，非文章ID�?
+    // P0 Fix: 使用 message.articleId 跳转（NotificationVO 的 id 是足迹记录ID，非文章ID）
     await router.push({ name: 'Article', params: { id: articleId } });
 };
 
