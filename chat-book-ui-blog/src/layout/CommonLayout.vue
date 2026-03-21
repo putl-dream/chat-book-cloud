@@ -5,13 +5,17 @@
         </el-header>
 
         <el-main class="main" id="common-layout-main">
-            <router-view/>
+            <div class="main-view">
+                <router-view/>
+            </div>
+            <SiteFooter class="layout-footer" />
         </el-main>
     </el-container>
 </template>
 
 <script setup>
 import CommonHeader from "@/components/common/CommonHeader.vue";
+import SiteFooter from "@/components/common/SiteFooter.vue";
 </script>
 
 <style scoped>
@@ -22,6 +26,16 @@ import CommonHeader from "@/components/common/CommonHeader.vue";
     flex: 1;
     overflow-y: auto;
     overflow-x: hidden;
+    display: flex;
+    flex-direction: column;
+}
+
+.main-view {
+    flex: 1 0 auto;
+}
+
+.layout-footer {
+    flex-shrink: 0;
 }
 
 .header {

@@ -34,6 +34,8 @@ import CreativeAside from "@/views/creator/components/CreativeAside.vue";
     background-color: #f8fafc;
     position: relative;
     overflow: hidden;
+    display: flex;
+    flex-direction: column;
 }
 
 /* Ambient Background Decorations */
@@ -76,6 +78,7 @@ import CreativeAside from "@/views/creator/components/CreativeAside.vue";
     max-width: 1440px;
     margin: 0 auto;
     width: 100%;
+    flex: 1;
 }
 
 .aside {
