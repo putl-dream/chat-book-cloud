@@ -7,8 +7,7 @@
             <div v-for="(msg, idx) in aiChatHistory" :key="idx" class="ai-msg" :class="msg.role">
                 <div class="msg-content">
                     <RichTextViewer
-                        :content="msg.content"
-                        source-format="markdown"
+                        :html="renderMessageHtml(msg)"
                         variant="chat" />
                 </div>
             </div>
@@ -26,9 +25,12 @@
 <script setup>
 import { ElInput, ElButton, ElText } from 'element-plus';
 import RichTextViewer from "@/components/common/rich-text/RichTextViewer.vue";
+import { buildRichTextHtml } from "@/components/common/rich-text/content-pipeline.js";
 import { useSidebarAI } from "../_hooks/useSidebarAI.js";
 
 const { aiMessage, aiChatHistory, sendAiMessage } = useSidebarAI();
+
+const renderMessageHtml = (message) => buildRichTextHtml(message?.content || '', message?.sourceFormat || 'markdown');
 </script>
 
 <style scoped>

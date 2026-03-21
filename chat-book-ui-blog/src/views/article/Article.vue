@@ -62,10 +62,12 @@
                         </div>
                     </header>
                     <main class="article-content custom-scrollbar">
-                        <RichTextViewer
-                            :content="article.content"
-                            source-format="html"
-                            variant="article" />
+                        <div class="article-body">
+                            <RichTextViewer
+                                :html="articleHtml"
+                                variant="article"
+                                as="article" />
+                        </div>
                     </main>
                 </div>
 
@@ -99,6 +101,7 @@ import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
 import { useRoute } from "vue-router";
 import { ElButton } from 'element-plus';
 import RichTextViewer from "@/components/common/rich-text/RichTextViewer.vue";
+import { buildRichTextHtml } from "@/components/common/rich-text/content-pipeline.js";
 
 import SidebarDefault from '@/views/article/article-sidebar/SidebarDefault.vue';
 import SidebarComment from '@/views/article/article-sidebar/SidebarComment.vue';
@@ -130,6 +133,8 @@ const {
     handleFavorite,
     openAuthorPanel
 } = useArticleLogic(articleId);
+
+const articleHtml = computed(() => buildRichTextHtml(article.value?.content || '', 'html'));
 
 // 统一通过路由参数驱动文章加载，避免首次挂载和路由同步各触发一次
 watch(articleId, async (newId, oldId) => {
@@ -187,7 +192,9 @@ onUnmounted(() => {
     /* 1. 左侧固定�?10%，主区域 1fr */
     grid-template-columns: 10% 1fr;
     height: 100%;
-    background-color: #f9fafb;
+    background:
+        radial-gradient(circle at top, rgba(59, 130, 246, 0.08), transparent 32%),
+        linear-gradient(180deg, #f8fafc 0%, #f3f6fb 100%);
     position: relative;
     overflow: hidden;
 }
@@ -345,21 +352,24 @@ onUnmounted(() => {
     min-width: 0;
     flex: 1;
     margin: 0 auto;
-    padding: 44px clamp(24px, 4vw, 56px) 52px;
+    padding: 48px clamp(24px, 4vw, 64px) 56px;
     height: 100%;
     display: flex;
     flex-direction: column;
-    background: #ffffff;
-    border-radius: 8px;
-    border: 1px solid rgba(0, 0, 0, 0.06);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    background: rgba(255, 255, 255, 0.94);
+    border-radius: 24px;
+    border: 1px solid rgba(148, 163, 184, 0.18);
+    box-shadow:
+        0 16px 40px rgba(15, 23, 42, 0.06),
+        0 2px 10px rgba(15, 23, 42, 0.04);
+    backdrop-filter: blur(12px);
 }
 
 .article-header {
     border-bottom: 1px solid var(--border-color-base);
-    padding-bottom: 24px;
-    margin: 0 0 32px;
-    width: min(100%, 820px);
+    padding-bottom: 28px;
+    margin: 0 0 28px;
+    width: min(100%, 800px);
     margin-inline: auto;
 }
 
@@ -411,8 +421,17 @@ onUnmounted(() => {
 .article-content {
     flex: 1;
     overflow-y: auto;
-    padding-right: 12px;
+    padding-right: 8px;
     width: 100%;
+    scroll-behavior: smooth;
+    scroll-padding-top: 28px;
+    overscroll-behavior: contain;
+}
+
+.article-body {
+    width: 100%;
+    min-height: 100%;
+    padding-bottom: 56px;
 }
 
 .meta-author {

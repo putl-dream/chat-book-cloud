@@ -1,4 +1,5 @@
 import { ref, watch, onBeforeUnmount } from 'vue';
+import { createHeadingId } from '@/components/common/rich-text/content-pipeline.js';
 
 export function useArticleToc(editorRef) {
     const headings = ref([]);
@@ -11,12 +12,13 @@ export function useArticleToc(editorRef) {
         const transaction = editor.state.tr;
         let modified = false;
         const newHeadings = [];
+        const headingOccurrences = new Map();
 
         editor.state.doc.descendants((node, pos) => {
             if (node.type.name === 'heading') {
-                const id = node.attrs.id || `heading-${Math.random().toString(36).substring(2, 9)}`;
+                const id = createHeadingId(node.textContent || '', headingOccurrences, `section-${newHeadings.length + 1}`);
 
-                if (!node.attrs.id) {
+                if (node.attrs.id !== id) {
                     transaction.setNodeMarkup(pos, undefined, { ...node.attrs, id });
                     modified = true;
                 }

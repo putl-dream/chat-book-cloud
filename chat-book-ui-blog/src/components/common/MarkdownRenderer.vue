@@ -1,14 +1,15 @@
 <template>
     <RichTextViewer
-        :content="content"
-        :source-format="sourceFormat"
+        :html="renderedHtml"
         :variant="variant" />
 </template>
 
 <script setup>
+import { computed } from 'vue';
 import RichTextViewer from '@/components/common/rich-text/RichTextViewer.vue';
+import { buildRichTextHtml } from '@/components/common/rich-text/content-pipeline.js';
 
-defineProps({
+const props = defineProps({
     content: {
         type: String,
         default: ''
@@ -22,4 +23,6 @@ defineProps({
         default: 'article'
     }
 });
+
+const renderedHtml = computed(() => buildRichTextHtml(props.content, props.sourceFormat));
 </script>

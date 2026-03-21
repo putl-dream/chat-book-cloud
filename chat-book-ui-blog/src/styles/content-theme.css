@@ -9,6 +9,12 @@
     --content-block-gap: 1.2rem;
     --content-heading-gap: 2.5rem;
     --content-max-width: 100%;
+    --content-code-radius: 18px;
+    --content-code-padding: 1rem 1.2rem;
+    --content-code-font-size: 0.92em;
+    --content-image-margin: 1.8rem auto;
+    --content-image-radius: 20px;
+    --content-table-cell-min-width: 140px;
     --content-inline-code-bg: rgba(79, 70, 229, 0.08);
     --content-inline-code-color: #4338ca;
     --content-inline-code-border: rgba(79, 70, 229, 0.12);
@@ -48,10 +54,15 @@
     --content-body-font: var(--content-font-serif);
     --content-heading-font: var(--content-font-sans);
     --content-font-size: clamp(1.0625rem, 1.01rem + 0.22vw, 1.1875rem);
-    --content-line-height: 1.95;
-    --content-block-gap: 1.4rem;
-    --content-heading-gap: 2.9rem;
-    --content-max-width: 820px;
+    --content-line-height: 1.98;
+    --content-block-gap: 1.45rem;
+    --content-heading-gap: 3rem;
+    --content-max-width: 800px;
+    --content-code-padding: 1.05rem 1.25rem;
+    --content-code-font-size: 0.95em;
+    --content-image-margin: 2.25rem auto;
+    --content-image-radius: 24px;
+    --content-table-cell-min-width: 160px;
     --content-h1-size: clamp(2.2rem, 2rem + 1vw, 3rem);
     --content-h2-size: clamp(1.85rem, 1.68rem + 0.65vw, 2.35rem);
     --content-h3-size: clamp(1.5rem, 1.38rem + 0.35vw, 1.82rem);
@@ -65,6 +76,12 @@
     --content-block-gap: 0.8rem;
     --content-heading-gap: 1.3rem;
     --content-max-width: 100%;
+    --content-code-radius: 14px;
+    --content-code-padding: 0.85rem 1rem;
+    --content-code-font-size: 0.88em;
+    --content-image-margin: 1rem auto;
+    --content-image-radius: 14px;
+    --content-table-cell-min-width: 120px;
     --content-h1-size: 1.25rem;
     --content-h2-size: 1.125rem;
     --content-h3-size: 1.03rem;
@@ -84,6 +101,7 @@
     line-height: var(--content-line-height);
     text-rendering: optimizeLegibility;
     word-break: break-word;
+    overflow-wrap: anywhere;
 }
 
 .content-theme[data-content-variant="editor"] .ProseMirror {
@@ -120,6 +138,7 @@
     font-weight: 700;
     line-height: 1.25;
     letter-spacing: -0.02em;
+    text-wrap: balance;
 }
 
 .content-theme .rich-text-viewer__body h1,
@@ -162,7 +181,7 @@
 .content-theme .rich-text-viewer__body blockquote,
 .content-theme .rich-text-viewer__body pre,
 .content-theme .rich-text-viewer__body figure,
-.content-theme .rich-text-viewer__body table,
+.content-theme .rich-text-viewer__body .table-scroll,
 .content-theme .rich-text-viewer__body hr,
 .content-theme .ProseMirror p,
 .content-theme .ProseMirror ul,
@@ -235,6 +254,16 @@
     color: var(--content-quote-color);
 }
 
+.content-theme .rich-text-viewer__body blockquote > :first-child,
+.content-theme .ProseMirror blockquote > :first-child {
+    margin-top: 0;
+}
+
+.content-theme .rich-text-viewer__body blockquote > :last-child,
+.content-theme .ProseMirror blockquote > :last-child {
+    margin-bottom: 0;
+}
+
 .content-theme .rich-text-viewer__body hr,
 .content-theme .ProseMirror hr {
     border: none;
@@ -246,7 +275,7 @@
 .content-theme .rich-text-viewer__body pre,
 .content-theme .ProseMirror pre {
     border: 1px solid var(--content-code-border);
-    border-radius: 18px;
+    border-radius: var(--content-code-radius);
     background: var(--content-code-surface);
     color: var(--content-code-color);
     box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
@@ -298,7 +327,7 @@
 
 .content-theme .rich-text-viewer__body pre,
 .content-theme .ProseMirror pre {
-    padding: 1rem 1.2rem;
+    padding: var(--content-code-padding);
     overflow-x: auto;
     white-space: pre;
 }
@@ -331,7 +360,7 @@
     padding: 0;
     background: transparent;
     color: inherit;
-    font-size: 0.92em;
+    font-size: var(--content-code-font-size);
 }
 
 .content-theme .rich-text-viewer__body img,
@@ -339,8 +368,8 @@
     display: block;
     max-width: 100%;
     height: auto;
-    margin: 1.8rem auto;
-    border-radius: 20px;
+    margin: var(--content-image-margin);
+    border-radius: var(--content-image-radius);
     box-shadow: 0 18px 45px rgba(15, 23, 42, 0.1);
 }
 
@@ -348,6 +377,11 @@
 .content-theme .ProseMirror figure {
     display: grid;
     gap: 0.75rem;
+}
+
+.content-theme .rich-text-viewer__body figure img,
+.content-theme .ProseMirror figure img {
+    margin: 0 auto;
 }
 
 .content-theme .rich-text-viewer__body figcaption,
@@ -370,16 +404,29 @@
     overflow: hidden;
 }
 
+.content-theme .rich-text-viewer__body .table-scroll {
+    overflow-x: auto;
+    border: 1px solid var(--content-table-border);
+    border-radius: 16px;
+    background: #fff;
+}
+
 .content-theme .rich-text-viewer__body table,
 .content-theme .ProseMirror table {
-    display: block;
     width: 100%;
-    overflow-x: auto;
     border-collapse: separate;
     border-spacing: 0;
     border: 1px solid var(--content-table-border);
     border-radius: 16px;
     background: #fff;
+}
+
+.content-theme .rich-text-viewer__body .table-scroll table {
+    min-width: 100%;
+    width: max-content;
+    border: none;
+    border-radius: 0;
+    margin: 0;
 }
 
 .content-theme .rich-text-viewer__body thead,
@@ -391,7 +438,7 @@
 .content-theme .rich-text-viewer__body td,
 .content-theme .ProseMirror th,
 .content-theme .ProseMirror td {
-    min-width: 140px;
+    min-width: var(--content-table-cell-min-width);
     padding: 0.8rem 0.9rem;
     border-bottom: 1px solid var(--content-table-border);
     text-align: left;
@@ -413,13 +460,13 @@
 .content-theme[data-content-variant="chat"] .rich-text-viewer__body ol,
 .content-theme[data-content-variant="chat"] .rich-text-viewer__body blockquote,
 .content-theme[data-content-variant="chat"] .rich-text-viewer__body pre,
-.content-theme[data-content-variant="chat"] .rich-text-viewer__body table {
+.content-theme[data-content-variant="chat"] .rich-text-viewer__body .table-scroll {
     margin: 0.75rem 0;
 }
 
 .content-theme[data-content-variant="chat"] .rich-text-viewer__body img {
-    margin: 1rem auto;
-    border-radius: 14px;
+    margin: var(--content-image-margin);
+    border-radius: var(--content-image-radius);
 }
 
 .content-theme[data-content-variant="chat"] .copy-btn {
