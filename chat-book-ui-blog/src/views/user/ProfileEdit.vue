@@ -130,14 +130,14 @@ const handleUpload = async (options) => {
 
 const beforeAvatarUpload = (rawFile) => {
     const isImage = rawFile.type === 'image/jpeg' || rawFile.type === 'image/png' || rawFile.type === 'image/gif';
-    const isLt2M = rawFile.size / 1024 / 1024 < 2;
+    const isLt10M = rawFile.size / 1024 / 1024 < 10;
 
     if (!isImage) {
         ElMessage.error('头像必须是 JPG/PNG/GIF 格式!');
         return false;
     }
-    if (!isLt2M) {
-        ElMessage.error('头像大小不能超过 2MB!');
+    if (!isLt10M) {
+        ElMessage.error('头像大小不能超过 10MB!');
         return false;
     }
     return true;

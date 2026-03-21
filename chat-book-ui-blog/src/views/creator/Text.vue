@@ -1,6 +1,18 @@
 <template>
     <div class="editor-layout">
-        <CreativeHeader class="site-header" />
+        <CreativeHeader class="site-header">
+            <template #actions>
+                <div class="editor-header-actions">
+                    <el-button class="editor-header-btn editor-header-btn--secondary" :loading="isSaving"
+                        @click="saveContent">
+                        保存草稿
+                    </el-button>
+                    <el-button class="editor-header-btn editor-header-btn--accent" @click="publishContent">
+                        发布文章
+                    </el-button>
+                </div>
+            </template>
+        </CreativeHeader>
 
         <div class="text-toolbar">
             <div class="toolbar-wrapper">
@@ -8,13 +20,23 @@
                     :tocVisible="layoutState.leftOpen"
                     :spellcheck-enabled="spellcheckEnabled"
                     @toggle-spellcheck="toggleSpellcheck" />
-                <div class="status-bar">
-                    <div class="status-indicator" :class="{ 'saving': saveState === 'saving' }"></div>
-                    <el-text class="status-text">{{ statusText }}</el-text>
+                <div class="toolbar-meta">
+                    <div class="status-bar">
+                        <div class="status-indicator" :class="{ 'saving': saveState === 'saving' }"></div>
+                        <el-text class="status-text">{{ statusText }}</el-text>
+                    </div>
+                    <div class="word-count-chip">
+                        <span class="word-count-label">字数</span>
+                        <span class="word-count-value">{{ wordCount }}</span>
+                    </div>
                 </div>
                 <el-button @click="toggleRight" :disabled="layoutState.isMobile" size="small"
-                    class="sidebar-toggle-btn">
-                    {{ layoutState.rightOpen ? '关闭侧边' : '打开侧边' }}
+                    class="sidebar-toggle-btn" :class="{ 'is-open': layoutState.rightOpen }">
+                    <span class="sidebar-toggle-btn__badge">AI</span>
+                    <span class="sidebar-toggle-btn__label">智能助手</span>
+                    <span class="sidebar-toggle-btn__status" :class="{ 'is-active': layoutState.rightOpen }">
+                        {{ layoutState.rightOpen ? '已展开' : '打开' }}
+                    </span>
                 </el-button>
             </div>
         </div>
@@ -57,15 +79,14 @@
             <!-- Right Column -->
             <div class="layout-right" :class="{ 'is-dragging': dragging === 'right' }" v-show="layoutState.rightOpen"
                 :style="{ width: layoutState.rightWidth + '%' }">
-                <EditorMetaPanel :publish-form="publishForm" :tech-tags="techTags" :path-tags="pathTags"
-                    :selected-tech-tags="selectedTechTags" :selected-path-tag="selectedPathTag"
-                    @change-tech-tags="handleTechTagsChange" @change-path-tag="handlePathTagChange"
-                    @close="toggleRight" />
+                <EditorAiPanel @close="toggleRight" />
             </div>
         </div>
 
-        <EditorFooterActions :word-count="wordCount" @save="saveContent" @publish="publishContent" />
         <PublishDialog v-model="publishDialogVisible" :publish-form="publishForm" :category-options="categoryOptions"
+            :tech-tags="techTags" :path-tags="pathTags" :selected-tech-tags="selectedTechTags"
+            :selected-path-tag="selectedPathTag" @change-tech-tags="handleTechTagsChange"
+            @change-path-tag="handlePathTagChange"
             :handle-cover-upload="handleCoverUpload" :before-cover-upload="beforeCoverUpload"
             @confirm="confirmPublish" />
     </div>
@@ -78,8 +99,7 @@ import { useEditorLogic } from './_hooks/useEditorLogic.js';
 import { CATEGORY_NAMES } from '@/constants';
 import CreativeHeader from "@/views/creator/components/CreativeHeader.vue";
 import TiptapToolbar from "@/views/creator/components/TiptapToolbar.vue";
-import EditorMetaPanel from "@/views/creator/components/EditorMetaPanel.vue";
-import EditorFooterActions from "@/views/creator/components/EditorFooterActions.vue";
+import EditorAiPanel from "@/views/creator/components/EditorAiPanel.vue";
 import PublishDialog from "@/views/creator/components/PublishDialog.vue";
 import ArticleToc from "@/views/article/components/ArticleToc.vue";
 import RichTextEditor from "@/components/common/rich-text/RichTextEditor.vue";
@@ -99,6 +119,7 @@ const {
     pathTags,
     selectedTechTags,
     selectedPathTag,
+    isSaving,
     saveState,
     statusText,
     contentWidth,
