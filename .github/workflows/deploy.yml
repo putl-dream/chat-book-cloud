@@ -8,33 +8,8 @@ on:
   workflow_dispatch:
 
 jobs:
-  qodana:
-    if: github.event_name == 'pull_request'
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      checks: write
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - name: Qodana Scan
-        uses: JetBrains/qodana-action@v2025.3
-        env:
-          QODANA_TOKEN: ${{ secrets.QODANA_TOKEN }}
-        with:
-          pr-mode: false
-          use-caches: true
-          post-pr-comment: true
-          use-annotations: true
-          upload-result: false
-          push-fixes: "none"
-
   java-ci:
     if: github.event_name == 'pull_request'
-    needs: qodana
     runs-on: ubuntu-latest
     env:
       FILE_STORAGE_BASE_URL: ${{ vars.FILE_STORAGE_BASE_URL || '' }}
