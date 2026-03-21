@@ -16,7 +16,7 @@ vi.mock('@/utils/websocket.js', () => ({
     formatWsUrl: () => 'ws://localhost'
 }));
 
-vi.mock('@/api/article.js', () => ({
+vi.mock('@/views/article/_domain/article.js', () => ({
     publishArticle: vi.fn(),
     saveDraftArticle: vi.fn(),
     uploadFile: vi.fn()
@@ -54,9 +54,9 @@ vi.mock('@tiptap/vue-3', () => ({
 }));
 
 // Mock custom components
-vi.mock('@/components/domain/CreativeHeader.vue', () => ({ default: { template: '<header></header>' } }));
-vi.mock('@/components/domain/TiptapToolbar.vue', () => ({ default: { template: '<div></div>' } }));
-vi.mock('@/components/domain/ArticleToc.vue', () => ({ default: { template: '<div></div>' } }));
+vi.mock('@/views/creator/components/CreativeHeader.vue', () => ({ default: { template: '<header></header>' } }));
+vi.mock('@/views/creator/components/TiptapToolbar.vue', () => ({ default: { template: '<div></div>' } }));
+vi.mock('@/views/article/components/ArticleToc.vue', () => ({ default: { template: '<div></div>' } }));
 
 describe('Text.vue Editor Layout Adjustments', () => {
     let wrapper;

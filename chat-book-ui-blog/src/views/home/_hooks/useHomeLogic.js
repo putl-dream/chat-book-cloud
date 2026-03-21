@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { getCategoryPage, getNewPage, getSystemRecommendPage, getContentTypePage, getTagPage } from "@/api/article.js";
+import { getCategoryPage, getNewPage, getSystemRecommendPage, getContentTypePage, getTagPage } from "@/views/article/_domain/article.js";
 import { CATEGORY_ENUM, CONTENT_TYPE_ENUM } from "@/constants/index.js";
 
 export function useHomeLogic() {
@@ -28,7 +28,7 @@ export function useHomeLogic() {
       list: (p, s) => getContentTypePage(p, s, CONTENT_TYPE_ENUM.PRACTICE),
       recommend: () => getContentTypePage(1, 5, CONTENT_TYPE_ENUM.PRACTICE)
     },
-    // 保留旧分类路由（兼容）
+    // 保留旧分类路由（兼容性）
     '/algorithm': {
       list: (p, s) => getCategoryPage(p, s, CATEGORY_ENUM.ALGORITHM),
       recommend: () => getCategoryPage(1, 5, CATEGORY_ENUM.ALGORITHM)

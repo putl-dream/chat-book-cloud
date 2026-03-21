@@ -50,7 +50,7 @@
                         </el-form-item>
 
                         <el-form-item label="个人简介" class="custom-field">
-                            <el-input v-model="form.profile" type="textarea" :rows="4" placeholder="写一句话介绍一下自己..."
+                            <el-input v-model="form.profile" type="textarea" :rows="4" placeholder="写一句话介绍一下自己.."
                                 resize="none" />
                         </el-form-item>
                     </div>
@@ -70,7 +70,7 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { getUserBySelf, updateUser, uploadAvatar } from "@/api/user.js";
+import { getUserBySelf, updateUser, uploadAvatar } from "@/views/user/_domain/user.js";
 import { ElMessage } from 'element-plus';
 import { Camera, User, ArrowLeft } from '@element-plus/icons-vue';
 import router from "@/router/index.js";
@@ -105,7 +105,7 @@ const fetchUserData = async () => {
 const handleUpload = async (options) => {
     try {
         const res = await uploadAvatar(options.file);
-        // 根据后端 ImageResult 结构，成功返回 ImageResult<Img>，其中 data 是 Img 对象
+        // 根据后端 ImageResult 结构，成功返�?ImageResult<Img>，其�?data �?Img 对象
         // Img 对象包含 url 字段
         if (res && res.url) {
             form.value.photo = res.url;
@@ -115,10 +115,10 @@ const handleUpload = async (options) => {
             form.value.photo = res.data.url;
             ElMessage.success('头像上传成功');
         } else {
-            // 按照 utils/http.js 的拦截器逻辑，如果 code=200，直接返回 res.data
+            // 按照 utils/http.js 的拦截器逻辑，如�?code=200，直接返�?res.data
             // FileController 返回 ImageResult.success(new Img(...))
-            // ImageResult 应该也是 CommonResult 的一种变体或者类似结构
-            // 如果拦截器已经解包了 data，那么 res 就是 Img 对象
+            // ImageResult 应该也是 CommonResult 的一种变体或者类似结�?
+            // 如果拦截器已经解包了 data，那�?res 就是 Img 对象
             form.value.photo = res.url;
             ElMessage.success('头像上传成功');
         }
@@ -133,7 +133,7 @@ const beforeAvatarUpload = (rawFile) => {
     const isLt2M = rawFile.size / 1024 / 1024 < 2;
 
     if (!isImage) {
-        ElMessage.error('头像必须是 JPG/PNG/GIF 格式!');
+        ElMessage.error('头像必须�?JPG/PNG/GIF 格式!');
         return false;
     }
     if (!isLt2M) {

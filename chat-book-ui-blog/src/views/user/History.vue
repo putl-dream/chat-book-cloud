@@ -25,7 +25,7 @@
                 </div>
 
                 <div v-if="noMoreArticles && posts.length > 0" class="no-more">
-                    <span>— 已经到底啦 —</span>
+                    <span>已经到底啦</span>
                 </div>
 
                 <div v-if="!loading && posts.length === 0 && noMoreArticles" class="empty-state glass-panel">
@@ -38,9 +38,9 @@
 
 <script setup>
 import { ElSkeleton, ElEmpty } from "element-plus";
-import ArticleCard from "@/components/domain/ArticleCard.vue";
+import ArticleCard from "@/views/article/components/ArticleCard.vue";
 import { onMounted, ref } from "vue";
-import { getHistory } from "@/api/interaction.js";
+import { getHistory } from "@/views/article/_domain/interaction.js";
 import router from "@/router/index.js";
 
 // 初始化为空数组，修复之前初始化为 [{}] 导致的空卡片问题
@@ -48,7 +48,7 @@ const posts = ref([]);
 const loading = ref(false);
 const noMoreArticles = ref(false);
 const currentPage = ref(1);
-const pageSize = ref(10); // 增加每页加载数量，提升体验
+const pageSize = ref(10); // 增加每页加载数量，提升体�?
 
 const historyRequest = async () => {
     if (loading.value || noMoreArticles.value) return;
@@ -70,7 +70,7 @@ const historyRequest = async () => {
 
 const handleScroll = (event) => {
     const { scrollTop, clientHeight, scrollHeight } = event.target;
-    // 增加触发阈值，提前加载更流畅
+    // 增加触发阈值，提前加载更流�?
     if (scrollTop + clientHeight >= scrollHeight - 100) {
         historyRequest();
     }

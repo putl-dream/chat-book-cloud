@@ -1,7 +1,7 @@
 import { ref } from 'vue';
 import { ElMessage } from "element-plus";
-import { getFriendList } from "@/api/social.js";
-import { getChatHistory, getUnreadCount, markAsRead } from "@/api/chat.js";
+import { getFriendList } from "@/views/user/_domain/social.js";
+import { getChatHistory, getUnreadCount, markAsRead } from "@/views/chat/_domain/chat.js";
 import { API_CONFIG } from "@/config/index.js";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 
@@ -28,7 +28,7 @@ export function useChatLogic() {
     const res = await getChatHistory(selectedFriend.value.userId, 1, 50);
     if (res && res.data) {
       // P0 Fix: 以当前登录用户的 userId 为基准判断发送方
-      // 原代码错误：senderId === selectedFriend.userId 判断为 self，实为对方发的
+      // 原代码错误：senderId === selectedFriend.userId 判断为self，实为对方发送
       const currentUserId = parseInt(localStorage.getItem('userId'));
       for (let i = 0; i < res.data.length; i++) {
         if (res.data[i].senderId === currentUserId) {

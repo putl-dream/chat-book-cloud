@@ -113,7 +113,7 @@
 
 <script setup>
 import { onMounted } from 'vue';
-import ArticleCard from "@/components/domain/ArticleCard.vue";
+import ArticleCard from "@/views/article/components/ArticleCard.vue";
 import { Star, View } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 import { DEFAULT_AVATAR } from "@/constants/index.js";

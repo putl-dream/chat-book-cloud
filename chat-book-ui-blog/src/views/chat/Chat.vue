@@ -21,7 +21,7 @@
                     </div>
                 </el-col>
 
-                <!-- 对话框 -->
+                <!-- 对话�?-->
                 <el-col :span="17" class="chat-main-area">
                     <template v-if="selectedFriend">
                         <div class="chat-header glass-header">
@@ -94,8 +94,8 @@
 
 <script setup>
 import { onMounted, onUnmounted, ref, nextTick } from 'vue'
-import ChatUserCard from "@/components/domain/ChatUserCard.vue";
-import ChatMessage from "@/components/domain/ChatMsgCard.vue";
+import ChatUserCard from "@/views/chat/components/ChatUserCard.vue";
+import ChatMessage from "@/views/chat/components/ChatMsgCard.vue";
 import { useChatLogic } from "./Chat/_hooks/useChatLogic.js";
 
 const {

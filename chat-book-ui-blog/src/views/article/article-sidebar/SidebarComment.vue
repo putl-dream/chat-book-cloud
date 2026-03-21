@@ -94,10 +94,9 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue';
+import { onMounted, toRef } from 'vue';
 import { ElAvatar, ElInput, ElButton, ElEmpty, ElMessage, ElLink, ElDivider } from 'element-plus';
-import { getByArticleId, saveReview } from "@/api/interaction.js";
-import { checkLogin } from "@/utils/http.js";
+import { useSidebarComment } from '../_hooks/useSidebarComment.js';
 
 const props = defineProps({
     articleId: {
@@ -109,137 +108,22 @@ const props = defineProps({
 const defaultAvatar = 'https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png';
 const selfPhoto = localStorage.getItem('avatar');
 
-// State
-const mainCommentContent = ref('');
-const replyContent = ref('');
-const activeReplyId = ref(null); // ID of the comment/subcomment being replied to
-const comments = ref([]);
-const submitting = ref(false);
+const articleIdRef = toRef(props, 'articleId');
 
-const totalComments = computed(() => {
-    let count = comments.value.length;
-    comments.value.forEach(c => {
-        if (c.children) count += c.children.length;
-    });
-    return count;
-});
-
-// Recursively flatten children and sort by time
-const flattenChildren = (nodes, parentName) => {
-    if (!nodes || nodes.length === 0) return [];
-
-    let result = [];
-    nodes.forEach(node => {
-        const { children, ...nodeData } = node;
-
-        // If replyToUser is missing, infer it from the parent structure
-        if (!nodeData.replyToUser && parentName) {
-            nodeData.replyToUser = parentName;
-        }
-
-        result.push(nodeData);
-        if (children && children.length > 0) {
-            // Pass current node's username as the parent for its children
-            result = result.concat(flattenChildren(children, nodeData.username));
-        }
-    });
-
-    // Sort flattened children by createTime (oldest first)
-    return result.sort((a, b) => new Date(a.createTime) - new Date(b.createTime));
-};
-
-const queryCommentRequest = async () => {
-    try {
-        const res = await getByArticleId(props.articleId);
-        if (res) {
-            const oldExpandedState = {};
-            comments.value.forEach(c => {
-                if (c.id) oldExpandedState[c.id] = c.expanded;
-            });
-
-            comments.value = res.map(comment => ({
-                ...comment,
-                expanded: oldExpandedState[comment.id] !== undefined ? oldExpandedState[comment.id] : true,
-                // Pass the main comment's username as the parent for direct children
-                children: flattenChildren(comment.children, comment.username)
-            }));
-        }
-    } catch (error) {
-        console.error("Failed to fetch comments", error);
-    }
-};
-
-const handleKeydown = (e, isMain = false) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault(); // Prevent new line
-        if (isMain) {
-            handleMainSubmit();
-        } else {
-            submitReply();
-        }
-    }
-};
-
-const handleMainSubmit = () => {
-    submitComment(0, mainCommentContent.value);
-};
-
-const submitReply = () => {
-    const targetId = activeReplyId.value;
-    const content = replyContent.value;
-    if (targetId) {
-        submitComment(targetId, content);
-    }
-};
-
-const submitComment = async (parentId, content) => {
-    if (!checkLogin()) return;
-
-    if (!content || content.trim() === '') {
-        ElMessage.warning('请输入评论内容');
-        return;
-    }
-
-    submitting.value = true;
-    try {
-        await saveReview({
-            articleId: props.articleId,
-            parentId: parentId,
-            content: content,
-        });
-
-        ElMessage.success('发布成功');
-
-        // Reset inputs
-        if (parentId === 0) {
-            mainCommentContent.value = '';
-        } else {
-            replyContent.value = '';
-            activeReplyId.value = null;
-        }
-
-        // Refresh comments
-        await queryCommentRequest();
-    } catch (error) {
-        console.error("Publish comment failed", error);
-    } finally {
-        submitting.value = false;
-    }
-};
-
-const toggleExpand = (comment) => {
-    comment.expanded = !comment.expanded;
-};
-
-const toggleReply = (id) => {
-    if (activeReplyId.value === id) {
-        activeReplyId.value = null;
-        replyContent.value = '';
-    } else {
-        activeReplyId.value = id;
-        replyContent.value = '';
-    }
-};
+const {
+    mainCommentContent,
+    replyContent,
+    activeReplyId,
+    comments,
+    submitting,
+    totalComments,
+    queryCommentRequest,
+    handleKeydown,
+    handleMainSubmit,
+    submitReply,
+    toggleExpand,
+    toggleReply
+} = useSidebarComment(articleIdRef);
 
 // Utility: Relative Time
 const formatRelativeTime = (timeStr) => {

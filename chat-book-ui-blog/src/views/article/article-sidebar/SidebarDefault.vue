@@ -1,6 +1,6 @@
 <template>
     <div class="default-sidebar">
-        <!-- 点击文章头部作者名时，右侧切换为此 default 模块（作者卡片 + 相关推荐） -->
+        <!-- 点击文章头部作者名时，右侧切换为此 default 模块（作者卡�?+ 相关推荐�?-->
         <div class="article-right-card">
             <AuthorCard :userId="userId" />
         </div>
@@ -14,9 +14,9 @@
 </template>
 
 <script setup>
-import AuthorCard from "@/components/domain/AuthorCard.vue";
-import ArticleTagCard from "@/components/domain/ArticleTagCard.vue";
-import RelatedCard from "@/components/domain/RelatedCard.vue";
+import AuthorCard from "@/views/user/components/AuthorCard.vue";
+import ArticleTagCard from "@/views/article/components/ArticleTagCard.vue";
+import RelatedCard from "@/views/article/components/RelatedCard.vue";
 
 defineProps({
     userId: {
@@ -42,7 +42,7 @@ defineProps({
     height: 100%;
     overflow-y: auto;
     padding-right: 4px;
-    /* 防止滚动条遮挡内容 */
+    /* 防止滚动条遮挡内�?*/
 }
 
 /* 隐藏滚动条但保留功能 (Chrome/Safari/Webkit) */
@@ -70,6 +70,6 @@ defineProps({
     border: 1px solid var(--border-color-light);
     overflow: hidden;
     flex-shrink: 0;
-    /* 防止卡片被压缩 */
+    /* 防止卡片被压�?*/
 }
 </style>

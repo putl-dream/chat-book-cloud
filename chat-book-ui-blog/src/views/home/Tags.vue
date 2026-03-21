@@ -51,7 +51,7 @@
 import { ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { Monitor, Guide } from '@element-plus/icons-vue'
-import { getTagsByType } from '@/api/tag.js'
+import { getTagsByType } from '@/views/article/_domain/tag.js'
 import { TAG_TYPE_ENUM } from '@/constants/index.js'
 
 const router = useRouter()

@@ -10,13 +10,13 @@
         </div>
 
         <div class="hot-bento-grid" v-if="recommendations && recommendations.length > 0">
-          <!-- 主热点 (Large) -->
+          <!-- 主热�?(Large) -->
           <div class="hot-item main-feature interactive-card glass-effect hover-soft animate-pop"
             @click="openArticle(recommendations[0].id)">
             <ArticleCard :post="recommendations[0]" variant="feature" />
           </div>
 
-          <!-- 次热点 -->
+          <!-- 次热�?-->
           <template v-if="recommendations.length > 1">
             <div v-for="(item, index) in recommendations.slice(1, 5)"
               class="hot-item interactive-card glass-effect hover-soft animate-pop" :key="'hot-' + (item.id || index)"
@@ -48,7 +48,7 @@
         <div class="spinner"></div>
       </div>
       <div v-if="noMoreArticles" class="no-more">
-        <span>— 到底啦 —</span>
+        <span>到底啦</span>
       </div>
     </div>
   </div>
@@ -57,8 +57,8 @@
 <script setup>
 import { onMounted, onUnmounted, ref, watch } from 'vue';
 import { useRoute } from 'vue-router';
-import HotCard from "@/components/domain/HotCard.vue";
-import ArticleCard from "@/components/domain/ArticleCard.vue";
+import HotCard from "@/views/home/components/HotCard.vue";
+import ArticleCard from "@/views/article/components/ArticleCard.vue";
 import router from "@/router/index.js";
 import { useHomeLogic } from "./_hooks/useHomeLogic.js";
 
@@ -197,7 +197,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   grid-template-rows: repeat(2, 180px);
-  /* 扁平化锁死高度 */
+  /* 扁平化锁死高�?*/
   gap: 24px;
   margin-bottom: 0px;
 }
@@ -271,12 +271,12 @@ onUnmounted(() => {
   animation-delay: calc(var(--delay, 0s) + 0.2s);
 }
 
-/* 占据两列的 Feature 卡片 - 多栏布局中建议全局占用或者使用默认流 */
+/* 占据两列�?Feature 卡片 - 多栏布局中建议全局占用或者使用默认流 */
 .feature-span-2 {
   border-radius: var(--border-radius-xl);
 }
 
-/* 热榜小组件可能不占很多 row，自动适应即可 */
+/* 热榜小组件可能不占很�?row，自动适应即可 */
 .widget-span {
   border-radius: var(--border-radius-xl);
 }

@@ -1,6 +1,6 @@
 import { ref } from 'vue';
-import { getUserBySelf } from "@/api/user.js";
-import { getUserArticlePage } from "@/api/article.js";
+import { getUserBySelf } from "@/views/user/_domain/user.js";
+import { getUserArticlePage } from "@/views/article/_domain/article.js";
 
 export function useProfileLogic() {
   const user = ref({});

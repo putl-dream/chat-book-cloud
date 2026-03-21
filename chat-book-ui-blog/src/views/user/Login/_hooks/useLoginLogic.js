@@ -1,6 +1,6 @@
 import { ref, reactive } from 'vue';
 import { ElMessage } from "element-plus";
-import { captcha, login, signUp, loginByEmailCode } from "@/api/user.js";
+import { captcha, login, signUp, loginByEmailCode } from "@/views/user/_domain/user.js";
 
 export function useLoginLogic() {
   const signupForm = reactive({
