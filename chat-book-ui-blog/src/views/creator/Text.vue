@@ -7,7 +7,7 @@
                 <TiptapToolbar :editor="editor" class="glass-toolbar" v-if="editor" @toggle-toc="toggleLeft"
                     :tocVisible="layoutState.leftOpen" />
                 <div class="status-bar">
-                    <div class="status-indicator" :class="{ 'saving': save }"></div>
+                    <div class="status-indicator" :class="{ 'saving': saveState === 'saving' }"></div>
                     <el-text class="status-text">{{ statusText }}</el-text>
                 </div>
                 <el-button @click="toggleRight" :disabled="layoutState.isMobile" size="small"
@@ -139,8 +139,8 @@ import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import CreativeHeader from "@/components/domain/CreativeHeader.vue";
 import TiptapToolbar from "@/components/domain/TiptapToolbar.vue";
 import ArticleToc from "@/components/domain/ArticleToc.vue";
-import { ElMessage } from "element-plus";
-import { onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
+import { ElMessage, ElMessageBox } from "element-plus";
+import { onBeforeRouteLeave, onBeforeRouteUpdate, useRoute, useRouter } from "vue-router";
 import SocketService, { formatWsUrl } from "@/utils/websocket.js";
 import { API_CONFIG } from "@/config/index.js";
 import { ElDialog, ElForm, ElFormItem, ElSelect, ElOption, ElInput, ElUpload, ElButton, ElIcon, ElCheckbox, ElCheckboxGroup, ElRadio, ElRadioGroup, ElTag } from 'element-plus';
@@ -149,6 +149,7 @@ import { publishArticle, saveDraftArticle, uploadFile } from '@/api/article.js';
 import { getTagsByType } from '@/api/tag.js';
 import { Plus, Close } from '@element-plus/icons-vue';
 import { reactive } from 'vue';
+import { saveDraft, loadDraft, clearDraft, hasDraft, isDraftNewer } from '@/utils/draftStorage.js';
 
 import { EditorContent, useEditor } from '@tiptap/vue-3';
 import StarterKit from '@tiptap/starter-kit';
@@ -174,8 +175,15 @@ const wordCount = ref(0);
 const articleId = ref(route.params.id ? Number(route.params.id) : null);
 const lastSavedAt = ref(null);
 const save = ref(false);
-const saveState = ref('idle');
+// saveState: 'saved' | 'saving' | 'local-cached' | 'cached' | 'error'
+const saveState = ref('saved');
 const hasUnsavedChanges = ref(false);
+
+// 获取当前用户ID
+const userId = computed(() => {
+    const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
+    return userInfo.id || null;
+});
 const publishDialogVisible = ref(false);
 const publishForm = ref({
     category: null,
@@ -288,17 +296,20 @@ const onMouseUp = () => {
 };
 
 const statusText = computed(() => {
-    if (save.value) {
+    if (saveState.value === 'local-cached') {
+        return '已本地保存';
+    }
+    if (saveState.value === 'saving') {
         return '保存中...';
     }
     if (saveState.value === 'cached') {
         return '已缓存';
     }
-    if (saveState.value === 'draft') {
-        return '草稿已保存';
+    if (saveState.value === 'saved') {
+        return '已保存';
     }
-    if (saveState.value === 'published') {
-        return '发布成功';
+    if (saveState.value === 'error') {
+        return '保存失败';
     }
     return '未保存';
 });
@@ -402,8 +413,10 @@ function applyCommandResult(result, message) {
     }
 }
 
-function sendMessage(type) {
-    const data = buildPayload();
+function sendMessage(type, data) {
+    if (!data) {
+        data = buildPayload();
+    }
     if (socketService && socketService.isConnected()) {
         console.log("发送消息-->>", type, data);
         socketService.send(type, data);
@@ -421,19 +434,45 @@ async function saveContentViaHttp() {
 async function submitSaveDraft(showMessage) {
     if (!hasMeaningfulContent()) {
         save.value = false;
+        saveState.value = 'saved';
         return;
     }
     save.value = true;
-    if (sendMessage('SAVE_DRAFT')) {
-        return;
+    saveState.value = 'saving';
+
+    // 尝试使用 sendWithAck
+    if (socketService && socketService.isConnected()) {
+        try {
+            const payload = buildPayload();
+            const response = await socketService.sendWithAck('SAVE_DRAFT', payload, { timeoutMs: 4000 });
+            console.log('SAVE_DRAFT ACK:', response);
+            // 清除本地草稿（已同步到服务端）
+            if (userId.value) {
+                clearDraft(userId.value, articleId.value);
+            }
+            applyCommandResult(response, showMessage ? '草稿已保存' : '');
+            saveState.value = 'saved';
+            return;
+        } catch (e) {
+            console.warn('SAVE_DRAFT ACK 超时或失败，尝试 HTTP 降级:', e.message);
+            // 继续走 HTTP 降级
+        }
     }
+
+    // HTTP 降级
     try {
         await saveContentViaHttp();
+        if (userId.value) {
+            clearDraft(userId.value, articleId.value);
+        }
         if (showMessage) {
             ElMessage.success('草稿已保存');
         }
+        saveState.value = 'saved';
     } catch (e) {
         console.error('HTTP 降级保存失败:', e);
+        saveState.value = 'error';
+        ElMessage.error('保存失败，请重试');
     } finally {
         save.value = false;
     }
@@ -445,15 +484,41 @@ async function submitPublish() {
         return;
     }
     save.value = true;
-    if (sendMessage('PUBLISH')) {
-        return;
+    saveState.value = 'saving';
+
+    // 尝试使用 sendWithAck
+    if (socketService && socketService.isConnected()) {
+        try {
+            const payload = buildPayload();
+            const response = await socketService.sendWithAck('PUBLISH', payload, { timeoutMs: 4000 });
+            console.log('PUBLISH ACK:', response);
+            // 清除本地草稿
+            if (userId.value) {
+                clearDraft(userId.value, articleId.value);
+            }
+            applyCommandResult(response, '发布成功');
+            saveState.value = 'published';
+            router.push('/');
+            return;
+        } catch (e) {
+            console.warn('PUBLISH ACK 超时或失败，尝试 HTTP 降级:', e.message);
+            // 继续走 HTTP 降级
+        }
     }
+
+    // HTTP 降级
     try {
         const result = await publishArticle(buildPayload());
+        if (userId.value) {
+            clearDraft(userId.value, articleId.value);
+        }
         applyCommandResult(result, '发布成功');
+        saveState.value = 'published';
         router.push('/');
     } catch (e) {
         console.error('HTTP 发布失败:', e);
+        saveState.value = 'error';
+        ElMessage.error('发布失败，请重试');
     } finally {
         save.value = false;
     }
@@ -463,10 +528,20 @@ function queueSaveFlow() {
     clearTimeout(cacheTimer.value);
     clearTimeout(autosaveTimer.value);
     hasUnsavedChanges.value = true;
-    save.value = true;
+
+    // 立即保存到本地 localStorage
+    const payload = buildPayload();
+    if (userId.value && hasMeaningfulContent()) {
+        saveDraft(userId.value, articleId.value, payload);
+    }
+
+    // 400ms 后发送 CACHE（fire-and-forget）
+    saveState.value = 'local-cached';
     cacheTimer.value = setTimeout(() => {
-        sendMessage('CACHE');
+        sendMessage('CACHE', payload);
     }, 400);
+
+    // 2s 后自动保存草稿
     autosaveTimer.value = setTimeout(() => {
         submitSaveDraft(false);
     }, 2000);
@@ -521,11 +596,59 @@ const connectWebSocket = () => {
         applyCommandResult(data, '发布成功');
         router.push('/');
     });
-    socketService.on('SELECT', (data) => {
+    socketService.on('SELECT', async (data) => {
         console.log("查询消息-->>", data);
         if (!data) {
             return;
         }
+
+        // 检查本地草稿是否比服务端更新
+        let restoreLocalDraft = false;
+        if (userId.value && articleId.value) {
+            const localDraft = loadDraft(userId.value, articleId.value);
+            if (localDraft && isDraftNewer(localDraft, data.updatedAt)) {
+                try {
+                    await ElMessageBox.confirm(
+                        '检测到本地草稿比服务器更新，是否恢复本地版本？',
+                        '发现较新草稿',
+                        {
+                            confirmButtonText: '恢复本地',
+                            cancelButtonText: '使用服务器版本',
+                            distinguishCancelAndClose: true
+                        }
+                    );
+                    restoreLocalDraft = true;
+                } catch (e) {
+                    // 用户取消或关闭 - 使用服务器版本
+                    clearDraft(userId.value, articleId.value);
+                }
+            }
+        }
+
+        if (restoreLocalDraft) {
+            const localDraft = loadDraft(userId.value, articleId.value);
+            title.value = localDraft.title || '';
+            html.value = localDraft.content || '';
+            publishForm.value.category = localDraft.category ?? null;
+            publishForm.value.contentType = localDraft.contentType ?? 0;
+            publishForm.value.abstractText = localDraft.abstractText || '';
+            publishForm.value.cover = localDraft.cover || '';
+            publishForm.value.tagIds = localDraft.tagIds || [];
+            selectedTechTags.value = localDraft.tagIds?.filter(id =>
+                techTags.value.some(t => t.id === id && t.type === TAG_TYPE_ENUM.TECH)
+            ) || [];
+            selectedPathTag.value = localDraft.tagIds?.find(id =>
+                pathTags.value.some(t => t.id === id && t.type === TAG_TYPE_ENUM.PATH)
+            ) || null;
+            if (editor.value) {
+                editor.value.commands.setContent(localDraft.content || '', false);
+                wordCount.value = editor.value.storage.characterCount.characters();
+            }
+            hasUnsavedChanges.value = true;
+            saveState.value = 'local-cached';
+            return;
+        }
+
         hydrating.value = true;
         articleId.value = data.id || articleId.value;
         html.value = data.content || '';
@@ -576,6 +699,10 @@ async function publishContent() {
 
 const handleBeforeUnload = (e) => {
     if (hasUnsavedChanges.value) {
+        // 同步落盘 localStorage
+        if (userId.value) {
+            saveDraft(userId.value, articleId.value, buildPayload());
+        }
         e.preventDefault();
         e.returnValue = '';
     }
@@ -590,7 +717,7 @@ const checkMobile = () => {
     }
 };
 
-onMounted(() => {
+onMounted(async () => {
     checkMobile();
     window.addEventListener('resize', checkMobile);
     window.addEventListener('mousemove', onMouseMove);
@@ -598,6 +725,47 @@ onMounted(() => {
     connectWebSocket();
     window.addEventListener('beforeunload', handleBeforeUnload);
     loadTags();
+
+    // 检查本地草稿（新建文章时）
+    if (!articleId.value && userId.value) {
+        const draft = loadDraft(userId.value, 'new');
+        if (draft && hasMeaningfulContent()) {
+            try {
+                await ElMessageBox.confirm(
+                    '检测到未同步的本地草稿，是否恢复？',
+                    '恢复草稿',
+                    {
+                        confirmButtonText: '恢复草稿',
+                        cancelButtonText: '放弃',
+                        distinguishCancelAndClose: true
+                    }
+                );
+                // 恢复草稿
+                title.value = draft.title || '';
+                html.value = draft.content || '';
+                publishForm.value.category = draft.category ?? null;
+                publishForm.value.contentType = draft.contentType ?? 0;
+                publishForm.value.abstractText = draft.abstractText || '';
+                publishForm.value.cover = draft.cover || '';
+                publishForm.value.tagIds = draft.tagIds || [];
+                selectedTechTags.value = draft.tagIds?.filter(id =>
+                    techTags.value.some(t => t.id === id && t.type === TAG_TYPE_ENUM.TECH)
+                ) || [];
+                selectedPathTag.value = draft.tagIds?.find(id =>
+                    pathTags.value.some(t => t.id === id && t.type === TAG_TYPE_ENUM.PATH)
+                ) || null;
+                if (editor.value) {
+                    editor.value.commands.setContent(draft.content || '', false);
+                    wordCount.value = editor.value.storage.characterCount.characters();
+                }
+                hasUnsavedChanges.value = true;
+                saveState.value = 'local-cached';
+            } catch (e) {
+                // 用户取消或关闭 - 放弃草稿
+                clearDraft(userId.value, 'new');
+            }
+        }
+    }
 });
 
 onBeforeUnmount(() => {
@@ -616,13 +784,56 @@ onBeforeUnmount(() => {
     }
 });
 
-onBeforeRouteUpdate((to, from) => {
-    if (to.params.id !== from.params.id) {
-        articleId.value = to.params.id ? Number(to.params.id) : null;
-        if (to.params.id) {
-            lastSavedAt.value = null;
-            sendMessage('SELECT');
+// 通用离开确认函数
+const confirmNavigation = async (to) => {
+    if (!hasUnsavedChanges.value) return true;
+
+    const action = await ElMessageBox.confirm(
+        '您有未保存的修改，是否保存草稿？',
+        '离开页面',
+        {
+            confirmButtonText: '保存草稿',
+            cancelButtonText: '放弃修改',
+            distinguishCancelAndClose: true,
+            beforeClose: (action, instance, done) => {
+                if (action === 'confirm') {
+                    // 保存后跳转
+                    submitSaveDraft(false).then(() => {
+                        router.push(to);
+                    });
+                    done();
+                } else if (action === 'cancel') {
+                    // 放弃
+                    hasUnsavedChanges.value = false;
+                    if (userId.value) {
+                        clearDraft(userId.value, articleId.value);
+                    }
+                    router.push(to);
+                    done();
+                } else {
+                    // 关闭对话框 - 取消跳转
+                    done();
+                }
+            }
         }
+    );
+    return false; // 阻止默认跳转
+};
+
+onBeforeRouteLeave((to) => {
+    return confirmNavigation(to);
+});
+
+onBeforeRouteUpdate((to, from) => {
+    // 同一组件内切换 articleId 时走确认
+    if (to.params.id !== from.params.id) {
+        return confirmNavigation(to);
+    }
+    // 原有逻辑继续（SELECT 加载）
+    articleId.value = to.params.id ? Number(to.params.id) : null;
+    if (to.params.id) {
+        lastSavedAt.value = null;
+        sendMessage('SELECT');
     }
 });
 </script>

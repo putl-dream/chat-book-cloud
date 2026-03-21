@@ -11,14 +11,22 @@ import lombok.NoArgsConstructor;
 public class WebSocketResult<T> {
     private String type;
     private T data;
+    private String requestId; // 请求唯一标识，用于 ACK 追踪
 
     /**
      * 构建通用响应并转换为 JSON 字符串
      */
     public static <T> String of(String type, T data) {
-        return BeanUtil.toJsonString(new WebSocketResult<>(type, data));
+        return BeanUtil.toJsonString(new WebSocketResult<>(type, data, null));
     }
-    
+
+    /**
+     * 构建带 requestId 的响应并转换为 JSON 字符串
+     */
+    public static <T> String of(String type, T data, String requestId) {
+        return BeanUtil.toJsonString(new WebSocketResult<>(type, data, requestId));
+    }
+
     /**
      * 系统消息
      */

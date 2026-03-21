@@ -21,6 +21,6 @@ public class SaveArticleHandler extends AbstractArticleHandler {
         message.getData().setStatus(result.getStatus());
         message.getData().setUpdatedAt(result.getUpdatedAt());
         articleCache.put(userId, message);
-        messagePublisher.sendToUser(userId, WebSocketResult.of("SAVE_DRAFT", result));
+        messagePublisher.sendToUser(userId, WebSocketResult.of("SAVE_DRAFT", result, message.getRequestId()));
     }
 }
