@@ -13,7 +13,7 @@
         <div class="right-section">
             <div class="action-btn">
                 <el-button type="primary" class="create-btn" @click="router.push('/text')" round>
-                    <el-icon><Plus /></el-icon> 开始创�?
+                    <el-icon><Plus /></el-icon> 开始创�?
                 </el-button>
             </div>
             
@@ -34,7 +34,7 @@
                             <el-icon><User /></el-icon> 个人信息
                         </el-dropdown-item>
                         <el-dropdown-item divided @click="handleCommand('logout')" class="logout-item">
-                            <el-icon><SwitchButton /></el-icon> 退出登�?
+                            <el-icon><SwitchButton /></el-icon> 退出登录
                         </el-dropdown-item>
                     </el-dropdown-menu>
                 </template>

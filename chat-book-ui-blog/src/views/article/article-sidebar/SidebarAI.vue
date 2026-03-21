@@ -6,7 +6,10 @@
         <div class="ai-chat-history">
             <div v-for="(msg, idx) in aiChatHistory" :key="idx" class="ai-msg" :class="msg.role">
                 <div class="msg-content">
-                    <MarkdownRenderer :content="msg.content" />
+                    <RichTextViewer
+                        :content="msg.content"
+                        source-format="markdown"
+                        variant="chat" />
                 </div>
             </div>
         </div>
@@ -22,7 +25,7 @@
 
 <script setup>
 import { ElInput, ElButton, ElText } from 'element-plus';
-import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
+import RichTextViewer from "@/components/common/rich-text/RichTextViewer.vue";
 import { useSidebarAI } from "../_hooks/useSidebarAI.js";
 
 const { aiMessage, aiChatHistory, sendAiMessage } = useSidebarAI();
@@ -69,12 +72,11 @@ const { aiMessage, aiChatHistory, sendAiMessage } = useSidebarAI();
 }
 
 .msg-content {
-    padding: 8px 12px;
-    border-radius: 8px;
+    padding: 10px 14px;
+    border-radius: 14px;
     max-width: 80%;
     word-break: break-word;
-    font-size: 0.9rem;
-    line-height: 1.5;
+    min-width: 0;
 }
 
 .ai-msg.user .msg-content {
@@ -85,6 +87,10 @@ const { aiMessage, aiChatHistory, sendAiMessage } = useSidebarAI();
 .ai-msg.ai .msg-content {
     background-color: #f4f4f5;
     color: #606266;
+}
+
+.msg-content :deep(.rich-text-viewer__body) {
+    color: inherit;
 }
 
 .ai-input-area {

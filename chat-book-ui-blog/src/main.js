@@ -1,5 +1,6 @@
 import {createApp} from 'vue'
 import '@/styles/variables.css'
+import '@/styles/content-theme.css'
 import '@/assets/style.css'
 import 'element-plus/dist/index.css'
 // import store from './store'; // 引入 Vuex store

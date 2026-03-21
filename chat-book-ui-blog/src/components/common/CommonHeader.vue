@@ -33,7 +33,7 @@
                                 个人信息
                             </el-dropdown-item>
                             <el-dropdown-item @click="handleCommand('logout')">
-                                退出登�?
+                                退出登录
                             </el-dropdown-item>
                         </div>
                     </template>

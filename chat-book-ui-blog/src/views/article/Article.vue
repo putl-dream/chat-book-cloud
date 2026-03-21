@@ -62,7 +62,10 @@
                         </div>
                     </header>
                     <main class="article-content custom-scrollbar">
-                        <MarkdownRenderer :content="article.content" />
+                        <RichTextViewer
+                            :content="article.content"
+                            source-format="html"
+                            variant="article" />
                     </main>
                 </div>
 
@@ -95,7 +98,7 @@ import { computed, onMounted, onUnmounted, ref, provide, watch } from 'vue';
 import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
 import { useRoute } from "vue-router";
 import { ElButton } from 'element-plus';
-import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
+import RichTextViewer from "@/components/common/rich-text/RichTextViewer.vue";
 
 import SidebarDefault from '@/views/article/article-sidebar/SidebarDefault.vue';
 import SidebarComment from '@/views/article/article-sidebar/SidebarComment.vue';
@@ -342,7 +345,7 @@ onUnmounted(() => {
     min-width: 0;
     flex: 1;
     margin: 0 auto;
-    padding: 40px 56px 48px;
+    padding: 44px clamp(24px, 4vw, 56px) 52px;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -356,16 +359,17 @@ onUnmounted(() => {
     border-bottom: 1px solid var(--border-color-base);
     padding-bottom: 24px;
     margin: 0 0 32px;
-    width: 100%;
+    width: min(100%, 820px);
+    margin-inline: auto;
 }
 
 .article-title {
-    font-size: 1.8rem;
+    font-size: clamp(2rem, 1.85rem + 0.85vw, 2.8rem);
     font-weight: 700;
     color: var(--text-color-primary);
-    line-height: 1.4;
+    line-height: 1.22;
     margin: 0 0 16px;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
 }
 
 @media (min-width: 1200px) {
@@ -377,6 +381,7 @@ onUnmounted(() => {
 .article-meta {
     display: flex;
     align-items: center;
+    flex-wrap: wrap;
     gap: 16px;
     font-size: 0.875rem;
     color: var(--text-color-secondary);
@@ -406,9 +411,6 @@ onUnmounted(() => {
 .article-content {
     flex: 1;
     overflow-y: auto;
-    font-size: 1.125rem;
-    line-height: 1.8;
-    color: var(--text-color-regular);
     padding-right: 12px;
     width: 100%;
 }

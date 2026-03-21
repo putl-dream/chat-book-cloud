@@ -39,7 +39,11 @@
                         </div>
 
                         <!-- 内容区域 -->
-                        <editor-content :editor="editor" class="main-content-editor" />
+                        <RichTextEditor
+                            :editor="editor"
+                            class="main-content-editor"
+                            placeholder="请输入内容..."
+                            variant="editor" />
                     </div>
                 </div>
             </div>
@@ -75,8 +79,8 @@ import EditorMetaPanel from "@/views/creator/components/EditorMetaPanel.vue";
 import EditorFooterActions from "@/views/creator/components/EditorFooterActions.vue";
 import PublishDialog from "@/views/creator/components/PublishDialog.vue";
 import ArticleToc from "@/views/article/components/ArticleToc.vue";
+import RichTextEditor from "@/components/common/rich-text/RichTextEditor.vue";
 import { ElMessageBox } from 'element-plus';
-import { EditorContent } from '@tiptap/vue-3';
 
 const containerRef = ref(null);
 
@@ -212,4 +216,3 @@ onBeforeRouteUpdate(async (to, from) => {
 </script>
 
 <style scoped src="./styles/text-layout.css"></style>
-<style scoped src="./styles/text-editor-theme.css"></style>

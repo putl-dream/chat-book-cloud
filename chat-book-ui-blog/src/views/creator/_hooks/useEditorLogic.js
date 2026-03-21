@@ -2,19 +2,6 @@ import { ref, computed, reactive, watch, onMounted, onBeforeUnmount } from 'vue'
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useEditor } from '@tiptap/vue-3';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Placeholder from '@tiptap/extension-placeholder';
-import CharacterCount from '@tiptap/extension-character-count';
-import TextAlign from '@tiptap/extension-text-align';
-import Highlight from '@tiptap/extension-highlight';
-import { Color } from '@tiptap/extension-color';
-import { TextStyle } from '@tiptap/extension-text-style';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-
-import SlashCommand from '@/views/creator/components/slash-command/index.js';
-import suggestion from '@/views/creator/components/slash-command/suggestion.js';
 
 import { publishArticle, saveDraftArticle, uploadFile } from '@/views/article/_domain/article.js';
 import { getTagsByType } from '@/views/article/_domain/tag.js';
@@ -22,6 +9,7 @@ import { TAG_TYPE_ENUM } from '@/constants';
 import SocketService, { formatWsUrl } from '@/utils/websocket.js';
 import { API_CONFIG } from '@/config/index.js';
 import { saveDraft, loadDraft, clearDraft, isDraftNewer } from '@/utils/draftStorage.js';
+import { createRichTextExtensions, richTextEditorAttributes } from '@/components/common/rich-text/editor-config.js';
 
 import { SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP, EDITOR_CONFIG } from '../_utils/constants.js';
 import { isValidCoverFile, hasMeaningfulContent, buildArticlePayload } from '../_domain/editor.js';
@@ -83,27 +71,13 @@ export function useEditorLogic() {
     // =============== Editor Setup ===============
     const editor = useEditor({
         content: '',
-        extensions: [
-            StarterKit,
-            Image,
-            Highlight.configure({ multicolor: true }),
-            TextStyle,
-            Color,
-            TaskList,
-            TaskItem.configure({ nested: true }),
-            SlashCommand.configure({ suggestion }),
-            Placeholder.configure({ placeholder: '请输入内容...' }),
-            CharacterCount,
-            TextAlign.configure({ types: ['heading', 'paragraph'] }),
-        ],
+        extensions: createRichTextExtensions({ placeholder: '请输入内容...' }),
         onUpdate: ({ editor }) => {
             html.value = editor.getHTML();
             wordCount.value = editor.storage.characterCount.characters();
         },
         editorProps: {
-            attributes: {
-                class: 'prose prose-sm sm:prose lg:prose-lg xl:prose-2xl mx-auto focus:outline-none',
-            },
+            attributes: richTextEditorAttributes,
         },
     });
 
