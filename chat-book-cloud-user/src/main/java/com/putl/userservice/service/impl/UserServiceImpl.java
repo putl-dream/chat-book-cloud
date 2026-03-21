@@ -18,6 +18,13 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 @Service
 @RequiredArgsConstructor
 @Slf4j
@@ -50,10 +57,59 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
+    public List<UserVO> selectByIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return new ArrayList<>();
+        }
+        // 批量查询用户信息
+        List<UserInfoDO> userInfos = userInfoMapper.selectList(
+                Wrappers.<UserInfoDO>lambdaQuery().in(UserInfoDO::getUserId, ids));
+        Map<Integer, UserInfoDO> userInfoMap = userInfos.stream()
+                .collect(Collectors.toMap(UserInfoDO::getUserId, Function.identity()));
+
+        // 批量查询账号信息
+        List<UserDO> users = this.listByIds(ids);
+        Map<Integer, UserDO> userMap = users.stream()
+                .collect(Collectors.toMap(UserDO::getId, Function.identity()));
+
+        // 组装结果
+        List<UserVO> result = new ArrayList<>();
+        for (Integer id : ids) {
+            UserInfoDO userInfo = userInfoMap.get(id);
+            UserDO user = userMap.get(id);
+            if (userInfo == null || user == null) {
+                continue;
+            }
+            String role = (userInfo.getRole() == RoleEnum.USER) ? "user" : "admin";
+            result.add(UserVO.builder()
+                    .id(userInfo.getId())
+                    .userId(id)
+                    .username(userInfo.getUsername())
+                    .email(user.getEmail())
+                    .photo(userInfo.getPhoto())
+                    .profile(userInfo.getProfile())
+                    .role(role)
+                    .build());
+        }
+        return result;
+    }
+
+    @Override
     public IPage<UserVO> selectPage(Integer page, Integer size) {
-        Page<UserDO> user = userMapper.selectPage(new Page<>(page, size), Wrappers.<UserDO>lambdaQuery()
+        Page<UserDO> userPage = userMapper.selectPage(new Page<>(page, size), Wrappers.<UserDO>lambdaQuery()
                 .orderByDesc(UserDO::getCreateTime));
-        return user.convert(userDO -> selectById(userDO.getId()));
+        List<Integer> ids = userPage.getRecords().stream().map(UserDO::getId).toList();
+        List<UserVO> userVOList = selectByIds(ids);
+        Map<Integer, UserVO> userVOMap = userVOList.stream()
+                .collect(Collectors.toMap(UserVO::getUserId, Function.identity()));
+        // 保持原有分页顺序
+        List<UserVO> orderedList = userPage.getRecords().stream()
+                .map(record -> userVOMap.get(record.getId()))
+                .filter(Objects::nonNull)
+                .toList();
+        Page<UserVO> resultPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        resultPage.setRecords(orderedList);
+        return resultPage;
     }
 
     @Override

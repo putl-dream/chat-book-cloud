@@ -65,7 +65,8 @@ import { useHomeLogic } from "./_hooks/useHomeLogic.js";
 const route = useRoute();
 
 const currentPath = ref('/');
-const { recommendations, posts, loading, noMoreArticles, fetchPosts, resetPosts } = useHomeLogic();
+const currentTagId = ref(null);
+const { recommendations, posts, loading, noMoreArticles, fetchPosts, fetchTagArticles, resetPosts } = useHomeLogic();
 
 const getPostVariant = (post, index) => {
   if (index % 7 === 3 && post.cover) return 'large-image';
@@ -80,7 +81,11 @@ const handleScroll = (e) => {
   const scrollHeight = target.scrollHeight;
 
   if (scrollTop + clientHeight >= scrollHeight - 50) {
-    fetchPosts(currentPath.value);
+    if (currentTagId.value) {
+      fetchTagArticles(currentTagId.value);
+    } else {
+      fetchPosts(currentPath.value);
+    }
   }
 };
 
@@ -91,9 +96,17 @@ const openArticle = async (id) => {
 watch(
   () => route.path,
   async (newPath) => {
-    currentPath.value = newPath;
     resetPosts();
-    await fetchPosts(newPath);
+    // 检查是否是标签路由
+    if (newPath.startsWith('/tag/')) {
+      currentTagId.value = parseInt(route.params.tagId);
+      currentPath.value = '/tags';
+      await fetchTagArticles(currentTagId.value);
+    } else {
+      currentTagId.value = null;
+      currentPath.value = newPath;
+      await fetchPosts(newPath);
+    }
   },
   { immediate: true }
 );

@@ -73,7 +73,12 @@
                     :class="{ 'expanded-panel glass-panel': showRightPanel }">
                     <transition name="fade-slide" mode="out-in">
                         <keep-alive>
-                            <component :is="componentMap[activePanel]" :userId="article.authorId" :articleId="articleId" />
+                            <component
+                                v-if="showRightPanel"
+                                :is="componentMap[activePanel]"
+                                :userId="article.authorId"
+                                :articleId="articleId"
+                                :tagIds="article.tagIds || []" />
                         </keep-alive>
                     </transition>
                 </div>
@@ -87,7 +92,7 @@
  * @file Article.vue
  * @description 文章详情页面，采用 10% 宽度的左侧边栏布局，响应式下支持折叠抽屉功能。
  */
-import { computed, onMounted, onUnmounted, ref, provide } from 'vue';
+import { computed, onMounted, onUnmounted, ref, provide, watch } from 'vue';
 import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
 import { useRoute } from "vue-router";
 import { ElButton } from 'element-plus';
@@ -99,7 +104,7 @@ import SidebarAI from '@/views/article/article-sidebar/SidebarAI.vue';
 import { useArticleLogic } from "./Article/_hooks/useArticleLogic.js";
 
 const route = useRoute();
-const articleId = route.params.id;
+const articleId = computed(() => route.params.id);
 
 const componentMap = {
     'default': SidebarDefault,
@@ -122,6 +127,14 @@ const {
     handleFavorite,
     openAuthorPanel
 } = useArticleLogic(articleId);
+
+// 统一通过路由参数驱动文章加载，避免首次挂载和路由同步各触发一次
+watch(articleId, async (newId, oldId) => {
+    if (!newId || newId === oldId) {
+        return;
+    }
+    await queryArticleRequest();
+}, { immediate: true });
 
 /** 右侧展开时显示可拖拽宽度，否则为 0 */
 const effectiveRightWidth = computed(() =>
@@ -157,7 +170,6 @@ const handleSidebarClick = () => {
 };
 
 onMounted(() => {
-    queryArticleRequest();
     checkViewport();
     window.addEventListener('resize', checkViewport);
 });

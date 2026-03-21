@@ -12,6 +12,7 @@ import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.mapper.entity.ArticleInfoDO;
 import com.putl.articleservice.service.ArticleService;
+import com.putl.articleservice.service.TagService;
 import com.putl.articleservice.utils.PageResult;
 import com.putl.interactionservice.api.InteractionClient;
 import com.putl.interactionservice.api.dto.UserFootListVO;
@@ -38,6 +39,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     private final ArticleInfoMapper articleInfoMapper;
     private final InteractionClient interactionClient;
     private final UserClient userClient;
+    private final TagService tagService;
 
     @Override
     public ArticleVO getArticleInfo(Integer articleId) {
@@ -62,6 +64,8 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
         }
 
         articleVO.setUserName(resolveUserName(articleDO.getUserId(), articleVO.getUserName()));
+        // 回填文章标签
+        articleVO.setTagIds(tagService.getArticleTagIds(articleId));
         fillInteractionState(articleId, articleVO);
         return articleVO;
     }
@@ -161,11 +165,16 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .title(command.getTitle())
                 .cover(command.getCover())
                 .category(command.getCategory())
+                .contentType(command.getContentType())
                 .abstractText(command.getAbstractText())
                 .status(targetStatus)
                 .build();
         articleMapper.insert(articleDO);
         upsertArticleInfo(articleDO, command.getContent(), usernameSnapshot);
+        // 保存文章标签
+        if (command.getTagIds() != null && !command.getTagIds().isEmpty()) {
+            tagService.setArticleTags(articleDO.getId(), command.getTagIds());
+        }
         return articleMapper.selectById(articleDO.getId());
     }
 
@@ -184,11 +193,14 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .title(command.getTitle())
                 .cover(command.getCover())
                 .category(command.getCategory())
+                .contentType(command.getContentType())
                 .abstractText(command.getAbstractText())
                 .status(targetStatus)
                 .build();
         articleMapper.updateById(articleDO);
         upsertArticleInfo(articleMapper.selectById(existing.getId()), command.getContent(), articleDO.getUserName());
+        // 更新文章标签
+        tagService.setArticleTags(existing.getId(), command.getTagIds());
         return articleMapper.selectById(existing.getId());
     }
 

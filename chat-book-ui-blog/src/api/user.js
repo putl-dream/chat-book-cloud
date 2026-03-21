@@ -93,3 +93,11 @@ export function uploadAvatar(file) {
     };
     return request.post(`/user/file/avatar/upload`, formData, config);
 }
+
+/**
+ * OAuth第三方登录 - 跳转到后端OAuth授权页面
+ * @param {string} provider - OAuth提供商 (google, github)
+ */
+export function oauthLogin(provider) {
+    window.location.href = `http://localhost:8081/oauth2/authorization/${provider}`;
+}

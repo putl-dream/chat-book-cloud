@@ -3,16 +3,21 @@ package com.putl.articleservice.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.enums.ArticleStatus;
+import com.putl.articleservice.mapper.ArticleTagMapper;
+import com.putl.articleservice.mapper.TagMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
+import com.putl.articleservice.mapper.entity.TagDO;
 import com.putl.articleservice.service.ArticlePageService;
+import com.putl.articleservice.service.TagService;
 import com.putl.articleservice.utils.PageResult;
+import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * 文章列表功能实现类，提供多种文章分页查询功能。
@@ -33,6 +38,15 @@ import java.util.List;
 @Slf4j
 @Service
 public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements ArticlePageService {
+
+    @Resource
+    private TagService tagService;
+
+    @Resource
+    private ArticleTagMapper articleTagMapper;
+
+    @Resource
+    private TagMapper tagMapper;
 
     /**
      * 获取最新文章列表，按照创建时间倒序排列。
@@ -267,5 +281,167 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         }
         List<ArticleDO> articleDOS = articleMapper.selectBatchIds(ids);
         return toBean(articleDOS);
+    }
+
+    @Override
+    public PageResult<ArticleListVO> getContentTypePage(Integer pageNo, Integer pageSize, Integer contentType) {
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getContentType, contentType)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                .orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    @Override
+    public PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, Integer tagId) {
+        List<Integer> articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+        if (articleIds == null || articleIds.isEmpty()) {
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .in(ArticleDO::getId, articleIds)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                .orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    @Override
+    public PageResult<ArticleListVO> getMultiFilterPage(Integer pageNo, Integer pageSize, Integer contentType, Integer category, Integer tagId) {
+        List<Integer> articleIds = null;
+
+        // 如果有标签筛选，先获取标签关联的文章ID
+        if (tagId != null) {
+            articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+            if (articleIds == null || articleIds.isEmpty()) {
+                return new PageResult<>(Collections.emptyList(), 0L);
+            }
+        }
+
+        // 构建查询条件
+        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                .eq(contentType != null, ArticleDO::getContentType, contentType)
+                .eq(category != null, ArticleDO::getCategory, category)
+                .in(articleIds != null, ArticleDO::getId, articleIds)
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                .orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    @Override
+    public PageResult<ArticleListVO> relatedPage(Integer articleId, Integer pageNo, Integer pageSize) {
+        // 获取当前文章
+        ArticleDO currentArticle = articleMapper.selectById(articleId);
+        if (currentArticle == null || currentArticle.getStatus() != ArticleStatus.PUBLISHED) {
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+
+        // 获取当前文章的标签
+        List<Integer> currentTagIds = tagService.getArticleTagIds(articleId);
+        if (currentTagIds.isEmpty()) {
+            // 无标签时，基于分类和内容类型推荐
+            return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+                    .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                    .ne(ArticleDO::getId, articleId)
+                    .eq(currentArticle.getContentType() != null, ArticleDO::getContentType, currentArticle.getContentType())
+                    .eq(currentArticle.getCategory() != null, ArticleDO::getCategory, currentArticle.getCategory())
+                    .orderByDesc(ArticleDO::getCreateTime));
+        }
+
+        // 获取当前文章的标签信息（区分技术栈和学习路径）
+        List<TagDO> currentTags = tagMapper.selectList(
+                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TagDO>()
+                        .in(TagDO::getId, currentTagIds)
+        );
+        List<Integer> techTagIds = currentTags.stream().filter(t -> t.getType() == 1).map(TagDO::getId).toList();
+        List<Integer> pathTagIds = currentTags.stream().filter(t -> t.getType() == 2).map(TagDO::getId).toList();
+
+        // 获取有共同标签的文章ID及其标签交集
+        // 先收集所有相关的文章ID
+        Set<Integer> relatedArticleIds = new HashSet<>();
+        for (Integer tagId : currentTagIds) {
+            List<Integer> articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+            if (articleIds != null) {
+                relatedArticleIds.addAll(articleIds);
+            }
+        }
+        relatedArticleIds.remove(articleId); // 排除当前文章
+
+        if (relatedArticleIds.isEmpty()) {
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+
+        // 获取这些文章的标签Map
+        Map<Integer, List<Integer>> articleTagMap = articleTagMapper.selectTagIdMapByArticleIds(new ArrayList<>(relatedArticleIds));
+
+        // 批量获取相关文章，避免 N+1 查询
+        List<ArticleDO> relatedArticles = articleMapper.selectBatchIds(relatedArticleIds);
+        Map<Integer, ArticleDO> articleDOMap = relatedArticles.stream()
+                .collect(Collectors.toMap(ArticleDO::getId, Function.identity()));
+
+        // 排除当前文章，计算每篇文章的推荐得分
+        List<Map.Entry<Integer, Integer>> scoredArticles = new ArrayList<>(); // <articleId, score>
+        for (Map.Entry<Integer, List<Integer>> entry : articleTagMap.entrySet()) {
+            Integer relatedArticleId = entry.getKey();
+            if (relatedArticleId.equals(articleId)) {
+                continue;
+            }
+            List<Integer> relatedTagIds = entry.getValue();
+
+            int score = 0;
+            // 共同技术栈标签：每个 +3 分
+            for (Integer techTagId : techTagIds) {
+                if (relatedTagIds.contains(techTagId)) {
+                    score += 3;
+                }
+            }
+            // 共同学习路径标签：每个 +2 分
+            for (Integer pathTagId : pathTagIds) {
+                if (relatedTagIds.contains(pathTagId)) {
+                    score += 2;
+                }
+            }
+            // 相同内容类型：+1 分
+            ArticleDO relatedArticle = articleDOMap.get(relatedArticleId);
+            if (relatedArticle != null && relatedArticle.getStatus() == ArticleStatus.PUBLISHED) {
+                if (currentArticle.getContentType() != null &&
+                        currentArticle.getContentType().equals(relatedArticle.getContentType())) {
+                    score += 1;
+                }
+                // 相同分类：+1 分
+                if (currentArticle.getCategory() != null &&
+                        currentArticle.getCategory().equals(relatedArticle.getCategory())) {
+                    score += 1;
+                }
+                scoredArticles.add(Map.entry(relatedArticleId, score));
+            }
+        }
+
+        // 按得分降序，得分相同时按创建时间降序
+        scoredArticles.sort((a, b) -> {
+            int cmp = b.getValue().compareTo(a.getValue());
+            if (cmp != 0) return cmp;
+            ArticleDO articleA = articleDOMap.get(a.getKey());
+            ArticleDO articleB = articleDOMap.get(b.getKey());
+            if (articleA == null || articleB == null) return 0;
+            return articleB.getCreateTime().compareTo(articleA.getCreateTime());
+        });
+
+        // 取前 pageSize 条
+        List<Integer> topArticleIds = scoredArticles.stream()
+                .limit(pageSize)
+                .map(Map.Entry::getKey)
+                .toList();
+
+        if (topArticleIds.isEmpty()) {
+            return new PageResult<>(Collections.emptyList(), 0L);
+        }
+
+        List<ArticleListVO> result = selectIds(topArticleIds);
+        // 保持排序顺序
+        Map<Integer, ArticleListVO> articleMap = result.stream()
+                .collect(Collectors.toMap(ArticleListVO::getId, v -> v));
+        List<ArticleListVO> orderedResult = topArticleIds.stream()
+                .map(articleMap::get)
+                .filter(Objects::nonNull)
+                .toList();
+
+        return new PageResult<>(orderedResult, (long) orderedResult.size());
     }
 }

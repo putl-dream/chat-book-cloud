@@ -5,6 +5,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
 import com.putl.userservice.controller.vo.UserVO;
 import com.putl.userservice.mapper.entity.UserDO;
 
+import java.util.List;
+
 public interface UserService extends IService<UserDO> {
     /**
      * 根据id查询用户
@@ -13,6 +15,11 @@ public interface UserService extends IService<UserDO> {
      * @return
      */
     UserVO selectById(int id);
+
+    /**
+     * 根据ids批量查询用户
+     */
+    List<UserVO> selectByIds(List<Integer> ids);
 
     //查询好友列表
 

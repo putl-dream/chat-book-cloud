@@ -60,7 +60,7 @@
 
 <script setup>
 import { markRaw, onMounted, reactive, ref } from "vue";
-import { HomeFilled, Monitor, Promotion } from "@element-plus/icons-vue";
+import { HomeFilled, Monitor, Promotion, Reading, Connection, PriceTag, ChatDotRound, Bell, Clock, Edit } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 import UserCard from "@/components/domain/UserCard.vue";
 import { getUserBySelf } from "@/api/user.js";
@@ -97,19 +97,20 @@ const handleCommand = (command) => {
     }
 };
 
+// 左侧导航 - 用户找内容的路径
 const menusLife = reactive([
-    { url: '/', name: '博客', icon: markRaw(HomeFilled) },
-    { url: '/backend', name: '后端', icon: markRaw(Monitor) },
-    { url: '/frontend', name: '前端', icon: markRaw(Promotion) },
-    { url: '/mysql', name: 'MySQL', icon: markRaw(Promotion) },
-    { url: '/algorithm', name: '算法', icon: markRaw(Promotion) },
+    { url: '/', name: '首页', icon: markRaw(HomeFilled) },
+    { url: '/learn', name: '学习', icon: markRaw(Reading) },
+    { url: '/practice', name: '实战', icon: markRaw(Connection) },
+    { url: '/tags', name: '标签', icon: markRaw(PriceTag) },
 ]);
 
+// 右侧导航 - 功能入口
 const menusRight = reactive([
-    { url: '/chat', name: '💬聊天', icon: markRaw(HomeFilled) },
-    { url: '/message', name: '📩消息', icon: markRaw(HomeFilled) },
-    { url: '/history', name: '历史', icon: markRaw(Monitor) },
-    { url: '/creative', name: '创作中心🎁', icon: markRaw(Promotion) },
+    { url: '/chat', name: '聊天', icon: markRaw(ChatDotRound) },
+    { url: '/message', name: '消息', icon: markRaw(Bell) },
+    { url: '/history', name: '历史', icon: markRaw(Clock) },
+    { url: '/creative', name: '创作中心', icon: markRaw(Edit) },
 ]);
 
 const user = ref({})

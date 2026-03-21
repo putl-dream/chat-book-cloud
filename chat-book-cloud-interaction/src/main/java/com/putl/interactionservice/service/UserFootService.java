@@ -17,6 +17,7 @@ public interface UserFootService extends IService<UserFootDO> {
     int updatePraise(Integer articleId, Integer userId);
     UserFootVO getUserFoot(Integer articleId, Integer userId);
     UserFootListVO getUserFootList(Integer articleId);
+    List<UserFootListVO> getUserFootListByArticleIds(List<Integer> articleIds);
     List<ArticleListVO> getHistory(Integer userId, Integer page, Integer size);
     List<NotificationVO> getNotifications(int userId);
 }

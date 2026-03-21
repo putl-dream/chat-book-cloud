@@ -4,13 +4,14 @@ import { queryArticle } from "@/api/article.js";
 import { addBrowse, updateCollection, updatePraise } from "@/api/interaction.js";
 import { checkLogin } from "@/utils/http.js";
 
-export function useArticleLogic(articleId) {
+export function useArticleLogic(articleIdRef) {
   const article = ref({});
   const praiseStat = ref(0);
   const collectStat = ref(0);
   const activePanel = ref('default');
   /** 右侧面板是否展开（default 时也需为 true 才能显示作者等） */
   const showRightPanel = ref(false);
+  const articleLoading = ref(false);
 
   const rightSidebarWidth = ref(400);
   const isResizing = ref(false);
@@ -22,23 +23,31 @@ export function useArticleLogic(articleId) {
   };
 
   const queryArticleRequest = async () => {
-    const res = await queryArticle(articleId);
-    if (res) {
-      article.value = res;
-      praiseStat.value = article.value.praiseStat;
-      collectStat.value = article.value.collectStat;
-      try {
-        await addBrowse(articleId);
-        article.value.viewCount = (article.value.viewCount || 0) + 1;
-      } catch (error) {
-        console.error('Failed to record browse:', error);
+    if (articleLoading.value) return;
+    articleLoading.value = true;
+    try {
+      const currentId = typeof articleIdRef === 'object' ? articleIdRef.value : articleIdRef;
+      const res = await queryArticle(currentId);
+      if (res) {
+        article.value = res;
+        praiseStat.value = article.value.praiseStat;
+        collectStat.value = article.value.collectStat;
+        try {
+          await addBrowse(currentId);
+          article.value.viewCount = (article.value.viewCount || 0) + 1;
+        } catch (error) {
+          console.error('Failed to record browse:', error);
+        }
       }
+    } finally {
+      articleLoading.value = false;
     }
   };
 
   const handleLike = async () => {
     if (!checkLogin()) return;
-    const res = await updatePraise(articleId);
+    const currentId = typeof articleIdRef === 'object' ? articleIdRef.value : articleIdRef;
+    const res = await updatePraise(currentId);
     praiseStat.value = res;
   };
 
@@ -75,7 +84,8 @@ export function useArticleLogic(articleId) {
 
   const handleFavorite = async () => {
     if (!checkLogin()) return;
-    const res = await updateCollection(articleId);
+    const currentId = typeof articleIdRef === 'object' ? articleIdRef.value : articleIdRef;
+    const res = await updateCollection(currentId);
     if (res === 0) {
       ElMessage.warning('取消收藏');
     } else {

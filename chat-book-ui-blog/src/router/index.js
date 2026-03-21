@@ -10,7 +10,28 @@ const routes = [
                 path: '',
                 name: 'Home',
                 component: () => import('@/views/home/Home.vue')
-            }, {
+            },
+            {
+                path: 'learn',
+                name: 'Learn',
+                component: () => import('@/views/home/Home.vue')
+            },
+            {
+                path: 'practice',
+                name: 'Practice',
+                component: () => import('@/views/home/Home.vue')
+            },
+            {
+                path: 'tags',
+                name: 'Tags',
+                component: () => import('@/views/home/Tags.vue')
+            },
+            {
+                path: 'tag/:tagId',
+                name: 'TagArticles',
+                component: () => import('@/views/home/Home.vue')
+            },
+            {
                 path: 'backend',
                 name: 'Backend',
                 component: () => import('@/views/home/Home.vue')

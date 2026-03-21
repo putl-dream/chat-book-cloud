@@ -186,3 +186,33 @@ export function getUserDraftArticlePage(pageNo, pageSize) {
 export function getAdminArticlePage(pageNo, pageSize) {
     return request.post('/page/adminArticlePage', { pageNo, pageSize });
 }
+
+/**
+ * 根据内容类型获取文章列表
+ * @param {number} pageNo
+ * @param {number} pageSize
+ * @param {number} contentType
+ */
+export function getContentTypePage(pageNo, pageSize, contentType) {
+    return request.post('/page/contentTypePage', { pageNo, pageSize, contentType });
+}
+
+/**
+ * 根据标签获取文章列表
+ * @param {number} pageNo
+ * @param {number} pageSize
+ * @param {number} tagId
+ */
+export function getTagPage(pageNo, pageSize, tagId) {
+    return request.post('/page/tagPage', { pageNo, pageSize, tagId });
+}
+
+/**
+ * 获取相关推荐文章列表
+ * @param {number} articleId
+ * @param {number} pageNo
+ * @param {number} pageSize
+ */
+export function getRelatedPage(articleId, pageNo, pageSize) {
+    return request.post('/page/relatedPage', { articleId, pageNo, pageSize });
+}

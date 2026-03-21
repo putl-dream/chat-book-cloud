@@ -4,8 +4,10 @@ import fun.amireux.chat.book.auth.projectobject.LoginMethod;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class UserDTO {
     @Schema(description = "鉴权方式")
@@ -18,6 +20,8 @@ public class UserDTO {
     private String email;
     @Schema(description = "验证码")
     private String captcha;
+    @Schema(description = "头像URL")
+    private String photo;
 
     public String getVerificationCode() {
         return captcha;

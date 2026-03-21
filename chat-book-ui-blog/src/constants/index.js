@@ -21,6 +21,38 @@ export const CATEGORY_NAMES = {
 };
 
 /**
+ * 内容类型枚举
+ */
+export const CONTENT_TYPE_ENUM = {
+    LEARN: 0,      // 学习/教程
+    PRACTICE: 1,    // 实战/项目
+};
+
+/**
+ * 内容类型名称映射
+ */
+export const CONTENT_TYPE_NAMES = {
+    [CONTENT_TYPE_ENUM.LEARN]: '学习',
+    [CONTENT_TYPE_ENUM.PRACTICE]: '实战',
+};
+
+/**
+ * 标签类型枚举
+ */
+export const TAG_TYPE_ENUM = {
+    TECH: 1,    // 技术栈
+    PATH: 2,    // 学习路径
+};
+
+/**
+ * 标签类型名称映射
+ */
+export const TAG_TYPE_NAMES = {
+    [TAG_TYPE_ENUM.TECH]: '技术栈',
+    [TAG_TYPE_ENUM.PATH]: '学习路径',
+};
+
+/**
  * HTTP 状态码
  */
 export const HTTP_STATUS = {

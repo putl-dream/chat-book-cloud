@@ -7,6 +7,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.cloud.openfeign.FallbackFactory;
 import org.springframework.stereotype.Component;
 
+import java.util.Collections;
+import java.util.List;
+
 /**
  * UserClient fallback factory.
  *
@@ -24,6 +27,12 @@ public class UserClientFallback implements FallbackFactory<UserClient> {
             @Override
             public CommonResult<UserResult> getUserById(Integer id) {
                 log.warn("[UserClient] getUserById fallback, userId: {}", id);
+                return CommonResult.error(500, "User service unavailable");
+            }
+
+            @Override
+            public CommonResult<List<UserResult>> getUsersByIds(List<Integer> ids) {
+                log.warn("[UserClient] getUsersByIds fallback, userIds: {}", ids);
                 return CommonResult.error(500, "User service unavailable");
             }
         };
