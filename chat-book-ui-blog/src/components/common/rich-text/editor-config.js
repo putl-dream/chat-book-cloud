@@ -36,6 +36,24 @@ export function createRichTextExtensions(options = {}) {
     return extensions;
 }
 
-export const richTextEditorAttributes = {
-    class: 'rich-text-editor__surface'
+export const createRichTextEditorAttributes = ({ spellcheck = false } = {}) => ({
+    spellcheck: String(spellcheck),
+    autocorrect: spellcheck ? 'on' : 'off',
+    autocapitalize: spellcheck ? 'on' : 'off',
+    autocomplete: spellcheck ? 'on' : 'off',
+    'data-spellcheck': spellcheck ? 'on' : 'off'
+});
+
+export const applyRichTextEditorAttributes = (editor, options = {}) => {
+    const surface = editor?.view?.dom;
+
+    if (!surface?.setAttribute) {
+        return;
+    }
+
+    const attributes = createRichTextEditorAttributes(options);
+
+    Object.entries(attributes).forEach(([key, value]) => {
+        surface.setAttribute(key, String(value));
+    });
 };

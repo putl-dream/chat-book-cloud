@@ -114,7 +114,7 @@
     overflow-wrap: anywhere;
 }
 
-.content-theme[data-content-variant="editor"] .ProseMirror {
+.content-theme[data-readonly="false"] .ProseMirror {
     min-height: 100%;
     outline: none;
     padding-bottom: 48px;

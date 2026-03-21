@@ -2,18 +2,21 @@
     <div
         class="rich-text-editor content-theme"
         :data-content-variant="variant"
+        :data-content-style="theme || null"
         :data-readonly="String(!editable)"
         :data-placeholder="placeholder">
         <EditorContent
             v-if="resolvedEditor"
             :editor="resolvedEditor"
-            class="rich-text-editor__content" />
+            class="rich-text-editor__content rich-text-viewer__body" />
     </div>
 </template>
 
 <script setup>
 import { computed, unref, watch } from 'vue';
 import { EditorContent } from '@tiptap/vue-3';
+import '@/styles/themes/article/light.css';
+import '@/styles/themes/article/reading.css';
 
 const props = defineProps({
     editor: {
@@ -31,6 +34,10 @@ const props = defineProps({
     variant: {
         type: String,
         default: 'editor'
+    },
+    theme: {
+        type: String,
+        default: ''
     }
 });
 

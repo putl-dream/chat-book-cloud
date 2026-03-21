@@ -5,7 +5,9 @@
         <div class="text-toolbar">
             <div class="toolbar-wrapper">
                 <TiptapToolbar :editor="editor" class="glass-toolbar" v-if="editor" @toggle-toc="toggleLeft"
-                    :tocVisible="layoutState.leftOpen" />
+                    :tocVisible="layoutState.leftOpen"
+                    :spellcheck-enabled="spellcheckEnabled"
+                    @toggle-spellcheck="toggleSpellcheck" />
                 <div class="status-bar">
                     <div class="status-indicator" :class="{ 'saving': saveState === 'saving' }"></div>
                     <el-text class="status-text">{{ statusText }}</el-text>
@@ -43,7 +45,8 @@
                             :editor="editor"
                             class="main-content-editor"
                             placeholder="请输入内容..."
-                            variant="editor" />
+                            variant="article"
+                            :theme="articleTheme" />
                     </div>
                 </div>
             </div>
@@ -80,6 +83,7 @@ import EditorFooterActions from "@/views/creator/components/EditorFooterActions.
 import PublishDialog from "@/views/creator/components/PublishDialog.vue";
 import ArticleToc from "@/views/article/components/ArticleToc.vue";
 import RichTextEditor from "@/components/common/rich-text/RichTextEditor.vue";
+import { useSiteTheme } from '@/composables/useSiteTheme.js';
 import { ElMessageBox } from 'element-plus';
 
 const containerRef = ref(null);
@@ -99,6 +103,7 @@ const {
     statusText,
     contentWidth,
     editor,
+    spellcheckEnabled,
     updateTagIds,
     handleCoverUpload,
     beforeCoverUpload,
@@ -107,6 +112,7 @@ const {
     startDrag,
     onMouseMove,
     onMouseUp,
+    toggleSpellcheck,
     queueSaveFlow,
     submitSaveDraft,
     confirmPublish,
@@ -121,6 +127,7 @@ const handleMouseMove = (e) => {
 };
 
 const categoryOptions = CATEGORY_NAMES;
+const { articleTheme } = useSiteTheme();
 
 const onInput = () => {
     queueSaveFlow();

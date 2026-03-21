@@ -171,6 +171,20 @@
       </el-tooltip>
       <input type="file" ref="fileInput" style="display: none" accept="image/*" @change="handleImageUpload">
     </div>
+
+    <div class="divider"></div>
+
+    <div class="toolbar-group">
+      <el-tooltip :content="spellcheckTooltip" placement="bottom" :show-after="500">
+        <button
+          class="toolbar-btn toolbar-toggle-btn"
+          :class="{ 'is-active': spellcheckEnabled }"
+          @click="$emit('toggle-spellcheck')">
+          <span class="toolbar-token">ABC</span>
+          <span class="btn-text">拼写</span>
+        </button>
+      </el-tooltip>
+    </div>
   </div>
 </template>
 
@@ -189,10 +203,14 @@ const props = defineProps({
   tocVisible: {
     type: Boolean,
     default: true
+  },
+  spellcheckEnabled: {
+    type: Boolean,
+    default: false
   }
 });
 
-defineEmits(['toggle-toc']);
+defineEmits(['toggle-toc', 'toggle-spellcheck']);
 
 const fileInput = ref(null);
 const textColor = ref('#000000');
@@ -222,6 +240,10 @@ const currentAlignIcon = computed(() => {
   if (props.editor.isActive({ textAlign: 'justify' })) return icons.alignJustify;
   return icons.alignLeft;
 });
+
+const spellcheckTooltip = computed(() => (
+  props.spellcheckEnabled ? '关闭拼写检查' : '开启拼写检查'
+));
 
 const handleHeading = (command) => {
   if (command === 'p') {
@@ -341,9 +363,35 @@ const handleImageUpload = async (event) => {
   width: auto;
 }
 
+.toolbar-toggle-btn {
+  gap: 6px;
+  padding: 0 10px;
+  width: auto;
+  border-radius: 999px;
+}
+
 .btn-text {
   font-size: 12px;
   font-weight: 500;
+}
+
+.toolbar-token {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 24px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.06);
+  color: inherit;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
+.toolbar-btn.is-active .toolbar-token {
+  background: rgba(59, 130, 246, 0.16);
 }
 
 .flex-row {

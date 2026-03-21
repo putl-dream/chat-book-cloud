@@ -1,4 +1,4 @@
-import { ref, computed, reactive, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, reactive, watch, onMounted, onBeforeUnmount, unref } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useEditor } from '@tiptap/vue-3';
@@ -9,7 +9,11 @@ import { TAG_TYPE_ENUM } from '@/constants';
 import SocketService, { formatWsUrl } from '@/utils/websocket.js';
 import { API_CONFIG } from '@/config/index.js';
 import { saveDraft, loadDraft, clearDraft, isDraftNewer } from '@/utils/draftStorage.js';
-import { createRichTextExtensions, richTextEditorAttributes } from '@/components/common/rich-text/editor-config.js';
+import {
+    applyRichTextEditorAttributes,
+    createRichTextExtensions,
+    createRichTextEditorAttributes
+} from '@/components/common/rich-text/editor-config.js';
 
 import { SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP, EDITOR_CONFIG } from '../_utils/constants.js';
 import { isValidCoverFile, hasMeaningfulContent, buildArticlePayload } from '../_domain/editor.js';
@@ -18,6 +22,7 @@ import { useEditorLayout } from './useEditorLayout.js';
 import { useEditorForm } from './useEditorForm.js';
 
 export function useEditorLogic() {
+    const SPELLCHECK_STORAGE_KEY = 'chat-book-editor-spellcheck';
     const route = useRoute();
     const router = useRouter();
 
@@ -56,6 +61,11 @@ export function useEditorLogic() {
     const saveState = ref(SAVE_STATE_ENUM.SAVED);
     const hasUnsavedChanges = ref(false);
     const isHydrating = ref(false);
+    const spellcheckEnabled = ref(
+        typeof window !== 'undefined'
+            ? window.localStorage.getItem(SPELLCHECK_STORAGE_KEY) === 'true'
+            : false
+    );
 
     const cacheTimer = ref(null);
     const autosaveTimer = ref(null);
@@ -77,9 +87,30 @@ export function useEditorLogic() {
             wordCount.value = editor.storage.characterCount.characters();
         },
         editorProps: {
-            attributes: richTextEditorAttributes,
+            attributes: createRichTextEditorAttributes({ spellcheck: spellcheckEnabled.value }),
         },
     });
+    const resolvedEditor = computed(() => unref(editor));
+
+    const setSpellcheckEnabled = (enabled) => {
+        spellcheckEnabled.value = enabled;
+    };
+
+    const toggleSpellcheck = () => {
+        setSpellcheckEnabled(!spellcheckEnabled.value);
+    };
+
+    watch(
+        [resolvedEditor, spellcheckEnabled],
+        ([editorInstance, enabled]) => {
+            applyRichTextEditorAttributes(editorInstance, { spellcheck: enabled });
+
+            if (typeof window !== 'undefined') {
+                window.localStorage.setItem(SPELLCHECK_STORAGE_KEY, String(enabled));
+            }
+        },
+        { immediate: true }
+    );
 
     // =============== Actions / Domain Integration ===============
     const loadTags = async () => {
@@ -403,6 +434,7 @@ export function useEditorLogic() {
         statusText,
         contentWidth,
         editor,
+        spellcheckEnabled,
         hasUnsavedChanges,
         userId,
         articleId,
@@ -416,6 +448,7 @@ export function useEditorLogic() {
         startDrag,
         onMouseMove,
         onMouseUp,
+        toggleSpellcheck,
         queueSaveFlow,
         submitSaveDraft,
         confirmPublish,
