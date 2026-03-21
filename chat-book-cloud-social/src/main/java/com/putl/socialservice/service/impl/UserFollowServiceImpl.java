@@ -9,6 +9,9 @@ import com.putl.socialservice.service.UserFollowService;
 import com.putl.socialservice.vo.FollowStatVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -26,6 +29,10 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "followStatCache", key = "#userId"),
+            @CacheEvict(value = "followStatCache", key = "#followId")
+    })
     public String follow(Integer userId, Integer followId) {
         if (userId == null || followId == null) {
             return "参数错误";
@@ -73,6 +80,10 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "followStatCache", key = "#userId"),
+            @CacheEvict(value = "followStatCache", key = "#followId")
+    })
     public String unfollow(Integer userId, Integer followId) {
         if (userId == null || followId == null) {
             return "参数错误";
@@ -152,6 +163,7 @@ public class UserFollowServiceImpl extends ServiceImpl<UserFollowMapper, UserFol
     }
 
     @Override
+    @Cacheable(value = "followStatCache", key = "#userId", unless = "#result == null")
     public FollowStatVO getFollowStat(Integer userId) {
         // 关注数
         Long followCount = baseMapper.selectCount(

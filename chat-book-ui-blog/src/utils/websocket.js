@@ -66,6 +66,9 @@ export default class SocketService {
         this.messageQueue = [];          // 3. Message queue for buffering
         this.heartbeatTimer = null;      // Timer for heartbeat
         this.reconnectTimer = null;      // Timer for reconnection
+
+        // Pending ACK requests for sendWithAck: Map<requestId, { resolve, reject, type }>
+        this.pendingRequests = new Map();
     }
 
     /**
@@ -109,7 +112,17 @@ export default class SocketService {
 
                 const message = JSON.parse(event.data);
 
-                // Dispatch to registered handlers
+                // Check if this is a response to a pending sendWithAck request
+                if (message.requestId && this.pendingRequests.has(message.requestId)) {
+                    const pending = this.pendingRequests.get(message.requestId);
+                    this.pendingRequests.delete(message.requestId);
+                    clearTimeout(pending.timeoutTimer);
+                    // Resolve with the data portion
+                    pending.resolve(message.data);
+                    return; // Don't emit to regular handlers for ACK responses
+                }
+
+                // Dispatch to registered handlers (passes message.data for backward compat)
                 this.emit(message.type, message.data);
             } catch (error) {
                 console.error('Error parsing WebSocket message:', error);
@@ -225,15 +238,56 @@ export default class SocketService {
             console.warn('WebSocket is not open. Message queued.');
             this.messageQueue.push(message);
 
-            // If connection is dead but not detected, try to reconnect? 
-            // Usually onclose handles this, but if in 'zombie' state, 
-            // sending might fail or buffer. 
+            // If connection is dead but not detected, try to reconnect?
+            // Usually onclose handles this, but if in 'zombie' state,
+            // sending might fail or buffer.
             // If completely closed/null, trigger connect if not explicitly closed?
             if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
                 if (!this.isExplicitlyClosed) this.connect();
             }
             return false;
         }
+    }
+
+    /**
+     * Send message with ACK support
+     * @param {string} type - Message type
+     * @param {object} data - Message data
+     * @param {object} options - Options
+     * @param {number} options.timeoutMs - Timeout in milliseconds (default: 4000)
+     * @returns {Promise<object>} Resolves with response data on ACK, rejects on timeout
+     */
+    sendWithAck(type, data, options = {}) {
+        const { timeoutMs = 4000 } = options;
+
+        return new Promise((resolve, reject) => {
+            if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+                reject(new Error('WebSocket is not connected'));
+                return;
+            }
+
+            const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+            const finalMessage = { type, data, requestId };
+            const message = JSON.stringify(finalMessage);
+
+            // Set up timeout
+            const timeoutTimer = setTimeout(() => {
+                this.pendingRequests.delete(requestId);
+                reject(new Error(`ACK timeout after ${timeoutMs}ms for ${type}`));
+            }, timeoutMs);
+
+            // Store the pending request
+            this.pendingRequests.set(requestId, { resolve, reject, type, timeoutTimer });
+
+            // Send message
+            try {
+                this.socket.send(message);
+            } catch (e) {
+                clearTimeout(timeoutTimer);
+                this.pendingRequests.delete(requestId);
+                reject(e);
+            }
+        });
     }
 
     /**

@@ -15,10 +15,14 @@ import com.putl.userservice.service.UserService;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -34,6 +38,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final UserInfoMapper userInfoMapper;
 
     @Override
+    @Cacheable(value = "userCache", key = "#id", unless = "#result == null")
     public UserVO selectById(int id) {
         UserInfoDO userInfo = userInfoService.getByUserId(id);
         log.debug("userInfo = {}", userInfo);
@@ -57,6 +62,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
+    @Cacheable(value = "userBatchCache", key = "T(java.util.Arrays).hashCode(#ids.![].toArray())", unless = "#result == null || #result.isEmpty()")
     public List<UserVO> selectByIds(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
@@ -114,6 +120,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "userCache", key = "#userVO.userId"),
+            @CacheEvict(value = "userBatchCache", allEntries = true)
+    })
     public void updateUser(UserVO userVO) {
         String userId = UserContext.getUserId();
         if (userId == null) {

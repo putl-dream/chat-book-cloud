@@ -8,6 +8,7 @@ import com.putl.articleservice.controller.dto.RelatedPageRequestDTO;
 import com.putl.articleservice.controller.dto.SearchPageRequestDTO;
 import com.putl.articleservice.controller.dto.TagPageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
+import com.putl.articleservice.service.ArticleListCacheService;
 import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
@@ -30,23 +31,24 @@ import java.util.List;
 public class ArticlePageController {
 
     private final ArticlePageService articlePageService;
+    private final ArticleListCacheService articleListCacheService;
 
     @Operation(summary = "获取最新文章列表")
     @PostMapping("/newPage")
     public CommonResult<PageResult<ArticleListVO>> getNewPage(@Valid @RequestBody PageRequestDTO request) {
-        return CommonResult.success(articlePageService.getNewPage(request.getPageNo(), request.getPageSize()));
+        return CommonResult.success(articleListCacheService.getNewPage(request.getPageNo(), request.getPageSize()));
     }
 
     @Operation(summary = "获取热门文章列表")
     @PostMapping("/hotPage")
     public CommonResult<PageResult<ArticleListVO>> getHotPage(@Valid @RequestBody PageRequestDTO request) {
-        return CommonResult.success(articlePageService.getHotPage(request.getPageNo(), request.getPageSize()));
+        return CommonResult.success(articleListCacheService.getHotPage(request.getPageNo(), request.getPageSize()));
     }
 
     @Operation(summary = "获取今日热门文章列表")
     @PostMapping("/todayHotPage")
     public CommonResult<PageResult<ArticleListVO>> getTodayHotPage(@Valid @RequestBody PageRequestDTO request) {
-        return CommonResult.success(articlePageService.getTodayHotPage(request.getPageNo(), request.getPageSize()));
+        return CommonResult.success(articleListCacheService.getTodayHotPage(request.getPageNo(), request.getPageSize()));
     }
 
     @Operation(summary = "根据分类获取文章列表")
@@ -122,7 +124,7 @@ public class ArticlePageController {
     @Operation(summary = "根据标签获取文章列表")
     @PostMapping("/tagPage")
     public CommonResult<PageResult<ArticleListVO>> getTagPage(@Valid @RequestBody TagPageRequestDTO request) {
-        return CommonResult.success(articlePageService.getTagPage(request.getPageNo(), request.getPageSize(), request.getTagId()));
+        return CommonResult.success(articleListCacheService.getTagPage(request.getPageNo(), request.getPageSize(), request.getTagId()));
     }
 
     @Operation(summary = "多条件筛选文章")
