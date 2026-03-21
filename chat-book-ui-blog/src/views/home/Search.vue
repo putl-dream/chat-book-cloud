@@ -104,7 +104,7 @@ const handleSearch = async () => {
     noMoreArticles.value = false;
     posts.value = [];
     await fetchPosts(false);
-    // 更新路由参数，但不刷新页�?
+    // 更新路由参数，但不刷新页面
     router.replace({ name: 'List', params: { keyValue: keyValue.value } });
 };
 

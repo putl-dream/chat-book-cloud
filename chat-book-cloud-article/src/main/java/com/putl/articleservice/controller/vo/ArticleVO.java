@@ -31,6 +31,9 @@ public class ArticleVO {
     @Schema(description = "作者ID")
     private Integer userId;
 
+    @Schema(description = "作者头像")
+    private String authorAvatar;
+
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     @Schema(description = "文章创建时间")
     private LocalDateTime createTime;

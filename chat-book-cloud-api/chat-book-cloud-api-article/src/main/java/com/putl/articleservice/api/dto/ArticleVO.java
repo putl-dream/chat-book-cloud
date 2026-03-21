@@ -19,6 +19,7 @@ public class ArticleVO {
     private String title;
     private String userName;
     private Integer userId;
+    private String authorAvatar;
     
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private LocalDateTime createTime;

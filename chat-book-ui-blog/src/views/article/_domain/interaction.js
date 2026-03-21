@@ -50,7 +50,7 @@ export function saveReview(params) {
 }
 
 /**
- * 获取互动通知（点�?收藏/评论/浏览�?
+ * 获取互动通知（点赞/收藏/评论/浏览量
  * @returns {Promise<NotificationVO[]>}
  */
 export function getNotifications() {

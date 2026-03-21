@@ -33,7 +33,7 @@ import CommonHeader from "@/components/common/CommonHeader.vue";
 
 .page {
     height: 100vh;
-    background: radial-gradient(circle at top right, #f8fafc, #f1f5f9);
+    background: var(--app-shell-radial), var(--app-shell-bg);
     display: flex;
     flex-direction: column;
     overflow: hidden;

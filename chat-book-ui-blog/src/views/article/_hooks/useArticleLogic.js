@@ -3,6 +3,8 @@ import { ElMessage } from 'element-plus';
 import { queryArticle } from "@/views/article/_domain/article.js";
 import { addBrowse, updateCollection, updatePraise } from "@/views/article/_domain/interaction.js";
 import { checkLogin } from "@/utils/http.js";
+import { getUserBySelf } from "@/views/user/_domain/user.js";
+import { followUser, unfollowUser, getFriendRelation } from "@/views/user/_domain/social.js";
 import { PANEL_TYPE, SIDEBAR_CONFIG } from "../_utils/config.js";
 
 export function useArticleLogic(articleIdRef) {
@@ -10,17 +12,47 @@ export function useArticleLogic(articleIdRef) {
   const praiseStat = ref(0);
   const collectStat = ref(0);
   const activePanel = ref(PANEL_TYPE.DEFAULT);
-  /** 右侧面板是否展开（default 时也需要 true 才能显示作者等） */
-  const showRightPanel = ref(false);
+  /** 默认保持右侧阅读辅助面板可见 */
+  const showRightPanel = ref(true);
   const articleLoading = ref(false);
+  const currentUser = ref(null);
+  const authorRelation = ref(-1);
+  const isSelfAuthor = ref(false);
+  const authorActionLoading = ref(false);
 
   const rightSidebarWidth = ref(SIDEBAR_CONFIG.DEFAULT_WIDTH);
   const isResizing = ref(false);
 
-  const componentMap = {
-    [PANEL_TYPE.DEFAULT]: null,
-    [PANEL_TYPE.COMMENT]: null,
-    [PANEL_TYPE.AI]: null
+  const loadAuthorContext = async (authorId) => {
+    authorRelation.value = -1;
+    isSelfAuthor.value = false;
+
+    if (!authorId || !localStorage.getItem('token')) {
+      currentUser.value = null;
+      return;
+    }
+
+    try {
+      const self = await getUserBySelf();
+      currentUser.value = self || null;
+
+      const currentUserId = Number(self?.id ?? self?.userId);
+      const normalizedAuthorId = Number(authorId);
+
+      if (!currentUserId || !normalizedAuthorId) {
+        return;
+      }
+
+      if (currentUserId === normalizedAuthorId) {
+        isSelfAuthor.value = true;
+        return;
+      }
+
+      const relation = await getFriendRelation(normalizedAuthorId);
+      authorRelation.value = Number.isFinite(Number(relation)) ? Number(relation) : -1;
+    } catch (error) {
+      console.error('Failed to load author relation:', error);
+    }
   };
 
   const queryArticleRequest = async () => {
@@ -34,6 +66,7 @@ export function useArticleLogic(articleIdRef) {
         article.value = res;
         praiseStat.value = article.value.praiseStat;
         collectStat.value = article.value.collectStat;
+        await loadAuthorContext(article.value.userId);
         try {
           await addBrowse(currentId);
           article.value.viewCount = (article.value.viewCount || 0) + 1;
@@ -54,34 +87,18 @@ export function useArticleLogic(articleIdRef) {
   };
 
   const handleComment = () => {
-    if (activePanel.value === PANEL_TYPE.COMMENT) {
-      showRightPanel.value = false;
-      activePanel.value = PANEL_TYPE.DEFAULT;
-    } else {
-      showRightPanel.value = true;
-      activePanel.value = PANEL_TYPE.COMMENT;
-    }
+    showRightPanel.value = true;
+    activePanel.value = activePanel.value === PANEL_TYPE.COMMENT ? PANEL_TYPE.DEFAULT : PANEL_TYPE.COMMENT;
   };
 
   const handleAiChat = () => {
-    if (activePanel.value === PANEL_TYPE.AI) {
-      showRightPanel.value = false;
-      activePanel.value = PANEL_TYPE.DEFAULT;
-    } else {
-      showRightPanel.value = true;
-      activePanel.value = PANEL_TYPE.AI;
-    }
+    showRightPanel.value = true;
+    activePanel.value = activePanel.value === PANEL_TYPE.AI ? PANEL_TYPE.DEFAULT : PANEL_TYPE.AI;
   };
 
-  /** 点击作者名：右侧切换为 default 模块（作者卡片等） */
-  const openAuthorPanel = () => {
-    if (showRightPanel.value && activePanel.value === PANEL_TYPE.DEFAULT) {
-      showRightPanel.value = false;
-      activePanel.value = PANEL_TYPE.DEFAULT;
-    } else {
-      showRightPanel.value = true;
-      activePanel.value = PANEL_TYPE.DEFAULT;
-    }
+  const openDefaultPanel = () => {
+    showRightPanel.value = true;
+    activePanel.value = PANEL_TYPE.DEFAULT;
   };
 
   const handleFavorite = async () => {
@@ -94,6 +111,31 @@ export function useArticleLogic(articleIdRef) {
       ElMessage.success('收藏成功');
     }
     collectStat.value = res;
+  };
+
+  const handleFollow = async () => {
+    if (!checkLogin()) return;
+
+    const authorId = Number(article.value?.userId);
+    if (!authorId || isSelfAuthor.value || authorActionLoading.value) {
+      return;
+    }
+
+    authorActionLoading.value = true;
+
+    try {
+      const message = authorRelation.value >= 0
+        ? await unfollowUser(authorId)
+        : await followUser(authorId);
+
+      if (message) {
+        ElMessage.success(message);
+      }
+
+      await loadAuthorContext(authorId);
+    } finally {
+      authorActionLoading.value = false;
+    }
   };
 
   const startResize = () => {
@@ -132,6 +174,10 @@ export function useArticleLogic(articleIdRef) {
     collectStat,
     activePanel,
     showRightPanel,
+    currentUser,
+    authorRelation,
+    isSelfAuthor,
+    authorActionLoading,
     rightSidebarWidth,
     isResizing,
     queryArticleRequest,
@@ -139,7 +185,8 @@ export function useArticleLogic(articleIdRef) {
     handleComment,
     handleAiChat,
     handleFavorite,
-    openAuthorPanel,
+    handleFollow,
+    openDefaultPanel,
     startResize
   };
 }

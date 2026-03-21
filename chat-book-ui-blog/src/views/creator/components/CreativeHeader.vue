@@ -13,7 +13,7 @@
         <div class="right-section">
             <div class="action-btn">
                 <el-button type="primary" class="create-btn" @click="router.push('/text')" round>
-                    <el-icon><Plus /></el-icon> 开始创�?
+                    <el-icon><Plus /></el-icon> 开始创作
                 </el-button>
             </div>
             

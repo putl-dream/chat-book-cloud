@@ -105,6 +105,33 @@
                             </div>
                         </div>
                     </div>
+
+                    <div class="side-card glass-panel theme-side-card">
+                        <h3 class="side-title">主题风格</h3>
+                        <div class="theme-option-list">
+                            <button
+                                v-for="option in themeOptions"
+                                :key="option.id"
+                                type="button"
+                                class="theme-option"
+                                :class="{ 'is-active': siteTheme === option.id }"
+                                @click="setSiteTheme(option.id)">
+                                <div class="theme-preview" :style="{ background: option.preview }">
+                                    <span class="theme-preview-nav"></span>
+                                    <span class="theme-preview-hero"></span>
+                                    <span class="theme-preview-paper"></span>
+                                </div>
+                                <div class="theme-copy">
+                                    <div class="theme-name-row">
+                                        <span class="theme-name">{{ option.name }}</span>
+                                        <span v-if="option.id === DEFAULT_SITE_THEME" class="theme-badge">默认</span>
+                                        <span v-if="siteTheme === option.id" class="theme-badge current">当前</span>
+                                    </div>
+                                    <p class="theme-description">{{ option.description }}</p>
+                                </div>
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -118,6 +145,7 @@ import { Star, View } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
 import { DEFAULT_AVATAR } from "@/constants/index.js";
 import { useProfileLogic } from "./Profile/_hooks/useProfileLogic.js";
+import { DEFAULT_SITE_THEME, useSiteTheme } from '@/composables/useSiteTheme.js';
 
 const openArticle = (id) => {
     router.push({ name: 'Article', params: { id } });
@@ -132,6 +160,12 @@ const {
     fetchUserPosts
 } = useProfileLogic();
 
+const {
+    siteTheme,
+    themeOptions,
+    setSiteTheme
+} = useSiteTheme();
+
 onMounted(async () => {
     await fetchUserData();
     await fetchUserPosts();
@@ -143,7 +177,7 @@ onMounted(async () => {
     min-height: 100%;
     background-color: var(--bg-color-base);
     padding-bottom: 60px;
-    background: radial-gradient(circle at top right, #eef2ff, var(--bg-color-base));
+    background: var(--app-shell-radial), var(--app-shell-bg);
 }
 
 .profile-container {
@@ -154,7 +188,7 @@ onMounted(async () => {
 
 .user-cover {
     height: 175px;
-    background: linear-gradient(120deg, #a5f3fc, #c4b5fd, #fbcfe8);
+    background: var(--profile-cover-gradient);
     background-size: 200% 200%;
     animation: gradientBG 10s ease infinite;
     border-radius: 0 0 24px 24px;
@@ -184,9 +218,9 @@ onMounted(async () => {
 }
 
 .glass-panel {
-    background: rgba(255, 255, 255, 0.7);
+    background: var(--theme-card-bg);
     backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
+    border: 1px solid var(--theme-card-border);
     box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
     border-radius: 24px;
 }
@@ -301,6 +335,9 @@ onMounted(async () => {
 .content-right {
     width: 320px;
     flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
 }
 
 .side-card {
@@ -337,15 +374,129 @@ onMounted(async () => {
     align-items: center;
     gap: 16px;
     padding: 12px;
-    background: rgba(255, 255, 255, 0.5);
+    background: rgba(255, 255, 255, 0.45);
     border-radius: 12px;
     transition: all 0.3s;
 }
 
 .achievement-item:hover {
-    background: #fff;
+    background: rgba(255, 255, 255, 0.72);
     transform: translateX(4px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.theme-side-card {
+    padding-bottom: 18px;
+}
+
+.theme-option-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.theme-option {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.35);
+    color: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.theme-option:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--color-primary-rgb), 0.18);
+    background: rgba(255, 255, 255, 0.58);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.theme-option.is-active {
+    border-color: rgba(var(--color-primary-rgb), 0.28);
+    background: rgba(var(--color-primary-rgb), 0.06);
+    box-shadow: 0 16px 28px rgba(var(--color-primary-rgb), 0.12);
+}
+
+.theme-preview {
+    position: relative;
+    height: 76px;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.theme-preview-nav,
+.theme-preview-hero,
+.theme-preview-paper {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+}
+
+.theme-preview-nav {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 12px;
+    opacity: 0.9;
+}
+
+.theme-preview-hero {
+    left: 14px;
+    bottom: 14px;
+    width: 28%;
+    height: 22px;
+    opacity: 0.74;
+}
+
+.theme-preview-paper {
+    top: 28px;
+    right: 14px;
+    width: 46%;
+    height: 34px;
+    border-radius: 18px;
+    opacity: 0.92;
+}
+
+.theme-copy {
+    margin-top: 12px;
+}
+
+.theme-name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.theme-name {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-color-primary);
+}
+
+.theme-badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.16);
+    color: var(--text-color-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.theme-badge.current {
+    background: rgba(var(--color-primary-rgb), 0.12);
+    color: var(--color-primary);
+}
+
+.theme-description {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 13px;
+    line-height: 1.55;
 }
 
 .icon-box {

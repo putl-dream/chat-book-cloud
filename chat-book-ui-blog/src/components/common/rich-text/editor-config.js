@@ -7,10 +7,10 @@ import Highlight from '@tiptap/extension-highlight';
 import { Color } from '@tiptap/extension-color';
 import { TextStyle } from '@tiptap/extension-text-style';
 import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
 
 import SlashCommand from '@/views/creator/components/slash-command/index.js';
 import suggestion from '@/views/creator/components/slash-command/suggestion.js';
+import { MarkdownPaste, MarkdownTaskItem } from '@/components/common/rich-text/markdown-shortcuts.js';
 
 export function createRichTextExtensions(options = {}) {
     const { placeholder = '请输入内容...', enableSlashCommand = true } = options;
@@ -22,7 +22,8 @@ export function createRichTextExtensions(options = {}) {
         TextStyle,
         Color,
         TaskList,
-        TaskItem.configure({ nested: true }),
+        MarkdownTaskItem.configure({ nested: true }),
+        MarkdownPaste,
         Placeholder.configure({ placeholder }),
         CharacterCount,
         TextAlign.configure({ types: ['heading', 'paragraph'] })

@@ -25,7 +25,7 @@ import CommonHeader from "@/components/common/CommonHeader.vue";
 }
 
 .page {
-    background-color: var(--bg-color-base);
+    background: var(--app-shell-radial), var(--app-shell-bg);
     min-height: 100vh;
 }
 </style>

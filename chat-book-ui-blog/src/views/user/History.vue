@@ -48,7 +48,7 @@ const posts = ref([]);
 const loading = ref(false);
 const noMoreArticles = ref(false);
 const currentPage = ref(1);
-const pageSize = ref(10); // 增加每页加载数量，提升体�?
+const pageSize = ref(10); // 增加每页加载数量，提升体验
 
 const historyRequest = async () => {
     if (loading.value || noMoreArticles.value) return;
@@ -70,7 +70,7 @@ const historyRequest = async () => {
 
 const handleScroll = (event) => {
     const { scrollTop, clientHeight, scrollHeight } = event.target;
-    // 增加触发阈值，提前加载更流�?
+    // 增加触发阈值，提前加载更多
     if (scrollTop + clientHeight >= scrollHeight - 100) {
         historyRequest();
     }

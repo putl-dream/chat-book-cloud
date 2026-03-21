@@ -3,6 +3,7 @@
         :is="as"
         class="rich-text-viewer content-theme"
         :data-content-variant="variant"
+        :data-content-style="theme || null"
         :data-readonly="true">
         <div
             class="rich-text-viewer__body"
@@ -15,6 +16,8 @@
 import { computed } from 'vue';
 import 'highlight.js/styles/github.css';
 import { ElMessage } from 'element-plus';
+import '@/styles/themes/article/light.css';
+import '@/styles/themes/article/reading.css';
 
 const props = defineProps({
     html: {
@@ -28,6 +31,10 @@ const props = defineProps({
     variant: {
         type: String,
         default: 'article'
+    },
+    theme: {
+        type: String,
+        default: ''
     },
     as: {
         type: String,

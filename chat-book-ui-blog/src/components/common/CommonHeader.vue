@@ -132,12 +132,12 @@ onMounted(() => {
 <style scoped>
 .el-menu--horizontal {
     --el-menu-horizontal-height: var(--header-height);
-    border-bottom: 1px solid rgba(255, 255, 255, 0.3);
+    border-bottom: 1px solid var(--app-header-border);
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 0 40px;
-    background: var(--bg-color-glass);
+    background: var(--app-header-bg);
     backdrop-filter: var(--blur-base);
     -webkit-backdrop-filter: var(--blur-base);
     position: sticky;
@@ -147,7 +147,7 @@ onMounted(() => {
 }
 
 .el-menu--horizontal:hover {
-    background: var(--bg-color-overlay);
+    background: var(--app-header-bg-hover);
 }
 
 .logo {
@@ -185,7 +185,7 @@ onMounted(() => {
     height: 40px;
     width: 100%;
     max-width: 480px;
-    background: var(--bg-color-light);
+    background: var(--app-search-bg);
     transition: var(--transition-base);
 }
 
@@ -195,8 +195,8 @@ onMounted(() => {
 
 .search-bar:focus-within {
     border-color: var(--color-primary);
-    background: var(--bg-color-white);
-    box-shadow: 0 0 0 4px var(--color-primary-light);
+    background: var(--app-search-bg-focus);
+    box-shadow: 0 0 0 4px var(--app-search-ring);
 }
 
 .search-bar input {
@@ -240,7 +240,10 @@ onMounted(() => {
 .dropdown-content {
     width: 260px;
     padding: 10px;
-    background: var(--bg-color-white);
+    background: var(--app-dropdown-bg);
+    border: 1px solid var(--border-color-light);
+    border-radius: 20px;
+    box-shadow: var(--box-shadow-hover);
 }
 
 .action-btn {

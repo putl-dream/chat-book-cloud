@@ -66,7 +66,14 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             }
         }
 
-        articleVO.setUserName(resolveUserName(articleDO.getUserId(), articleVO.getUserName()));
+        UserResult author = queryUser(articleDO.getUserId(), "查询作者实时信息失败，回退快照");
+        if (author != null) {
+            if (author.getUsername() != null && !author.getUsername().isBlank()) {
+                articleVO.setUserName(author.getUsername());
+            }
+            articleVO.setAuthorAvatar(author.getPhoto());
+        }
+
         // 回填文章标签
         articleVO.setTagIds(tagService.getArticleTagIds(articleId));
         fillInteractionState(articleId, articleVO);
@@ -263,29 +270,23 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
         }
     }
 
-    private String resolveUserName(Integer userId, String fallback) {
+    private UserResult queryUser(Integer userId, String failLogMessage) {
         if (userId == null) {
-            return fallback;
+            return null;
         }
         try {
             CommonResult<UserResult> response = userClient.getUserById(userId);
-            if (response != null && response.getData() != null && response.getData().getUsername() != null) {
-                return response.getData().getUsername();
+            if (response != null) {
+                return response.getData();
             }
         } catch (Exception e) {
-            log.warn("查询作者实时信息失败，回退快照: userId={}", userId, e);
+            log.warn("{}: userId={}", failLogMessage, userId, e);
         }
-        return fallback;
+        return null;
     }
 
     private UserResult queryCurrentUser(Integer currentUserId) {
-        try {
-            CommonResult<UserResult> response = userClient.getUserById(currentUserId);
-            return response != null ? response.getData() : null;
-        } catch (Exception e) {
-            log.warn("查询当前用户失败，继续使用快照字段: userId={}", currentUserId, e);
-            return null;
-        }
+        return queryUser(currentUserId, "查询当前用户失败，继续使用快照字段");
     }
 
     private void validateOwnership(ArticleDO articleDO) {

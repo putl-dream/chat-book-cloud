@@ -229,7 +229,7 @@ onMounted(() => {
     } else if (error) {
         // Handle OAuth error
         console.error('OAuth login failed:', error);
-        ElMessage.error('第三方登录失�? ' + error);
+        ElMessage.error('第三方登录失败: ' + error);
     }
 });
 </script>

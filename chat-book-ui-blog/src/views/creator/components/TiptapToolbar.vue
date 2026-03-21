@@ -108,7 +108,7 @@
           <el-dropdown-menu>
             <el-dropdown-item command="left" :class="{ 'is-active': editor.isActive({ textAlign: 'left' }) }">
                <div class="flex-row">
-                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path :d="icons.alignLeft" /></svg> 左对�?               </div>
+                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path :d="icons.alignLeft" /></svg> 左对齐               </div>
             </el-dropdown-item>
             <el-dropdown-item command="center" :class="{ 'is-active': editor.isActive({ textAlign: 'center' }) }">
                <div class="flex-row">
@@ -117,7 +117,7 @@
             </el-dropdown-item>
             <el-dropdown-item command="right" :class="{ 'is-active': editor.isActive({ textAlign: 'right' }) }">
                <div class="flex-row">
-                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path :d="icons.alignRight" /></svg> 右对�?               </div>
+                 <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path :d="icons.alignRight" /></svg> 右对齐               </div>
             </el-dropdown-item>
             <el-dropdown-item command="justify" :class="{ 'is-active': editor.isActive({ textAlign: 'justify' }) }">
                <div class="flex-row">
