@@ -8,7 +8,7 @@
             <div class="search-header-area">
                 <div class="search-bar-wrapper">
                     <div class="search-input-group" @keyup.enter="handleSearch">
-                        <input type="text" v-model="keyValue" placeholder="搜索你感兴趣的文章..." />
+                        <input type="text" v-model="keyValue" placeholder="搜索你感兴趣的文章.." />
                         <button @click="handleSearch">
                             <el-icon class="search-icon">
                                 <Search />
@@ -36,7 +36,7 @@
                         <div v-if="loading && currentPage > 1" class="loading">
                             <el-skeleton :rows="2" animated />
                         </div>
-                        <div v-if="noMoreArticles && posts.length > 0" class="no-more">没有更多文章了</div>
+                        <div v-if="noMoreArticles && posts.length > 0" class="no-more">没有更多文章啦</div>
                         <div v-if="posts.length === 0 && !loading" class="empty-state">
                             <el-empty description="未找到相关文章" />
                         </div>
@@ -57,10 +57,10 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import { ElSkeleton, ElIcon } from "element-plus";
 import { Search } from "@element-plus/icons-vue";
-import ArticleCard from "@/components/domain/ArticleCard.vue";
-import HotCard from "@/components/domain/HotCard.vue";
+import ArticleCard from "@/views/article/components/ArticleCard.vue";
+import HotCard from "@/views/home/components/HotCard.vue";
 import { useRoute } from "vue-router";
-import { getLikePage } from "@/api/article.js";
+import { getLikePage } from "@/views/article/_domain/article.js";
 import router from "@/router/index.js";
 
 const posts = ref([]);
@@ -104,7 +104,7 @@ const handleSearch = async () => {
     noMoreArticles.value = false;
     posts.value = [];
     await fetchPosts(false);
-    // 更新路由参数，但不刷新页面
+    // 更新路由参数，但不刷新页�?
     router.replace({ name: 'List', params: { keyValue: keyValue.value } });
 };
 

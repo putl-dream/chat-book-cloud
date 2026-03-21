@@ -9,54 +9,24 @@
                 <ArticleImgCard :post="article" />
             </div>
             <div v-if="noMoreArticles" class="no-more">没有了</div>
-            <div v-if="articles.length === 0" class="no-more">这里空空如也！</div>
+            <div v-if="articles.length === 0" class="no-more">这里空空如也</div>
         </div>
     </div>
 </template>
 
 
 <script setup>
-import { onMounted, ref } from 'vue';
-import ArticleImgCard from '@/components/domain/ArticleImgCard.vue';
-import { getUserArticlePage } from "@/api/article.js";
+import { onMounted } from 'vue';
+import ArticleImgCard from '@/views/article/components/ArticleImgCard.vue';
+import { useContentLogic } from './_hooks/useContentLogic.js';
 
-
-// 文章列表数据
-const articles = ref([]);
-const loading = ref(false);
-const noMoreArticles = ref(false);
-const currentPage = ref(1);
-const pageSize = ref(10);
-
-// 获取文章列表
-const fetchArticles = async () => {
-    if (loading.value || noMoreArticles.value) return;
-    loading.value = true;
-    try {
-        const response = await getUserArticlePage(currentPage.value, pageSize.value)
-        console.log(response)
-        const newArticles = response.list;
-        const total = response.total;
-        if (newArticles.length === 0) {
-            noMoreArticles.value = true;
-        } else {
-            articles.value = currentPage.value === 1 ? newArticles : [...articles.value, ...newArticles];
-            currentPage.value++;
-        }
-    } catch (error) {
-        console.error('Failed to fetch articles:', error);
-    } finally {
-        loading.value = false;
-    }
-};
-
-// 滚动事件处理
-const handleScroll = (event) => {
-    const { scrollTop, clientHeight, scrollHeight } = event.target;
-    if (scrollTop + clientHeight >= scrollHeight - 10) { // 调整阈值以适应需要
-        fetchArticles();
-    }
-};
+const {
+    articles,
+    loading,
+    noMoreArticles,
+    fetchArticles,
+    handleScroll
+} = useContentLogic();
 
 // 初始化时获取文章列表
 onMounted(() => {

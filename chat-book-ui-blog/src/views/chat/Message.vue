@@ -46,8 +46,8 @@
 </template>
 
 <script setup>
-import MessageCard from "@/components/domain/MessageCard.vue";
-import { getNotifications } from "@/api/interaction.js";
+import MessageCard from "@/views/chat/components/MessageCard.vue";
+import { getNotifications } from "@/views/article/_domain/interaction.js";
 import { onMounted, ref } from "vue";
 import router from "@/router/index.js";
 import { ElSkeleton, ElEmpty } from 'element-plus';
@@ -58,7 +58,7 @@ const loading = ref(false);
 const messageRequest = async () => {
     loading.value = true;
     try {
-        // P0 Fix: 原 getMessage 接口返回数据错误，已更换为 getNotifications
+        // P0 Fix: �?getMessage 接口返回数据错误，已更换�?getNotifications
         const res = await getNotifications();
         if (res) {
             messages.value = res;
@@ -71,7 +71,7 @@ const messageRequest = async () => {
 }
 
 const openArticle = async (articleId) => {
-    // P0 Fix: 使用 message.articleId 跳转（NotificationVO 的 id 是足迹记录ID，非文章ID）
+    // P0 Fix: 使用 message.articleId 跳转（NotificationVO �?id 是足迹记录ID，非文章ID�?
     await router.push({ name: 'Article', params: { id: articleId } });
 };
 

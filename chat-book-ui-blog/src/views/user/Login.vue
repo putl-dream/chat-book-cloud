@@ -190,7 +190,7 @@ import { useRouter } from 'vue-router';
 import { User, Lock, Message } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useLoginLogic } from "./Login/_hooks/useLoginLogic.js";
-import { oauthLogin } from "@/api/user.js";
+import { oauthLogin } from "@/views/user/_domain/user.js";
 
 const router = useRouter();
 const isSignUpPanelActive = ref(false);
@@ -229,7 +229,7 @@ onMounted(() => {
     } else if (error) {
         // Handle OAuth error
         console.error('OAuth login failed:', error);
-        ElMessage.error('第三方登录失败: ' + error);
+        ElMessage.error('第三方登录失�? ' + error);
     }
 });
 </script>

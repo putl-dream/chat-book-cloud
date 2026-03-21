@@ -1,6 +1,6 @@
 /**
  * 本地草稿存储工具
- * 基于 localStorage 实现，TTL 7 天
+ * 基于 localStorage 实现，TTL 7 �?
  */
 
 const DRAFT_PREFIX = 'draft';
@@ -17,7 +17,7 @@ function getDraftKey(userId, articleId) {
 }
 
 /**
- * 获取 TTL 毫秒数
+ * 获取 TTL 毫秒�?
  * @returns {number}
  */
 function getTTLMs() {
@@ -39,10 +39,10 @@ function hasMeaningfulContent(draft) {
 }
 
 /**
- * 保存草稿到 localStorage
+ * 保存草稿�?localStorage
  * @param {string|number} userId
  * @param {string|number|null} articleId
- * @param {object} data - buildPayload() 格式的数据
+ * @param {object} data - buildPayload() 格式的数�?
  * @returns {boolean} 是否保存成功
  */
 export function saveDraft(userId, articleId, data) {
@@ -68,7 +68,7 @@ export function saveDraft(userId, articleId, data) {
     try {
         const key = getDraftKey(userId, articleId);
         const payload = JSON.stringify(draft);
-        // 存入带 TTL 的结构
+        // 存入�?TTL 的结�?
         const stored = JSON.stringify({
             data: draft,
             expireAt: Date.now() + getTTLMs()
@@ -82,10 +82,10 @@ export function saveDraft(userId, articleId, data) {
 }
 
 /**
- * 从 localStorage 加载草稿
+ * �?localStorage 加载草稿
  * @param {string|number} userId
  * @param {string|number|null} articleId
- * @returns {object|null} 草稿数据或 null
+ * @returns {object|null} 草稿数据�?null
  */
 export function loadDraft(userId, articleId) {
     if (!userId) return null;
@@ -97,13 +97,13 @@ export function loadDraft(userId, articleId) {
 
         const { data, expireAt } = JSON.parse(stored);
 
-        // 检查 TTL
+        // 检�?TTL
         if (Date.now() > expireAt) {
             clearDraft(userId, articleId);
             return null;
         }
 
-        // 校验数据结构完整性
+        // 校验数据结构完整�?
         if (!data || typeof data !== 'object') {
             clearDraft(userId, articleId);
             return null;
@@ -132,7 +132,7 @@ export function clearDraft(userId, articleId) {
 }
 
 /**
- * 检查是否存在草稿
+ * 检查是否存在草�?
  * @param {string|number} userId
  * @param {string|number|null} articleId
  * @returns {boolean}
@@ -146,7 +146,7 @@ export function hasDraft(userId, articleId) {
 /**
  * 比较草稿是否比服务端更新
  * @param {object} draft - 本地草稿
- * @param {string|number} serverSavedAt - 服务端更新时间 (ISO string 或时间戳)
+ * @param {string|number} serverSavedAt - 服务端更新时�?(ISO string 或时间戳)
  * @returns {boolean} true if draft is newer
  */
 export function isDraftNewer(draft, serverSavedAt) {

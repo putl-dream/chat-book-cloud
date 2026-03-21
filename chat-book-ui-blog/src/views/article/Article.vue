@@ -5,7 +5,7 @@
             @mouseenter="handleSidebarHover(true)" @mouseleave="handleSidebarHover(false)"
             @click="handleSidebarClick">
             <div class="sidebar-inner">
-                <!-- 内部组件，流式排布 -->
+                <!-- 内部组件，流式排�?-->
                 <div class="article-buttons">
                     <div class="action-item">
                         <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }"
@@ -32,9 +32,9 @@
             </div>
         </aside>
 
-        <!-- 主内容区与右侧面板 -->
+        <!-- 主内容区与右侧面�?-->
         <div class="main-container">
-            <!-- 右下角 AI 助手悬浮球 -->
+            <!-- 右下�?AI 助手悬浮�?-->
             <button type="button" class="fab-ai" :class="{ 'is-active': activePanel === 'ai' }" @click="handleAiChat"
                 title="AI 助手">
                 <el-icon><Service /></el-icon>
@@ -66,7 +66,7 @@
                     </main>
                 </div>
 
-                <!-- 仅在有侧边面板时显示拖拽条（一条缝） -->
+                <!-- 仅在有侧边面板时显示拖拽条（一条缝�?-->
                 <div v-if="showRightPanel" class="resize-handle" @mousedown="startResize"></div>
 
                 <div class="article-right" :style="{ width: effectiveRightWidth + 'px' }"
@@ -90,8 +90,7 @@
 <script setup>
 /**
  * @file Article.vue
- * @description 文章详情页面，采用 10% 宽度的左侧边栏布局，响应式下支持折叠抽屉功能。
- */
+ * @description 文章详情页面，采�?10% 宽度的左侧边栏布局，响应式下支持折叠抽屉功能�? */
 import { computed, onMounted, onUnmounted, ref, provide, watch } from 'vue';
 import { ChatLineRound, Pointer, Star, Service } from '@element-plus/icons-vue';
 import { useRoute } from "vue-router";
@@ -101,15 +100,16 @@ import MarkdownRenderer from "@/components/common/MarkdownRenderer.vue";
 import SidebarDefault from '@/views/article/article-sidebar/SidebarDefault.vue';
 import SidebarComment from '@/views/article/article-sidebar/SidebarComment.vue';
 import SidebarAI from '@/views/article/article-sidebar/SidebarAI.vue';
-import { useArticleLogic } from "./Article/_hooks/useArticleLogic.js";
+import { useArticleLogic } from "./_hooks/useArticleLogic.js";
+import { PANEL_TYPE } from "./_utils/config.js";
 
 const route = useRoute();
 const articleId = computed(() => route.params.id);
 
 const componentMap = {
-    'default': SidebarDefault,
-    'comment': SidebarComment,
-    'ai': SidebarAI
+    [PANEL_TYPE.DEFAULT]: SidebarDefault,
+    [PANEL_TYPE.COMMENT]: SidebarComment,
+    [PANEL_TYPE.AI]: SidebarAI
 };
 
 const {
@@ -147,8 +147,7 @@ const effectiveRightWidth = computed(() =>
 const isSidebarCollapsed = ref(false);
 const isSidebarExpanded = ref(false);
 
-// 向下提供侧边栏状态，使子组件能够响应侧边栏的折叠状态
-provide('isSidebarCollapsed', isSidebarCollapsed);
+// 向下提供侧边栏状态，使子组件能够响应侧边栏的折叠状�?provide('isSidebarCollapsed', isSidebarCollapsed);
 
 const checkViewport = () => {
     isSidebarCollapsed.value = window.innerWidth <= 1024;
@@ -182,7 +181,7 @@ onUnmounted(() => {
 <style scoped>
 .article-page {
     display: grid;
-    /* 1. 左侧固定为 10%，主区域 1fr */
+    /* 1. 左侧固定�?10%，主区域 1fr */
     grid-template-columns: 10% 1fr;
     height: 100%;
     background-color: #f9fafb;
@@ -194,7 +193,7 @@ onUnmounted(() => {
 .sidebar {
     position: relative;
     height: 100%;
-    /* 6. 动画与 transform 优化，保障流畅度 */
+    /* 6. 动画�?transform 优化，保障流畅度 */
     transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -204,7 +203,7 @@ onUnmounted(() => {
     overflow: hidden;
 }
 
-/* 2. 内部嵌套容器：宽度占父级的 70% */
+/* 2. 内部嵌套容器：宽度占父级�?70% */
 .sidebar-inner {
     width: 70%;
     margin: 0 auto;
@@ -214,7 +213,7 @@ onUnmounted(() => {
     transition: width 0.3s ease;
 }
 
-/* 3. 流式排布防溢出 */
+/* 3. 流式排布防溢�?*/
 .article-buttons {
     display: flex;
     flex-direction: column;
@@ -269,7 +268,7 @@ onUnmounted(() => {
     text-align: center;
 }
 
-/* 4. 断点：小于 1024px 时自动折叠为图标抽屉 */
+/* 4. 断点：小�?1024px 时自动折叠为图标抽屉 */
 @media (max-width: 1024px) {
     .article-page {
         /* 主内容区保持 100% 可用宽度 */
@@ -292,7 +291,7 @@ onUnmounted(() => {
         width: 100%;
     }
 
-    /* Hover 或 点击后展开至 70% 覆盖层 */
+    /* Hover �?点击后展开�?70% 覆盖�?*/
     .sidebar.is-expanded {
         width: 70%;
         background-color: #fff;
@@ -338,7 +337,7 @@ onUnmounted(() => {
     margin-right: auto;
 }
 
-/* 中间内容区：纸张感 */
+/* 中间内容区：纸张�?*/
 .content {
     min-width: 0;
     flex: 1;
@@ -499,7 +498,7 @@ onUnmounted(() => {
     transform: translateX(20px);
 }
 
-/* 右下角 AI 悬浮球 */
+/* 右下�?AI 悬浮�?*/
 .fab-ai {
     position: fixed;
     right: 32px;

@@ -9,8 +9,8 @@ import 'nprogress/nprogress.css';
 /**
  * NProgress 配置
  */
-NProgress.configure({ 
-    showSpinner: false, // 是否显示加载进度环
+NProgress.configure({
+    showSpinner: false, // 是否显示加载进度条
     speed: 500,         // 动画速度
     minimum: 0.3        // 最小百分比
 });
@@ -21,7 +21,7 @@ NProgress.configure({
 const pendingMap = new Map();
 
 /**
- * 生成唯一的请求 key
+ * 生成唯一的请求key
  */
 function getRequestKey(config) {
     const { method, url, params, data } = config;
@@ -91,13 +91,13 @@ service.interceptors.response.use(
         removePending(response.config);
 
         const res = response.data;
-        
+
         // 兼容处理：二进制数据直接返回
         if (response.request.responseType === 'blob' || response.request.responseType === 'arraybuffer') {
             return res;
         }
 
-        // 统一成功逻辑判断 (code 为 200, 0 或不存在 code 时视为成功)
+        // 统一成功逻辑判断 (code 为200, 0 或不存在 code 时视为成功)
         if (res.code === 200 || res.code === 0 || !res.code) {
             return res.data !== undefined ? res.data : res;
         }
@@ -144,7 +144,7 @@ function handleError(code, msg) {
                 duration: 3000,
                 onClose: () => { window.isUnauthorizedNotifying = false }
             });
-            
+
             // 清除用户信息并跳转
             localStorage.removeItem('token');
             localStorage.removeItem('avatar');
@@ -155,7 +155,7 @@ function handleError(code, msg) {
         return;
     }
 
-    // 2. 根据不同的 HTTP 状态码定制提示（如有需要可扩展）
+    // 2. 根据不同的HTTP 状态码定制提示（如有需要可扩展）
     let displayMsg = msg || '系统操作异常';
     if (msg?.includes('timeout')) displayMsg = '请求超时，请稍后重试';
     if (msg?.includes('Network Error')) displayMsg = '网络连接异常';
@@ -170,7 +170,7 @@ function handleError(code, msg) {
 
 /**
  * 检查是否登录
- * @returns {boolean} true: 已登录, false: 未登录
+ * @returns {boolean} true: 已登录 false: 未登录
  */
 export function checkLogin() {
     const token = localStorage.getItem('token');
@@ -182,4 +182,4 @@ export function checkLogin() {
     return true;
 }
 
-export default service;
+export default service;

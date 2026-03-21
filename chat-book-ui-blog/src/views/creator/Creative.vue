@@ -66,80 +66,30 @@
                     v-model:current-page="currentPage" @current-change="handlePageChange" />
             </div>
 
-            <el-empty v-else description="暂无文章，快去创作吧！" class="empty-state"></el-empty>
+            <el-empty v-else description="暂无文章，快去创作吧" class="empty-state"></el-empty>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue';
-import UserDataCard from "@/components/domain/UserDataCard.vue";
-import { getUserArticlePage, deleteArticle } from "@/api/article.js";
+import { useCreativeLogic, useCreativeFormatter } from './_hooks/useCreativeLogic.js';
+import UserDataCard from "@/views/user/components/UserDataCard.vue";
 import { View, ChatDotSquare, Star, Collection } from '@element-plus/icons-vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import router from "@/router/index.js";
 
-// 文章列表数据
-const articles = ref([]);
-const totalArticles = ref(0);
-const pageSize = ref(10);
-const currentPage = ref(1);
+const {
+    articles,
+    totalArticles,
+    pageSize,
+    currentPage,
+    handlePageChange,
+    handleEdit,
+    handleDelete
+} = useCreativeLogic();
 
-// Format Helper
-const formatNumber = (num) => {
-    if (!num) return 0;
-    return num > 9999 ? (num / 10000).toFixed(1) + 'w' : num;
-};
-
-const formatDate = (dateStr) => {
-    if (!dateStr) return '';
-    return dateStr.split('T')[0]; // Simple format
-};
-
-// 获取文章列表
-const fetchArticles = async () => {
-    try {
-        const response = await getUserArticlePage(currentPage.value, pageSize.value)
-        if (response === null) { return; }
-        articles.value = response.list;
-        totalArticles.value = parseInt(response.total);
-    } catch (error) {
-        console.error('Failed to fetch articles:', error);
-    }
-};
-
-// 分页变化处理
-const handlePageChange = (newPage) => {
-    currentPage.value = newPage;
-    fetchArticles();
-};
-
-// 编辑文章
-const handleEdit = (article) => {
-    router.push(`/text/${article.id}`);
-};
-
-// 删除文章
-const handleDelete = async (article) => {
-    await ElMessageBox.confirm(
-        `确定要删除文章 "${article.title}" 吗？`,
-        '删除确认',
-        {
-            confirmButtonText: '确定删除',
-            cancelButtonText: '取消',
-            type: 'warning',
-        }
-    );
-
-    await deleteArticle(article.id);
-    ElMessage.success('文章删除成功');
-    fetchArticles();
-};
-
-// 初始化时获取文章列表
-onMounted(() => {
-    fetchArticles();
-});
+const {
+    formatNumber,
+    formatDate
+} = useCreativeFormatter();
 </script>
 
 <style scoped>

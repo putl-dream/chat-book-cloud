@@ -64,8 +64,7 @@ describe('Article.vue Sidebar Layout', () => {
             }
         });
 
-        // 默认非折叠状态
-        expect(wrapper.vm.isSidebarCollapsed).toBe(false);
+        // 默认非折叠状�?        expect(wrapper.vm.isSidebarCollapsed).toBe(false);
 
         const page = wrapper.find('.article-page');
         expect(page.exists()).toBe(true);

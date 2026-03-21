@@ -2,7 +2,6 @@ package fun.amireux.chat.book.framework.redis.config;
 
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import org.springframework.boot.autoconfigure.AutoConfiguration;
@@ -39,8 +38,7 @@ public class RedisConfig {
         template.setConnectionFactory(connectionFactory);
 
         StringRedisSerializer keySerializer = new StringRedisSerializer();
-        GenericJackson2JsonRedisSerializer valueSerializer =
-                new GenericJackson2JsonRedisSerializer(createRedisObjectMapper());
+        GenericJackson2JsonRedisSerializer valueSerializer = createRedisSerializer();
 
         template.setKeySerializer(keySerializer);
         template.setHashKeySerializer(keySerializer);
@@ -53,8 +51,7 @@ public class RedisConfig {
     @Bean
     @ConditionalOnMissingBean(CacheManager.class)
     public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
-        ObjectMapper objectMapper = createRedisObjectMapper();
-        GenericJackson2JsonRedisSerializer serializer = new GenericJackson2JsonRedisSerializer(objectMapper);
+        GenericJackson2JsonRedisSerializer serializer = createRedisSerializer();
 
         RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
                 .entryTtl(Duration.ofMinutes(30))
@@ -80,11 +77,11 @@ public class RedisConfig {
                 .build();
     }
 
-    private ObjectMapper createRedisObjectMapper() {
-        ObjectMapper objectMapper = new ObjectMapper();
-        objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        objectMapper.registerModule(new JavaTimeModule());
-        objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
-        return objectMapper;
+    GenericJackson2JsonRedisSerializer createRedisSerializer() {
+        return new GenericJackson2JsonRedisSerializer().configure(objectMapper -> {
+            objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        });
     }
 }

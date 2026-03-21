@@ -33,7 +33,7 @@
                                 个人信息
                             </el-dropdown-item>
                             <el-dropdown-item @click="handleCommand('logout')">
-                                退出登录
+                                退出登�?
                             </el-dropdown-item>
                         </div>
                     </template>
@@ -62,8 +62,8 @@
 import { markRaw, onMounted, reactive, ref } from "vue";
 import { HomeFilled, Monitor, Promotion, Reading, Connection, PriceTag, ChatDotRound, Bell, Clock, Edit } from "@element-plus/icons-vue";
 import router from "@/router/index.js";
-import UserCard from "@/components/domain/UserCard.vue";
-import { getUserBySelf } from "@/api/user.js";
+import UserCard from "@/views/user/components/UserCard.vue";
+import { getUserBySelf } from "@/views/user/_domain/user.js";
 
 const props = defineProps({
     showSearch: {

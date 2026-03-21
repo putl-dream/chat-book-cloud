@@ -114,6 +114,12 @@ const routes = [
                 name: 'Content',
                 component: () => import('@/views/article/Content.vue'),
                 meta: { requiresAuth: true }
+            },
+            {
+                path: 'drafts',
+                name: 'Drafts',
+                component: () => import('@/views/creator/DraftBox.vue'),
+                meta: { requiresAuth: true }
             }
         ]
     },
@@ -150,7 +156,7 @@ const router = createRouter({
 
 // 路由守卫
 router.beforeEach((to, from, next) => {
-    const token = localStorage.getItem('token'); // 从 localStorage 获取 token
+    const token = localStorage.getItem('token'); // �?localStorage 获取 token
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
     if (requiresAuth && !token) {

@@ -2,7 +2,7 @@
     <div class="tag-filter">
         <el-dropdown @command="handleTagSelect" trigger="click">
             <el-button type="primary" plain>
-                标签筛选 <el-icon><ArrowDown /></el-icon>
+                标签筛�?<el-icon><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
                 <el-dropdown-menu>
@@ -33,7 +33,7 @@
 <script setup>
 import { ref, onMounted, computed, watch } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
-import { getTagsByType, getAllTags } from '@/api/tag.js'
+import { getTagsByType, getAllTags } from '@/views/article/_domain/tag.js'
 import { TAG_TYPE_ENUM } from '@/constants/index.js'
 
 const emit = defineEmits(['tag-change'])

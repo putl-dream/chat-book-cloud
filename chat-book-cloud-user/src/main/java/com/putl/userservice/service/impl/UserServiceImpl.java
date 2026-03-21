@@ -22,7 +22,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -62,7 +61,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
-    @Cacheable(value = "userBatchCache", key = "T(java.util.Arrays).hashCode(#ids.![].toArray())", unless = "#result == null || #result.isEmpty()")
+    @Cacheable(
+            value = "userBatchCache",
+            key = "'ids:' + T(org.springframework.util.StringUtils).collectionToCommaDelimitedString(#ids)",
+            condition = "#ids != null && !#ids.isEmpty()",
+            unless = "#result == null || #result.isEmpty()"
+    )
     public List<UserVO> selectByIds(List<Integer> ids) {
         if (ids == null || ids.isEmpty()) {
             return new ArrayList<>();
