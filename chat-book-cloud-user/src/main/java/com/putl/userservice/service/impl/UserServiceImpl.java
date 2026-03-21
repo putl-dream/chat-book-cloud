@@ -21,6 +21,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -95,9 +96,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     public IPage<UserVO> selectPage(Integer page, Integer size) {
-        Page<UserDO> user = userMapper.selectPage(new Page<>(page, size), Wrappers.<UserDO>lambdaQuery()
+        Page<UserDO> userPage = userMapper.selectPage(new Page<>(page, size), Wrappers.<UserDO>lambdaQuery()
                 .orderByDesc(UserDO::getCreateTime));
-        return user.convert(userDO -> selectById(userDO.getId()));
+        List<Integer> ids = userPage.getRecords().stream().map(UserDO::getId).toList();
+        List<UserVO> userVOList = selectByIds(ids);
+        Map<Integer, UserVO> userVOMap = userVOList.stream()
+                .collect(Collectors.toMap(UserVO::getUserId, Function.identity()));
+        // 保持原有分页顺序
+        List<UserVO> orderedList = userPage.getRecords().stream()
+                .map(record -> userVOMap.get(record.getId()))
+                .filter(Objects::nonNull)
+                .toList();
+        Page<UserVO> resultPage = new Page<>(userPage.getCurrent(), userPage.getSize(), userPage.getTotal());
+        resultPage.setRecords(orderedList);
+        return resultPage;
     }
 
     @Override

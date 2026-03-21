@@ -3,6 +3,7 @@ package com.putl.articleservice.mapper;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.putl.articleservice.mapper.dto.ArticleTagPair;
 import com.putl.articleservice.mapper.entity.ArticleTagDO;
+import org.apache.ibatis.annotations.Insert;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 import org.apache.ibatis.annotations.Select;
@@ -50,4 +51,15 @@ public interface ArticleTagMapper extends BaseMapper<ArticleTagDO> {
                 java.util.stream.Collectors.mapping(p -> p.tagId, java.util.stream.Collectors.toList())
         ));
     }
+
+    /**
+     * 批量插入文章标签关联
+     */
+    @Insert("<script>" +
+            "INSERT INTO article_tag (article_id, tag_id) VALUES " +
+            "<foreach collection='list' item='item' separator=','>" +
+            "(#{item.articleId}, #{item.tagId})" +
+            "</foreach>" +
+            "</script>")
+    void insertBatch(@Param("list") List<ArticleTagDO> articleTagList);
 }

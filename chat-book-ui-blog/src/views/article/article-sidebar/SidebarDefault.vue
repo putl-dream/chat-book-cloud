@@ -5,6 +5,9 @@
             <AuthorCard :userId="userId" />
         </div>
         <div class="article-right-card">
+            <ArticleTagCard :articleId="articleId" :tagIds="tagIds" />
+        </div>
+        <div class="article-right-card">
             <RelatedCard :articleId="articleId" />
         </div>
     </div>
@@ -12,6 +15,7 @@
 
 <script setup>
 import AuthorCard from "@/components/domain/AuthorCard.vue";
+import ArticleTagCard from "@/components/domain/ArticleTagCard.vue";
 import RelatedCard from "@/components/domain/RelatedCard.vue";
 
 defineProps({
@@ -22,6 +26,10 @@ defineProps({
     articleId: {
         type: [Number, String],
         required: true
+    },
+    tagIds: {
+        type: Array,
+        default: () => []
     }
 });
 </script>

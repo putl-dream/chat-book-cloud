@@ -19,6 +19,8 @@ const router = createRouter({
     routes: [{ path: '/article/:id', component: Article }]
 });
 
+const queryArticleRequestMock = vi.fn();
+
 // Mock hook
 vi.mock('./Article/_hooks/useArticleLogic.js', () => ({
     useArticleLogic: () => ({
@@ -29,7 +31,7 @@ vi.mock('./Article/_hooks/useArticleLogic.js', () => ({
         showRightPanel: { value: false },
         rightSidebarWidth: { value: 300 },
         startResize: vi.fn(),
-        queryArticleRequest: vi.fn(),
+        queryArticleRequest: queryArticleRequestMock,
         handleLike: vi.fn(),
         handleComment: vi.fn(),
         handleAiChat: vi.fn(),
@@ -42,6 +44,7 @@ describe('Article.vue Sidebar Layout', () => {
     beforeEach(() => {
         Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1200 });
         vi.restoreAllMocks();
+        queryArticleRequestMock.mockClear();
     });
 
     it('should have normal layout when viewport > 1024px', async () => {
@@ -133,5 +136,33 @@ describe('Article.vue Sidebar Layout', () => {
         await sidebar.trigger('click');
         expect(wrapper.vm.isSidebarExpanded).toBe(true);
         expect(sidebar.classes()).toContain('is-expanded');
+    });
+
+    it('should query article once on initial mount and again when route id changes', async () => {
+        await router.push('/article/1');
+        await router.isReady();
+
+        const wrapper = mount(Article, {
+            global: {
+                plugins: [router, ElementPlus],
+                stubs: {
+                    MarkdownRenderer: true,
+                    Pointer: true,
+                    Star: true,
+                    ChatLineRound: true,
+                    Service: true,
+                    SidebarDefault: true,
+                    SidebarComment: true,
+                    SidebarAI: true
+                }
+            }
+        });
+
+        await wrapper.vm.$nextTick();
+        expect(queryArticleRequestMock).toHaveBeenCalledTimes(1);
+
+        await router.push('/article/2');
+        await wrapper.vm.$nextTick();
+        expect(queryArticleRequestMock).toHaveBeenCalledTimes(2);
     });
 });

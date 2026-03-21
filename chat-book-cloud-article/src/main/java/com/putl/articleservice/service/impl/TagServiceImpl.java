@@ -119,13 +119,14 @@ public class TagServiceImpl implements TagService {
             throw new com.putl.articleservice.exception.BusinessException(400, "学习路径标签最多选择1个");
         }
 
-        // 新增关联
-        for (Integer tagId : distinctTagIds) {
-            articleTagMapper.insert(ArticleTagDO.builder()
-                    .articleId(articleId)
-                    .tagId(tagId)
-                    .build());
-        }
+        // 批量新增关联，避免 N+1 插入
+        List<ArticleTagDO> articleTagList = distinctTagIds.stream()
+                .map(tagId -> ArticleTagDO.builder()
+                        .articleId(articleId)
+                        .tagId(tagId)
+                        .build())
+                .toList();
+        articleTagMapper.insertBatch(articleTagList);
     }
 
     @Override

@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDateTime;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -369,6 +370,11 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         // 获取这些文章的标签Map
         Map<Integer, List<Integer>> articleTagMap = articleTagMapper.selectTagIdMapByArticleIds(new ArrayList<>(relatedArticleIds));
 
+        // 批量获取相关文章，避免 N+1 查询
+        List<ArticleDO> relatedArticles = articleMapper.selectBatchIds(relatedArticleIds);
+        Map<Integer, ArticleDO> articleDOMap = relatedArticles.stream()
+                .collect(Collectors.toMap(ArticleDO::getId, Function.identity()));
+
         // 排除当前文章，计算每篇文章的推荐得分
         List<Map.Entry<Integer, Integer>> scoredArticles = new ArrayList<>(); // <articleId, score>
         for (Map.Entry<Integer, List<Integer>> entry : articleTagMap.entrySet()) {
@@ -392,7 +398,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
                 }
             }
             // 相同内容类型：+1 分
-            ArticleDO relatedArticle = articleMapper.selectById(relatedArticleId);
+            ArticleDO relatedArticle = articleDOMap.get(relatedArticleId);
             if (relatedArticle != null && relatedArticle.getStatus() == ArticleStatus.PUBLISHED) {
                 if (currentArticle.getContentType() != null &&
                         currentArticle.getContentType().equals(relatedArticle.getContentType())) {
@@ -411,8 +417,8 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         scoredArticles.sort((a, b) -> {
             int cmp = b.getValue().compareTo(a.getValue());
             if (cmp != 0) return cmp;
-            ArticleDO articleA = articleMapper.selectById(a.getKey());
-            ArticleDO articleB = articleMapper.selectById(b.getKey());
+            ArticleDO articleA = articleDOMap.get(a.getKey());
+            ArticleDO articleB = articleDOMap.get(b.getKey());
             if (articleA == null || articleB == null) return 0;
             return articleB.getCreateTime().compareTo(articleA.getCreateTime());
         });

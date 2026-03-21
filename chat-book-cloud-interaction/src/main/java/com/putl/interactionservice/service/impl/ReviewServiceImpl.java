@@ -33,10 +33,22 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
             return Collections.emptyList();
         }
 
+        // 批量获取用户信息，避免 N+1 查询
+        List<Integer> userIds = dos.stream().map(ReviewDO::getUserId).distinct().toList();
+        Map<Integer, UserResult> userMap = new HashMap<>();
+        if (!userIds.isEmpty()) {
+            CommonResult<List<UserResult>> batchResult = userClient.getUsersByIds(userIds);
+            if (batchResult != null && batchResult.getData() != null) {
+                for (UserResult userResult : batchResult.getData()) {
+                    userMap.put(userResult.getId(), userResult);
+                }
+            }
+        }
+
         Map<Integer, ReviewListVO> map = new HashMap<>();
         List<ReviewListVO> header = new ArrayList<>();
 
-        List<ReviewListVO> allComments = dos.stream().map(this::getReviewVO).toList();
+        List<ReviewListVO> allComments = dos.stream().map(item -> getReviewVO(item, userMap)).toList();
 
         for (ReviewListVO comment : allComments) {
             if (comment.getParentId() == 0) {
@@ -72,9 +84,8 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
         return saved;
     }
 
-    private ReviewListVO getReviewVO(ReviewDO item) {
-        CommonResult<UserResult> userResult = userClient.getUserById(item.getUserId());
-        UserResult user = userResult != null ? userResult.getData() : null;
+    private ReviewListVO getReviewVO(ReviewDO item, Map<Integer, UserResult> userMap) {
+        UserResult user = userMap.get(item.getUserId());
         ReviewListVO rspVO = new ReviewListVO();
         rspVO.setId(item.getId());
         rspVO.setArticleId(item.getTextId());

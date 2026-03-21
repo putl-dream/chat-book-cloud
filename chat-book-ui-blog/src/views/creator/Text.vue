@@ -541,7 +541,7 @@ const connectWebSocket = () => {
         // 恢复标签选择状态
         if (data.tagIds && data.tagIds.length > 0) {
             const techIds = techTags.value.filter(t => t.type === 1).map(t => t.id);
-            const pathIds = techTags.value.filter(t => t.type === 2).map(t => t.id);
+            const pathIds = pathTags.value.filter(t => t.type === 2).map(t => t.id);
             selectedTechTags.value = data.tagIds.filter(id => techIds.includes(id));
             const pathTag = data.tagIds.find(id => pathIds.includes(id));
             selectedPathTag.value = pathTag || null;
