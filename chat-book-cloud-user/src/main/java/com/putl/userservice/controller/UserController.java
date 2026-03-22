@@ -40,7 +40,11 @@ public class UserController {
     @Operation(summary = "更新用户信息")
     @PostMapping("/update")
     public CommonResult<Void> updateUser(@RequestBody UserVO userVO) {
-        userService.updateUser(userVO);
+        String userId = UserContext.getUserId();
+        if (userId == null) {
+            return CommonResult.error(ErrorType.ERROR_401);
+        }
+        userService.updateUser(Integer.parseInt(userId), userVO);
         return CommonResult.success();
     }
 

@@ -12,7 +12,6 @@ import com.putl.userservice.mapper.entity.UserDO;
 import com.putl.userservice.mapper.entity.UserInfoDO;
 import com.putl.userservice.service.UserInfoService;
 import com.putl.userservice.service.UserService;
-import fun.amireux.chat.book.framework.common.context.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -125,15 +124,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     @Transactional
     @Caching(evict = {
-            @CacheEvict(value = "userCache", key = "#userVO.userId"),
+            @CacheEvict(value = "userCache", key = "#p0"),
             @CacheEvict(value = "userBatchCache", allEntries = true)
     })
-    public void updateUser(UserVO userVO) {
-        String userId = UserContext.getUserId();
-        if (userId == null) {
+    public void updateUser(Integer currentUserId, UserVO userVO) {
+        if (currentUserId == null) {
             throw new IllegalStateException("用户信息未找到，请重新登录");
         }
-        Integer currentUserId = Integer.parseInt(userId);
 
         UserInfoDO existing = userInfoService.getByUserId(currentUserId);
         UserInfoDO duplicateUsername = userInfoMapper.selectOne(Wrappers.<UserInfoDO>lambdaQuery()

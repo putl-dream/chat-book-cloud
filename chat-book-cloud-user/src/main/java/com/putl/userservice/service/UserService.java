@@ -28,7 +28,8 @@ public interface UserService extends IService<UserDO> {
 
     /**
      * 更新用户信息
+     * @param currentUserId 当前登录用户ID
      * @param userVO
      */
-    void updateUser(UserVO userVO);
+    void updateUser(Integer currentUserId, UserVO userVO);
 }
