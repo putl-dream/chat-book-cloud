@@ -66,6 +66,150 @@ jobs:
           tar -xzf "${archive_file}" -C "${GITHUB_WORKSPACE}" --strip-components=1
           rm -f "${archive_file}"
 
+      - name: Detect changed areas
+        id: changes
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import urllib.request
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          event_name = os.environ["GITHUB_EVENT_NAME"]
+          event_path = os.environ["GITHUB_EVENT_PATH"]
+          token = os.environ["GITHUB_TOKEN"]
+          output_path = os.environ["GITHUB_OUTPUT"]
+
+          service_map = {
+              "chat-book-cloud-gateway/": ("gateway", "chat-book-cloud-gateway"),
+              "chat-book-cloud-auth/": ("auth", "chat-book-cloud-auth"),
+              "chat-book-cloud-user/": ("user", "chat-book-cloud-user"),
+              "chat-book-cloud-article/": ("article", "chat-book-cloud-article"),
+              "chat-book-cloud-interaction/": ("interaction", "chat-book-cloud-interaction"),
+              "chat-book-cloud-social/": ("social", "chat-book-cloud-social"),
+              "chat-book-cloud-chat/": ("chat", "chat-book-cloud-chat"),
+              "chat-book-ui-blog/": ("frontend", None),
+          }
+          backend_services = [
+              ("gateway", "chat-book-cloud-gateway"),
+              ("auth", "chat-book-cloud-auth"),
+              ("user", "chat-book-cloud-user"),
+              ("article", "chat-book-cloud-article"),
+              ("interaction", "chat-book-cloud-interaction"),
+              ("social", "chat-book-cloud-social"),
+              ("chat", "chat-book-cloud-chat"),
+          ]
+          deploy_order = [name for name, _ in backend_services] + ["frontend"]
+          common_backend_prefixes = (
+              "chat-book-cloud-framework/",
+              "chat-book-cloud-api/",
+              "chat-book-cloud-dependencies/",
+          )
+          ignored_prefixes = (
+              ".github/",
+          )
+          ignored_files = {
+              ".gitignore",
+              "README.md",
+              "docker-compose.yml",
+          }
+
+          def ordered_unique(values, order):
+              present = set(values)
+              return [item for item in order if item in present]
+
+          files = None
+          before = ""
+          if event_name == "push":
+              with open(event_path, "r", encoding="utf-8") as fh:
+                  payload = json.load(fh)
+              before = payload.get("before") or ""
+
+          if event_name == "push" and before and set(before) != {"0"}:
+              compare_url = f"https://api.github.com/repos/{repo}/compare/{before}...{sha}"
+              request = urllib.request.Request(
+                  compare_url,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "chat-book-cloud-deploy-dev",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      compare = json.load(response)
+                  files = [item["filename"] for item in compare.get("files", [])]
+              except Exception:
+                  files = None
+
+          full_backend = files is None
+          build_frontend = files is None
+          backend_modules = set()
+          deploy_services = set()
+
+          if files is not None:
+              for path in files:
+                  if path in ignored_files or path.startswith(ignored_prefixes):
+                      continue
+
+                  if path == "pom.xml" or path == "docker-compose.dev.yml":
+                      full_backend = True
+                      build_frontend = True
+                      continue
+
+                  if path.startswith(common_backend_prefixes):
+                      full_backend = True
+                      continue
+
+                  matched = False
+                  for prefix, (service, module) in service_map.items():
+                      if path.startswith(prefix):
+                          matched = True
+                          if service == "frontend":
+                              build_frontend = True
+                              deploy_services.add("frontend")
+                          else:
+                              backend_modules.add(module)
+                              deploy_services.add(service)
+                          break
+
+                  if matched:
+                      continue
+
+                  full_backend = True
+                  build_frontend = True
+
+          if full_backend:
+              backend_modules = {module for _, module in backend_services}
+              deploy_services.update(name for name, _ in backend_services)
+
+          if build_frontend:
+              deploy_services.add("frontend")
+
+          ordered_backend_modules = ordered_unique(
+              backend_modules,
+              [module for _, module in backend_services],
+          )
+          ordered_deploy_services = ordered_unique(deploy_services, deploy_order)
+
+          with open(output_path, "a", encoding="utf-8") as out:
+              out.write(f"build_backend={'true' if ordered_backend_modules else 'false'}\n")
+              out.write(f"backend_modules={','.join(ordered_backend_modules)}\n")
+              out.write(f"build_frontend={'true' if build_frontend else 'false'}\n")
+              out.write(f"deploy_services={','.join(ordered_deploy_services)}\n")
+          PY
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Show build plan
+        run: |
+          echo "build_backend=${{ steps.changes.outputs.build_backend }}"
+          echo "backend_modules=${{ steps.changes.outputs.backend_modules }}"
+          echo "build_frontend=${{ steps.changes.outputs.build_frontend }}"
+          echo "deploy_services=${{ steps.changes.outputs.deploy_services }}"
+
       - name: Verify local build toolchain
         run: |
           set -euo pipefail
@@ -94,22 +238,37 @@ jobs:
           fi
 
       - name: Build backend with Maven
-        run: mvn -B -ntp clean package -DskipTests --file pom.xml
+        if: steps.changes.outputs.build_backend == 'true'
+        run: |
+          mvn -B -ntp -T 1C \
+            -DskipTests \
+            -Dmaven.artifact.threads=8 \
+            -pl "${{ steps.changes.outputs.backend_modules }}" \
+            -am \
+            package \
+            --file pom.xml
 
       - name: Install frontend dependencies
+        if: steps.changes.outputs.build_frontend == 'true'
         working-directory: chat-book-ui-blog
-        run: npm ci
+        run: npm ci --prefer-offline --no-audit --fund=false
 
       - name: Build frontend
+        if: steps.changes.outputs.build_frontend == 'true'
         working-directory: chat-book-ui-blog
         run: npm run build
 
       - name: Deploy services on VPN server
+        if: steps.changes.outputs.deploy_services != ''
         run: |
           set -euo pipefail
+
+          services="$(echo "${{ steps.changes.outputs.deploy_services }}" | tr ',' ' ')"
+
           if docker compose version > /dev/null 2>&1; then
-            docker compose -f docker-compose.dev.yml up -d --build --remove-orphans
+            docker compose -f docker-compose.dev.yml up -d --build --remove-orphans ${services}
           else
-            docker-compose -f docker-compose.dev.yml up -d --build --remove-orphans
+            docker-compose -f docker-compose.dev.yml up -d --build --remove-orphans ${services}
           fi
+
           docker image prune -f
