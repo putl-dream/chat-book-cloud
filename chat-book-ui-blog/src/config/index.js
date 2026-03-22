@@ -7,3 +7,7 @@ export const API_CONFIG = {
     baseURL: (import.meta.env.VITE_APP_BASE_URL ?? ''),
     timeout: 8000,
 };
+
+export const AUTH_CONFIG = {
+    baseURL: (import.meta.env.VITE_AUTH_BASE_URL ?? 'http://localhost:8081'),
+};

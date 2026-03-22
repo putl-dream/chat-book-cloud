@@ -17,6 +17,9 @@ spring:
     username: ${MYSQL_USERNAME:root}
     password: ${MYSQL_PASSWORD:root}
 
-oauth2:
-  success:
-    redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:http://180.184.30.1/login}
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://10.0.0.2:9000}
+  access-key: ${MINIO_ACCESS_KEY:admin}
+  secret-key: ${MINIO_SECRET_KEY:admin@2026}
+  bucket: ${MINIO_BUCKET:chat-book-images}
+  public-url: ${MINIO_PUBLIC_URL:http://49.235.53.56:9000}

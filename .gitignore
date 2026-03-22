@@ -1,32 +1,40 @@
-### Java & Maven ###
+### Java / Maven / Gradle ###
 target/
 **/target/
-.mvn/wrapper/maven-wrapper.jar
+build/
+**/build/
+out/
 .flattened-pom.xml
 **/.flattened-pom.xml
+dependency-reduced-pom.xml
 
-### Node.js & Vue (前端通用) ###
+### Node / Vite ###
 node_modules/
+**/node_modules/
 dist/
+**/dist/
+coverage/
+**/coverage/
+.vite/
+**/.vite/
 .npm/
-# 本地环境变量文件（保护敏感配置）
+.pnpm-store/
+
+### Local env files ###
 .env.local
 .env.*.local
 
-### IDE & 编辑器 ###
-# IntelliJ IDEA
+### IDE / Editor ###
 .idea/
+**/.idea/
+.vscode/
+**/.vscode/
+.history/
 *.iws
 *.iml
 *.ipr
-*.md
-out/
 
-# VS Code
-.vscode/
-.history/
-
-# STS / Eclipse
+### Eclipse / STS ###
 .apt_generated/
 .classpath
 .factorypath
@@ -35,36 +43,49 @@ out/
 .springBeans
 .sts4-cache/
 
-# NetBeans
+### NetBeans ###
 /nbproject/private/
 /nbbuild/
 /nbdist/
 /.nb-gradle/
-build/
-**/build/
 
-### AI & Agent 本地缓存 ###
+### AI / Agent cache ###
 .qoder/
 .claude/
 .agents/
 
-### 日志文件 ###
-*.log
+### Logs / Runtime ###
 logs/
+*.log
 *.log.*
+*.out
+*.err
+*.pid
+*.pid.lock
+hs_err_pid*
+replay_pid*
 
-### 操作系统 ###
+### OS files ###
 .DS_Store
 Thumbs.db
 
-### 临时文件 ###
+### Temp / backup ###
 *.tmp
 *.bak
 *.swp
 *~
+*.orig
+*.rej
+*.md
 
-### 敏感配置文件 ###
+### Local Spring overrides ###
 application-local.yml
 application-local.yaml
 bootstrap-local.yml
 bootstrap-local.yaml
+
+### Versioned Spring profile templates ###
+!**/src/main/resources/application-local.yml
+!**/src/main/resources/application-local.yaml
+!**/src/main/resources/bootstrap-local.yml
+!**/src/main/resources/bootstrap-local.yaml
