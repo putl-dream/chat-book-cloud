@@ -1,35 +1,10 @@
 spring:
   config:
-    import: nacos:article-service-dev.yml
-
-  rabbitmq:
-    host: ${RABBITMQ_HOST:127.0.0.1}
-    port: ${RABBITMQ_PORT:5672}
-    username: ${RABBITMQ_USERNAME:admin}
-    password: ${RABBITMQ_PASSWORD:admin@2026}
-
-  datasource:
-    url: jdbc:mysql://${MYSQL_HOST:127.0.0.1}:${MYSQL_PORT:3306}/chat_book_article?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: ${MYSQL_USERNAME:root}
-    password: ${MYSQL_PASSWORD:root}
-
-  data:
-    redis:
-      host: ${REDIS_HOST:127.0.0.1}
-      port: ${REDIS_PORT:6379}
-      password: ${REDIS_PASSWORD:}
+    import: optional:nacos:article-service-${spring.profiles.active}.yml
 
 file:
   storage:
     base-url: ${FILE_STORAGE_BASE_URL:}
-
-minio:
-  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
-  access-key: ${MINIO_ACCESS_KEY:admin}
-  secret-key: ${MINIO_SECRET_KEY:admin@2026}
-  bucket: ${MINIO_BUCKET:chat-book-images}
-  public-url: ${MINIO_PUBLIC_URL:http://localhost:9000}
 
 websocket:
   path: /article/ws

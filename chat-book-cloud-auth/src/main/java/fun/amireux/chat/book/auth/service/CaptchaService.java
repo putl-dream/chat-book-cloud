@@ -23,7 +23,7 @@ public class CaptchaService {
 
     private static final long CAPTCHA_EXPIRE_TIME = 5; // 5 minutes
 
-    @Value("${spring.profiles.active:dev}")
+    @Value("${spring.profiles.active:local}")
     private String env;
 
     public void sendCaptcha(String email) {
