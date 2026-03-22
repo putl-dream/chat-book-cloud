@@ -60,10 +60,10 @@ jobs:
           npm -v
 
           java_major="$(java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2; exit}')"
-          node_major="$(node -p 'process.versions.node.split(\".\")[0]')"
+          node_major="$(node -v | sed 's/^v//' | cut -d. -f1)"
 
-          if [ "${java_major}" != "17" ]; then
-            echo "Java 17 is required on the self-hosted runner, found: ${java_major}"
+          if [ "${java_major}" -lt 17 ]; then
+            echo "Java 17+ is required on the self-hosted runner, found: ${java_major}"
             exit 1
           fi
 
