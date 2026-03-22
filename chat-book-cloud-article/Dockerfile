@@ -15,7 +15,7 @@ WORKDIR /app
 COPY target/*.jar app.jar
 
 # 暴露端口
-EXPOSE 9091
+EXPOSE 8082
 
 # 启动命令
 ENTRYPOINT ["java", "-jar", "app.jar"]
