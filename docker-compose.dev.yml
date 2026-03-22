@@ -11,6 +11,12 @@ services:
       NACOS_SERVER_ADDR: ${NACOS_SERVER_ADDR:-10.0.0.2:8848}
       SPRING_CLOUD_NACOS_DISCOVERY_IP: ${NACOS_REGISTER_IP:-10.0.0.1}
       SPRING_CLOUD_NACOS_DISCOVERY_PORT: 8080
+      AUTH_SERVICE_URI: http://auth:8081
+      ARTICLE_SERVICE_URI: http://article:8082
+      USER_SERVICE_URI: http://user:8083
+      CHAT_SERVICE_URI: http://chat:8085
+      INTERACTION_SERVICE_URI: http://interaction:8084
+      SOCIAL_SERVICE_URI: http://social:8086
     networks:
       - chat-book-net
 
