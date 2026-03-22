@@ -21,6 +21,14 @@ NProgress.configure({
 const pendingMap = new Map();
 
 /**
+ * 仅对非 GET 请求做重复提交拦截，允许页面初始化阶段并发拉取相同数据。
+ */
+function shouldTrackRequest(config) {
+    const method = String(config?.method || 'get').toLowerCase();
+    return !['get', 'head', 'options'].includes(method);
+}
+
+/**
  * 生成唯一的请求key
  */
 function getRequestKey(config) {
@@ -32,6 +40,10 @@ function getRequestKey(config) {
  * 移除重复请求
  */
 function removePending(config) {
+    if (!shouldTrackRequest(config)) {
+        return;
+    }
+
     const key = getRequestKey(config);
     if (pendingMap.has(key)) {
         const controller = pendingMap.get(key);
@@ -60,11 +72,13 @@ service.interceptors.request.use(
         // 开启进度条
         NProgress.start();
 
-        // 重复请求拦截：如果已经有相同的请求在进行，则取消之前的请求
-        removePending(config);
-        const controller = new AbortController();
-        config.signal = controller.signal;
-        pendingMap.set(getRequestKey(config), controller);
+        // 重复请求拦截：仅拦截可能产生副作用的重复提交
+        if (shouldTrackRequest(config)) {
+            removePending(config);
+            const controller = new AbortController();
+            config.signal = controller.signal;
+            pendingMap.set(getRequestKey(config), controller);
+        }
 
         const token = localStorage.getItem('token');
         if (token) {

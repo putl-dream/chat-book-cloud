@@ -269,9 +269,9 @@ jobs:
           services="$(echo "${{ steps.changes.outputs.deploy_services }}" | tr ',' ' ')"
 
           if docker compose version > /dev/null 2>&1; then
-            docker compose -f docker-compose.dev.yml up -d --build --remove-orphans ${services}
+            docker compose -f docker-compose.dev.yml up -d --build --no-deps --remove-orphans ${services}
           else
-            docker-compose -f docker-compose.dev.yml up -d --build --remove-orphans ${services}
+            docker-compose -f docker-compose.dev.yml up -d --build --no-deps --remove-orphans ${services}
           fi
 
           docker image prune -f

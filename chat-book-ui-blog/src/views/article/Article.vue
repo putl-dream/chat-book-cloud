@@ -242,6 +242,7 @@ onUnmounted(() => {
     display: grid;
     grid-template-columns: 10% 1fr;
     height: 100%;
+    min-height: 0;
     background: var(--article-page-radial), var(--article-page-bg);
     position: relative;
     overflow: hidden;
@@ -250,6 +251,7 @@ onUnmounted(() => {
 .sidebar {
     position: relative;
     height: 100%;
+    min-height: 0;
     transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -330,6 +332,7 @@ onUnmounted(() => {
 
 .main-container {
     height: 100%;
+    min-height: 0;
     position: relative;
     overflow: hidden;
     display: flex;
@@ -347,6 +350,7 @@ onUnmounted(() => {
     padding: var(--container-padding) var(--container-padding) 0 0;
     align-items: stretch;
     height: 100%;
+    min-height: 0;
     overflow: hidden;
     box-sizing: border-box;
 }
@@ -358,6 +362,7 @@ onUnmounted(() => {
 
 .content {
     min-width: 0;
+    min-height: 0;
     flex: 1;
     margin: 0 auto;
     padding: 32px clamp(18px, 3vw, 44px) 36px;
@@ -497,6 +502,7 @@ onUnmounted(() => {
 .article-content {
     flex: 1;
     width: 100%;
+    min-height: 0;
 }
 
 .article-body {
