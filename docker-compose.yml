@@ -111,6 +111,8 @@ services:
       RABBITMQ_HOST: rabbitmq
       RABBITMQ_USERNAME: admin
       RABBITMQ_PASSWORD: admin@2026
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-http://localhost:5173/login}
     depends_on:
       - mysql
