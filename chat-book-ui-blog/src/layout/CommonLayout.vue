@@ -6,7 +6,9 @@
 
         <el-main class="main" id="common-layout-main">
             <div class="main-view">
-                <router-view/>
+                <router-view v-slot="{ Component }">
+                    <component :is="Component" class="route-view" />
+                </router-view>
             </div>
             <SiteFooter class="layout-footer" />
         </el-main>
@@ -24,6 +26,7 @@ import SiteFooter from "@/components/common/SiteFooter.vue";
     padding: 0;
     width: 100%;
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
@@ -31,7 +34,15 @@ import SiteFooter from "@/components/common/SiteFooter.vue";
 }
 
 .main-view {
-    flex: 1 0 auto;
+    flex: 1 1 auto;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+.route-view {
+    flex: 1 1 auto;
+    min-height: 0;
 }
 
 .layout-footer {
