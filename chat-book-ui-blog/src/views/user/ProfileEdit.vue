@@ -175,13 +175,15 @@ onMounted(() => {
 
 <style scoped>
 .profile-edit-page {
-    height: 100%;
+    min-height: 100%;
     background-color: var(--bg-color-base);
     position: relative;
-    overflow: hidden;
+    overflow: visible;
     display: flex;
     justify-content: center;
     align-items: flex-start;
+    padding: 20px 20px calc(env(safe-area-inset-bottom, 0px) + 112px);
+    box-sizing: border-box;
 }
 
 /* Background Decoration */
@@ -208,7 +210,7 @@ onMounted(() => {
     border-radius: var(--border-radius-xl);
     padding: 40px;
     box-shadow: var(--box-shadow-glass);
-    margin-top: 20px;
+    margin: 0 auto;
 }
 
 /* Animations */
@@ -420,7 +422,7 @@ onMounted(() => {
 /* Responsive */
 @media (max-width: 768px) {
     .profile-edit-page {
-        padding: 20px;
+        padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 104px);
     }
 
     .edit-container {

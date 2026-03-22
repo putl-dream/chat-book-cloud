@@ -22,6 +22,7 @@ const currentYear = new Date().getFullYear();
     justify-content: center;
     position: relative;
     z-index: 5;
+    pointer-events: none;
 }
 
 .site-footer__inner {
