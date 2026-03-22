@@ -180,6 +180,9 @@ services:
     build: ./chat-book-ui-blog
     ports:
       - "80:80"
+    environment:
+      GATEWAY_PROXY_TARGET: http://gateway:8080
+      MINIO_PROXY_TARGET: http://minio:9000
     depends_on:
       - gateway
     networks:
