@@ -110,6 +110,7 @@ onUnmounted(() => {
     /* Native scrolling via AppLayout */
     display: flex;
     justify-content: center;
+    width: 100%;
     min-height: 100%;
 }
 
@@ -119,6 +120,7 @@ onUnmounted(() => {
     padding: 32px 24px;
     display: flex;
     flex-direction: column;
+    margin: 0 auto;
 }
 
 .page-header {

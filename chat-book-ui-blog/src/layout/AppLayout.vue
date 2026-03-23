@@ -183,4 +183,13 @@ const headerHeight = computed(() => 'auto'); // Let it size naturally
   opacity: 0;
   transform: translateY(-10px);
 }
+
+@media (max-width: 768px) {
+  .aside {
+    display: none !important;
+  }
+  .main-content {
+    padding: 16px;
+  }
+}
 </style>

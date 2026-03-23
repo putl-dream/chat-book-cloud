@@ -5,7 +5,7 @@
                 <el-icon><EditPen /></el-icon> 发布文章
             </el-button>
         </div>
-        <el-menu :default-active="$route.path" class="glass-menu" router>
+        <el-menu :default-active="$route.path" class="glass-menu" router @select="$emit('close')">
             <template v-for="(item, index) in menus" :key="index">
                 <el-menu-item :index="item.url" v-if="!item.children" class="menu-item">
                     <el-icon class="icon">

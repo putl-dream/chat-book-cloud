@@ -175,12 +175,19 @@ onMounted(async () => {
 <style scoped>
 .profile-page {
     min-height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
     background-color: var(--bg-color-base);
     padding-bottom: 60px;
     background: var(--app-shell-radial), var(--app-shell-bg);
 }
 
 .profile-container {
+    width: 100%;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
     max-width: var(--container-width-lg);
     margin: 0 auto;
     padding: 0 20px;
@@ -321,6 +328,8 @@ onMounted(async () => {
 }
 
 .profile-content {
+    width: 100%;
+    flex: 1;
     display: flex;
     gap: 24px;
     padding: 0 20px;

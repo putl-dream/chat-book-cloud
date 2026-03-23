@@ -27,7 +27,7 @@
         </div>
         
         <div class="right-section">
-            <div class="page-actions">
+            <div class="page-actions" v-if="!isMobile">
                 <slot name="actions">
                     <div class="action-btn">
                         <el-button type="primary" class="create-btn" @click="router.push('/text')" round>
@@ -37,7 +37,7 @@
                 </slot>
             </div>
             
-            <el-dropdown trigger="click" popper-class="creator-user-dropdown">
+            <el-dropdown trigger="click" popper-class="creator-user-dropdown" v-if="!isMobile">
                 <div class="user-profile-trigger">
                     <div class="user-profile-main">
                         <el-avatar :size="36" :src="user.photo" class="user-avatar">
@@ -71,17 +71,46 @@
                     </el-dropdown-menu>
                 </template>
             </el-dropdown>
+
+            <!-- Mobile Hamburger Icon -->
+            <div class="mobile-menu-trigger" v-if="isMobile" @click="showMobileMenu = true">
+                <el-icon :size="24"><Menu /></el-icon>
+            </div>
         </div>
+
+        <!-- Mobile Drawer Menu -->
+        <el-drawer
+            v-if="isMobile"
+            v-model="showMobileMenu"
+            title="创作中心"
+            direction="ltr"
+            size="260px"
+            class="mobile-creative-drawer"
+            :append-to-body="true"
+        >
+            <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color-light);">
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <el-avatar :size="40" :src="user.photo">{{ user.username?.charAt(0) }}</el-avatar>
+                    <div style="display: flex; flex-direction: column;">
+                        <span style="font-weight: 600; font-size: 15px;">{{ user.username || '创作者' }}</span>
+                        <span style="font-size: 12px; color: var(--color-danger); cursor: pointer;" @click="handleCommand('logout')">退出登录</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Render the creative aside inside the drawer -->
+            <CreativeAside @close="showMobileMenu = false" />
+        </el-drawer>
     </div>
 </template>
 
 <script setup>
-import {computed, onMounted, ref} from "vue";
+import {computed, onMounted, onUnmounted, ref} from "vue";
 import {useRoute} from "vue-router";
 import router from "@/router/index.js";
 import UserCard from "@/views/user/components/UserCard.vue";
 import {getUserBySelf} from "@/views/user/_domain/user.js";
-import { Plus, CaretBottom, User, SwitchButton } from '@element-plus/icons-vue';
+import { Plus, CaretBottom, User, SwitchButton, Menu } from '@element-plus/icons-vue';
+import CreativeAside from '@/views/creator/components/CreativeAside.vue';
 
 const route = useRoute();
 
@@ -126,8 +155,6 @@ const navigateTo = (target) => {
 const handleCommand = (command) => {
     switch (command) {
         case 'logout':
-            // Logic for logout usually involves clearing token and redirecting
-            // Assuming token clearing is handled elsewhere or just simple redirect here
             localStorage.removeItem('token');
             localStorage.removeItem('avatar');
             router.push('/login');
@@ -148,8 +175,25 @@ const userRequest = async () => {
         console.error(e)
     }
 }
+
+const isMobile = ref(false);
+const showMobileMenu = ref(false);
+
+const checkViewport = () => {
+    isMobile.value = window.innerWidth <= 768;
+    if (!isMobile.value) {
+        showMobileMenu.value = false;
+    }
+};
+
 onMounted(() => {
-    userRequest()
+    userRequest();
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
+})
+
+onUnmounted(() => {
+    window.removeEventListener('resize', checkViewport);
 })
 </script>
 
@@ -160,7 +204,7 @@ onMounted(() => {
     align-items: center;
     padding: 0 32px;
     height: var(--header-height);
-    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82) 0%, rgba(255, 255, 255, 0.68) 100%);
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.82), rgba(255, 255, 255, 0.68) 100%);
     backdrop-filter: blur(12px);
     border-bottom: 1px solid rgba(255, 255, 255, 0.56);
     box-shadow: 0 14px 40px rgba(15, 23, 42, 0.04);
@@ -366,6 +410,20 @@ onMounted(() => {
     color: var(--color-danger);
 }
 
+.mobile-menu-trigger {
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    color: var(--text-color-primary);
+    padding: 8px;
+    border-radius: 8px;
+    transition: background-color 0.2s;
+}
+
+.mobile-menu-trigger:hover {
+    background: rgba(79, 70, 229, 0.08);
+}
+
 :deep(.creator-user-dropdown.el-popper) {
     padding: 8px;
     border: none;
@@ -522,6 +580,15 @@ onMounted(() => {
 
     :deep(.creator-user-dropdown .profile-dropdown-menu) {
         min-width: 312px;
+    }
+}
+
+@media (max-width: 768px) {
+    .right-section {
+        border-radius: 12px;
+        background: transparent;
+        box-shadow: none;
+        border: none;
     }
 }
 </style>
