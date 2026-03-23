@@ -75,6 +75,7 @@ jobs:
           python3 - <<'PY'
           import json
           import os
+          import re
           import urllib.request
 
           repo = os.environ["GITHUB_REPOSITORY"]
@@ -103,6 +104,8 @@ jobs:
               ("social", "chat-book-cloud-social"),
               ("chat", "chat-book-cloud-chat"),
           ]
+          backend_service_map = dict(backend_services)
+          compose_service_names = set(backend_service_map) | {"frontend"}
           deploy_order = [name for name, _ in backend_services] + ["frontend"]
           common_backend_prefixes = (
               "chat-book-cloud-framework/",
@@ -122,12 +125,91 @@ jobs:
               present = set(values)
               return [item for item in order if item in present]
 
-          files = None
-          before = ""
+          def build_compose_service_index(path):
+              owners = {}
+              current_service = None
+              in_services = False
+
+              try:
+                  with open(path, "r", encoding="utf-8") as fh:
+                      lines = fh.readlines()
+              except OSError:
+                  return None
+
+              for lineno, line in enumerate(lines, start=1):
+                  stripped = line.strip()
+
+                  if not in_services:
+                      if stripped == "services:":
+                          in_services = True
+                      continue
+
+                  if stripped and not line.startswith(" "):
+                      break
+
+                  if line.startswith("  ") and not line.startswith("    ") and stripped.endswith(":"):
+                      service_name = stripped[:-1]
+                      current_service = service_name if service_name in compose_service_names else None
+
+                  owners[lineno] = current_service
+
+              return owners
+
+          def detect_compose_services(path, patch):
+              if not patch:
+                  return None
+
+              owners = build_compose_service_index(path)
+              if not owners:
+                  return None
+
+              changed = set()
+              new_lineno = None
+              last_service = None
+
+              for line in patch.splitlines():
+                  if line.startswith("@@"):
+                      match = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+                      if not match:
+                          new_lineno = None
+                          last_service = None
+                          continue
+                      new_lineno = int(match.group(1))
+                      last_service = owners.get(new_lineno)
+                      continue
+
+                  if new_lineno is None or line.startswith("+++ ") or line.startswith("--- "):
+                      continue
+
+                  if line.startswith("-"):
+                      if last_service:
+                          changed.add(last_service)
+                      continue
+
+                  service = owners.get(new_lineno) or last_service
+                  if service:
+                      changed.add(service)
+                      last_service = service
+                  new_lineno += 1
+
+              return changed
+
+          payload = {}
+          with open(event_path, "r", encoding="utf-8") as fh:
+              payload = json.load(fh)
+
+          before = payload.get("before") or ""
+          head_commit = payload.get("head_commit") or {}
+          head_commit_message = (head_commit.get("message") or "").lower()
+          force_full_build = False
+
           if event_name == "push":
-              with open(event_path, "r", encoding="utf-8") as fh:
-                  payload = json.load(fh)
-              before = payload.get("before") or ""
+              force_full_build = (
+                  "[full-build]" in head_commit_message
+                  or "[full-rebuild]" in head_commit_message
+              )
+
+          files = None
 
           if event_name == "push" and before and set(before) != {"0"}:
               compare_url = f"https://api.github.com/repos/{repo}/compare/{before}...{sha}"
@@ -143,9 +225,12 @@ jobs:
               try:
                   with urllib.request.urlopen(request, timeout=60) as response:
                       compare = json.load(response)
-                  files = [item["filename"] for item in compare.get("files", [])]
+                  files = compare.get("files", [])
               except Exception:
                   files = None
+
+          if force_full_build:
+              files = None
 
           full_backend = files is None
           build_frontend = files is None
@@ -153,13 +238,31 @@ jobs:
           deploy_services = set()
 
           if files is not None:
-              for path in files:
+              for file_info in files:
+                  path = file_info["filename"]
+
                   if path in ignored_files or path.startswith(ignored_prefixes):
                       continue
 
-                  if path == "pom.xml" or path == "docker-compose.dev.yml":
+                  if path == "pom.xml":
                       full_backend = True
                       build_frontend = True
+                      continue
+
+                  if path == "docker-compose.dev.yml":
+                      compose_services = detect_compose_services(path, file_info.get("patch", ""))
+                      if not compose_services:
+                          full_backend = True
+                          build_frontend = True
+                          continue
+
+                      for service in compose_services:
+                          if service == "frontend":
+                              build_frontend = True
+                              deploy_services.add("frontend")
+                          else:
+                              backend_modules.add(backend_service_map[service])
+                              deploy_services.add(service)
                       continue
 
                   if path.startswith(common_backend_prefixes):
@@ -196,11 +299,14 @@ jobs:
               [module for _, module in backend_services],
           )
           ordered_deploy_services = ordered_unique(deploy_services, deploy_order)
+          maven_threads = "1" if full_backend else "1C"
 
           with open(output_path, "a", encoding="utf-8") as out:
+              out.write(f"full_backend={'true' if full_backend else 'false'}\n")
               out.write(f"build_backend={'true' if ordered_backend_modules else 'false'}\n")
               out.write(f"backend_modules={','.join(ordered_backend_modules)}\n")
               out.write(f"build_frontend={'true' if build_frontend else 'false'}\n")
+              out.write(f"maven_threads={maven_threads}\n")
               out.write(f"deploy_services={','.join(ordered_deploy_services)}\n")
           PY
         env:
@@ -208,9 +314,11 @@ jobs:
 
       - name: Show build plan
         run: |
+          echo "full_backend=${{ steps.changes.outputs.full_backend }}"
           echo "build_backend=${{ steps.changes.outputs.build_backend }}"
           echo "backend_modules=${{ steps.changes.outputs.backend_modules }}"
           echo "build_frontend=${{ steps.changes.outputs.build_frontend }}"
+          echo "maven_threads=${{ steps.changes.outputs.maven_threads }}"
           echo "deploy_services=${{ steps.changes.outputs.deploy_services }}"
 
       - name: Verify local build toolchain
@@ -243,7 +351,7 @@ jobs:
       - name: Build backend with Maven
         if: steps.changes.outputs.build_backend == 'true'
         run: |
-          mvn -B -ntp -T 1C \
+          mvn -B -ntp -T "${{ steps.changes.outputs.maven_threads }}" \
             -DskipTests \
             -Dmaven.artifact.threads=8 \
             -pl "${{ steps.changes.outputs.backend_modules }}" \
