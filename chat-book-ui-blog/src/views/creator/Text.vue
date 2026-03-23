@@ -3,12 +3,14 @@
         <CreativeHeader class="site-header">
             <template #actions>
                 <div class="editor-header-actions">
-                    <el-button class="editor-header-btn editor-header-btn--secondary" :loading="isSaving"
+                    <el-button class="editor-header-btn editor-header-btn--secondary" :class="{'mobile-icon-btn': layoutState.isMobile}" :loading="isSaving"
                         @click="saveContent">
-                        保存草稿
+                        <el-icon v-if="layoutState.isMobile"><DocumentChecked /></el-icon>
+                        <span v-else>保存草稿</span>
                     </el-button>
-                    <el-button class="editor-header-btn editor-header-btn--accent" @click="publishContent">
-                        发布文章
+                    <el-button class="editor-header-btn editor-header-btn--accent" :class="{'mobile-icon-btn': layoutState.isMobile}" @click="publishContent">
+                        <el-icon v-if="layoutState.isMobile"><Promotion /></el-icon>
+                        <span v-else>发布文章</span>
                     </el-button>
                 </div>
             </template>
@@ -30,7 +32,7 @@
                         <span class="word-count-value">{{ wordCount }}</span>
                     </div>
                 </div>
-                <el-button @click="toggleRight" :disabled="layoutState.isMobile" size="small"
+                <el-button v-if="!layoutState.isMobile" @click="toggleRight" size="small"
                     class="sidebar-toggle-btn" :class="{ 'is-open': layoutState.rightOpen }">
                     <span class="sidebar-toggle-btn__badge">AI</span>
                     <span class="sidebar-toggle-btn__label">智能助手</span>
@@ -43,14 +45,28 @@
 
         <div class="editor-container" ref="containerRef" @mousemove="handleMouseMove" @mouseup="onMouseUp"
             @mouseleave="onMouseUp">
-            <!-- Left Column -->
-            <div class="layout-left" :class="{ 'is-dragging': dragging === 'left' }" v-show="layoutState.leftOpen"
+            <!-- Left Column Desktop -->
+            <div v-if="!layoutState.isMobile" class="layout-left" :class="{ 'is-dragging': dragging === 'left' }" v-show="layoutState.leftOpen"
                 :style="{ width: layoutState.leftWidth + '%' }">
                 <ArticleToc v-if="editor" :editor="editor" />
             </div>
 
-            <!-- Left Splitter -->
-            <div class="layout-splitter" v-show="layoutState.leftOpen" @mousedown.prevent="startDrag('left')"></div>
+            <!-- Left Drawer Mobile -->
+            <el-drawer
+                v-if="layoutState.isMobile"
+                v-model="layoutState.leftOpen"
+                title="文档大纲"
+                direction="ltr"
+                size="70%"
+                :append-to-body="true"
+            >
+                <div @click="setTimeout(() => layoutState.leftOpen = false, 100)">
+                   <ArticleToc v-if="editor" :editor="editor" />
+                </div>
+            </el-drawer>
+
+            <!-- Left Splitter Desktop -->
+            <div v-if="!layoutState.isMobile" class="layout-splitter" v-show="layoutState.leftOpen" @mousedown.prevent="startDrag('left')"></div>
 
             <!-- Content Column -->
             <div class="layout-content" :class="{ 'is-dragging': dragging }" :style="{ width: contentWidth + '%' }">
@@ -73,14 +89,32 @@
                 </div>
             </div>
 
-            <!-- Right Splitter -->
-            <div class="layout-splitter" v-show="layoutState.rightOpen" @mousedown.prevent="startDrag('right')"></div>
+            <!-- Right Splitter Desktop -->
+            <div v-if="!layoutState.isMobile" class="layout-splitter" v-show="layoutState.rightOpen" @mousedown.prevent="startDrag('right')"></div>
 
-            <!-- Right Column -->
-            <div class="layout-right" :class="{ 'is-dragging': dragging === 'right' }" v-show="layoutState.rightOpen"
+            <!-- Right Column Desktop -->
+            <div v-if="!layoutState.isMobile" class="layout-right" :class="{ 'is-dragging': dragging === 'right' }" v-show="layoutState.rightOpen"
                 :style="{ width: layoutState.rightWidth + '%' }">
                 <EditorAiPanel @close="toggleRight" />
             </div>
+
+            <!-- Right Drawer Mobile -->
+            <el-drawer
+                v-if="layoutState.isMobile"
+                v-model="layoutState.rightOpen"
+                title="AI 智能助手"
+                direction="btt"
+                size="80vh"
+                :append-to-body="true"
+            >
+                <EditorAiPanel @close="toggleRight" />
+            </el-drawer>
+        </div>
+
+        <div v-if="layoutState.isMobile" class="mobile-fab-container">
+            <button class="mobile-ai-fab" @click="toggleRight">
+               <el-icon><MagicStick /></el-icon>
+            </button>
         </div>
 
         <PublishDialog v-model="publishDialogVisible" :publish-form="publishForm" :category-options="categoryOptions"
@@ -105,6 +139,7 @@ import ArticleToc from "@/views/article/components/ArticleToc.vue";
 import RichTextEditor from "@/components/common/rich-text/RichTextEditor.vue";
 import { useSiteTheme } from '@/composables/useSiteTheme.js';
 import { ElMessageBox } from 'element-plus';
+import { DocumentChecked, Promotion, MagicStick } from '@element-plus/icons-vue';
 
 const containerRef = ref(null);
 

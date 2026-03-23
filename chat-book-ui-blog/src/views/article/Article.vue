@@ -624,7 +624,6 @@ onUnmounted(() => {
     flex-direction: column;
     gap: 8px;
     position: sticky;
-    top: 60px;
     height: calc(100vh - 60px);
     overflow-y: auto;
     transition: width 0.25s ease;

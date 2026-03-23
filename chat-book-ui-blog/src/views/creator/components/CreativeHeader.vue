@@ -5,7 +5,7 @@
                 <img src="@/assets/logo.svg" alt="logo" />
                 <span class="brand-name">ChatBook</span>
             </div>
-            <nav class="breadcrumb-nav" aria-label="创作面包屑">
+            <nav class="breadcrumb-nav" aria-label="创作面包屑" v-if="!isMobile">
                 <div
                     v-for="(item, index) in breadcrumbItems"
                     :key="item.key"
@@ -24,12 +24,15 @@
                     <span v-if="index < breadcrumbItems.length - 1" class="breadcrumb-separator">/</span>
                 </div>
             </nav>
+            <div class="mobile-back-btn" v-if="isMobile" @click="router.back()" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; cursor: pointer; border-radius: 50%; background: rgba(0,0,0,0.05);">
+                <el-icon><ArrowLeft /></el-icon>
+            </div>
         </div>
         
         <div class="right-section">
-            <div class="page-actions" v-if="!isMobile">
+            <div class="page-actions">
                 <slot name="actions">
-                    <div class="action-btn">
+                    <div class="action-btn" v-if="!isMobile">
                         <el-button type="primary" class="create-btn" @click="router.push('/text')" round>
                             <el-icon><Plus /></el-icon> 开始创作
                         </el-button>
@@ -109,7 +112,7 @@ import {useRoute} from "vue-router";
 import router from "@/router/index.js";
 import UserCard from "@/views/user/components/UserCard.vue";
 import {getUserBySelf} from "@/views/user/_domain/user.js";
-import { Plus, CaretBottom, User, SwitchButton, Menu } from '@element-plus/icons-vue';
+import { Plus, CaretBottom, User, SwitchButton, Menu, ArrowLeft } from '@element-plus/icons-vue';
 import CreativeAside from '@/views/creator/components/CreativeAside.vue';
 
 const route = useRoute();
