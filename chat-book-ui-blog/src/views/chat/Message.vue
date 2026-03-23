@@ -83,9 +83,13 @@ onMounted(() => {
 
 <style scoped>
 .message-page {
-    min-height: 100%;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
     background-color: var(--bg-color-base);
-    padding: 40px 24px;
+    padding: 40px 24px 20px;
     background-image:
         radial-gradient(circle at 10% 20%, rgba(var(--color-primary-rgb), 0.05) 0%, transparent 20%),
         radial-gradient(circle at 90% 80%, rgba(var(--color-success-rgb), 0.05) 0%, transparent 20%);
@@ -93,13 +97,19 @@ onMounted(() => {
 
 .message-container {
     max-width: 900px;
+    width: 100%;
     margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
 }
 
 .message-header {
     margin-bottom: 32px;
     position: relative;
     padding-left: 16px;
+    flex-shrink: 0;
 }
 
 .header-decoration {
@@ -125,6 +135,28 @@ onMounted(() => {
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
+}
+
+.message-list-wrapper {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding-right: 8px;
+    padding-bottom: 20px;
+}
+
+.message-list-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+.message-list-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+.message-list-wrapper::-webkit-scrollbar-thumb {
+    background: rgba(148, 163, 184, 0.3);
+    border-radius: 10px;
+}
+.message-list-wrapper::-webkit-scrollbar-thumb:hover {
+    background: rgba(148, 163, 184, 0.5);
 }
 
 .message-grid {

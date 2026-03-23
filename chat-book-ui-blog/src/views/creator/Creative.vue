@@ -95,15 +95,22 @@ const {
 <style scoped>
 .dashboard {
     padding: 24px;
-    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
 }
 
 .articles-container {
     max-width: 1000px;
+    width: 100%;
     margin: 0 auto;
     position: relative;
-    height: calc(100vh - 48px);
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
     overflow-y: auto;
     padding-right: 8px;
     /* For scrollbar space */

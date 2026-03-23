@@ -420,4 +420,17 @@ const handleImageUpload = async (event) => {
   color: #3b82f6;
   background-color: rgba(59, 130, 246, 0.05);
 }
+
+@media (max-width: 768px) {
+  .tiptap-toolbar {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    width: auto;
+    padding-bottom: 2px;
+  }
+  
+  .tiptap-toolbar::-webkit-scrollbar {
+    display: none;
+  }
+}
 </style>

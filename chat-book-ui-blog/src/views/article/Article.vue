@@ -1,7 +1,7 @@
 <template>
     <div class="article-page">
         <aside
-            class="sidebar"
+            class="sidebar desktop-only"
             :class="{ 'is-collapsed': isSidebarCollapsed, 'is-expanded': isSidebarExpanded }"
             @mouseenter="handleSidebarHover(true)"
             @mouseleave="handleSidebarHover(false)"
@@ -51,6 +51,40 @@
             </div>
         </aside>
 
+        <!-- Mobile Bottom Toolbar -->
+        <div class="mobile-toolbar mobile-only">
+            <div class="action-item">
+                <el-button class="action-btn" size="large" circle :class="{ 'is-active': praiseStat !== 0 }" @click.stop="handleLike">
+                    <el-icon><Pointer /></el-icon>
+                </el-button>
+                <span class="action-label">点赞</span>
+            </div>
+            <div class="action-item">
+                <el-button class="action-btn" size="large" circle :class="{ 'is-active': collectStat !== 0 }" @click.stop="handleFavorite">
+                    <el-icon><Star /></el-icon>
+                </el-button>
+                <span class="action-label">收藏</span>
+            </div>
+            <div class="action-item">
+                <el-button class="action-btn" size="large" circle :class="{ 'is-active': activePanel === PANEL_TYPE.COMMENT }" @click.stop="handleComment">
+                    <el-icon><ChatLineRound /></el-icon>
+                </el-button>
+                <span class="action-label">评论</span>
+            </div>
+            <div v-if="!isSelfAuthor" class="action-item">
+                <el-button class="action-btn" size="large" circle :loading="authorActionLoading" :class="{ 'is-active': isFollowing }" @click.stop="handleFollow">
+                    <el-icon><UserFilled /></el-icon>
+                </el-button>
+                <span class="action-label">{{ followLabel }}</span>
+            </div>
+            <div class="action-item">
+                <el-button class="action-btn" size="large" circle :class="{ 'is-active': activePanel === PANEL_TYPE.AI }" @click.stop="handleAiChat">
+                    <el-icon><Service /></el-icon>
+                </el-button>
+                <span class="action-label">AI</span>
+            </div>
+        </div>
+
         <div class="main-container">
             <div class="article-detail" :class="{ 'panel-open': showRightPanel }">
                 <div ref="contentRef" class="content custom-scrollbar">
@@ -96,11 +130,17 @@
                             <RichTextViewer :html="articleHtml" variant="article" :theme="articleTheme" as="article" />
                         </div>
                     </main>
+
+                    <div v-if="isMobile" class="mobile-bottom-cards">
+                        <ArticleTagCard :articleId="articleId" :tagIds="article.tagIds || []" />
+                        <RelatedCard :articleId="articleId" />
+                    </div>
                 </div>
 
-                <div v-if="showRightPanel" class="resize-handle" @mousedown="startResize"></div>
+                <div v-if="showRightPanel && !isMobile" class="resize-handle" @mousedown="startResize"></div>
 
                 <div
+                    v-if="!isMobile"
                     class="article-right"
                     :style="{ width: effectiveRightWidth + 'px' }"
                     :class="{ 'expanded-panel': showRightPanel, 'glass-panel': showRightPanel }">
@@ -114,6 +154,21 @@
                 </div>
             </div>
         </div>
+
+        <el-drawer
+            v-if="isMobile"
+            v-model="showRightPanel"
+            :title="activePanelTitle"
+            direction="btt"
+            size="70vh"
+            class="mobile-panel-drawer"
+            :append-to-body="true"
+            destroy-on-close>
+            <component
+                :is="activePanelComponent"
+                :key="activePanelKey"
+                v-bind="activePanelProps" />
+        </el-drawer>
     </div>
 </template>
 
@@ -126,6 +181,8 @@ import { buildRichTextHtml } from "@/components/common/rich-text/content-pipelin
 import SidebarDefault from '@/views/article/article-sidebar/SidebarDefault.vue';
 import SidebarComment from '@/views/article/article-sidebar/SidebarComment.vue';
 import SidebarAI from '@/views/article/article-sidebar/SidebarAI.vue';
+import ArticleTagCard from "@/views/article/components/ArticleTagCard.vue";
+import RelatedCard from "@/views/article/components/RelatedCard.vue";
 import { useArticleLogic } from "./_hooks/useArticleLogic.js";
 import { PANEL_TYPE } from "./_utils/config.js";
 import { useSiteTheme } from '@/composables/useSiteTheme.js';
@@ -194,6 +251,15 @@ const activePanelProps = computed(() => {
 const activePanelComponent = computed(() => componentMap[activePanel.value] || SidebarDefault);
 const activePanelKey = computed(() => `${activePanel.value}-${articleId.value}`);
 
+const activePanelTitle = computed(() => {
+    switch (activePanel.value) {
+        case PANEL_TYPE.DEFAULT: return '目录';
+        case PANEL_TYPE.COMMENT: return '评论';
+        case PANEL_TYPE.AI: return 'AI 助手';
+        default: return '阅读工具';
+    }
+});
+
 watch(articleId, async (newId, oldId) => {
     if (!newId || newId === oldId) {
         return;
@@ -207,9 +273,11 @@ const effectiveRightWidth = computed(() => (
 
 const isSidebarCollapsed = ref(false);
 const isSidebarExpanded = ref(false);
+const isMobile = ref(false);
 
 const checkViewport = () => {
     isSidebarCollapsed.value = window.innerWidth <= 1024;
+    isMobile.value = window.innerWidth <= 768;
     if (!isSidebarCollapsed.value) {
         isSidebarExpanded.value = false;
     }
@@ -241,17 +309,15 @@ onUnmounted(() => {
 .article-page {
     display: grid;
     grid-template-columns: 10% 1fr;
-    height: 100%;
-    min-height: 0;
+    min-height: 100%;
     background: var(--article-page-radial), var(--article-page-bg);
     position: relative;
-    overflow: hidden;
 }
 
 .sidebar {
-    position: relative;
-    height: 100%;
-    min-height: 0;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
     transition: width 0.3s ease, transform 0.3s ease, background-color 0.3s ease;
     display: flex;
     flex-direction: column;
@@ -331,10 +397,8 @@ onUnmounted(() => {
 }
 
 .main-container {
-    height: 100%;
-    min-height: 0;
+    min-height: 100%;
     position: relative;
-    overflow: hidden;
     display: flex;
     flex-direction: column;
     box-sizing: border-box;
@@ -349,9 +413,7 @@ onUnmounted(() => {
     gap: 0;
     padding: var(--container-padding) var(--container-padding) 0 0;
     align-items: stretch;
-    height: 100%;
-    min-height: 0;
-    overflow: hidden;
+    min-height: 100%;
     box-sizing: border-box;
 }
 
@@ -362,21 +424,17 @@ onUnmounted(() => {
 
 .content {
     min-width: 0;
-    min-height: 0;
     flex: 1;
     margin: 0 auto;
     padding: 32px clamp(18px, 3vw, 44px) 36px;
-    height: 100%;
     display: flex;
     flex-direction: column;
     background: var(--article-paper-bg);
     border-radius: 20px 20px 0 0;
     border: 1px solid var(--article-paper-border);
     box-shadow: var(--article-paper-shadow);
-    overflow-y: auto;
     scroll-behavior: smooth;
     scroll-padding-top: 28px;
-    overscroll-behavior: contain;
 }
 
 .article-header {
@@ -509,13 +567,33 @@ onUnmounted(() => {
     width: 100%;
     min-height: 100%;
     padding-bottom: 28px;
+    font-size: 16px;
+    line-height: 1.7;
+}
+
+.article-body :deep(pre), 
+.article-body :deep(code) {
+    overflow-x: auto;
+    white-space: pre;
+    max-width: 100%;
+}
+
+.mobile-bottom-cards {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 32px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border-color-light);
 }
 
 .resize-handle {
     width: 6px;
     margin: 0 -3px;
     cursor: col-resize;
-    position: relative;
+    position: sticky;
+    top: 60px;
+    height: calc(100vh - 60px);
     z-index: 100;
     display: flex;
     justify-content: center;
@@ -545,14 +623,14 @@ onUnmounted(() => {
     display: flex;
     flex-direction: column;
     gap: 8px;
-    height: 100%;
-    overflow: hidden;
+    position: sticky;
+    height: calc(100vh - 60px);
+    overflow-y: auto;
     transition: width 0.25s ease;
 }
 
 .article-right.expanded-panel {
-    height: 100%;
-    overflow: hidden;
+    height: calc(100vh - 60px);
     padding: 0 12px;
     min-width: 0;
 }
@@ -583,6 +661,15 @@ onUnmounted(() => {
 .fade-slide-leave-to {
     opacity: 0;
     transform: translateX(20px);
+}
+
+/* Mobile toolbar - hidden by default */
+.mobile-only {
+    display: none !important;
+}
+
+.desktop-only {
+    display: flex;
 }
 
 @media (max-width: 1024px) {
@@ -635,6 +722,75 @@ onUnmounted(() => {
     .meta-cluster {
         align-items: flex-start;
         justify-content: flex-start;
+    }
+}
+
+@media (max-width: 768px) {
+    .mobile-only {
+        display: flex !important;
+    }
+
+    .desktop-only {
+        display: none !important;
+    }
+
+    .mobile-toolbar {
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 60px;
+        background: rgba(255, 255, 255, 0.95);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        justify-content: space-around;
+        align-items: center;
+        z-index: 100;
+        border-top: 1px solid rgba(0, 0, 0, 0.1);
+        padding: 0 8px;
+    }
+
+    .mobile-toolbar .action-item {
+        flex: 1;
+        max-width: 70px;
+    }
+
+    .mobile-toolbar .action-btn {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+    }
+
+    .mobile-toolbar .action-label {
+        font-size: 10px;
+    }
+
+    .article-page {
+        padding-bottom: 70px;
+    }
+
+    .main-container {
+        padding-left: 0;
+    }
+
+    .article-detail {
+        padding-inline: 0;
+    }
+
+    .content {
+        padding: 20px 16px 36px;
+        border-radius: 16px 16px 0 0;
+    }
+
+    .article-header {
+        padding-bottom: 14px;
+        margin-bottom: 14px;
+        width: 100%;
+    }
+
+    .article-title {
+        font-size: 1.5rem;
+        margin-bottom: 12px;
     }
 }
 </style>

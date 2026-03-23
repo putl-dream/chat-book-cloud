@@ -149,6 +149,12 @@ chat-book-cloud
 4.  **制品整理**: 自动收集 Jar 包、Dist 文件及 Docker 配置。
 5.  **自动部署**: 通过 SSH 将构建制品传输至服务器，并使用 Docker Compose 零停机更新服务。
 
+补充说明：
+
+- 普通 `push` 会按变更范围选择性构建和部署，只重打受影响的后端模块或前端。
+- 如果希望某一次 `push` 强制全量重建全部后端服务和前端，可以在提交信息中包含 `[full-build]` 或 `[full-rebuild]`。
+- 手动触发 `Deploy Dev` (`workflow_dispatch`) 时，默认执行一次全量后端 + 前端重建部署。
+
 ## 🚀 快速开始
 
 ### 环境准备

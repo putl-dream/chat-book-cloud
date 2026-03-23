@@ -1,5 +1,7 @@
 .editor-layout {
-    height: 100vh;
+    flex: 1;
+    height: 100%;
+    width: 100%;
     display: flex;
     flex-direction: column;
     overflow: hidden;
@@ -232,8 +234,10 @@
 
 .editor-container {
     flex: 1;
+    min-height: 0;
     width: 100%;
     display: flex;
+    align-items: stretch;
     overflow: hidden;
     position: relative;
     padding: 8px;
@@ -243,8 +247,9 @@
 .layout-left,
 .layout-content,
 .layout-right {
-    height: 100%;
+    min-height: 0;
     display: flex;
+    align-self: stretch; /* ensure cross axis stretching */
     flex-direction: column;
     overflow: hidden;
     background: var(--bg-color-white);
@@ -289,10 +294,11 @@
 .scroll-area {
     width: 100%;
     flex: 1;
+    min-height: 0;
     display: flex;
     flex-direction: column;
     overflow-y: auto;
-    scroll-behavior: smooth;
+    scroll-behavior: auto;
 }
 
 .main-content {
@@ -303,7 +309,7 @@
     flex: 1;
     max-width: 940px;
     margin: 0 auto;
-    padding: 30px 40px 0;
+    padding: 30px 40px 60px;
     background: transparent;
 }
 
@@ -342,40 +348,97 @@
 @media (max-width: 768px) {
     .toolbar-wrapper {
         padding: 8px 12px;
-        flex-wrap: wrap;
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        white-space: nowrap;
+        display: flex;
+        gap: 8px;
+    }
+
+    .toolbar-wrapper::-webkit-scrollbar {
+        display: none;
     }
 
     .editor-header-actions {
         gap: 8px;
     }
 
-    .editor-header-btn {
-        min-width: 0;
+    .editor-header-btn.mobile-icon-btn {
+        min-width: 36px;
+        width: 36px;
+        height: 36px;
+        padding: 0;
+        display: inline-flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 50%;
     }
 
     .toolbar-meta {
         order: 3;
-        width: 100%;
+        width: auto;
         gap: 12px;
     }
 
-    .status-bar {
+    .status-bar, .word-count-chip {
         padding-left: 0;
         border-left: none;
+        font-size: 11px;
     }
 
-    .word-count-chip {
-        padding-left: 0;
-        border-left: none;
+    .editor-container {
+        padding: 0;
+        background: #fff;
     }
 
-    .sidebar-toggle-btn {
-        margin-left: 0;
-        width: 100%;
-        justify-content: center;
+    .layout-content {
+        border-radius: 0;
+        box-shadow: none;
     }
 
     .main-content {
-        padding: 20px 12px 0;
+        padding: 20px 16px 80px;
+    }
+    
+    .title-area {
+        margin-bottom: 12px;
+    }
+
+    .title-input {
+        font-size: 22px;
+    }
+
+    .mobile-fab-container {
+        position: fixed;
+        right: 20px;
+        bottom: 24px;
+        z-index: 1000;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .mobile-ai-fab {
+        width: 50px;
+        height: 50px;
+        font-size: 22px;
+        color: var(--color-primary, #4f46e5);
+        background: rgba(79, 70, 229, 0.1);
+        border: 1px solid rgba(79, 70, 229, 0.16);
+        border-radius: 50%;
+        box-shadow: 0 10px 24px rgba(79, 70, 229, 0.12);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        transition: all 0.25s ease;
+    }
+
+    .mobile-ai-fab:active {
+        transform: scale(0.92);
+        background: rgba(79, 70, 229, 0.14);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
     }
 }
