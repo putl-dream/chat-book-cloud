@@ -6,7 +6,7 @@
                 <p class="subtitle">记录您最近阅读过的精彩内容</p>
             </div>
 
-            <div class="history-list-wrapper custom-scrollbar" @scroll="handleScroll">
+            <div class="history-list-wrapper">
                 <div class="history-list">
                     <transition-group name="staggered-fade">
                         <div v-for="(post, index) in posts" :key="post.id || index" class="history-item-wrapper"
@@ -24,6 +24,9 @@
                     </div>
                 </div>
 
+                <!-- Intersection Observer trigger -->
+                <div ref="loadMoreTrigger" class="load-more-trigger"></div>
+
                 <div v-if="noMoreArticles && posts.length > 0" class="no-more">
                     <span>已经到底啦</span>
                 </div>
@@ -39,16 +42,17 @@
 <script setup>
 import { ElSkeleton, ElEmpty } from "element-plus";
 import ArticleCard from "@/views/article/components/ArticleCard.vue";
-import { onMounted, ref } from "vue";
+import { onMounted, onUnmounted, ref } from "vue";
 import { getHistory } from "@/views/article/_domain/interaction.js";
 import router from "@/router/index.js";
 
-// 初始化为空数组，修复之前初始化为 [{}] 导致的空卡片问题
 const posts = ref([]);
 const loading = ref(false);
 const noMoreArticles = ref(false);
 const currentPage = ref(1);
-const pageSize = ref(10); // 增加每页加载数量，提升体验
+const pageSize = ref(10);
+const loadMoreTrigger = ref(null);
+let observer = null;
 
 const historyRequest = async () => {
     if (loading.value || noMoreArticles.value) return;
@@ -68,14 +72,6 @@ const historyRequest = async () => {
     }
 };
 
-const handleScroll = (event) => {
-    const { scrollTop, clientHeight, scrollHeight } = event.target;
-    // 增加触发阈值，提前加载更多
-    if (scrollTop + clientHeight >= scrollHeight - 100) {
-        historyRequest();
-    }
-};
-
 const openArticle = async (id) => {
     if (!id) return;
     await router.push({ name: 'Article', params: { id: id } });
@@ -83,16 +79,38 @@ const openArticle = async (id) => {
 
 onMounted(() => {
     historyRequest();
+    
+    // Setup Intersection Observer for seamless scroll functionality
+    observer = new IntersectionObserver((entries) => {
+        if (entries[0].isIntersecting && !loading.value && !noMoreArticles.value) {
+            historyRequest();
+        }
+    }, {
+        rootMargin: '100px',
+        threshold: 0.1
+    });
+
+    if (loadMoreTrigger.value) {
+        observer.observe(loadMoreTrigger.value);
+    }
+});
+
+onUnmounted(() => {
+    if (observer && loadMoreTrigger.value) {
+        observer.unobserve(loadMoreTrigger.value);
+    }
+    if (observer) {
+        observer.disconnect();
+    }
 });
 </script>
 
 <style scoped>
 .history-page {
-    background-color: var(--bg-color-base);
-    height: 100%;
+    /* Native scrolling via AppLayout */
     display: flex;
     justify-content: center;
-    background: radial-gradient(circle at bottom right, #f0f4ff, var(--bg-color-base));
+    min-height: 100%;
 }
 
 .history-container {
@@ -101,7 +119,6 @@ onMounted(() => {
     padding: 32px 24px;
     display: flex;
     flex-direction: column;
-    height: 100%;
 }
 
 .page-header {
@@ -132,10 +149,7 @@ onMounted(() => {
 
 .history-list-wrapper {
     flex: 1;
-    overflow-y: auto;
     padding-bottom: 40px;
-    padding-right: 8px;
-    /* For scrollbar space */
 }
 
 .history-list {
@@ -145,7 +159,6 @@ onMounted(() => {
 }
 
 .history-item-wrapper {
-    /* Animation base */
     animation: fadeInUp 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
     animation-delay: var(--delay);
 }
@@ -155,7 +168,6 @@ onMounted(() => {
         opacity: 0;
         transform: translateY(30px);
     }
-
     to {
         opacity: 1;
         transform: translateY(0);
@@ -171,7 +183,6 @@ onMounted(() => {
     cursor: pointer;
     overflow: hidden;
     padding: 4px;
-    /* Slight inner padding for framing effect */
 }
 
 .history-card:hover {
@@ -197,9 +208,7 @@ onMounted(() => {
 }
 
 @keyframes spin {
-    to {
-        transform: rotate(360deg);
-    }
+    to { transform: rotate(360deg); }
 }
 
 .no-more {
@@ -221,21 +230,9 @@ onMounted(() => {
     backdrop-filter: blur(8px);
 }
 
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
+.load-more-trigger {
+    width: 100%;
+    height: 1px;
+    opacity: 0;
 }
 </style>

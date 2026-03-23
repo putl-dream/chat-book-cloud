@@ -12,16 +12,16 @@
         <div class="hot-bento-grid" v-if="recommendations && recommendations.length > 0">
           <!-- 主热点(Large) -->
           <div class="hot-item main-feature interactive-card glass-effect hover-soft animate-pop"
-            @click="openArticle(recommendations[0].id)">
-            <ArticleCard :post="recommendations[0]" variant="feature" />
+               @click="openArticle(recommendations[0].id)">
+            <ArticleCard :post="recommendations[0]" variant="feature"/>
           </div>
 
           <!-- 次热点 -->
           <template v-if="recommendations.length > 1">
             <div v-for="(item, index) in recommendations.slice(1, 5)"
-              class="hot-item interactive-card glass-effect hover-soft animate-pop" :key="'hot-' + (item.id || index)"
-              :style="{ '--delay': `${index * 0.1 + 0.1}s` }" @click="openArticle(item.id)">
-              <ArticleCard :post="item" variant="image" />
+                 class="hot-item interactive-card glass-effect hover-soft animate-pop" :key="'hot-' + (item.id || index)"
+                 :style="{ '--delay': `${index * 0.1 + 0.1}s` }" @click="openArticle(item.id)">
+              <ArticleCard :post="item" variant="image"/>
             </div>
           </template>
         </div>
@@ -38,8 +38,8 @@
       <div class="bento-waterfall">
         <template v-for="(post, index) in posts" :key="'post-' + (post.id || index)">
           <div class="bento-item interactive-card glass-effect hover-soft animate-delayed"
-            :style="{ '--delay': `${index * 0.05}s` }" @click="openArticle(post.id)">
-            <ArticleCard :post="post" :variant="getPostVariant(post, index)" />
+               :style="{ '--delay': `${index * 0.05}s` }" @click="openArticle(post.id)">
+            <ArticleCard :post="post" :variant="getPostVariant(post, index)"/>
           </div>
         </template>
       </div>
@@ -55,18 +55,18 @@
 </template>
 
 <script setup>
-import { onMounted, onUnmounted, ref, watch } from 'vue';
-import { useRoute } from 'vue-router';
+import {onMounted, onUnmounted, ref, watch} from 'vue';
+import {useRoute} from 'vue-router';
 import HotCard from "@/views/home/components/HotCard.vue";
 import ArticleCard from "@/views/article/components/ArticleCard.vue";
 import router from "@/router/index.js";
-import { useHomeLogic } from "./_hooks/useHomeLogic.js";
+import {useHomeLogic} from "./_hooks/useHomeLogic.js";
 
 const route = useRoute();
 
 const currentPath = ref('/');
 const currentTagId = ref(null);
-const { recommendations, posts, loading, noMoreArticles, fetchPosts, fetchTagArticles, resetPosts } = useHomeLogic();
+const {recommendations, posts, loading, noMoreArticles, fetchPosts, fetchTagArticles, resetPosts} = useHomeLogic();
 
 const getPostVariant = (post, index) => {
   if (index % 7 === 3 && post.cover) return 'large-image';
@@ -90,25 +90,25 @@ const handleScroll = (e) => {
 };
 
 const openArticle = async (id) => {
-  await router.push({ name: 'Article', params: { id: id } });
+  await router.push({name: 'Article', params: {id: id}});
 };
 
 watch(
-  () => route.path,
-  async (newPath) => {
-    resetPosts();
-    // 检查是否是标签路由
-    if (newPath.startsWith('/tag/')) {
-      currentTagId.value = parseInt(route.params.tagId);
-      currentPath.value = '/tags';
-      await fetchTagArticles(currentTagId.value);
-    } else {
-      currentTagId.value = null;
-      currentPath.value = newPath;
-      await fetchPosts(newPath);
-    }
-  },
-  { immediate: true }
+    () => route.path,
+    async (newPath) => {
+      resetPosts();
+      // 检查是否是标签路由
+      if (newPath.startsWith('/tag/')) {
+        currentTagId.value = parseInt(route.params.tagId);
+        currentPath.value = '/tags';
+        await fetchTagArticles(currentTagId.value);
+      } else {
+        currentTagId.value = null;
+        currentPath.value = newPath;
+        await fetchPosts(newPath);
+      }
+    },
+    {immediate: true}
 );
 
 onMounted(() => {
@@ -127,16 +127,26 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 1. 根节点适配外层 Flex 布局 */
 .home {
-  min-height: 100vh;
+  /* 移除 min-height: 100vh，完全交由父级 .route-view (flex: 1 0 auto) 控制 */
+  flex: 1 0 auto;
+  display: flex;
+  flex-direction: column;
   padding-top: 32px;
+  padding-bottom: 40px; /* 底部预留空间，防止内容紧贴页脚 */
   background: transparent;
 }
 
+/* 2. 容器满宽并允许自然撑展 */
 .home-container {
-  max-width: var(--container-width-lg);
+  flex: 1 0 auto;
+  width: 100%;
+  max-width: var(--container-width-lg, 1200px);
   margin: 0 auto;
-  padding: 0 var(--container-padding);
+  padding: 0 var(--container-padding, 24px);
+  display: flex;
+  flex-direction: column;
 }
 
 .section-header {
@@ -145,6 +155,7 @@ onUnmounted(() => {
   display: flex;
   align-items: center;
   gap: 16px;
+  flex-shrink: 0; /* 防止标题在空间不足时被挤压 */
 }
 
 .section-title {
@@ -168,12 +179,15 @@ onUnmounted(() => {
   opacity: 0.5;
 }
 
+/* 3. Island 容器优化负边距导致的潜在溢出 */
 .island-container {
   padding: 32px;
-  margin: -16px -32px 40px;
+  /* 调整负边距，避免在小屏幕上引发横向滚动条 */
+  margin: 0 0 40px 0;
   background: radial-gradient(circle at top left, var(--color-primary-light), transparent 70%);
   border-radius: var(--border-radius-xl);
   border-bottom: 1px solid var(--border-color-base);
+  flex-shrink: 0;
 }
 
 .animated-icon {
@@ -182,12 +196,9 @@ onUnmounted(() => {
 }
 
 @keyframes wave {
-
-  0%,
-  100% {
+  0%, 100% {
     transform: translateY(0);
   }
-
   50% {
     transform: translateY(-4px);
   }
@@ -197,9 +208,7 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr;
   grid-template-rows: repeat(2, 180px);
-  /* 扁平化锁死高度 */
   gap: 24px;
-  margin-bottom: 0px;
 }
 
 .hot-item {
@@ -217,7 +226,6 @@ onUnmounted(() => {
   animation: border-pulse 4s infinite, popIn 0.8s cubic-bezier(0.16, 1, 0.3, 1) backwards;
 }
 
-/* 利用深层穿透应用色彩呼应的蒙版渐变 */
 .main-feature :deep(.variant-feature .card-overlay) {
   background: linear-gradient(to top, var(--color-primary), transparent 100%);
   opacity: 0.15;
@@ -225,26 +233,22 @@ onUnmounted(() => {
 }
 
 @keyframes border-pulse {
-  0% {
+  0%, 100% {
     border-color: var(--border-color-glass);
     box-shadow: var(--box-shadow-glass);
   }
-
   50% {
     border-color: var(--color-primary-light);
     box-shadow: 0 0 16px var(--border-color-glass);
   }
-
-  100% {
-    border-color: var(--border-color-glass);
-    box-shadow: var(--box-shadow-glass);
-  }
 }
 
+/* 4. 瀑布流容器自动扩展 */
 .bento-waterfall {
   column-count: 3;
   column-gap: 24px;
-  margin-bottom: 40px;
+  margin-bottom: 20px; /* 减小底部外边距，因为外层 home 已经加了 padding-bottom */
+  flex: 1 0 auto; /* 让瀑布流区域自然撑开剩余空间 */
 }
 
 .bento-item {
@@ -257,7 +261,8 @@ onUnmounted(() => {
   break-inside: avoid;
   page-break-inside: avoid;
   margin-bottom: 24px;
-  transform: translateZ(0);
+  transform: translateZ(0); /* 开启硬件加速 */
+  will-change: transform, opacity; /* 优化滚动性能 */
 }
 
 .animate-pop {
@@ -267,21 +272,9 @@ onUnmounted(() => {
 
 .animate-delayed {
   animation: fadeInUp 0.6s backwards;
-  /* Additional 0.2s delay for the entire waterfall layer */
   animation-delay: calc(var(--delay, 0s) + 0.2s);
 }
 
-/* 占据两列的Feature 卡片 - 多栏布局中建议全局占用或者使用默认流 */
-.feature-span-2 {
-  border-radius: var(--border-radius-xl);
-}
-
-/* 热榜小组件可能不占很多row，自动适应即可 */
-.widget-span {
-  border-radius: var(--border-radius-xl);
-}
-
-/* 柔和阴影效果覆盖 override */
 .hover-soft {
   transition: all 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
   border: 1px solid var(--border-color-glass);
@@ -295,9 +288,10 @@ onUnmounted(() => {
 
 .loading {
   text-align: center;
-  padding: 40px 0;
+  padding: 20px 0 40px;
   display: flex;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .spinner {
@@ -311,10 +305,11 @@ onUnmounted(() => {
 
 .no-more {
   text-align: center;
-  padding: 40px 0;
+  padding: 20px 0 40px;
   color: var(--text-color-placeholder);
   font-size: 13px;
   letter-spacing: 1px;
+  flex-shrink: 0;
 }
 
 @keyframes spin {
@@ -328,7 +323,6 @@ onUnmounted(() => {
     opacity: 0;
     transform: translateY(40px);
   }
-
   to {
     opacity: 1;
     transform: translateY(0);
@@ -340,14 +334,13 @@ onUnmounted(() => {
     opacity: 0;
     transform: scale(0.95) translateY(20px);
   }
-
   100% {
     opacity: 1;
     transform: scale(1) translateY(0);
   }
 }
 
-/* Responsive Design */
+/* ================== 响应式适配 ================== */
 @media (max-width: 1200px) {
   .hot-bento-grid {
     grid-template-columns: 1fr 1fr;
@@ -367,12 +360,12 @@ onUnmounted(() => {
 }
 
 @media (max-width: 768px) {
-  .bento-waterfall {
-    column-count: 1;
+  .island-container {
+    padding: 20px;
+    margin-bottom: 30px;
+    border-radius: var(--border-radius-lg);
   }
-}
 
-@media (max-width: 480px) {
   .bento-waterfall {
     column-count: 1;
   }

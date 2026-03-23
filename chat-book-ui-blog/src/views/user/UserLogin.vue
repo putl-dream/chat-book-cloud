@@ -235,350 +235,424 @@ onMounted(() => {
 </script>
 
 <style scoped>
+/* =========================================
+   全局与背景基础样式
+   ========================================= */
 .body {
-    font-family: 'Inter', system-ui, -apple-system, sans-serif;
-    height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: #f0f4f8;
-    position: relative;
-    overflow: hidden;
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #f0f4f8;
+  position: relative;
+  overflow: hidden;
 }
 
 .background-shapes .shape {
-    position: absolute;
-    filter: blur(80px);
-    z-index: 0;
-    opacity: 0.6;
-    animation: float 20s infinite;
+  position: absolute;
+  filter: blur(80px);
+  z-index: 0;
+  opacity: 0.6;
+  animation: float 20s infinite;
+  will-change: transform; /* 开启 GPU 加速，优化性能 */
 }
 
 .shape-1 {
-    top: -10%;
-    left: -10%;
-    width: 500px;
-    height: 500px;
-    background: #c4b5fd;
-    animation-delay: 0s;
+  top: -10%; left: -10%;
+  width: 500px; height: 500px;
+  background: #c4b5fd;
+  animation-delay: 0s;
 }
 
 .shape-2 {
-    bottom: -10%;
-    right: -10%;
-    width: 600px;
-    height: 600px;
-    background: #a5f3fc;
-    animation-delay: -5s;
+  bottom: -10%; right: -10%;
+  width: 600px; height: 600px;
+  background: #a5f3fc;
+  animation-delay: -5s;
 }
 
 .shape-3 {
-    top: 40%;
-    left: 40%;
-    width: 300px;
-    height: 300px;
-    background: #fbcfe8;
-    animation-delay: -10s;
+  top: 40%; left: 40%;
+  width: 300px; height: 300px;
+  background: #fbcfe8;
+  animation-delay: -10s;
 }
 
 @keyframes float {
-
-    0%,
-    100% {
-        transform: translate(0, 0) rotate(0deg);
-    }
-
-    33% {
-        transform: translate(30px, -50px) rotate(10deg);
-    }
-
-    66% {
-        transform: translate(-20px, 20px) rotate(-5deg);
-    }
+  0%, 100% { transform: translate(0, 0) rotate(0deg); }
+  33% { transform: translate(30px, -50px) rotate(10deg); }
+  66% { transform: translate(-20px, 20px) rotate(-5deg); }
 }
 
+/* =========================================
+   PC 端经典左右布局样式 (保留你原本的逻辑)
+   ========================================= */
 .container {
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(20px);
-    -webkit-backdrop-filter: blur(20px);
-    border: 1px solid rgba(255, 255, 255, 0.8);
-    border-radius: 24px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
-    position: relative;
-    overflow: hidden;
-    width: 900px;
-    max-width: 95%;
-    min-height: 600px;
-    display: flex;
-    z-index: 1;
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  border-radius: 24px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
+  position: relative;
+  overflow: hidden;
+  width: 900px;
+  max-width: 95%;
+  min-height: 600px;
+  display: flex;
+  z-index: 1;
 }
 
 .form-container {
-    position: absolute;
-    top: 0;
-    height: 100%;
-    transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    width: 50%;
-    background: rgba(255, 255, 255, 0.4);
-    backdrop-filter: blur(10px);
+  position: absolute;
+  top: 0;
+  height: 100%;
+  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  width: 50%;
+  background: rgba(255, 255, 255, 0.4);
+  backdrop-filter: blur(10px);
 }
 
 .form-container form {
-    display: flex;
-    flex-direction: column;
-    padding: 0 50px;
-    height: 100%;
-    justify-content: center;
-    align-items: center;
-    text-align: center;
+  display: flex;
+  flex-direction: column;
+  padding: 0 50px;
+  height: 100%;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
 }
 
 h1 {
-    font-weight: 800;
-    margin: 0 0 20px;
-    color: var(--text-color-primary);
-    font-size: 28px;
+  font-weight: 800;
+  margin: 0 0 20px;
+  color: #1f2937;
+  font-size: 28px;
 }
 
 .social-container {
-    margin: 10px 0 20px;
-    display: flex;
-    gap: 16px;
+  margin: 10px 0 20px;
+  display: flex;
+  gap: 16px;
 }
 
 .social {
-    border: 1px solid #ddd;
-    border-radius: 50%;
-    display: inline-flex;
-    justify-content: center;
-    align-items: center;
-    width: 40px;
-    height: 40px;
-    color: var(--text-color-secondary);
-    transition: all 0.3s;
-    background: white;
+  border: 1px solid #ddd;
+  border-radius: 50%;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  width: 40px; height: 40px;
+  color: #6b7280;
+  transition: all 0.3s;
+  background: white;
 }
 
 .social:hover {
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-    transform: translateY(-2px);
+  color: #6366f1;
+  border-color: #6366f1;
+  transform: translateY(-2px);
 }
 
 span {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-    margin-bottom: 20px;
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 20px;
 }
 
 .input-group {
-    position: relative;
-    width: 100%;
-    margin: 8px 0;
+  position: relative;
+  width: 100%;
+  margin: 8px 0;
 }
 
 .input-group input {
-    background: rgba(255, 255, 255, 0.8);
-    border: 1px solid transparent;
-    padding: 12px 15px 12px 45px;
-    width: 100%;
-    border-radius: 12px;
-    font-size: 14px;
-    outline: none;
-    transition: all 0.3s;
-    color: var(--text-color-primary);
-    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid transparent;
+  padding: 12px 15px 12px 45px;
+  width: 100%;
+  border-radius: 12px;
+  font-size: 14px;
+  outline: none;
+  transition: all 0.3s;
+  color: #1f2937;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .input-group input:focus {
-    background: #fff;
-    border-color: var(--color-primary);
-    box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.1);
+  background: #fff;
+  border-color: #6366f1;
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
 }
 
 .input-icon {
-    position: absolute;
-    left: 15px;
-    top: 50%;
-    transform: translateY(-50%);
-    color: var(--text-color-placeholder);
-    transition: color 0.3s;
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+  transition: color 0.3s;
 }
 
 .input-group input:focus+.input-icon {
-    color: var(--color-primary);
+  color: #6366f1;
 }
 
 .captcha-group {
-    display: flex;
-    gap: 10px;
+  display: flex;
+  gap: 10px;
 }
 
 .captcha-group input {
-    padding-left: 15px;
-    /* Adjust padding if no icon */
-    flex: 1;
+  padding-left: 15px;
+  flex: 1;
 }
 
 .code-btn {
-    white-space: nowrap;
-    padding: 0 15px;
+  white-space: nowrap;
+  padding: 0 15px;
 }
 
 .actions {
-    width: 100%;
-    display: flex;
-    justify-content: space-between;
-    margin: 15px 0 25px;
-    font-size: 13px;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  margin: 15px 0 25px;
+  font-size: 13px;
 }
 
 .action-link {
-    color: var(--text-color-secondary);
-    cursor: pointer;
-    transition: color 0.3s;
+  color: #6b7280;
+  cursor: pointer;
+  transition: color 0.3s;
 }
 
 .action-link:hover {
-    color: var(--color-primary);
-    text-decoration: underline;
+  color: #6366f1;
+  text-decoration: underline;
 }
 
 .submit-btn {
-    border-radius: 30px;
-    border: none;
-    background: linear-gradient(135deg, var(--color-primary), #6366f1);
-    color: #fff;
-    font-size: 14px;
-    font-weight: 700;
-    padding: 12px 45px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: transform 80ms ease-in, box-shadow 0.3s;
-    cursor: pointer;
-    box-shadow: 0 4px 15px rgba(var(--color-primary-rgb), 0.3);
+  border-radius: 30px;
+  border: none;
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  font-size: 14px;
+  font-weight: 700;
+  padding: 12px 45px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: transform 80ms ease-in, box-shadow 0.3s;
+  cursor: pointer;
+  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+  margin-top: 10px;
 }
 
 .submit-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(var(--color-primary-rgb), 0.4);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
 }
 
 .submit-btn:active {
-    transform: scale(0.95);
+  transform: scale(0.95);
 }
 
-.submit-btn:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-}
-
+/* 覆盖层样式 */
 .overlay-container {
-    position: absolute;
-    top: 0;
-    left: 50%;
-    width: 50%;
-    height: 100%;
-    overflow: hidden;
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-    z-index: 100;
+  position: absolute;
+  top: 0; left: 50%;
+  width: 50%; height: 100%;
+  overflow: hidden;
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 100;
 }
 
 .overlay {
-    background: linear-gradient(135deg, var(--color-primary), #8b5cf6);
-    background-repeat: no-repeat;
-    background-size: cover;
-    background-position: 0 0;
-    color: #fff;
-    position: relative;
-    left: -100%;
-    height: 100%;
-    width: 200%;
-    transform: translateX(0);
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  background: linear-gradient(135deg, #8b5cf6, #6366f1);
+  color: #fff;
+  position: relative;
+  left: -100%;
+  height: 100%; width: 200%;
+  transform: translateX(0);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .overlay-panel {
-    position: absolute;
-    top: 0;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    padding: 0 40px;
-    height: 100%;
-    width: 50%;
-    text-align: center;
-    transform: translateX(0);
-    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  position: absolute;
+  top: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 0 40px;
+  height: 100%; width: 50%;
+  text-align: center;
+  transform: translateX(0);
+  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .overlay-panel h1 {
-    color: white;
-    margin-bottom: 10px;
+  color: white;
+  margin-bottom: 10px;
 }
 
 .overlay-panel p {
-    font-size: 14px;
-    font-weight: 300;
-    line-height: 1.6;
-    margin: 10px 0 30px;
-    color: rgba(255, 255, 255, 0.9);
+  font-size: 14px;
+  font-weight: 300;
+  line-height: 1.6;
+  margin: 10px 0 30px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .ghost {
-    background: transparent;
-    border: 1px solid #fff;
-    border-radius: 30px;
-    color: #fff;
-    font-size: 13px;
-    font-weight: 700;
-    padding: 10px 40px;
-    letter-spacing: 1px;
-    text-transform: uppercase;
-    transition: all 0.3s;
-    cursor: pointer;
+  background: transparent;
+  border: 1px solid #fff;
+  border-radius: 30px;
+  color: #fff;
+  font-size: 13px;
+  font-weight: 700;
+  padding: 10px 40px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  transition: all 0.3s;
+  cursor: pointer;
 }
 
 .ghost:hover {
-    background: rgba(255, 255, 255, 0.2);
-    transform: scale(1.05);
+  background: rgba(255, 255, 255, 0.2);
+  transform: scale(1.05);
 }
 
-.overlay-right {
-    right: 0;
-    transform: translateX(0);
-}
+.overlay-right { right: 0; transform: translateX(0); }
+.overlay-left { transform: translateX(-20%); }
 
-.overlay-left {
-    transform: translateX(-20%);
-}
+/* PC端状态切换动画 */
+.container.right-panel-active .sign-in-container { transform: translateX(100%); opacity: 0; }
+.container.right-panel-active .overlay-container { transform: translateX(-100%); }
+.container.right-panel-active .sign-up-container { transform: translateX(100%); opacity: 1; z-index: 5; }
+.container.right-panel-active .overlay { transform: translateX(50%); }
+.container.right-panel-active .overlay-left { transform: translateX(0); }
+.container.right-panel-active .overlay-right { transform: translateX(20%); }
 
-/* Animation States */
-.container.right-panel-active .sign-in-container {
-    transform: translateX(100%);
-    opacity: 0;
-}
 
-.container.right-panel-active .overlay-container {
-    transform: translateX(-100%);
-}
+/* =========================================
+   移动端专属样式优化 (上下卡片切换)
+   ========================================= */
+@media (max-width: 768px) {
+  /* 容器改为全屏，允许滚动防键盘遮挡 */
+  .container {
+    flex-direction: column;
+    width: 100%;
+    height: 100vh;
+    max-height: 100vh;
+    border-radius: 0;
+    min-height: auto;
+  }
 
-.container.right-panel-active .sign-up-container {
-    transform: translateX(100%);
+  /* 1. 顶部紫色背景区域（原 overlay） */
+  .overlay-container {
+    position: relative;
+    left: 0 !important;
+    width: 100% !important;
+    height: 220px !important; /* 固定顶部高度 */
+    transform: none !important;
+    z-index: 1;
+  }
+
+  .overlay {
+    left: 0 !important;
+    width: 100% !important;
+    transform: none !important;
+  }
+
+  .overlay-panel {
+    width: 100% !important;
+    padding: 0 20px !important;
+    transform: none !important;
+    transition: opacity 0.4s ease; /* 切换时使用透明度过渡 */
+  }
+
+  /* 移动端隐藏大段描述文字，节省空间 */
+  .overlay-panel p {
+    display: none;
+  }
+
+  .overlay-panel h1 {
+    font-size: 22px;
+  }
+
+  /* 移动端顶部文案切换逻辑 */
+  .overlay-left { opacity: 0; pointer-events: none; }
+  .overlay-right { opacity: 1; pointer-events: auto; }
+  .container.right-panel-active .overlay-left { opacity: 1; pointer-events: auto; }
+  .container.right-panel-active .overlay-right { opacity: 0; pointer-events: none; }
+
+  /* 2. 表单卡片区域 */
+  .form-container {
+    position: absolute; /* 关键：保留绝对定位，让两个表单重叠 */
+    top: 180px; /* 往上提，盖住一部分紫色背景，形成卡片感 */
+    left: 0 !important;
+    width: 100% !important;
+    height: calc(100vh - 180px) !important;
+    background: rgba(255, 255, 255, 0.95); /* 提高不透明度 */
+    border-radius: 30px 30px 0 0; /* 顶部大圆角 */
+    box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
+    transition: opacity 0.4s ease, transform 0.4s ease, z-index 0.4s;
+  }
+
+  .form-container form {
+    padding: 30px 25px !important;
+    justify-content: flex-start; /* 表单靠上对齐，防止键盘遮挡 */
+    height: 100%;
+    overflow-y: auto; /* 允许内部滚动 */
+  }
+
+  .form-container h1 {
+    font-size: 24px;
+    margin-bottom: 10px;
+  }
+
+  /* 3. 移动端表单切换动画逻辑 (摒弃左右位移，改用淡入淡出+轻微上浮) */
+
+  /* 默认状态：显示登录 */
+  .sign-in-container {
     opacity: 1;
     z-index: 5;
-}
+    transform: translateY(0) !important;
+    pointer-events: auto;
+  }
+  .sign-up-container {
+    opacity: 0;
+    z-index: 1;
+    transform: translateY(20px) !important; /* 隐藏时轻微下沉 */
+    pointer-events: none; /* 防止点击到隐藏的表单 */
+  }
 
-.container.right-panel-active .overlay {
-    transform: translateX(50%);
-}
+  /* 触发态：显示注册 */
+  .container.right-panel-active .sign-in-container {
+    opacity: 0;
+    z-index: 1;
+    transform: translateY(20px) !important;
+    pointer-events: none;
+  }
+  .container.right-panel-active .sign-up-container {
+    opacity: 1;
+    z-index: 5;
+    transform: translateY(0) !important;
+    pointer-events: auto;
+  }
 
-.container.right-panel-active .overlay-left {
-    transform: translateX(0);
-}
+  /* 4. 优化移动端背景动画性能 */
+  .background-shapes .shape {
+    filter: blur(40px); /* 降低模糊半径，大幅减少发热 */
+    opacity: 0.3;
+    animation: mobileFloat 10s infinite alternate ease-in-out;
+  }
 
-.container.right-panel-active .overlay-right {
-    transform: translateX(20%);
+  @keyframes mobileFloat {
+    0% { transform: translate(0, 0); }
+    100% { transform: translate(15px, 15px); }
+  }
 }
 </style>

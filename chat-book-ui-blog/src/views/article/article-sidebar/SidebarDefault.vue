@@ -79,4 +79,10 @@ defineProps({
 .toc-card {
     min-height: 240px;
 }
+
+@media (max-width: 768px) {
+    .article-right-card:not(.toc-card) {
+        display: none !important;
+    }
+}
 </style>
