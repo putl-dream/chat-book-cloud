@@ -200,6 +200,25 @@ chat-book-cloud
     ```
 4.  **访问验证**: 打开浏览器访问 `http://localhost:5173` (前端) 或 `http://localhost:15020/doc.html` (网关 Knife4j 文档).
 
+### Docker Compose 环境变量
+
+`chat-book-cloud-auth` 的 Google OAuth2 配置依赖以下环境变量：
+
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+OAUTH2_SUCCESS_REDIRECT_URL=http://localhost:5173/login
+```
+
+推荐把它们写入仓库根目录 `.env`，或显式通过 `--env-file` 传入，而不是仅在当前 shell 中赋值：
+
+```bash
+cp .env.example .env
+docker compose --env-file .env -f docker-compose.dev.yml up -d --build auth
+```
+
+如果只是在 shell 里执行了 `GOOGLE_CLIENT_SECRET=xxx` 但没有 `export`，`echo $GOOGLE_CLIENT_SECRET` 仍然会有值，但 `docker compose` 子进程拿不到该变量，最终会把容器中的 `GOOGLE_CLIENT_SECRET` 替换为空字符串。
+
 ## 🔮 未来规划
 
 - [ ] **AI 能力增强**: 集成 RAG (检索增强生成) 流程，支持知识库问答。
