@@ -4,7 +4,7 @@
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.1-blue)](https://spring.io/projects/spring-cloud)
 [![Spring Cloud Alibaba](https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2023.0.1.0-orange)](https://github.com/alibaba/spring-cloud-alibaba)
 
-> 🌐 **在线体验**: [http://49.235.53.56/](http://49.235.53.56/) (基于 GitHub Actions 自动化部署)
+> 🌐 **在线体验**: [http://180.184.30.1/](http://180.184.30.1/) (基于 GitHub Actions 自动化部署)
 
 ## 📖 项目简介
 
