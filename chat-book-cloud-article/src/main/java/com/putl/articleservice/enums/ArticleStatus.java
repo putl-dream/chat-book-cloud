@@ -9,7 +9,7 @@ import lombok.Getter;
 @AllArgsConstructor
 public enum ArticleStatus {
     DRAFT(0),
-    UNPUBLISHED(1),
+    PENDING_REVIEW(1),
     PUBLISHED(2),
     DELETED(-1);
 

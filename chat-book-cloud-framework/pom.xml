@@ -28,6 +28,7 @@
         <module>chat-book-cloud-minio</module>
         <module>chat-book-cloud-parsing</module>
         <module>chat-book-cloud-excel</module>
+        <module>chat-book-cloud-rabbitmq</module>
     </modules>
 
     <dependencyManagement>
@@ -81,6 +82,12 @@
             <dependency>
                 <groupId>fun.amireux</groupId>
                 <artifactId>chat-book-cloud-excel</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+
+            <dependency>
+                <groupId>fun.amireux</groupId>
+                <artifactId>chat-book-cloud-rabbitmq</artifactId>
                 <version>1.0.0</version>
             </dependency>
         </dependencies>

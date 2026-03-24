@@ -17,6 +17,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Map;
 
@@ -65,7 +66,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
         UserDO userDO = getUserInfo(user);
         log.info("用户登录成功: {}", userDO.getEmail());
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "email", userDO.getEmail()));
+        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
     }
 
 
@@ -78,16 +79,21 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             log.error("密码错误");
             throw new AuthenticationException("密码错误");
         }
-        log.info("用户登录成功: {}", userDO.getUsername());
-        // todo : 待加入roles
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", userDO.getUsername()));//
+        UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userDO.getId()));
+        String username = userInfo != null ? userInfo.getUsername() : "";
+        log.info("用户登录成功: {}", username);
+        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
     }
 
     @Override
     public UserDO getUserInfo(UserDTO user) {
         UserDO userDO = null;
         if (StringUtils.isNotBlank(user.getUsername())) {
-            userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, user.getUsername()));
+            // 从 user_info 表查询用户id，再查询 user 表
+            UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUsername, user.getUsername()));
+            if (userInfo != null) {
+                userDO = userMapper.selectById(userInfo.getUserId());
+            }
         }
         if (userDO == null && StringUtils.isNotBlank(user.getEmail())) {
             userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
@@ -101,6 +107,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
+    @Transactional
     public String signIn(UserDTO signInVO) {
         // Verify Captcha for registration
         if (!captchaService.verifyCaptcha(signInVO.getEmail(), signInVO.getVerificationCode())) {
@@ -111,13 +118,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             log.error("邮箱已存在");
             throw new AuthenticationException("邮箱已存在");
         }
-        if (userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getUsername, signInVO.getUsername())) != null) {
+        // 用户名校验在 user_info 表中进行
+        if (userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUsername, signInVO.getUsername())) != null) {
             log.error("用户名已存在");
             throw new AuthenticationException("用户名已存在");
         }
 
         UserDO userDO = UserDO.builder()
-                .username(signInVO.getUsername())
                 .email(signInVO.getEmail())
                 .password(PwdUtil.hashPassword(signInVO.getPassword()))
                 .build();
@@ -132,6 +139,52 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .build();
         userInfoMapper.insert(userInfo);
 
-        return jwtUtil.generateToken(Map.of("id", userDO.getId(), "username", userDO.getUsername()));
+        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
+    }
+
+    @Override
+    @Transactional
+    public Integer oauth2Login(UserDTO user) {
+        // Check if user exists by email
+        UserDO existingUser = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
+
+        if (existingUser != null) {
+            // Update user info if changed
+            UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, existingUser.getId()));
+            if (userInfo != null) {
+                boolean updated = false;
+                if (user.getUsername() != null && !user.getUsername().equals(userInfo.getUsername())) {
+                    userInfo.setUsername(user.getUsername());
+                    updated = true;
+                }
+                if (user.getPhoto() != null && !user.getPhoto().equals(userInfo.getPhoto())) {
+                    userInfo.setPhoto(user.getPhoto());
+                    updated = true;
+                }
+                if (updated) {
+                    userInfoMapper.updateById(userInfo);
+                }
+            }
+            return existingUser.getId();
+        }
+
+        // Create new OAuth user
+        UserDO newUser = UserDO.builder()
+                .email(user.getEmail())
+                .password(PwdUtil.hashPassword("")) // OAuth users have no password
+                .build();
+        userMapper.insert(newUser);
+
+        // Create user info
+        UserInfoDO userInfo = UserInfoDO.builder()
+                .userId(newUser.getId())
+                .username(user.getUsername() != null ? user.getUsername() : "user_" + newUser.getId())
+                .photo(user.getPhoto())
+                .role(0)
+                .build();
+        userInfoMapper.insert(userInfo);
+
+        log.info("OAuth用户注册成功: {}, provider: {}", user.getEmail(), user.getLoginMethod());
+        return newUser.getId();
     }
 }

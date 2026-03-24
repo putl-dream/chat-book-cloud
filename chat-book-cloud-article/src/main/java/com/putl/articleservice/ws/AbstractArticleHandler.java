@@ -24,12 +24,6 @@ public abstract class AbstractArticleHandler implements MessageHandler<ArticleMe
 
     @Override
     public void handleMessage(String userId, ArticleMessage message) {
-        // Cache the message
-        articleCache.put(userId, message);
-        
-        // Notify cache success (from original logic)
-        messagePublisher.sendToUser(userId, WebSocketResult.of("CACHE", "缓存成功!"));
-        
         doHandle(userId, message);
     }
 

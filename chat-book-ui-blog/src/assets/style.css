@@ -23,7 +23,7 @@ a, button, .clickable {
     background: var(--bg-color-glass);
     backdrop-filter: var(--blur-base);
     -webkit-backdrop-filter: var(--blur-base);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid var(--border-color-glass);
     box-shadow: var(--box-shadow-glass);
 }
 
@@ -34,7 +34,7 @@ a, button, .clickable {
 }
 
 .interactive-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     box-shadow: var(--box-shadow-hover);
     border-color: var(--color-primary-light);
 }
@@ -57,4 +57,19 @@ a, button, .clickable {
 
 ::-webkit-scrollbar-thumb:hover {
     background: var(--text-color-secondary);
+}
+
+/* NProgress Customization */
+#nprogress .bar {
+    background: var(--color-primary) !important;
+    height: 3px !important;
+}
+
+#nprogress .peg {
+    box-shadow: 0 0 10px var(--color-primary), 0 0 5px var(--color-primary) !important;
+}
+
+#nprogress .spinner-icon {
+    border-top-color: var(--color-primary) !important;
+    border-left-color: var(--color-primary) !important;
 }

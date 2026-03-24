@@ -24,7 +24,10 @@ public class DefaultMessageRouter implements MessageRouter {
     @Autowired
     public DefaultMessageRouter(List<MessageHandler> handlerList) {
         // 自动收集所有实现 MessageHandler 的 Bean
-        handlerList.forEach(handler -> handlers.put(handler.getType(), handler));
+        handlerList.forEach(handler -> {
+            handlers.put(handler.getType(), handler);
+            log.info("注册 WebSocket 消息处理器: type={}, class={}", handler.getType(), handler.getClass().getName());
+        });
     }
 
     @Override

@@ -13,8 +13,27 @@
 
     <dependencies>
         <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-minio</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- User API -->
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-api-user</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- Interaction API -->
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-api-interaction</artifactId>
+            <version>1.0.0</version>
         </dependency>
 
         <dependency>
@@ -29,8 +48,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-amqp</artifactId>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-rabbitmq</artifactId>
         </dependency>
 
         <dependency>
@@ -59,11 +78,6 @@
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
 
-        <!-- UA解析工具 -->
-        <dependency>
-            <groupId>eu.bitwalker</groupId>
-            <artifactId>UserAgentUtils</artifactId>
-        </dependency>
 
         <dependency>
             <groupId>com.mysql</groupId>
@@ -76,8 +90,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-redis</artifactId>
         </dependency>
 
         <dependency>
@@ -100,4 +114,12 @@
 
     </dependencies>
 
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 </project>

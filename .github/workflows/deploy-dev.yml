@@ -1,0 +1,385 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  deploy-dev:
+    runs-on:
+      - self-hosted
+      - Linux
+      - X64
+    timeout-minutes: 60
+    concurrency:
+      group: deploy-dev
+      cancel-in-progress: false
+    env:
+      FILE_STORAGE_BASE_URL: ${{ vars.FILE_STORAGE_BASE_URL || '' }}
+      VITE_APP_BASE_URL: ${{ vars.VITE_APP_BASE_URL || '' }}
+      VITE_AUTH_BASE_URL: ${{ vars.VITE_AUTH_BASE_URL || 'http://180.184.30.1:8081' }}
+      NACOS_SERVER_ADDR: ${{ vars.NACOS_SERVER_ADDR || '10.0.0.2:8848' }}
+      NACOS_REGISTER_IP: ${{ vars.NACOS_REGISTER_IP || '10.0.0.1' }}
+      MYSQL_HOST: ${{ vars.MYSQL_HOST || '10.0.0.2' }}
+      MYSQL_PORT: ${{ vars.MYSQL_PORT || '3306' }}
+      REDIS_HOST: ${{ vars.REDIS_HOST || '10.0.0.2' }}
+      REDIS_PORT: ${{ vars.REDIS_PORT || '6379' }}
+      RABBITMQ_HOST: ${{ vars.RABBITMQ_HOST || '10.0.0.2' }}
+      RABBITMQ_PORT: ${{ vars.RABBITMQ_PORT || '5672' }}
+      MINIO_ENDPOINT: ${{ vars.MINIO_ENDPOINT || 'http://10.0.0.2:9000' }}
+      MINIO_PUBLIC_URL: ${{ vars.MINIO_PUBLIC_URL || 'http://49.235.53.56:9000' }}
+      MINIO_ACCESS_KEY: ${{ vars.MINIO_ACCESS_KEY || '' }}
+      MINIO_SECRET_KEY: ${{ vars.MINIO_SECRET_KEY || '' }}
+      MINIO_BUCKET: ${{ vars.MINIO_BUCKET || 'chat-book-images' }}
+      GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || '' }}
+      GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET || '' }}
+      OAUTH2_SUCCESS_REDIRECT_URL: ${{ vars.OAUTH2_SUCCESS_REDIRECT_URL || 'http://180.184.30.1/login' }}
+
+    steps:
+      - name: Download source archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+
+          archive_file="$(mktemp /tmp/chat-book-cloud-${GITHUB_RUN_ID}-XXXXXX.tar.gz)"
+          mkdir -p "${GITHUB_WORKSPACE}"
+
+          curl --fail --location \
+            --retry 5 \
+            --retry-all-errors \
+            --retry-delay 5 \
+            --connect-timeout 30 \
+            --max-time 900 \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            -H "Accept: application/vnd.github+json" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/tarball/${GITHUB_SHA}" \
+            -o "${archive_file}"
+
+          find "${GITHUB_WORKSPACE}" -mindepth 1 -maxdepth 1 -exec rm -rf {} +
+          tar -xzf "${archive_file}" -C "${GITHUB_WORKSPACE}" --strip-components=1
+          rm -f "${archive_file}"
+
+      - name: Detect changed areas
+        id: changes
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          import urllib.request
+
+          repo = os.environ["GITHUB_REPOSITORY"]
+          sha = os.environ["GITHUB_SHA"]
+          event_name = os.environ["GITHUB_EVENT_NAME"]
+          event_path = os.environ["GITHUB_EVENT_PATH"]
+          token = os.environ["GITHUB_TOKEN"]
+          output_path = os.environ["GITHUB_OUTPUT"]
+
+          service_map = {
+              "chat-book-cloud-gateway/": ("gateway", "chat-book-cloud-gateway"),
+              "chat-book-cloud-auth/": ("auth", "chat-book-cloud-auth"),
+              "chat-book-cloud-user/": ("user", "chat-book-cloud-user"),
+              "chat-book-cloud-article/": ("article", "chat-book-cloud-article"),
+              "chat-book-cloud-interaction/": ("interaction", "chat-book-cloud-interaction"),
+              "chat-book-cloud-social/": ("social", "chat-book-cloud-social"),
+              "chat-book-cloud-chat/": ("chat", "chat-book-cloud-chat"),
+              "chat-book-ui-blog/": ("frontend", None),
+          }
+          backend_services = [
+              ("gateway", "chat-book-cloud-gateway"),
+              ("auth", "chat-book-cloud-auth"),
+              ("user", "chat-book-cloud-user"),
+              ("article", "chat-book-cloud-article"),
+              ("interaction", "chat-book-cloud-interaction"),
+              ("social", "chat-book-cloud-social"),
+              ("chat", "chat-book-cloud-chat"),
+          ]
+          backend_service_map = dict(backend_services)
+          compose_service_names = set(backend_service_map) | {"frontend"}
+          deploy_order = [name for name, _ in backend_services] + ["frontend"]
+          common_backend_prefixes = (
+              "chat-book-cloud-framework/",
+              "chat-book-cloud-api/",
+              "chat-book-cloud-dependencies/",
+          )
+          ignored_prefixes = (
+              ".github/",
+          )
+          ignored_files = {
+              ".gitignore",
+              "README.md",
+              "docker-compose.yml",
+          }
+
+          def ordered_unique(values, order):
+              present = set(values)
+              return [item for item in order if item in present]
+
+          def build_compose_service_index(path):
+              owners = {}
+              current_service = None
+              in_services = False
+
+              try:
+                  with open(path, "r", encoding="utf-8") as fh:
+                      lines = fh.readlines()
+              except OSError:
+                  return None
+
+              for lineno, line in enumerate(lines, start=1):
+                  stripped = line.strip()
+
+                  if not in_services:
+                      if stripped == "services:":
+                          in_services = True
+                      continue
+
+                  if stripped and not line.startswith(" "):
+                      break
+
+                  if line.startswith("  ") and not line.startswith("    ") and stripped.endswith(":"):
+                      service_name = stripped[:-1]
+                      current_service = service_name if service_name in compose_service_names else None
+
+                  owners[lineno] = current_service
+
+              return owners
+
+          def detect_compose_services(path, patch):
+              if not patch:
+                  return None
+
+              owners = build_compose_service_index(path)
+              if not owners:
+                  return None
+
+              changed = set()
+              new_lineno = None
+              last_service = None
+
+              for line in patch.splitlines():
+                  if line.startswith("@@"):
+                      match = re.match(r"@@ -\d+(?:,\d+)? \+(\d+)(?:,\d+)? @@", line)
+                      if not match:
+                          new_lineno = None
+                          last_service = None
+                          continue
+                      new_lineno = int(match.group(1))
+                      last_service = owners.get(new_lineno)
+                      continue
+
+                  if new_lineno is None or line.startswith("+++ ") or line.startswith("--- "):
+                      continue
+
+                  if line.startswith("-"):
+                      if last_service:
+                          changed.add(last_service)
+                      continue
+
+                  service = owners.get(new_lineno) or last_service
+                  if service:
+                      changed.add(service)
+                      last_service = service
+                  new_lineno += 1
+
+              return changed
+
+          payload = {}
+          with open(event_path, "r", encoding="utf-8") as fh:
+              payload = json.load(fh)
+
+          before = payload.get("before") or ""
+          head_commit = payload.get("head_commit") or {}
+          head_commit_message = (head_commit.get("message") or "").lower()
+          force_full_build = False
+
+          if event_name == "push":
+              force_full_build = (
+                  "[full-build]" in head_commit_message
+                  or "[full-rebuild]" in head_commit_message
+              )
+
+          files = None
+
+          if event_name == "push" and before and set(before) != {"0"}:
+              compare_url = f"https://api.github.com/repos/{repo}/compare/{before}...{sha}"
+              request = urllib.request.Request(
+                  compare_url,
+                  headers={
+                      "Authorization": f"Bearer {token}",
+                      "Accept": "application/vnd.github+json",
+                      "X-GitHub-Api-Version": "2022-11-28",
+                      "User-Agent": "chat-book-cloud-deploy-dev",
+                  },
+              )
+              try:
+                  with urllib.request.urlopen(request, timeout=60) as response:
+                      compare = json.load(response)
+                  files = compare.get("files", [])
+              except Exception:
+                  files = None
+
+          if force_full_build:
+              files = None
+
+          full_backend = files is None
+          build_frontend = files is None
+          backend_modules = set()
+          deploy_services = set()
+
+          if files is not None:
+              for file_info in files:
+                  path = file_info["filename"]
+
+                  if path in ignored_files or path.startswith(ignored_prefixes):
+                      continue
+
+                  if path == "pom.xml":
+                      full_backend = True
+                      build_frontend = True
+                      continue
+
+                  if path == "docker-compose.dev.yml":
+                      compose_services = detect_compose_services(path, file_info.get("patch", ""))
+                      if not compose_services:
+                          full_backend = True
+                          build_frontend = True
+                          continue
+
+                      for service in compose_services:
+                          if service == "frontend":
+                              build_frontend = True
+                              deploy_services.add("frontend")
+                          else:
+                              backend_modules.add(backend_service_map[service])
+                              deploy_services.add(service)
+                      continue
+
+                  if path.startswith(common_backend_prefixes):
+                      full_backend = True
+                      continue
+
+                  matched = False
+                  for prefix, (service, module) in service_map.items():
+                      if path.startswith(prefix):
+                          matched = True
+                          if service == "frontend":
+                              build_frontend = True
+                              deploy_services.add("frontend")
+                          else:
+                              backend_modules.add(module)
+                              deploy_services.add(service)
+                          break
+
+                  if matched:
+                      continue
+
+                  full_backend = True
+                  build_frontend = True
+
+          if full_backend:
+              backend_modules = {module for _, module in backend_services}
+              deploy_services.update(name for name, _ in backend_services)
+
+          if build_frontend:
+              deploy_services.add("frontend")
+
+          ordered_backend_modules = ordered_unique(
+              backend_modules,
+              [module for _, module in backend_services],
+          )
+          ordered_deploy_services = ordered_unique(deploy_services, deploy_order)
+          maven_threads = "1" if full_backend else "1C"
+
+          with open(output_path, "a", encoding="utf-8") as out:
+              out.write(f"full_backend={'true' if full_backend else 'false'}\n")
+              out.write(f"build_backend={'true' if ordered_backend_modules else 'false'}\n")
+              out.write(f"backend_modules={','.join(ordered_backend_modules)}\n")
+              out.write(f"build_frontend={'true' if build_frontend else 'false'}\n")
+              out.write(f"maven_threads={maven_threads}\n")
+              out.write(f"deploy_services={','.join(ordered_deploy_services)}\n")
+          PY
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+
+      - name: Show build plan
+        run: |
+          echo "full_backend=${{ steps.changes.outputs.full_backend }}"
+          echo "build_backend=${{ steps.changes.outputs.build_backend }}"
+          echo "backend_modules=${{ steps.changes.outputs.backend_modules }}"
+          echo "build_frontend=${{ steps.changes.outputs.build_frontend }}"
+          echo "maven_threads=${{ steps.changes.outputs.maven_threads }}"
+          echo "deploy_services=${{ steps.changes.outputs.deploy_services }}"
+
+      - name: Verify local build toolchain
+        run: |
+          set -euo pipefail
+
+          command -v java > /dev/null
+          command -v mvn > /dev/null
+          command -v node > /dev/null
+          command -v npm > /dev/null
+
+          java -version
+          mvn -v
+          node -v
+          npm -v
+
+          java_major="$(java -XshowSettings:properties -version 2>&1 | awk -F'= ' '/java.specification.version/ {print $2; exit}')"
+          node_major="$(node -v | sed 's/^v//' | cut -d. -f1)"
+
+          if [ "${java_major}" -lt 17 ]; then
+            echo "Java 17+ is required on the self-hosted runner, found: ${java_major}"
+            exit 1
+          fi
+
+          if [ "${node_major}" -lt 18 ]; then
+            echo "Node.js 18+ is required on the self-hosted runner, found: ${node_major}"
+            exit 1
+          fi
+
+      - name: Build backend with Maven
+        if: steps.changes.outputs.build_backend == 'true'
+        run: |
+          mvn -B -ntp -T "${{ steps.changes.outputs.maven_threads }}" \
+            -DskipTests \
+            -Dmaven.artifact.threads=8 \
+            -pl "${{ steps.changes.outputs.backend_modules }}" \
+            -am \
+            package \
+            --file pom.xml
+
+      - name: Install frontend dependencies
+        if: steps.changes.outputs.build_frontend == 'true'
+        working-directory: chat-book-ui-blog
+        run: npm ci --prefer-offline --no-audit --fund=false
+
+      - name: Build frontend
+        if: steps.changes.outputs.build_frontend == 'true'
+        working-directory: chat-book-ui-blog
+        run: npm run build
+
+      - name: Deploy services on VPN server
+        if: steps.changes.outputs.deploy_services != ''
+        run: |
+          set -euo pipefail
+
+          services="$(echo "${{ steps.changes.outputs.deploy_services }}" | tr ',' ' ')"
+
+          if docker compose version > /dev/null 2>&1; then
+            docker compose -f docker-compose.dev.yml up -d --build --no-deps --remove-orphans ${services}
+          else
+            docker-compose -f docker-compose.dev.yml up -d --build --no-deps --remove-orphans ${services}
+          fi
+
+          docker image prune -f

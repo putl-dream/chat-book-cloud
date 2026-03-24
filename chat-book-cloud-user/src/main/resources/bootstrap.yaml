@@ -1,17 +1,12 @@
 spring:
   application:
-    name: user-service
+    name: chat-book-cloud-user
 
   profiles:
-    active: dev
+    active: ${SPRING_PROFILES_ACTIVE:local}
 
 server:
-  port: 9093
+  port: 8083
 
 websocket:
   path: /user/ws
-
---- ## 日志
-logging:
-  level:
-    org.springframework.cloud.gateway: info

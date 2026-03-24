@@ -54,8 +54,8 @@
         </dependency>
 
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-data-redis</artifactId>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-redis</artifactId>
         </dependency>
 
         <dependency>
@@ -65,7 +65,17 @@
 
         <dependency>
             <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-oauth2-client</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-mail</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-rabbitmq</artifactId>
         </dependency>
     </dependencies>
 
@@ -78,5 +88,4 @@
             </plugin>
         </plugins>
     </build>
-
 </project>

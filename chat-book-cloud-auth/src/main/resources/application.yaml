@@ -1,53 +1,34 @@
-server:
-  port: 9092
-
 spring:
-  rabbitmq:
-    host: 127.0.0.1
-    port: 5672
-    virtual-host: /ice
-    username: ice
-    password: root
-
-  data:
-    redis:
-      host: 127.0.0.1
-      port: 6379
-      password:
-
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://127.0.0.1:3306/ice_user?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
-    password: root
-
   mail:
-    #配置smtp服务主机地址
-    # qq邮箱为smtp.qq.com          端口号465或587
-    # sina    smtp.sina.cn
-    # aliyun  smtp.aliyun.com
-    # 163     smtp.163.com       端口号465或994
     host: smtp.qq.com
-    #发送者邮箱
     username: ${Email:1711858319@qq.com}
-    #配置密码,注意不是真正的密码，而是刚刚申请到的授权码
     password: ${QQ_SMTP:ynpehhroknoebfhg}
-    #端口号465或587
     port: 465
-    #默认的邮件编码为UTF-8
     default-encoding: UTF-8
-    #其他参数
     properties:
       mail:
-        #配置SSL 加密工厂
         smtp:
           ssl:
-            #本地测试，先放开ssl
             enable: true
             required: false
-          #开启debug模式，这样邮件发送过程的日志会在控制台打印出来，方便排查错误
         debug: false
         personal: ICE
+
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: ${GOOGLE_CLIENT_ID:}
+            client-secret: ${GOOGLE_CLIENT_SECRET:}
+            scope: profile, email
+            redirect-uri: "{baseUrl}/login/oauth2/code/{registrationId}"
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/v2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            user-name-attribute: email
 
 mybatis-plus:
   configuration:

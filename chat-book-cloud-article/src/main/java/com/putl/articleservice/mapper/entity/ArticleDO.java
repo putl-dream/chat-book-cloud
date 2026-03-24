@@ -43,6 +43,9 @@ public class ArticleDO implements Serializable {
     // 分类
     private Integer category;
 
+    // 内容类型：0-学习/教程 1-实战/项目
+    private Integer contentType;
+
     //摘要
     private String abstractText;
 

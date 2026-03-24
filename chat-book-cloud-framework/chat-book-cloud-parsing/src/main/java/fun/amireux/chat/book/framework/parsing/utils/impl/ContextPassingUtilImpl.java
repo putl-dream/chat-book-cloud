@@ -11,6 +11,7 @@ import org.apache.tika.parser.Parser;
 import org.apache.tika.sax.BodyContentHandler;
 import org.springframework.stereotype.Component;
 import org.xml.sax.ContentHandler;
+import lombok.extern.slf4j.Slf4j;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -22,6 +23,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
+@Slf4j
 public class ContextPassingUtilImpl implements ContextParsingUtil {
 
     /**
@@ -83,7 +85,7 @@ public class ContextPassingUtilImpl implements ContextParsingUtil {
 
             while (iterator.hasNext()) {
                 String chunk = iterator.next();
-                System.out.println(chunk);
+                log.debug("chunk: {}", chunk);
                 if (chunk.length() > miniBlockSize) {
                     textChunks.add(chunk);
                 }

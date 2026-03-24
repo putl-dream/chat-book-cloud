@@ -1,9 +1,14 @@
 package com.putl.articleservice.controller;
 
 import com.putl.articleservice.controller.dto.CategoryPageRequestDTO;
+import com.putl.articleservice.controller.dto.ContentTypePageRequestDTO;
+import com.putl.articleservice.controller.dto.MultiFilterPageRequestDTO;
 import com.putl.articleservice.controller.dto.PageRequestDTO;
+import com.putl.articleservice.controller.dto.RelatedPageRequestDTO;
 import com.putl.articleservice.controller.dto.SearchPageRequestDTO;
+import com.putl.articleservice.controller.dto.TagPageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
+import com.putl.articleservice.service.ArticleListCacheService;
 import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
@@ -26,23 +31,24 @@ import java.util.List;
 public class ArticlePageController {
 
     private final ArticlePageService articlePageService;
+    private final ArticleListCacheService articleListCacheService;
 
     @Operation(summary = "获取最新文章列表")
     @PostMapping("/newPage")
     public CommonResult<PageResult<ArticleListVO>> getNewPage(@Valid @RequestBody PageRequestDTO request) {
-        return CommonResult.success(articlePageService.getNewPage(request.getPageNo(), request.getPageSize()));
+        return CommonResult.success(articleListCacheService.getNewPage(request.getPageNo(), request.getPageSize()));
     }
 
     @Operation(summary = "获取热门文章列表")
     @PostMapping("/hotPage")
     public CommonResult<PageResult<ArticleListVO>> getHotPage(@Valid @RequestBody PageRequestDTO request) {
-        return CommonResult.success(articlePageService.getHotPage(request.getPageNo(), request.getPageSize()));
+        return CommonResult.success(articleListCacheService.getHotPage(request.getPageNo(), request.getPageSize()));
     }
 
     @Operation(summary = "获取今日热门文章列表")
     @PostMapping("/todayHotPage")
     public CommonResult<PageResult<ArticleListVO>> getTodayHotPage(@Valid @RequestBody PageRequestDTO request) {
-        return CommonResult.success(articlePageService.getTodayHotPage(request.getPageNo(), request.getPageSize()));
+        return CommonResult.success(articleListCacheService.getTodayHotPage(request.getPageNo(), request.getPageSize()));
     }
 
     @Operation(summary = "根据分类获取文章列表")
@@ -107,5 +113,31 @@ public class ArticlePageController {
     @PostMapping("/ids")
     public CommonResult<List<ArticleListVO>> selectIds(@RequestBody List<Integer> ids) {
         return CommonResult.success(articlePageService.selectIds(ids));
+    }
+
+    @Operation(summary = "根据内容类型获取文章列表")
+    @PostMapping("/contentTypePage")
+    public CommonResult<PageResult<ArticleListVO>> getContentTypePage(@Valid @RequestBody ContentTypePageRequestDTO request) {
+        return CommonResult.success(articlePageService.getContentTypePage(request.getPageNo(), request.getPageSize(), request.getContentType()));
+    }
+
+    @Operation(summary = "根据标签获取文章列表")
+    @PostMapping("/tagPage")
+    public CommonResult<PageResult<ArticleListVO>> getTagPage(@Valid @RequestBody TagPageRequestDTO request) {
+        return CommonResult.success(articleListCacheService.getTagPage(request.getPageNo(), request.getPageSize(), request.getTagId()));
+    }
+
+    @Operation(summary = "多条件筛选文章")
+    @PostMapping("/multiFilterPage")
+    public CommonResult<PageResult<ArticleListVO>> getMultiFilterPage(@Valid @RequestBody MultiFilterPageRequestDTO request) {
+        return CommonResult.success(articlePageService.getMultiFilterPage(
+                request.getPageNo(), request.getPageSize(),
+                request.getContentType(), request.getCategory(), request.getTagId()));
+    }
+
+    @Operation(summary = "相关推荐文章列表")
+    @PostMapping("/relatedPage")
+    public CommonResult<PageResult<ArticleListVO>> getRelatedPage(@Valid @RequestBody RelatedPageRequestDTO request) {
+        return CommonResult.success(articlePageService.relatedPage(request.getArticleId(), request.getPageNo(), request.getPageSize()));
     }
 }

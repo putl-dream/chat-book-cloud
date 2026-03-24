@@ -1,7 +1,8 @@
 package com.putl.articleservice.controller.vo;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -21,10 +22,14 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "文章ID")
     private Integer id;
 
+    @Schema(description = "作者ID")
+    private Integer userId;
+
     @Schema(description = "文章标题")
     private String title;
 
     @Schema(description = "文章封面图片URL")
+    @JsonSerialize(using = FileUrlSerializer.class)
     private String cover;
 
     @Schema(description = "文章摘要")
@@ -34,6 +39,7 @@ public class ArticleListVO implements Serializable {
     private String userName;
 
     @Schema(description = "作者头像图片URL")
+    @JsonSerialize(using = FileUrlSerializer.class)
     private String authorAvatar;
 
     @Schema(description = "文章分类ID")

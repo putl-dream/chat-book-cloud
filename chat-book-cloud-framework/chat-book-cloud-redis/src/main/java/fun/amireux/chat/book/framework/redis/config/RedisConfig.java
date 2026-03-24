@@ -1,59 +1,87 @@
 package fun.amireux.chat.book.framework.redis.config;
 
-
 import com.fasterxml.jackson.annotation.JsonAutoDetect;
 import com.fasterxml.jackson.annotation.PropertyAccessor;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.PropertyNamingStrategies;
-import fun.amireux.chat.book.framework.redis.pojo.RedisProperties;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.boot.autoconfigure.AutoConfiguration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnClass;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
+import org.springframework.data.redis.cache.RedisCacheConfiguration;
+import org.springframework.data.redis.cache.RedisCacheManager;
 import org.springframework.data.redis.connection.RedisConnectionFactory;
-import org.springframework.data.redis.connection.RedisStandaloneConfiguration;
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory;
+import org.springframework.data.redis.core.RedisOperations;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.data.redis.serializer.Jackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
+import org.springframework.data.redis.serializer.RedisSerializationContext;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
-@Configuration
+import java.time.Duration;
+
+@AutoConfiguration(after = RedisAutoConfiguration.class)
+@ConditionalOnClass(RedisOperations.class)
+@ConditionalOnBean(RedisConnectionFactory.class)
+@EnableCaching
 public class RedisConfig {
 
-    @Bean
-    public LettuceConnectionFactory redisConnectionFactory(RedisProperties redisProperties) {
-        RedisStandaloneConfiguration config = new RedisStandaloneConfiguration();
-        config.setHostName(redisProperties.getHost());
-        config.setPort(redisProperties.getPort());
-        config.setPassword(redisProperties.getPassword());
-        config.setDatabase(redisProperties.getDatabase());
-        return new LettuceConnectionFactory(config);
+    @Bean("objectRedisTemplate")
+    @Primary
+    @ConditionalOnMissingBean(name = "objectRedisTemplate")
+    public RedisTemplate<String, Object> objectRedisTemplate(RedisConnectionFactory connectionFactory) {
+        RedisTemplate<String, Object> template = new RedisTemplate<>();
+        template.setConnectionFactory(connectionFactory);
+
+        StringRedisSerializer keySerializer = new StringRedisSerializer();
+        GenericJackson2JsonRedisSerializer valueSerializer = createRedisSerializer();
+
+        template.setKeySerializer(keySerializer);
+        template.setHashKeySerializer(keySerializer);
+        template.setValueSerializer(valueSerializer);
+        template.setHashValueSerializer(valueSerializer);
+        template.afterPropertiesSet();
+        return template;
     }
 
     @Bean
-    public RedisTemplate<String, Object> redisTemplate(RedisConnectionFactory factory) {
-        RedisTemplate<String, Object> template = new RedisTemplate<>();
-        template.setConnectionFactory(factory);
+    @ConditionalOnMissingBean(CacheManager.class)
+    public CacheManager cacheManager(RedisConnectionFactory connectionFactory) {
+        GenericJackson2JsonRedisSerializer serializer = createRedisSerializer();
 
-        // 定义Jackson2JsonRedisSerializer序列化对象
-        ObjectMapper om = new ObjectMapper();
-        // 指定要序列化的域，field,get和set,以及修饰符范围，ANY是都有包括private和public
-        om.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
-        // 设置属性命名策略为蛇形命名法（可选）
-        om.setPropertyNamingStrategy(PropertyNamingStrategies.SNAKE_CASE);
+        RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration.defaultCacheConfig()
+                .entryTtl(Duration.ofMinutes(30))
+                .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(serializer))
+                .disableCachingNullValues();
 
-        // 使用构造函数传入ObjectMapper
-        Jackson2JsonRedisSerializer<Object> jacksonSeial = new Jackson2JsonRedisSerializer<>(om, Object.class);
+        RedisCacheConfiguration articleCacheConfig = defaultCacheConfig.entryTtl(Duration.ofHours(1));
+        RedisCacheConfiguration userCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(15));
+        RedisCacheConfiguration tagListCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(30));
+        RedisCacheConfiguration reviewListCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(30));
+        RedisCacheConfiguration followStatCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(15));
+        RedisCacheConfiguration articleListCacheConfig = defaultCacheConfig.entryTtl(Duration.ofMinutes(5));
 
-        StringRedisSerializer stringSerial = new StringRedisSerializer();
-        // redis key 序列化方式使用stringSerial
-        template.setKeySerializer(stringSerial);
-        // redis value 序列化方式使用jackson
-        template.setValueSerializer(jacksonSeial);
-        // redis hash key 序列化方式使用stringSerial
-        template.setHashKeySerializer(stringSerial);
-        // redis hash value 序列化方式使用jackson
-        template.setHashValueSerializer(jacksonSeial);
+        return RedisCacheManager.builder(connectionFactory)
+                .cacheDefaults(defaultCacheConfig)
+                .withCacheConfiguration("articleCache", articleCacheConfig)
+                .withCacheConfiguration("userCache", userCacheConfig)
+                .withCacheConfiguration("tagListCache", tagListCacheConfig)
+                .withCacheConfiguration("reviewListCache", reviewListCacheConfig)
+                .withCacheConfiguration("followStatCache", followStatCacheConfig)
+                .withCacheConfiguration("articleListCache", articleListCacheConfig)
+                .build();
+    }
 
-        template.afterPropertiesSet();
-        return template;
+    GenericJackson2JsonRedisSerializer createRedisSerializer() {
+        return new GenericJackson2JsonRedisSerializer().configure(objectMapper -> {
+            objectMapper.setVisibility(PropertyAccessor.ALL, JsonAutoDetect.Visibility.ANY);
+            objectMapper.registerModule(new JavaTimeModule());
+            objectMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+        });
     }
 }

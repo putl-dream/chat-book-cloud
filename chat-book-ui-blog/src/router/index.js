@@ -3,122 +3,146 @@ import { createWebHistory, createRouter } from 'vue-router';
 const routes = [
     {
         path: '/',
-        name: 'common',
-        component: () => import('@/layout/CommonLayout.vue'),
+        name: 'app-root',
+        component: () => import('@/layout/AppLayout.vue'),
         children: [
+            // ----- Common Layout Routes -----
             {
                 path: '',
                 name: 'Home',
-                component: () => import('@/views/Home.vue')
-            }, {
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true, sidebar: false }
+            },
+            {
+                path: 'learn',
+                name: 'Learn',
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
+            },
+            {
+                path: 'practice',
+                name: 'Practice',
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
+            },
+            {
+                path: 'tags',
+                name: 'Tags',
+                component: () => import('@/views/home/Tags.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
+            },
+            {
+                path: 'tag/:tagId',
+                name: 'TagArticles',
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
+            },
+            {
                 path: 'backend',
                 name: 'Backend',
-                component: () => import('@/views/Home.vue')
-            }, {
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
+            }, 
+            {
                 path: 'frontend',
                 name: 'Frontend',
-                component: () => import('@/views/Home.vue')
-            }, {
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
+            }, 
+            {
                 path: 'mysql',
                 name: 'Mysql',
-                component: () => import('@/views/Home.vue')
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
             },
             {
                 path: 'algorithm',
                 name: 'Algorithm',
-                component: () => import('@/views/Home.vue')
+                component: () => import('@/views/home/Home.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: '/article/:id',
+                path: 'article/:id',
                 name: 'Article',
-                component: () => import('@/views/Article.vue')
+                component: () => import('@/views/article/Article.vue'),
+                meta: { headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: '/message',
+                path: 'message',
                 name: 'Message',
-                component: () => import('@/views/Message.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/chat/Message.vue'),
+                meta: { requiresAuth: true, headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: '/history',
+                path: 'history',
                 name: 'History',
-                component: () => import('@/views/History.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/user/UserHistory.vue'),
+                meta: { requiresAuth: true, headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: '/profile',
+                path: 'profile',
                 name: 'Profile',
-                component: () => import('@/views/Profile.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/user/UserProfile.vue'),
+                meta: { requiresAuth: true, headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: '/profile/edit',
+                path: 'profile/edit',
                 name: 'ProfileEdit',
-                component: () => import('@/views/ProfileEdit.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/user/UserProfileEdit.vue'),
+                meta: { requiresAuth: true, headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: '/chat',
+                path: 'chat',
                 name: 'Chat',
-                component: () => import('@/views/Chat.vue'),
-                meta: { requiresAuth: true }
-            }
-        ]
-    },
-    {
-        path: '/search',
-        name: 'Search',
-        component: () => import('@/layout/SearchLayout.vue'),
-        children: [
+                component: () => import('@/views/chat/Chat.vue'),
+                meta: { requiresAuth: true, headerType: 'common', showSearch: true, showFooter: true }
+            },
+            // ----- Search Layout Routes -----
             {
-                path: 'list/:keyValue',
+                path: 'search/list/:keyValue',
                 name: 'List',
-                component: () => import('@/views/Search.vue')
-            }
-        ]
-    },
-    {
-        path: '/creative',
-        name: 'Creative',
-        component: () => import('@/layout/CreativeLayout.vue'),
-        children: [
+                component: () => import('@/views/home/Search.vue'),
+                meta: { headerType: 'common', showSearch: false, showFooter: true }
+            },
+            // ----- Creative Layout Routes -----
             {
-                path: '',
+                path: 'creative',
                 name: 'CreativeHome',
-                component: () => import('@/views/Creative.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/creator/Creative.vue'),
+                meta: { requiresAuth: true, headerType: 'creative', sidebar: 'creative', showFooter: true }
             },
             {
-                path: 'content',
+                path: 'creative/content',
                 name: 'Content',
-                component: () => import('@/views/Content.vue'),
-                meta: { requiresAuth: true }
-            }
-        ]
-    },
-    {
-        path: '/text',
-        name: 'Text',
-        component: () => import('@/layout/LessLayout.vue'),
-        children: [
-            {
-                path: '',
-                name: 'Write',
-                component: () => import('@/views/Text.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/article/Content.vue'),
+                meta: { requiresAuth: true, headerType: 'creative', sidebar: 'creative', showFooter: true }
             },
             {
-                path: ':id',
+                path: 'creative/drafts',
+                name: 'Drafts',
+                component: () => import('@/views/creator/DraftBox.vue'),
+                meta: { requiresAuth: true, headerType: 'creative', sidebar: 'creative', showFooter: true }
+            },
+            // ----- Less Layout Routes -----
+            {
+                path: 'text',
+                name: 'Write',
+                component: () => import('@/views/creator/Text.vue'),
+                meta: { requiresAuth: true, headerType: 'none', showFooter: false }
+            },
+            {
+                path: 'text/:id',
                 name: 'Edit',
-                component: () => import('@/views/Text.vue'),
-                meta: { requiresAuth: true }
+                component: () => import('@/views/creator/Text.vue'),
+                meta: { requiresAuth: true, headerType: 'none', showFooter: false }
             }
         ]
     },
+    // Login remains standalone full page
     {
         path: '/login',
         name: 'Login',
-        component: () => import('@/views/Login.vue')
+        component: () => import('@/views/user/UserLogin.vue')
     }
 ]
 
@@ -127,13 +151,12 @@ const router = createRouter({
     routes,
 });
 
-// 路由守卫
+// Route Guard
 router.beforeEach((to, from, next) => {
-    const token = localStorage.getItem('token'); // 从 localStorage 获取 token
+    const token = localStorage.getItem('token');
     const requiresAuth = to.matched.some(record => record.meta.requiresAuth);
 
     if (requiresAuth && !token) {
-        // 如果需要认证且没有 token，则重定向到登录页面
         next({ name: 'Login' });
     } else {
         next();

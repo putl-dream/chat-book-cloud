@@ -1,62 +1,91 @@
-### Maven ###
+### Java / Maven / Gradle ###
 target/
-.mvn/wrapper/maven-wrapper.jar
-!**/src/main/**/target/
-!**/src/test/**/target/
 **/target/
-
-### Maven flatten plugin 生成的文件 ###
+build/
+**/build/
+out/
 .flattened-pom.xml
 **/.flattened-pom.xml
+dependency-reduced-pom.xml
 
-### STS ###
-.apt_generated
-.classpath
-.factorypath
-.project
-.settings
-.springBeans
-.sts4-cache
+### Node / Vite ###
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+coverage/
+**/coverage/
+.vite/
+**/.vite/
+.npm/
+.pnpm-store/
 
-### IntelliJ IDEA ###
-.idea
+### Local env files ###
+.env.local
+.env.*.local
+
+### IDE / Editor ###
+.idea/
+**/.idea/
+.vscode/
+**/.vscode/
+.history/
 *.iws
 *.iml
 *.ipr
-out/
+
+### Eclipse / STS ###
+.apt_generated/
+.classpath
+.factorypath
+.project
+.settings/
+.springBeans
+.sts4-cache/
 
 ### NetBeans ###
 /nbproject/private/
 /nbbuild/
-/chat-book-ui-blog/node_modules
-chat-book-ui-blog/dist/**
 /nbdist/
 /.nb-gradle/
-build/
-!**/src/main/**/build/
-!**/src/test/**/build/
 
-### VS Code ###
-.vscode/
+### AI / Agent cache ###
+.qoder/
+.claude/
+.agents/
 
-### 日志文件 ###
-*.log
+### Logs / Runtime ###
 logs/
+*.log
 *.log.*
+*.out
+*.err
+*.pid
+*.pid.lock
+hs_err_pid*
+replay_pid*
 
-### 操作系统 ###
+### OS files ###
 .DS_Store
 Thumbs.db
 
-### 临时文件 ###
+### Temp / backup ###
 *.tmp
 *.bak
 *.swp
 *~
+*.orig
+*.rej
+*.md
 
-### 敏感配置文件 ###
+### Local Spring overrides ###
 application-local.yml
 application-local.yaml
 bootstrap-local.yml
 bootstrap-local.yaml
 
+### Versioned Spring profile templates ###
+!**/src/main/resources/application-local.yml
+!**/src/main/resources/application-local.yaml
+!**/src/main/resources/bootstrap-local.yml
+!**/src/main/resources/bootstrap-local.yaml

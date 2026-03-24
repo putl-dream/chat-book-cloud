@@ -1,0 +1,39 @@
+package com.putl.articleservice.api.dto;
+
+import com.fasterxml.jackson.annotation.JsonFormat;
+import io.swagger.v3.oas.annotations.media.Schema;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
+import lombok.Data;
+import lombok.NoArgsConstructor;
+
+import java.time.LocalDateTime;
+
+@Data
+@Builder
+@AllArgsConstructor
+@NoArgsConstructor
+@Schema(description = "ArticleVO")
+public class ArticleVO {
+    private Integer id;
+    private String title;
+    private String userName;
+    private Integer userId;
+    private String authorAvatar;
+    
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime createTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    private LocalDateTime updatedAt;
+    
+    private String content;
+    private String cover;
+    private Integer category;
+    private String abstractText;
+    private Integer status;
+    
+    private Integer praiseStat;
+    private Integer collectStat;
+    private Long viewCount;
+}

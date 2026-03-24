@@ -18,6 +18,10 @@
         <module>chat-book-cloud-auth</module>
         <module>chat-book-cloud-article</module>
         <module>chat-book-cloud-user</module>
+        <module>chat-book-cloud-interaction</module>
+        <module>chat-book-cloud-social</module>
+        <module>chat-book-cloud-chat</module>
+        <module>chat-book-cloud-api</module>
     </modules>
 
     <properties>
@@ -86,6 +90,19 @@
                         <release>${java.version}</release>
                         <encoding>${project.build.sourceEncoding}</encoding>
                         <parameters>true</parameters>
+                        <proc>full</proc>
+                    </configuration>
+                </plugin>
+
+                <!-- 测试运行插件 -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-surefire-plugin</artifactId>
+                    <version>3.2.5</version>
+                    <configuration>
+                        <argLine>
+                            -XX:+EnableDynamicAgentLoading
+                        </argLine>
                     </configuration>
                 </plugin>
 
@@ -170,6 +187,11 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>flatten-maven-plugin</artifactId>
+            </plugin>
+            <!-- 测试运行插件 -->
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
         </plugins>
     </build>

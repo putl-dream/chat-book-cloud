@@ -14,12 +14,6 @@ import org.springframework.web.socket.handler.AbstractWebSocketHandler;
 import java.net.URI;
 import java.util.List;
 
-/**
- * 从技术与业务来看：
- * WebSocketHandler 相当于一个event listener，主要负责技术层事件，比如：连接建立成功、接收到消息、连接关闭、连接出错。
- * 因此这里bean只负责技术层事件，不处理业务逻辑。
- */
-
 @Slf4j
 @Component
 public class WebSocketHandler extends AbstractWebSocketHandler {
@@ -40,105 +34,117 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
     }
 
     @Override
-    public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+    public void afterConnectionEstablished(WebSocketSession session) {
         String userId = getUserIdFromSession(session);
-        if (StringUtils.hasText(userId)) {
-            log.info("连接建立成功，用户ID：{}，SessionID：{}", userId, session.getId());
-            session.getAttributes().put("userId", userId);
-            sessionManager.register(userId, session);
+        String senderId = StringUtils.hasText(userId) ? userId : session.getId();
 
-            // 通知监听器
-            if (connectionListeners != null) {
-                for (WebSocketConnectionListener listener : connectionListeners) {
-                    try {
-                        listener.onConnect(userId, session);
-                    } catch (Exception e) {
-                        log.error("连接监听器执行异常", e);
-                    }
+        // Keep a stable key for routing/reply even when userId is unavailable.
+        session.getAttributes().put("senderId", senderId);
+        if (StringUtils.hasText(userId)) {
+            session.getAttributes().put("userId", userId);
+            log.info("WebSocket connected, userId={}, sessionId={}", userId, session.getId());
+        } else {
+            log.warn("WebSocket connected without user identity, sessionId={}", session.getId());
+        }
+
+        sessionManager.register(senderId, session);
+
+        if (connectionListeners != null) {
+            for (WebSocketConnectionListener listener : connectionListeners) {
+                try {
+                    listener.onConnect(senderId, session);
+                } catch (Exception e) {
+                    log.error("WebSocket connection listener error", e);
                 }
             }
-        } else {
-            log.warn("连接建立成功，但未识别到用户身份，SessionID：{}", session.getId());
-            // 可以在这里选择是否允许匿名连接，或者注册为 session ID
-            // sessionManager.register(session.getId(), session);
         }
     }
 
     @Override
-    protected void handleTextMessage(WebSocketSession session, TextMessage message) throws Exception {
-        log.info("接收到文本消息：{}", message.getPayload());
-        // 路由时使用 userId (如果存在) 还是 sessionId?
-        // 建议优先使用 userId，方便后续业务处理
-        String userId = (String) session.getAttributes().get("userId");
-        String senderId = StringUtils.hasText(userId) ? userId : session.getId();
+    protected void handleTextMessage(WebSocketSession session, TextMessage message) {
+        log.info("Received text message: {}", message.getPayload());
+        String senderId = getSenderId(session);
         messageRouter.route(senderId, message.getPayload());
     }
 
     @Override
-    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) throws Exception {
-        log.info("接收到二进制消息：{}", message.getPayload());
-        String userId = (String) session.getAttributes().get("userId");
-        String senderId = StringUtils.hasText(userId) ? userId : session.getId();
+    protected void handleBinaryMessage(WebSocketSession session, BinaryMessage message) {
+        log.info("Received binary message: {}", message.getPayload());
+        String senderId = getSenderId(session);
         messageRouter.route(senderId, message.getPayload().toString());
     }
 
     @Override
-    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) throws Exception {
-        log.warn("连接关闭：{}", status.getReason());
-        String userId = (String) session.getAttributes().get("userId");
-        if (StringUtils.hasText(userId)) {
-            sessionManager.remove(userId);
+    public void afterConnectionClosed(WebSocketSession session, CloseStatus status) {
+        log.warn("WebSocket closed: {}", status.getReason());
+        String senderId = getSenderId(session);
+        sessionManager.remove(senderId);
 
-            // 通知监听器
-            if (connectionListeners != null) {
-                for (WebSocketConnectionListener listener : connectionListeners) {
-                    try {
-                        listener.onClose(userId, session);
-                    } catch (Exception e) {
-                        log.error("关闭监听器执行异常", e);
-                    }
+        if (connectionListeners != null) {
+            for (WebSocketConnectionListener listener : connectionListeners) {
+                try {
+                    listener.onClose(senderId, session);
+                } catch (Exception e) {
+                    log.error("WebSocket close listener error", e);
                 }
             }
         }
-        // 如果也注册了 sessionId，也要移除
-        // sessionManager.remove(session.getId());
     }
 
     @Override
-    public void handleTransportError(WebSocketSession session, Throwable exception) throws Exception {
-        log.error("连接出错：{}", exception.getMessage(), exception);
-        String userId = (String) session.getAttributes().get("userId");
-        if (StringUtils.hasText(userId)) {
-            sessionManager.remove(userId);
+    public void handleTransportError(WebSocketSession session, Throwable exception) {
+        log.error("WebSocket transport error: {}", exception.getMessage(), exception);
+        String senderId = getSenderId(session);
+        sessionManager.remove(senderId);
+    }
+
+    private String getSenderId(WebSocketSession session) {
+        Object senderIdAttr = session.getAttributes().get("senderId");
+        if (senderIdAttr != null) {
+            String senderId = String.valueOf(senderIdAttr);
+            if (StringUtils.hasText(senderId) && !"null".equalsIgnoreCase(senderId)) {
+                return senderId;
+            }
         }
+
+        String userId = (String) session.getAttributes().get("userId");
+        return StringUtils.hasText(userId) ? userId : session.getId();
     }
 
     private String getUserIdFromSession(WebSocketSession session) {
-        // 0. 优先从 Session 属性获取 (由 AuthHandshakeInterceptor 注入)
-        String userId = String.valueOf(session.getAttributes().get("userId"));
-        if (StringUtils.hasText(userId)) {
-            return userId;
+        Object userIdAttr = session.getAttributes().get("userId");
+        if (userIdAttr != null) {
+            String userId = String.valueOf(userIdAttr).trim();
+            if (StringUtils.hasText(userId) && !"null".equalsIgnoreCase(userId)) {
+                return userId;
+            }
         }
 
-        // 1. 尝试从 Query Param 获取 token 或 uid
+        // If the client uses subprotocol to pass token: new WebSocket(url, [token])
+        String acceptedProtocol = session.getAcceptedProtocol();
+        if (StringUtils.hasText(acceptedProtocol)) {
+            String userId = getUserIdFromToken(acceptedProtocol);
+            if (StringUtils.hasText(userId)) {
+                return userId;
+            }
+        }
+
+        // Query param token=xxx
         URI uri = session.getUri();
         if (uri != null && uri.getQuery() != null) {
-            String query = uri.getQuery();
-            // 简单解析 token=xxx
-            String token = extractParam(query, "token");
+            String token = extractParam(uri.getQuery(), "token");
             if (StringUtils.hasText(token)) {
                 return getUserIdFromToken(token);
             }
         }
 
-        // 2. 尝试从 Header 获取 Authorization
+        // Authorization: Bearer xxx
         String authHeader = session.getHandshakeHeaders().getFirst("Authorization");
         if (StringUtils.hasText(authHeader) && authHeader.startsWith("Bearer ")) {
-            String token = authHeader.substring(7);
-            return getUserIdFromToken(token);
+            return getUserIdFromToken(authHeader.substring(7));
         }
 
-        // 3. 尝试从 Header 获取 token (有些客户端可能直接传 token)
+        // token: xxx
         String tokenHeader = session.getHandshakeHeaders().getFirst("token");
         if (StringUtils.hasText(tokenHeader)) {
             return getUserIdFromToken(tokenHeader);
@@ -160,10 +166,9 @@ public class WebSocketHandler extends AbstractWebSocketHandler {
 
     private String getUserIdFromToken(String token) {
         try {
-            // 假设 token 里有 id 字段
             return jwtUtil.verifyToken(token).getClaim("id").toString();
         } catch (Exception e) {
-            log.warn("Token 解析失败: {}", e.getMessage());
+            log.warn("Token parse failed: {}", e.getMessage());
             return null;
         }
     }

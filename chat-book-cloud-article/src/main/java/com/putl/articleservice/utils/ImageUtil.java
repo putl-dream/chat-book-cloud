@@ -10,7 +10,9 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Random;
 import java.util.UUID;
+import lombok.extern.slf4j.Slf4j;
 
+@Slf4j
 public class ImageUtil {
 
     /**
@@ -77,10 +79,11 @@ public class ImageUtil {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        return baseUrl + "/images/" + ImgName;
+        String prefix = (baseUrl == null || baseUrl.isBlank()) ? "" : baseUrl;
+        return prefix + "/images/" + ImgName;
     }
 
-    private static String baseUrl = "http://localhost:8080";
+    private static String baseUrl = "";
 
     public static void setBaseUrl(String baseUrl) {
         ImageUtil.baseUrl = baseUrl;
@@ -89,6 +92,6 @@ public class ImageUtil {
     public static void main(String[] args){
         String text = "Hello, World!123";
         String outputPath = getImageByText(text);
-        System.out.println("图片已生成: " + outputPath);
+        log.info("图片已生成: {}", outputPath);
     }
 }

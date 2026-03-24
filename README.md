@@ -4,6 +4,8 @@
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.1-blue)](https://spring.io/projects/spring-cloud)
 [![Spring Cloud Alibaba](https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2023.0.1.0-orange)](https://github.com/alibaba/spring-cloud-alibaba)
 
+> 🌐 **在线体验**: [http://180.184.30.1/](http://180.184.30.1/) (基于 GitHub Actions 自动化部署)
+
 ## 📖 项目简介
 
 **Chat Book Cloud** 是一个基于 Spring Cloud 微服务架构的大模型知识库与博客平台。本项目以**插件化**、**高复用**为核心设计理念，致力于打造一套"兼容万物"的基础架构体系。
@@ -57,14 +59,22 @@ chat-book-cloud
 │   ├── chat-book-cloud-common     # 通用工具、上下文、全局异常、Result封装
 │   ├── chat-book-cloud-security-mvc # 微服务安全组件 (Token解析、上下文填充)
 │   ├── chat-book-cloud-redis      # Redis 增强配置 (CacheManager, RedisTemplate)
-│   ├── chat-book-cloud-minio      # 对象存储服务封装 (MinioTemplate)
+│   ├── chat-book-cloud-minio      # 对象存储服务封装 (MinIO)
 │   ├── chat-book-cloud-websocket  # WebSocket 通信基座
 │   ├── chat-book-cloud-parsing    # 文档解析与 AI 上下文处理 (Tika, LangChain4j)
-│   └── chat-book-cloud-excel      # Excel 导入导出工具 (EasyExcel)
+│   ├── chat-book-cloud-excel      # Excel 导入导出工具 (EasyExcel)
+│   └── chat-book-cloud-rabbitmq   # RabbitMQ 消息队列封装
 ├── chat-book-cloud-gateway        # API 网关 (路由、鉴权、限流)
 ├── chat-book-cloud-auth           # 认证中心 (登录、注册、Token颁发)
 ├── chat-book-cloud-user           # 用户服务 (用户信息、关注、消息)
 ├── chat-book-cloud-article        # 文章服务 (博客、分类、评论)
+├── chat-book-cloud-interaction    # 互动服务 (点赞、收藏、评论、通知)
+├── chat-book-cloud-social         # 社交服务 (关注、粉丝、好关系)
+├── chat-book-cloud-api            # Feign API 客户端模块 (跨服务调用)
+│   ├── chat-book-cloud-api-user       # 用户服务 API 客户端
+│   ├── chat-book-cloud-api-article   # 文章服务 API 客户端
+│   ├── chat-book-cloud-api-interaction # 互动服务 API 客户端
+│   └── chat-book-cloud-api-social    # 社交服务 API 客户端
 └── chat-book-ui-blog              # 前端工程 (Vue 3 + Vite)
 ```
 
@@ -72,14 +82,24 @@ chat-book-cloud
 
 ### 1. 基础架构 (Infrastructure)
 
-| 模块名称                         | 说明         | 关键功能点                                                                                         |
-| :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------- |
+| 模块名称                         | 说明         | 关键功能点                                                                                               |
+| :------------------------------- | :----------- | :------------------------------------------------------------------------------------------------------- |
 | **chat-book-cloud-common**       | **通用基座** | `UserContext` 线程隔离上下文, `CommonResult` 统一响应, `GlobalExceptionHandler` 全局异常, `JwtUtil` 工具 |
-| **chat-book-cloud-security-mvc** | **安全插件** | 提供 `UserContextFilter`，自动拦截请求并填充 `UserContext`，实现微服务内部无感鉴权                 |
-| **chat-book-cloud-minio**        | **存储插件** | 封装 MinIO SDK，提供文件上传、下载、预览 URL 生成等一键式服务                                      |
-| **chat-book-cloud-parsing**      | **AI 解析**  | 集成 Apache Tika 和 LangChain4j，支持 PDF/Word/Txt 等多格式文档解析与分块                          |
-| **chat-book-cloud-websocket**    | **实时通信** | 基于 Netty/Tomcat 封装的 WebSocket 服务，支持点对点消息推送                                        |
-| **chat-book-cloud-excel**        | **数据导出** | 集成 EasyExcel，提供注解式导入导出功能                                                             |
+| **chat-book-cloud-security-mvc** | **安全插件** | 提供 `UserContextFilter`，自动拦截请求并填充 `UserContext`，实现微服务内部无感鉴权                       |
+| **chat-book-cloud-minio**        | **存储插件** | 封装 MinIO SDK，提供文件上传、下载、预览 URL 生成等一键式服务                                            |
+| **chat-book-cloud-parsing**      | **AI 解析**  | 集成 Apache Tika 和 LangChain4j，支持 PDF/Word/Txt 等多格式文档解析与分块                                |
+| **chat-book-cloud-websocket**    | **实时通信** | 基于 Netty/Tomcat 封装的 WebSocket 服务，支持点对点消息推送                                              |
+| **chat-book-cloud-excel**        | **数据导出** | 集成 EasyExcel，提供注解式导入导出功能                                                                   |
+| **chat-book-cloud-rabbitmq**     | **消息队列** | RabbitMQ 配置与模板封装，支持消息发布与订阅                                                             |
+
+### 3. 业务服务层 (Business Services)
+
+| 模块名称                    | 说明             | 关键功能点                                                                                          |
+| :------------------------- | :--------------- | :-------------------------------------------------------------------------------------------------- |
+| **chat-book-cloud-user**    | **用户服务**     | 用户信息管理、好友关系、消息系统                                                                    |
+| **chat-book-cloud-article** | **文章服务**    | 博客发布、分类管理、标签系统、搜索功能                                                              |
+| **chat-book-cloud-interaction** | **互动服务** | 点赞、收藏、评论、通知中心                                                                         |
+| **chat-book-cloud-social** | **社交服务**     | 关注/粉丝管理、好关系判定、关注统计                                                                |
 
 ### 2. 网关与认证 (Gateway & Auth)
 
@@ -91,6 +111,19 @@ chat-book-cloud
 - **chat-book-cloud-auth**:
   - 负责用户的登录认证与 Token 颁发。
   - 与 User 服务交互验证用户身份。
+
+### 3. Feign API 客户端模块 (API Layer)
+
+项目采用 **Feign + OpenFeign** 实现微服务之间的声明式调用，将跨服务 HTTP 请求封装为本地接口调用：
+
+| 模块名称                            | 说明             | 关键功能点                                                                                          |
+| :--------------------------------- | :--------------- | :-------------------------------------------------------------------------------------------------- |
+| **chat-book-cloud-api-user**       | **用户 API**     | 提供用户信息查询、好友关系等服务的 Feign 客户端                                              |
+| **chat-book-cloud-api-article**   | **文章 API**     | 提供文章查询、分类等服务的 Feign 客户端                                                    |
+| **chat-book-cloud-api-interaction** | **互动 API**    | 提供点赞、收藏、评论等服务的 Feign 客户端                                                    |
+| **chat-book-cloud-api-social**    | **社交 API**     | 提供关注、粉丝、好关系等服务的 Feign 客户端                                                   |
+
+业务服务只需引入对应的 API 模块依赖，即可像调用本地方法一样调用其他微服务。
 
 ## 🛠 技术栈 (Dependencies)
 
@@ -104,6 +137,23 @@ chat-book-cloud
 - **API 文档**: Knife4j 4.4.0
 - **AI 与大模型**: LangChain4j 0.31.0
 - **工具库**: Apache Commons, FastJSON2, Hutool, EasyExcel
+- **DevOps**: GitHub Actions, Docker, Docker Compose
+
+## 🔄 CI/CD 自动化部署
+
+本项目实现了基于 GitHub Actions 的完整自动化部署流程，代码提交至 `master` 分支后自动触发：
+
+1.  **环境准备**: 自动配置 JDK 17 和 Node.js 环境。
+2.  **后端构建**: Maven 并行构建所有微服务模块。
+3.  **前端构建**: 注入环境变量 (`VITE_API_BASE_URL`) 并执行 `npm run build`。
+4.  **制品整理**: 自动收集 Jar 包、Dist 文件及 Docker 配置。
+5.  **自动部署**: 通过 SSH 将构建制品传输至服务器，并使用 Docker Compose 零停机更新服务。
+
+补充说明：
+
+- 普通 `push` 会按变更范围选择性构建和部署，只重打受影响的后端模块或前端。
+- 如果希望某一次 `push` 强制全量重建全部后端服务和前端，可以在提交信息中包含 `[full-build]` 或 `[full-rebuild]`。
+- 手动触发 `Deploy Dev` (`workflow_dispatch`) 时，默认执行一次全量后端 + 前端重建部署。
 
 ## 🚀 快速开始
 
@@ -111,10 +161,24 @@ chat-book-cloud
 
 - **JDK**: 17+
 - **Maven**: 3.8+
-- **MySQL**: 8.0+ (导入各服务下的 SQL 脚本)
+- **Node.js**: 18+
+- **MySQL**: 8.0+ (各服务对应数据库)
 - **Redis**: 启动默认端口 6379
 - **Nacos**: 2.x (启动并导入配置)
 - **MinIO**: (可选，涉及文件上传时需要)
+- **RabbitMQ**: (可选，涉及消息队列时需要)
+
+### 数据库说明
+
+| 服务                   | 数据库名称             | 说明                      |
+| :--------------------- | :-------------------- | :------------------------ |
+| chat-book-cloud-auth  | ice_user              | 用户认证数据              |
+| chat-book-cloud-user  | ice_user              | 用户信息、好友、消息      |
+| chat-book-cloud-article | ice_article         | 文章、分类、标签          |
+| chat-book-cloud-interaction | chat_book_interaction | 点赞、收藏、评论、通知    |
+| chat-book-cloud-social | chat_book_social    | 关注、粉丝、好关系        |
+
+> 各服务数据库初始化脚本位于 `src/main/resources/db/migration/` 目录，使用 Flyway 管理。
 
 ### 配置中心 (Nacos) 设置
 
@@ -132,6 +196,8 @@ chat-book-cloud
     2.  `AuthenticationApplication` (认证)
     3.  `UserServiceApplication` (用户)
     4.  `ArticleApplication` (文章)
+    5.  `InteractionServiceApplication` (互动)
+    6.  `SocialServiceApplication` (社交)
 3.  **前端应用**:
     ```bash
     cd chat-book-ui-blog
@@ -140,11 +206,29 @@ chat-book-cloud
     ```
 4.  **访问验证**: 打开浏览器访问 `http://localhost:5173` (前端) 或 `http://localhost:15020/doc.html` (网关 Knife4j 文档).
 
+### Docker Compose 环境变量
+
+`chat-book-cloud-auth` 的 Google OAuth2 配置依赖以下环境变量：
+
+```bash
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+OAUTH2_SUCCESS_REDIRECT_URL=http://localhost:5173/login
+```
+
+推荐把它们写入仓库根目录 `.env`，或显式通过 `--env-file` 传入，而不是仅在当前 shell 中赋值：
+
+```bash
+cp .env.example .env
+docker compose --env-file .env -f docker-compose.dev.yml up -d --build auth
+```
+
+如果只是在 shell 里执行了 `GOOGLE_CLIENT_SECRET=xxx` 但没有 `export`，`echo $GOOGLE_CLIENT_SECRET` 仍然会有值，但 `docker compose` 子进程拿不到该变量，最终会把容器中的 `GOOGLE_CLIENT_SECRET` 替换为空字符串。
+
 ## 🔮 未来规划
 
 - [ ] **AI 能力增强**: 集成 RAG (检索增强生成) 流程，支持知识库问答。
 - [ ] **全文检索**: 引入 ElasticSearch 替代 MySQL 模糊查询。
-- [ ] **社区功能**: 增加点赞、评论、收藏等互动功能 (已部分实现)。
 - [ ] **监控告警**: 完善 Prometheus + Grafana 监控体系。
 
 ---

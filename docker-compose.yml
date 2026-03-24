@@ -1,0 +1,246 @@
+services:
+  # --- 1. 注册中心与配置中心 ---
+  nacos:
+    image: nacos/nacos-server:v2.2.3
+    container_name: nacos
+    restart: always
+    environment:
+      - MODE=standalone
+      - JVM_XMS=256m
+      - JVM_XMX=256m
+    ports:
+      - "8848:8848"
+      - "9848:9848"
+    networks:
+      - chat-book-net
+
+  # --- 2. 数据库 ---
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    user: "999:999"
+    environment:
+      - MYSQL_ROOT_PASSWORD=root
+    ports:
+      - "3306:3306"
+    volumes:
+      - ./data/mysql:/var/lib/mysql
+    command: --default-authentication-plugin=mysql_native_password
+    networks:
+      - chat-book-net
+
+  # --- 3. 缓存 ---
+  redis:
+    image: redis:7.0
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    volumes:
+      - ./data/redis:/data
+    networks:
+      - chat-book-net
+
+  # --- 4. 消息队列 ---
+  rabbitmq:
+    image: rabbitmq:3-management
+    container_name: rabbitmq
+    restart: always
+    hostname: rabbit-server
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=admin
+      - RABBITMQ_DEFAULT_PASS=admin@2026
+    volumes:
+      - ./data/rabbitmq/data:/var/lib/rabbitmq
+      - ./data/rabbitmq/logs:/var/log/rabbitmq
+      - ./data/rabbitmq/conf/enabled_plugins:/etc/rabbitmq/enabled_plugins
+    networks:
+      - chat-book-net
+
+  # --- 5. 对象存储 ---
+  minio:
+    image: quay.io/minio/minio:latest
+    container_name: minio
+    restart: always
+    command: server /data --console-address ":9001"
+    environment:
+      - MINIO_ROOT_USER=admin
+      - MINIO_ROOT_PASSWORD=admin@2026
+    ports:
+      - "9000:9000"
+      - "9001:9001"
+    volumes:
+      - ./data/minio/data:/data
+      - ./data/minio/config:/root/.minio
+    networks:
+      - chat-book-net
+
+  # --- 6. 网关服务 ---
+  gateway:
+    image: chat-book-cloud-gateway:local
+    container_name: gateway
+    restart: always
+    build: ./chat-book-cloud-gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+    depends_on:
+      - nacos
+    networks:
+      - chat-book-net
+
+  # --- 7. 认证服务 ---
+  auth:
+    image: chat-book-cloud-auth:local
+    container_name: auth
+    restart: always
+    build: ./chat-book-cloud-auth
+    ports:
+      - "8081:8081"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin@2026
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required for auth oauth2 login}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required for auth oauth2 login}
+      OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-http://localhost:5173/login}
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+    networks:
+      - chat-book-net
+
+  # --- 8. 用户服务 ---
+  user:
+    image: chat-book-cloud-user:local
+    container_name: user
+    restart: always
+    build: ./chat-book-cloud-user
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin@2026
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: admin@2026
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+      - minio
+    networks:
+      - chat-book-net
+
+  # --- 9. 文章服务 ---
+  article:
+    image: chat-book-cloud-article:local
+    container_name: article
+    restart: always
+    build: ./chat-book-cloud-article
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      RABBITMQ_HOST: rabbitmq
+      RABBITMQ_USERNAME: admin
+      RABBITMQ_PASSWORD: admin@2026
+      FILE_STORAGE_BASE_URL: ${FILE_STORAGE_BASE_URL:-}
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: admin@2026
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+    depends_on:
+      - mysql
+      - redis
+      - rabbitmq
+      - minio
+    networks:
+      - chat-book-net
+
+  # --- 10. 前端服务 ---
+  frontend:
+    image: chat-book-ui-blog:local
+    container_name: frontend
+    restart: always
+    build: ./chat-book-ui-blog
+    ports:
+      - "80:80"
+    environment:
+      GATEWAY_PROXY_TARGET: http://gateway:8080
+      MINIO_PROXY_TARGET: http://minio:9000
+    depends_on:
+      - gateway
+    networks:
+      - chat-book-net
+
+  # --- 11. 互动服务 ---
+  interaction:
+    image: chat-book-cloud-interaction:local
+    container_name: interaction
+    restart: always
+    build: ./chat-book-cloud-interaction
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ACCESS_KEY: admin
+      MINIO_SECRET_KEY: admin@2026
+      MINIO_BUCKET: chat-book-images
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
+    depends_on:
+      - mysql
+      - minio
+    networks:
+      - chat-book-net
+
+  # --- 12. 社交服务 ---
+  social:
+    image: chat-book-cloud-social:local
+    container_name: social
+    restart: always
+    build: ./chat-book-cloud-social
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+    depends_on:
+      - mysql
+    networks:
+      - chat-book-net
+
+  # --- 13. 聊天服务 ---
+  chat:
+    image: chat-book-cloud-chat:local
+    container_name: chat
+    restart: always
+    build: ./chat-book-cloud-chat
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+    depends_on:
+      - mysql
+    networks:
+      - chat-book-net
+
+networks:
+  chat-book-net:
+    driver: bridge

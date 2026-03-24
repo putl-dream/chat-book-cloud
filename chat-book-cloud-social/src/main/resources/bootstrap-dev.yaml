@@ -1,0 +1,23 @@
+--- ###==================== Nacos 注册中心 ====================
+spring:
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_SERVER_ADDR:10.0.0.2:8848} # 注册中心地址
+        namespace: ${NACOS_NAMESPACE:putl} # 命名空间
+#        username: nacos # 用户名
+#        password: nacos # 密码
+
+--- ###==================== Nacos 配置中心 ====================
+spring:
+  cloud:
+    nacos:
+      config:
+        server-addr: ${NACOS_SERVER_ADDR:10.0.0.2:8848}
+        namespace: ${NACOS_CONFIG_NAMESPACE:public}
+        group: ${NACOS_GROUP:DEFAULT_GROUP}
+        file-extension: yaml
+        shared-configs:
+          - data-id: common.yaml
+            group: ${NACOS_GROUP:DEFAULT_GROUP}
+            refresh: true

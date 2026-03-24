@@ -1,6 +1,36 @@
 
 import { ElMessage } from 'element-plus';
 
+/**
+ * 格式�?WebSocket URL
+ * 处理 http/https 替换和相对路径转�?
+ * @param {string} baseUrl - 基础 URL
+ * @returns {string} WebSocket URL (无尾部斜�?
+ */
+export const formatWsUrl = (baseUrl) => {
+    if (!baseUrl) return '';
+
+    let url = baseUrl;
+
+    // 处理�?http/https 开头的绝对路径
+    if (url.startsWith('http')) {
+        url = url.replace(/^http/, 'ws').replace(/^https/, 'wss');
+    }
+    // 处理�?/ 开头的相对路径
+    else if (url.startsWith('/')) {
+        const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const host = window.location.host;
+        url = `${protocol}//${host}${url}`;
+    }
+
+    // 移除尾部斜杠
+    if (url.endsWith('/')) {
+        url = url.slice(0, -1);
+    }
+
+    return url;
+};
+
 export default class SocketService {
     /**
      * @param {string} url - WebSocket URL
@@ -36,6 +66,9 @@ export default class SocketService {
         this.messageQueue = [];          // 3. Message queue for buffering
         this.heartbeatTimer = null;      // Timer for heartbeat
         this.reconnectTimer = null;      // Timer for reconnection
+
+        // Pending ACK requests for sendWithAck: Map<requestId, { resolve, reject, type }>
+        this.pendingRequests = new Map();
     }
 
     /**
@@ -79,7 +112,17 @@ export default class SocketService {
 
                 const message = JSON.parse(event.data);
 
-                // Dispatch to registered handlers
+                // Check if this is a response to a pending sendWithAck request
+                if (message.requestId && this.pendingRequests.has(message.requestId)) {
+                    const pending = this.pendingRequests.get(message.requestId);
+                    this.pendingRequests.delete(message.requestId);
+                    clearTimeout(pending.timeoutTimer);
+                    // Resolve with the data portion
+                    pending.resolve(message.data);
+                    return; // Don't emit to regular handlers for ACK responses
+                }
+
+                // Dispatch to registered handlers (passes message.data for backward compat)
                 this.emit(message.type, message.data);
             } catch (error) {
                 console.error('Error parsing WebSocket message:', error);
@@ -179,39 +222,14 @@ export default class SocketService {
      * If not connected, queues the message
      */
     send(type, data) {
-        // Flatten the message structure: { type, ...data }
-        // If data is not an object (e.g. null), it will be ignored by spread syntax
-        const messagePayload = data && typeof data === 'object' ? { type, ...data } : { type, data };
-        // Special handling if data was null/undefined to avoid {type, data: undefined} if we want just {type}
-        // But the previous line logic:
-        // if data is null: { type, data: null } -> wait, spread null is empty.
-        // let's be precise.
-
         let finalMessage;
-        if (data && typeof data === 'object') {
-            finalMessage = { type, ...data };
-        } else if (data === undefined || data === null) {
-            finalMessage = { type };
-        } else {
-            // primitive type, wrap in 'data' field? or just send as is?
-            // Backend expects flat structure usually.
-            // But if data is a string, we can't flatten it.
-            // Let's assume for now we keep 'data' field for primitives, but flattened for objects.
-            // However, to be consistent with backend @JsonUnwrapped, it expects fields.
-            // If we send { type, data: "some string" }, backend might not map it unless there is a 'data' field.
-            // But we are removing 'data' field nesting in backend via @JsonUnwrapped.
-            // So primitives might fail unless mapped to a specific field.
-            // Given current usage in Text.vue and Chat.vue, data is always Object or null.
+        if (data !== undefined && data !== null) {
             finalMessage = { type, data };
+        } else {
+            finalMessage = { type };
         }
 
-        // Re-evaluating:
-        // Text.vue: always object.
-        // Chat.vue: object or null.
-        // So simply { type, ...data } works for object.
-        // For null, { type, ...null } is { type }. This is perfect for SystemMessage.
-
-        const message = JSON.stringify({ type, ...data });
+        const message = JSON.stringify(finalMessage);
 
         if (this.socket && this.socket.readyState === WebSocket.OPEN) {
             this.socket.send(message);
@@ -220,15 +238,56 @@ export default class SocketService {
             console.warn('WebSocket is not open. Message queued.');
             this.messageQueue.push(message);
 
-            // If connection is dead but not detected, try to reconnect? 
-            // Usually onclose handles this, but if in 'zombie' state, 
-            // sending might fail or buffer. 
+            // If connection is dead but not detected, try to reconnect?
+            // Usually onclose handles this, but if in 'zombie' state,
+            // sending might fail or buffer.
             // If completely closed/null, trigger connect if not explicitly closed?
             if (!this.socket || this.socket.readyState === WebSocket.CLOSED) {
                 if (!this.isExplicitlyClosed) this.connect();
             }
             return false;
         }
+    }
+
+    /**
+     * Send message with ACK support
+     * @param {string} type - Message type
+     * @param {object} data - Message data
+     * @param {object} options - Options
+     * @param {number} options.timeoutMs - Timeout in milliseconds (default: 4000)
+     * @returns {Promise<object>} Resolves with response data on ACK, rejects on timeout
+     */
+    sendWithAck(type, data, options = {}) {
+        const { timeoutMs = 4000 } = options;
+
+        return new Promise((resolve, reject) => {
+            if (!this.socket || this.socket.readyState !== WebSocket.OPEN) {
+                reject(new Error('WebSocket is not connected'));
+                return;
+            }
+
+            const requestId = `req_${Date.now()}_${Math.random().toString(36).slice(2, 9)}`;
+            const finalMessage = { type, data, requestId };
+            const message = JSON.stringify(finalMessage);
+
+            // Set up timeout
+            const timeoutTimer = setTimeout(() => {
+                this.pendingRequests.delete(requestId);
+                reject(new Error(`ACK timeout after ${timeoutMs}ms for ${type}`));
+            }, timeoutMs);
+
+            // Store the pending request
+            this.pendingRequests.set(requestId, { resolve, reject, type, timeoutTimer });
+
+            // Send message
+            try {
+                this.socket.send(message);
+            } catch (e) {
+                clearTimeout(timeoutTimer);
+                this.pendingRequests.delete(requestId);
+                reject(e);
+            }
+        });
     }
 
     /**
