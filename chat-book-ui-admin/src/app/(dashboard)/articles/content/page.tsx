@@ -1,8 +1,4 @@
-import {
-  articleCategoryMap,
-  articleStatusMap,
-  contentTypeMap
-} from "@/lib/admin-config";
+import { articleCategoryMap, articleStatusMap, contentTypeMap } from "@/lib/admin-config";
 import { getContentArticles } from "@/lib/admin-api";
 
 export default async function ContentPage() {

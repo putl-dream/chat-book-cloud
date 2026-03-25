@@ -6,7 +6,7 @@ const launchChecklist = [
   "把用户、标签、文章审核列表切到真实接口。",
   "补齐审核动作、评论治理、系统日志接口。",
   "增加操作日志和审计追踪。",
-  "落地搜索、筛选、分页和空状态规范。"
+  "落地搜索、筛选、分页和空状态规范。",
 ];
 
 export default async function SystemPage() {
@@ -18,8 +18,8 @@ export default async function SystemPage() {
         <p className="eyebrow">System Readiness</p>
         <h1>后台接入策略与改造清单</h1>
         <p className="hero-copy">
-          这套后台框架已经把管理端路由、布局、数据适配层和页面职责拆开。后续接入时，优先替换 `lib/admin-api.ts`
-          即可逐步把 mock 数据切成真实接口。
+          这套后台框架已经把管理端路由、布局、数据适配层和页面职责拆开。后续接入时，优先替换
+          `lib/admin-api.ts` 即可逐步把 mock 数据切成真实接口。
         </p>
       </div>
 

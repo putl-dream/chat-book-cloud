@@ -65,7 +65,9 @@ export default async function UsersPage() {
                     </td>
                     <td>{user.email}</td>
                     <td>
-                      <span className={user.role === "admin" ? "pill pill-safe" : "pill pill-neutral"}>
+                      <span
+                        className={user.role === "admin" ? "pill pill-safe" : "pill pill-neutral"}
+                      >
                         {user.role}
                       </span>
                     </td>

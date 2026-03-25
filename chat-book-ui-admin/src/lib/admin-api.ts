@@ -4,14 +4,14 @@ import {
   contentArticles,
   dashboardSnapshot,
   interactionEvents,
-  reviewArticles
+  reviewArticles,
 } from "@/lib/mock-data";
 import type {
   AdminArticle,
   AdminTag,
   AdminUser,
   DashboardSnapshot,
-  InteractionEvent
+  InteractionEvent,
 } from "@/lib/types";
 
 function clone<T>(value: T): T {

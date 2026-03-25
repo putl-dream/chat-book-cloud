@@ -1,0 +1,21 @@
+{
+  "extends": ["stylelint-config-standard"],
+  "rules": {
+    "color-no-hex": true,
+    "color-named": "never",
+    "declaration-property-value-disallowed-list": {
+      "color": ["/^#/", "/^rgb/", "/^rgba/", "/^hsl/", "/^hsla/"],
+      "background-color": ["/^#/", "/^rgb/", "/^rgba/", "/^hsl/", "/^hsla/"],
+      "border-color": ["/^#/", "/^rgb/", "/^rgba/", "/^hsl/", "/^hsla/"]
+    },
+    "at-rule-no-unknown": [
+      true,
+      {
+        "ignoreAtRules": ["tailwind", "apply", "variants", "responsive", "screen", "layer"]
+      }
+    ],
+    "no-descending-specificity": null,
+    "custom-property-empty-line-before": null,
+    "import-notation": "string"
+  }
+}

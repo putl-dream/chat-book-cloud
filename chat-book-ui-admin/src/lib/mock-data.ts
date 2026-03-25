@@ -3,7 +3,7 @@ import type {
   AdminTag,
   AdminUser,
   DashboardSnapshot,
-  InteractionEvent
+  InteractionEvent,
 } from "@/lib/types";
 
 export const dashboardSnapshot: DashboardSnapshot = {
@@ -12,43 +12,43 @@ export const dashboardSnapshot: DashboardSnapshot = {
       label: "平台用户",
       value: "1,286",
       detail: "映射 `/user/admin/count` 中的 `userCount`",
-      trend: "+8.2%"
+      trend: "+8.2%",
     },
     {
       label: "文章总量",
       value: "742",
       detail: "映射 `/user/admin/count` 中的 `articleCount`",
-      trend: "+12.4%"
+      trend: "+12.4%",
     },
     {
       label: "待审核文章",
       value: "19",
       detail: "映射 `/page/adminArticlePage` 的待处理结果",
-      trend: "-3"
+      trend: "-3",
     },
     {
       label: "互动告警",
       value: "7",
       detail: "需要新增跨全站的后台互动聚合接口",
-      trend: "待建设"
-    }
+      trend: "待建设",
+    },
   ],
   highlights: [
     {
       title: "用户管理基础能力已具备",
       description: "当前后端已经提供数据统计和分页用户查询接口，管理端可以直接接入。",
-      status: "stable"
+      status: "stable",
     },
     {
       title: "文章审核链路具备入口但缺少动作接口",
       description: "可读待审核列表，但尚无管理员通过、驳回、批量审核等操作接口。",
-      status: "partial"
+      status: "partial",
     },
     {
       title: "互动治理仍缺后台视角",
       description: "前台已有评论与通知接口，但都围绕当前登录用户，后台缺少全局巡检能力。",
-      status: "gap"
-    }
+      status: "gap",
+    },
   ],
   services: [
     {
@@ -56,37 +56,37 @@ export const dashboardSnapshot: DashboardSnapshot = {
       responsibility: "用户列表、账号角色、平台概览统计",
       currentApi: "/user/admin/count, /user/admin/user",
       backendGap: "缺少角色变更、禁用用户、批量导出能力",
-      priority: "high"
+      priority: "high",
     },
     {
       service: "chat-book-cloud-article",
       responsibility: "待审核文章、已发布文章、标签体系",
       currentApi: "/page/adminArticlePage, /article/query, /tag/*",
       backendGap: "缺少审核动作、文章上下架、批量删除、内容搜索",
-      priority: "high"
+      priority: "high",
     },
     {
       service: "chat-book-cloud-interaction",
       responsibility: "评论治理、互动数据巡检、通知抽查",
       currentApi: "/interaction/review/getByArticleId, /interaction/foot/getNotifications",
       backendGap: "缺少后台全量评论分页、屏蔽、删除、告警聚合",
-      priority: "high"
+      priority: "high",
     },
     {
       service: "chat-book-cloud-social",
       responsibility: "关系链审计、异常关注排查",
       currentApi: "/social/friends, /social/friends/detailed",
       backendGap: "缺少管理员视角的关系查询、黑名单与风控接口",
-      priority: "medium"
+      priority: "medium",
     },
     {
       service: "chat-book-cloud-chat",
       responsibility: "私信审计、未读堆积与风控监控",
       currentApi: "/chat/messages, /chat/unread/count",
       backendGap: "缺少后台会话查询、敏感词审计与封禁联动",
-      priority: "medium"
-    }
-  ]
+      priority: "medium",
+    },
+  ],
 };
 
 export const adminUsers: AdminUser[] = [
@@ -98,7 +98,7 @@ export const adminUsers: AdminUser[] = [
     role: "admin",
     profile: "平台维护者，负责架构与内容治理。",
     status: "active",
-    createdAt: "2026-03-21 09:15"
+    createdAt: "2026-03-21 09:15",
   },
   {
     id: 2,
@@ -108,7 +108,7 @@ export const adminUsers: AdminUser[] = [
     role: "user",
     profile: "专注 Spring Cloud、MySQL 和中间件实践。",
     status: "active",
-    createdAt: "2026-03-18 13:42"
+    createdAt: "2026-03-18 13:42",
   },
   {
     id: 3,
@@ -118,7 +118,7 @@ export const adminUsers: AdminUser[] = [
     role: "user",
     profile: "输出前端工程与 UI 设计经验。",
     status: "active",
-    createdAt: "2026-03-16 20:09"
+    createdAt: "2026-03-16 20:09",
   },
   {
     id: 4,
@@ -128,8 +128,8 @@ export const adminUsers: AdminUser[] = [
     role: "user",
     profile: "当前有多篇草稿待补全。",
     status: "draft",
-    createdAt: "2026-03-12 11:30"
-  }
+    createdAt: "2026-03-12 11:30",
+  },
 ];
 
 export const reviewArticles: AdminArticle[] = [
@@ -147,7 +147,7 @@ export const reviewArticles: AdminArticle[] = [
     viewCount: 0,
     commentCount: 0,
     praiseCount: 0,
-    collectCount: 0
+    collectCount: 0,
   },
   {
     id: 302,
@@ -163,7 +163,7 @@ export const reviewArticles: AdminArticle[] = [
     viewCount: 0,
     commentCount: 0,
     praiseCount: 0,
-    collectCount: 0
+    collectCount: 0,
   },
   {
     id: 303,
@@ -179,8 +179,8 @@ export const reviewArticles: AdminArticle[] = [
     viewCount: 0,
     commentCount: 0,
     praiseCount: 0,
-    collectCount: 0
-  }
+    collectCount: 0,
+  },
 ];
 
 export const contentArticles: AdminArticle[] = [
@@ -198,7 +198,7 @@ export const contentArticles: AdminArticle[] = [
     viewCount: 438,
     commentCount: 12,
     praiseCount: 87,
-    collectCount: 43
+    collectCount: 43,
   },
   {
     id: 119,
@@ -214,7 +214,7 @@ export const contentArticles: AdminArticle[] = [
     viewCount: 356,
     commentCount: 9,
     praiseCount: 65,
-    collectCount: 27
+    collectCount: 27,
   },
   {
     id: 120,
@@ -230,8 +230,8 @@ export const contentArticles: AdminArticle[] = [
     viewCount: 0,
     commentCount: 0,
     praiseCount: 0,
-    collectCount: 0
-  }
+    collectCount: 0,
+  },
 ];
 
 export const adminTags: AdminTag[] = [
@@ -241,7 +241,7 @@ export const adminTags: AdminTag[] = [
     type: 1,
     color: "#0f766e",
     sort: 100,
-    relatedArticles: 43
+    relatedArticles: 43,
   },
   {
     id: 12,
@@ -249,7 +249,7 @@ export const adminTags: AdminTag[] = [
     type: 1,
     color: "#2563eb",
     sort: 95,
-    relatedArticles: 37
+    relatedArticles: 37,
   },
   {
     id: 13,
@@ -257,7 +257,7 @@ export const adminTags: AdminTag[] = [
     type: 2,
     color: "#b45309",
     sort: 88,
-    relatedArticles: 22
+    relatedArticles: 22,
   },
   {
     id: 14,
@@ -265,8 +265,8 @@ export const adminTags: AdminTag[] = [
     type: 2,
     color: "#be123c",
     sort: 80,
-    relatedArticles: 11
-  }
+    relatedArticles: 11,
+  },
 ];
 
 export const interactionEvents: InteractionEvent[] = [
@@ -278,7 +278,7 @@ export const interactionEvents: InteractionEvent[] = [
     articleId: 118,
     scope: "评论治理",
     summary: "新增评论需要支持敏感词巡检、人工复核和申诉追踪。",
-    createdAt: "2026-03-25 09:21"
+    createdAt: "2026-03-25 09:21",
   },
   {
     id: 8002,
@@ -288,7 +288,7 @@ export const interactionEvents: InteractionEvent[] = [
     articleId: 119,
     scope: "互动趋势",
     summary: "点赞在 2 小时内快速增长，建议进入热文观测区。",
-    createdAt: "2026-03-25 08:40"
+    createdAt: "2026-03-25 08:40",
   },
   {
     id: 8003,
@@ -298,7 +298,7 @@ export const interactionEvents: InteractionEvent[] = [
     articleId: 301,
     scope: "内容预热",
     summary: "待审核文章在草稿链接内被多次预览，后台需要识别异常传播。",
-    createdAt: "2026-03-25 07:55"
+    createdAt: "2026-03-25 07:55",
   },
   {
     id: 8004,
@@ -308,6 +308,6 @@ export const interactionEvents: InteractionEvent[] = [
     articleId: 303,
     scope: "收藏趋势",
     summary: "收藏高于平均值，适合作为首页推荐备选。",
-    createdAt: "2026-03-24 23:10"
-  }
+    createdAt: "2026-03-24 23:10",
+  },
 ];

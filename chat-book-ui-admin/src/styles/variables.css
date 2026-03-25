@@ -1,0 +1,51 @@
+@layer base {
+  :root {
+    /* Base Palette */
+    --primary: #f59e0b; /* Amber 500 (Golden) */
+    --primary-foreground: #ffffff;
+
+    --neutral: #172029; /* Slate 900 */
+    --neutral-foreground: #f8f0e2;
+
+    --success: #10b981; /* Emerald 500 */
+    --success-foreground: #ffffff;
+
+    --warning: #f59e0b; /* Amber 500 */
+    --warning-foreground: #ffffff;
+
+    --error: #ef4444; /* Red 500 */
+    --error-foreground: #ffffff;
+
+    /* Semantic Colors */
+    --bg-main: #f5efe4; /* Light background */
+    --bg-card: #ffffff; /* Card background */
+    --card-foreground: #20170d; /* Text color */
+
+    --border-subtle: #d9d9d9; /* Soft border */
+  }
+
+  .dark {
+    /* Base Palette - Dark Mode */
+    --primary: #f59e0b;
+    --primary-foreground: #ffffff;
+
+    --neutral: #172029;
+    --neutral-foreground: #f8f0e2;
+
+    --success: #10b981;
+    --success-foreground: #ffffff;
+
+    --warning: #f59e0b;
+    --warning-foreground: #ffffff;
+
+    --error: #ef4444;
+    --error-foreground: #ffffff;
+
+    /* Semantic Colors - Dark Mode */
+    --bg-main: #172029;
+    --bg-card: #111827;
+    --card-foreground: #f8f0e2;
+
+    --border-subtle: #374151;
+  }
+}

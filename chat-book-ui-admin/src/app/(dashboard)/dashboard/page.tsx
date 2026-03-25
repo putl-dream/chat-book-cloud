@@ -61,15 +61,17 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="stack-list">
-            {adminNavigation.flatMap((group) => group.items).map((item) => (
-              <article className="stack-item" key={item.href}>
-                <div className="stack-title-row">
-                  <h4>{item.label}</h4>
-                  <span className="pill pill-neutral">{item.href}</span>
-                </div>
-                <p>{item.description}</p>
-              </article>
-            ))}
+            {adminNavigation
+              .flatMap((group) => group.items)
+              .map((item) => (
+                <article className="stack-item" key={item.href}>
+                  <div className="stack-title-row">
+                    <h4>{item.label}</h4>
+                    <span className="pill pill-neutral">{item.href}</span>
+                  </div>
+                  <p>{item.description}</p>
+                </article>
+              ))}
           </div>
         </section>
       </div>
