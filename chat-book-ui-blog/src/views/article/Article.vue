@@ -34,7 +34,7 @@
 
                 <div v-if="showRightPanel && !isMobile" class="resize-handle" @mousedown="startResize"></div>
 
-                <div v-if="!isMobile" class="article-right" :style="{ width: effectiveRightWidth + 'px' }"
+                <div v-if="!isMobile" class="article-right custom-scrollbar" :style="{ width: effectiveRightWidth + 'px' }"
                     :class="{ 'expanded-panel': showRightPanel, 'glass-panel': showRightPanel }">
                     <transition name="fade-slide" mode="out-in">
                         <component v-if="showRightPanel" :is="activePanelComponent" :key="activePanelKey"

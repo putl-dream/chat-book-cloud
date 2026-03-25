@@ -1,5 +1,5 @@
 <template>
-    <div class="default-sidebar integrated-card custom-scrollbar">
+    <div class="default-sidebar custom-scrollbar">
         <!-- Reading Progress Bar -->
         <div class="reading-progress-container" :class="{ 'is-visible': readingProgress > 0 }">
             <div class="reading-progress-bar" :style="{ width: readingProgress + '%' }"></div>
@@ -9,13 +9,9 @@
             <ArticleViewerToc :articleHtml="articleHtml" :contentTarget="contentTarget" />
         </div>
 
-        <div class="module-divider"></div>
-
         <div class="sidebar-module">
             <ArticleTagCard :articleId="articleId" :tagIds="tagIds" />
         </div>
-
-        <div class="module-divider"></div>
 
         <div class="sidebar-module">
             <RelatedCard :articleId="articleId" />
@@ -104,35 +100,26 @@ onUnmounted(() => {
 .default-sidebar {
     display: flex;
     flex-direction: column;
-    min-height: 100%; /* Changed from height:100% so it can expand based on children instead of squishing them */
+    gap: 8px; /* Explicit gap between the sidebar modules */
     position: relative;
-    padding-bottom: 20px; /* Add some padding so content doesn't hit the bottom edge tightly */
+    padding-bottom: 20px;
 }
 
-.integrated-card {
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-light);
-    overflow-x: hidden;
-    /* overflow-y: auto; removed to allow .article-right to handle the scrolling */
-}
-
-/* 隐藏滚动条但保留功能 (Chrome/Safari/Webkit) */
-.integrated-card::-webkit-scrollbar {
+/* Hide individual scrollbars and use common styling */
+.custom-scrollbar::-webkit-scrollbar {
     width: 4px;
 }
 
-.integrated-card::-webkit-scrollbar-track {
+.custom-scrollbar::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.integrated-card::-webkit-scrollbar-thumb {
+.custom-scrollbar::-webkit-scrollbar-thumb {
     background: rgba(0, 0, 0, 0.1);
     border-radius: 4px;
 }
 
-.integrated-card::-webkit-scrollbar-thumb:hover {
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 0, 0, 0.2);
 }
 
@@ -161,23 +148,19 @@ onUnmounted(() => {
 }
 
 .sidebar-module {
-    flex-shrink: 0;
+    display: block;
+    width: 100%;
+    background: var(--bg-color-white);
+    border-radius: var(--border-radius-xl);
+    box-shadow: var(--box-shadow-base);
+    border: 1px solid var(--border-color-light);
+    overflow: hidden;
 }
 
-.toc-module {
-    min-height: 240px;
-    padding-top: 4px; /* accommodate progress bar overlay */
-}
 
-.module-divider {
-    height: 1px;
-    background: linear-gradient(90deg, rgba(15,23,42,0.02), rgba(15,23,42,0.06), rgba(15,23,42,0.02));
-    margin: 0 20px;
-    flex-shrink: 0;
-}
 
 @media (max-width: 768px) {
-    .sidebar-module:not(.toc-module), .module-divider {
+    .sidebar-module:not(.toc-module) {
         display: none !important;
     }
 }
