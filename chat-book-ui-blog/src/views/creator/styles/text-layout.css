@@ -1,7 +1,11 @@
 .editor-layout {
-    flex: 1;
-    height: 100%;
-    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 100vh; /* Fallback for older browsers */
+    height: 100dvh; /* Dynamic viewport height to fix mobile chrome/safari bars */
+    z-index: 50; /* Ensure it floats above AppLayout background layers */
     display: flex;
     flex-direction: column;
     overflow: hidden;

@@ -81,7 +81,8 @@ const headerHeight = computed(() => 'auto'); // Let it size naturally
   width: 100%;
   z-index: var(--z-index-header, 100);
   flex-shrink: 0;
-  position: relative;
+  position: sticky;
+  top: 0;
 }
 
 /* Creative Background Decorations */
@@ -144,6 +145,7 @@ const headerHeight = computed(() => 'auto'); // Let it size naturally
   display: flex;
   flex-direction: column;
   width: 100%;
+  overflow: visible !important;
 }
 
 .main-content-wrapper.no-padding {
