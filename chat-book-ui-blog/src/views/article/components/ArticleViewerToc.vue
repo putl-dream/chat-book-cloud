@@ -22,7 +22,7 @@
 </template>
 
 <script setup>
-import { toRef } from 'vue';
+import { toRef, watch, nextTick } from 'vue';
 import { useArticleViewerToc } from '../_hooks/useArticleViewerToc.js';
 
 const props = defineProps({
@@ -39,6 +39,27 @@ const props = defineProps({
 const articleHtmlRef = toRef(props, 'articleHtml');
 const contentTargetRef = toRef(props, 'contentTarget');
 const { headings, activeId, scrollToHeading } = useArticleViewerToc(articleHtmlRef, contentTargetRef);
+
+watch(activeId, async (newId) => {
+    if (!newId) return;
+    await nextTick();
+    const activeEl = document.querySelector('.viewer-toc .toc-item.is-active');
+    if (activeEl) {
+        const scrollContainer = activeEl.closest('.toc-content');
+        if (scrollContainer) {
+            const containerRect = scrollContainer.getBoundingClientRect();
+            const elRect = activeEl.getBoundingClientRect();
+            
+            if (elRect.top < containerRect.top + 20 || elRect.bottom > containerRect.bottom - 20) {
+                const targetScrollTop = scrollContainer.scrollTop + (elRect.top - containerRect.top) - (containerRect.height / 2) + (elRect.height / 2);
+                scrollContainer.scrollTo({
+                    top: targetScrollTop,
+                    behavior: 'smooth'
+                });
+            }
+        }
+    }
+});
 </script>
 
 <style scoped>

@@ -87,18 +87,30 @@ export function useArticleLogic(articleIdRef) {
   };
 
   const handleComment = () => {
-    showRightPanel.value = true;
-    activePanel.value = activePanel.value === PANEL_TYPE.COMMENT ? PANEL_TYPE.DEFAULT : PANEL_TYPE.COMMENT;
+    if (activePanel.value === PANEL_TYPE.COMMENT && showRightPanel.value) {
+      showRightPanel.value = false;
+    } else {
+      showRightPanel.value = true;
+      activePanel.value = PANEL_TYPE.COMMENT;
+    }
   };
 
   const handleAiChat = () => {
-    showRightPanel.value = true;
-    activePanel.value = activePanel.value === PANEL_TYPE.AI ? PANEL_TYPE.DEFAULT : PANEL_TYPE.AI;
+    if (activePanel.value === PANEL_TYPE.AI && showRightPanel.value) {
+      showRightPanel.value = false;
+    } else {
+      showRightPanel.value = true;
+      activePanel.value = PANEL_TYPE.AI;
+    }
   };
 
   const openDefaultPanel = () => {
-    showRightPanel.value = true;
-    activePanel.value = PANEL_TYPE.DEFAULT;
+    if (activePanel.value === PANEL_TYPE.DEFAULT && showRightPanel.value) {
+      showRightPanel.value = false;
+    } else {
+      showRightPanel.value = true;
+      activePanel.value = PANEL_TYPE.DEFAULT;
+    }
   };
 
   const handleFavorite = async () => {

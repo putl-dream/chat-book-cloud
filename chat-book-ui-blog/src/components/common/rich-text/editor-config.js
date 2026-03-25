@@ -1,4 +1,5 @@
 import StarterKit from '@tiptap/starter-kit';
+import Heading from '@tiptap/extension-heading';
 import Image from '@tiptap/extension-image';
 import Placeholder from '@tiptap/extension-placeholder';
 import CharacterCount from '@tiptap/extension-character-count';
@@ -12,11 +13,28 @@ import SlashCommand from '@/views/creator/components/slash-command/index.js';
 import suggestion from '@/views/creator/components/slash-command/suggestion.js';
 import { MarkdownPaste, MarkdownTaskItem } from '@/components/common/rich-text/markdown-shortcuts.js';
 
+const CustomHeading = Heading.extend({
+    addAttributes() {
+        return {
+            ...this.parent?.(),
+            id: {
+                default: null,
+                parseHTML: element => element.getAttribute('id'),
+                renderHTML: attributes => {
+                    if (!attributes.id) return {};
+                    return { id: attributes.id };
+                }
+            }
+        };
+    }
+});
+
 export function createRichTextExtensions(options = {}) {
     const { placeholder = '请输入内容...', enableSlashCommand = true } = options;
 
     const extensions = [
-        StarterKit,
+        StarterKit.configure({ heading: false }),
+        CustomHeading,
         Image,
         Highlight.configure({ multicolor: true }),
         TextStyle,
