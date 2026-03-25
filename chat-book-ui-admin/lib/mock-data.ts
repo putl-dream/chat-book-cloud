@@ -1,0 +1,313 @@
+import type {
+  AdminArticle,
+  AdminTag,
+  AdminUser,
+  DashboardSnapshot,
+  InteractionEvent
+} from "@/lib/types";
+
+export const dashboardSnapshot: DashboardSnapshot = {
+  metrics: [
+    {
+      label: "平台用户",
+      value: "1,286",
+      detail: "映射 `/user/admin/count` 中的 `userCount`",
+      trend: "+8.2%"
+    },
+    {
+      label: "文章总量",
+      value: "742",
+      detail: "映射 `/user/admin/count` 中的 `articleCount`",
+      trend: "+12.4%"
+    },
+    {
+      label: "待审核文章",
+      value: "19",
+      detail: "映射 `/page/adminArticlePage` 的待处理结果",
+      trend: "-3"
+    },
+    {
+      label: "互动告警",
+      value: "7",
+      detail: "需要新增跨全站的后台互动聚合接口",
+      trend: "待建设"
+    }
+  ],
+  highlights: [
+    {
+      title: "用户管理基础能力已具备",
+      description: "当前后端已经提供数据统计和分页用户查询接口，管理端可以直接接入。",
+      status: "stable"
+    },
+    {
+      title: "文章审核链路具备入口但缺少动作接口",
+      description: "可读待审核列表，但尚无管理员通过、驳回、批量审核等操作接口。",
+      status: "partial"
+    },
+    {
+      title: "互动治理仍缺后台视角",
+      description: "前台已有评论与通知接口，但都围绕当前登录用户，后台缺少全局巡检能力。",
+      status: "gap"
+    }
+  ],
+  services: [
+    {
+      service: "chat-book-cloud-user",
+      responsibility: "用户列表、账号角色、平台概览统计",
+      currentApi: "/user/admin/count, /user/admin/user",
+      backendGap: "缺少角色变更、禁用用户、批量导出能力",
+      priority: "high"
+    },
+    {
+      service: "chat-book-cloud-article",
+      responsibility: "待审核文章、已发布文章、标签体系",
+      currentApi: "/page/adminArticlePage, /article/query, /tag/*",
+      backendGap: "缺少审核动作、文章上下架、批量删除、内容搜索",
+      priority: "high"
+    },
+    {
+      service: "chat-book-cloud-interaction",
+      responsibility: "评论治理、互动数据巡检、通知抽查",
+      currentApi: "/interaction/review/getByArticleId, /interaction/foot/getNotifications",
+      backendGap: "缺少后台全量评论分页、屏蔽、删除、告警聚合",
+      priority: "high"
+    },
+    {
+      service: "chat-book-cloud-social",
+      responsibility: "关系链审计、异常关注排查",
+      currentApi: "/social/friends, /social/friends/detailed",
+      backendGap: "缺少管理员视角的关系查询、黑名单与风控接口",
+      priority: "medium"
+    },
+    {
+      service: "chat-book-cloud-chat",
+      responsibility: "私信审计、未读堆积与风控监控",
+      currentApi: "/chat/messages, /chat/unread/count",
+      backendGap: "缺少后台会话查询、敏感词审计与封禁联动",
+      priority: "medium"
+    }
+  ]
+};
+
+export const adminUsers: AdminUser[] = [
+  {
+    id: 1,
+    userId: 1001,
+    username: "amireux",
+    email: "amireux@chatbook.dev",
+    role: "admin",
+    profile: "平台维护者，负责架构与内容治理。",
+    status: "active",
+    createdAt: "2026-03-21 09:15"
+  },
+  {
+    id: 2,
+    userId: 1024,
+    username: "backend-hub",
+    email: "backend@chatbook.dev",
+    role: "user",
+    profile: "专注 Spring Cloud、MySQL 和中间件实践。",
+    status: "active",
+    createdAt: "2026-03-18 13:42"
+  },
+  {
+    id: 3,
+    userId: 1056,
+    username: "frontend-notes",
+    email: "frontend@chatbook.dev",
+    role: "user",
+    profile: "输出前端工程与 UI 设计经验。",
+    status: "active",
+    createdAt: "2026-03-16 20:09"
+  },
+  {
+    id: 4,
+    userId: 1078,
+    username: "draft-writer",
+    email: "draft@chatbook.dev",
+    role: "user",
+    profile: "当前有多篇草稿待补全。",
+    status: "draft",
+    createdAt: "2026-03-12 11:30"
+  }
+];
+
+export const reviewArticles: AdminArticle[] = [
+  {
+    id: 301,
+    title: "Spring Cloud Gateway 统一鉴权最佳实践",
+    userName: "backend-hub",
+    userId: 1024,
+    category: 0,
+    contentType: 0,
+    status: 1,
+    summary: "围绕当前网关和认证中心实现，介绍 Token 校验、Header 透传和异常封装。",
+    tags: ["Spring Cloud", "Gateway", "JWT"],
+    createdAt: "2026-03-24 21:10",
+    viewCount: 0,
+    commentCount: 0,
+    praiseCount: 0,
+    collectCount: 0
+  },
+  {
+    id: 302,
+    title: "基于 Tiptap 的创作台协同编辑方案",
+    userName: "frontend-notes",
+    userId: 1056,
+    category: 1,
+    contentType: 1,
+    status: 1,
+    summary: "结合现有创作端的本地草稿、状态同步和发布弹窗，整理出一套协同增强思路。",
+    tags: ["Vue", "Tiptap", "编辑器"],
+    createdAt: "2026-03-24 19:55",
+    viewCount: 0,
+    commentCount: 0,
+    praiseCount: 0,
+    collectCount: 0
+  },
+  {
+    id: 303,
+    title: "评论与通知链路的事件化设计",
+    userName: "amireux",
+    userId: 1001,
+    category: 4,
+    contentType: 0,
+    status: 1,
+    summary: "从 interaction-service 的现状出发，设计后台可观测的全局评论治理能力。",
+    tags: ["互动", "通知", "事件驱动"],
+    createdAt: "2026-03-23 17:08",
+    viewCount: 0,
+    commentCount: 0,
+    praiseCount: 0,
+    collectCount: 0
+  }
+];
+
+export const contentArticles: AdminArticle[] = [
+  {
+    id: 118,
+    title: "MinIO 在微服务场景下的文件上传实践",
+    userName: "backend-hub",
+    userId: 1024,
+    category: 0,
+    contentType: 1,
+    status: 2,
+    summary: "介绍统一文件上传接口、目录策略和预览 URL 设计。",
+    tags: ["MinIO", "文件上传"],
+    createdAt: "2026-03-20 10:18",
+    viewCount: 438,
+    commentCount: 12,
+    praiseCount: 87,
+    collectCount: 43
+  },
+  {
+    id: 119,
+    title: "前端内容筛选器的多条件组合设计",
+    userName: "frontend-notes",
+    userId: 1056,
+    category: 1,
+    contentType: 0,
+    status: 2,
+    summary: "基于分类、标签和内容类型的多条件过滤实现。",
+    tags: ["Vue", "筛选器"],
+    createdAt: "2026-03-19 16:41",
+    viewCount: 356,
+    commentCount: 9,
+    praiseCount: 65,
+    collectCount: 27
+  },
+  {
+    id: 120,
+    title: "AI 知识库接入草案",
+    userName: "draft-writer",
+    userId: 1078,
+    category: 4,
+    contentType: 0,
+    status: 0,
+    summary: "RAG 能力的预研文稿，目前停留在草稿阶段。",
+    tags: ["AI", "RAG"],
+    createdAt: "2026-03-18 08:12",
+    viewCount: 0,
+    commentCount: 0,
+    praiseCount: 0,
+    collectCount: 0
+  }
+];
+
+export const adminTags: AdminTag[] = [
+  {
+    id: 11,
+    name: "Spring Boot",
+    type: 1,
+    color: "#0f766e",
+    sort: 100,
+    relatedArticles: 43
+  },
+  {
+    id: 12,
+    name: "Vue",
+    type: 1,
+    color: "#2563eb",
+    sort: 95,
+    relatedArticles: 37
+  },
+  {
+    id: 13,
+    name: "微服务架构",
+    type: 2,
+    color: "#b45309",
+    sort: 88,
+    relatedArticles: 22
+  },
+  {
+    id: 14,
+    name: "AI 工程化",
+    type: 2,
+    color: "#be123c",
+    sort: 80,
+    relatedArticles: 11
+  }
+];
+
+export const interactionEvents: InteractionEvent[] = [
+  {
+    id: 8001,
+    senderName: "reader-01",
+    actionType: "COMMENT",
+    articleTitle: "MinIO 在微服务场景下的文件上传实践",
+    articleId: 118,
+    scope: "评论治理",
+    summary: "新增评论需要支持敏感词巡检、人工复核和申诉追踪。",
+    createdAt: "2026-03-25 09:21"
+  },
+  {
+    id: 8002,
+    senderName: "reader-12",
+    actionType: "PRAISE",
+    articleTitle: "前端内容筛选器的多条件组合设计",
+    articleId: 119,
+    scope: "互动趋势",
+    summary: "点赞在 2 小时内快速增长，建议进入热文观测区。",
+    createdAt: "2026-03-25 08:40"
+  },
+  {
+    id: 8003,
+    senderName: "reader-22",
+    actionType: "BROWSE",
+    articleTitle: "Spring Cloud Gateway 统一鉴权最佳实践",
+    articleId: 301,
+    scope: "内容预热",
+    summary: "待审核文章在草稿链接内被多次预览，后台需要识别异常传播。",
+    createdAt: "2026-03-25 07:55"
+  },
+  {
+    id: 8004,
+    senderName: "reader-08",
+    actionType: "COLLECT",
+    articleTitle: "评论与通知链路的事件化设计",
+    articleId: 303,
+    scope: "收藏趋势",
+    summary: "收藏高于平均值，适合作为首页推荐备选。",
+    createdAt: "2026-03-24 23:10"
+  }
+];
