@@ -13,6 +13,7 @@ import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
+import fun.amireux.chat.book.framework.mvc.security.annotation.RequireAdmin;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
@@ -105,6 +106,7 @@ public class ArticlePageController {
 
     @Operation(summary = "获取管理员审核文章列表")
     @PostMapping("/adminArticlePage")
+    @RequireAdmin
     public CommonResult<PageResult<ArticleListVO>> getAdminArticlePage(@Valid @RequestBody PageRequestDTO request) {
         return CommonResult.success(articlePageService.getAdminArticlePage(request.getPageNo(), request.getPageSize()));
     }

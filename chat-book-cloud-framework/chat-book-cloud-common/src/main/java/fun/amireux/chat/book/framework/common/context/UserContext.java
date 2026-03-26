@@ -30,6 +30,11 @@ public class UserContext {
         return userInfo != null ? userInfo.getClientIp() : null;
     }
 
+    public static String getRoles() {
+        UserInfo userInfo = USER_THREAD_LOCAL.get();
+        return userInfo != null ? userInfo.getRoles() : null;
+    }
+
     public static void remove() {
         USER_THREAD_LOCAL.remove();
     }

@@ -15,32 +15,34 @@ import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
+
+    private static final int ADMIN_ROLE_CODE = 1;
+
     private final UserMapper userMapper;
     private final UserInfoMapper userInfoMapper;
     private final JwtUtil jwtUtil = new JwtUtil("chat-book", "auth-service");
     private final CaptchaService captchaService;
 
-
     @Override
     public String login(UserDTO user) {
         if (StringUtils.isAllBlank(user.getUsername(), user.getEmail())) {
-            log.error("用户名或邮箱不能为空");
-            throw new AuthenticationException("登录信息不完整");
+            log.error("Username or email is required");
+            throw new AuthenticationException("Login payload is incomplete");
         }
 
         if (user.getLoginMethod() == null) {
-            log.error("登录方式不能为空");
-            throw new AuthenticationException("登录方式不能为空");
+            log.error("Login method is required");
+            throw new AuthenticationException("Login method is required");
         }
 
         return switch (user.getLoginMethod()) {
@@ -52,56 +54,58 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     private String verificationCodeLogin(UserDTO user) {
         if (StringUtils.isBlank(user.getVerificationCode())) {
-            throw new AuthenticationException("验证码不能为空");
+            throw new AuthenticationException("Verification code is required");
         }
 
-        // Use email for verification code login usually
         if (StringUtils.isBlank(user.getEmail())) {
-            throw new AuthenticationException("邮箱不能为空");
+            throw new AuthenticationException("Email is required");
         }
 
         if (!captchaService.verifyCaptcha(user.getEmail(), user.getVerificationCode())) {
-            throw new AuthenticationException("验证码错误或已过期");
+            throw new AuthenticationException("Verification code is invalid or expired");
         }
 
         UserDO userDO = getUserInfo(user);
-        log.info("用户登录成功: {}", userDO.getEmail());
-        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
+        UserInfoDO userInfo = findUserInfo(userDO.getId());
+        log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
+        return buildToken(userDO, userInfo);
     }
-
 
     private String passwordLogin(UserDTO user) {
         if (StringUtils.isBlank(user.getPassword())) {
-            throw new AuthenticationException("密码不能为空");
+            throw new AuthenticationException("Password is required");
         }
+
         UserDO userDO = getUserInfo(user);
         if (!PwdUtil.checkPassword(user.getPassword(), userDO.getPassword())) {
-            log.error("密码错误");
-            throw new AuthenticationException("密码错误");
+            log.error("Password check failed");
+            throw new AuthenticationException("Password is invalid");
         }
-        UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userDO.getId()));
-        String username = userInfo != null ? userInfo.getUsername() : "";
-        log.info("用户登录成功: {}", username);
-        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
+
+        UserInfoDO userInfo = findUserInfo(userDO.getId());
+        log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
+        return buildToken(userDO, userInfo);
     }
 
     @Override
     public UserDO getUserInfo(UserDTO user) {
         UserDO userDO = null;
         if (StringUtils.isNotBlank(user.getUsername())) {
-            // 从 user_info 表查询用户id，再查询 user 表
-            UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUsername, user.getUsername()));
+            UserInfoDO userInfo = userInfoMapper.selectOne(
+                    Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUsername, user.getUsername())
+            );
             if (userInfo != null) {
                 userDO = userMapper.selectById(userInfo.getUserId());
             }
         }
+
         if (userDO == null && StringUtils.isNotBlank(user.getEmail())) {
             userDO = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
         }
 
         if (userDO == null) {
-            log.error("用户不存在");
-            throw new AuthenticationException("用户不存在");
+            log.error("User not found");
+            throw new AuthenticationException("User does not exist");
         }
         return userDO;
     }
@@ -109,29 +113,28 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     @Transactional
     public String signIn(UserDTO signInVO) {
-        // Verify Captcha for registration
         if (!captchaService.verifyCaptcha(signInVO.getEmail(), signInVO.getVerificationCode())) {
-            throw new AuthenticationException("验证码错误");
+            throw new AuthenticationException("Verification code is invalid");
         }
 
         if (userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, signInVO.getEmail())) != null) {
-            log.error("邮箱已存在");
-            throw new AuthenticationException("邮箱已存在");
+            log.error("Email already exists");
+            throw new AuthenticationException("Email already exists");
         }
-        // 用户名校验在 user_info 表中进行
-        if (userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUsername, signInVO.getUsername())) != null) {
-            log.error("用户名已存在");
-            throw new AuthenticationException("用户名已存在");
+
+        if (userInfoMapper.selectOne(
+                Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUsername, signInVO.getUsername())
+        ) != null) {
+            log.error("Username already exists");
+            throw new AuthenticationException("Username already exists");
         }
 
         UserDO userDO = UserDO.builder()
                 .email(signInVO.getEmail())
                 .password(PwdUtil.hashPassword(signInVO.getPassword()))
                 .build();
-
         userMapper.insert(userDO);
 
-        // 注册用户信息
         UserInfoDO userInfo = UserInfoDO.builder()
                 .userId(userDO.getId())
                 .username(signInVO.getUsername())
@@ -139,18 +142,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .build();
         userInfoMapper.insert(userInfo);
 
-        return jwtUtil.generateToken(Map.of("id", userDO.getId()));
+        return buildToken(userDO, userInfo);
     }
 
     @Override
     @Transactional
     public Integer oauth2Login(UserDTO user) {
-        // Check if user exists by email
         UserDO existingUser = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
 
         if (existingUser != null) {
-            // Update user info if changed
-            UserInfoDO userInfo = userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, existingUser.getId()));
+            UserInfoDO userInfo = findUserInfo(existingUser.getId());
             if (userInfo != null) {
                 boolean updated = false;
                 if (user.getUsername() != null && !user.getUsername().equals(userInfo.getUsername())) {
@@ -168,14 +169,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
             return existingUser.getId();
         }
 
-        // Create new OAuth user
         UserDO newUser = UserDO.builder()
                 .email(user.getEmail())
-                .password(PwdUtil.hashPassword("")) // OAuth users have no password
+                .password(PwdUtil.hashPassword(""))
                 .build();
         userMapper.insert(newUser);
 
-        // Create user info
         UserInfoDO userInfo = UserInfoDO.builder()
                 .userId(newUser.getId())
                 .username(user.getUsername() != null ? user.getUsername() : "user_" + newUser.getId())
@@ -184,7 +183,30 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .build();
         userInfoMapper.insert(userInfo);
 
-        log.info("OAuth用户注册成功: {}, provider: {}", user.getEmail(), user.getLoginMethod());
+        log.info("OAuth user registered: {}, provider: {}", user.getEmail(), user.getLoginMethod());
         return newUser.getId();
+    }
+
+    private UserInfoDO findUserInfo(Integer userId) {
+        return userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userId));
+    }
+
+    private String buildToken(UserDO userDO, UserInfoDO userInfo) {
+        Map<String, Object> claims = new LinkedHashMap<>();
+        claims.put("id", userDO.getId());
+
+        if (userInfo != null && StringUtils.isNotBlank(userInfo.getUsername())) {
+            claims.put("username", userInfo.getUsername());
+        }
+
+        claims.put("roles", resolveRoleClaim(userInfo));
+        return jwtUtil.generateToken(claims);
+    }
+
+    private String resolveRoleClaim(UserInfoDO userInfo) {
+        if (userInfo != null && Integer.valueOf(ADMIN_ROLE_CODE).equals(userInfo.getRole())) {
+            return "ROLE_ADMIN";
+        }
+        return "ROLE_USER";
     }
 }

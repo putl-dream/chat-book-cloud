@@ -119,6 +119,7 @@ public class UserContextFilter extends OncePerRequestFilter {
                 .userId(userId)
                 .username(username)
                 .clientIp(clientIp)
+                .roles(rolesStr)
                 .build();
         UserContext.setUser(userInfo);
 

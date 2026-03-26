@@ -1,0 +1,4 @@
+#NOTE: This is a Maven Resolver internal implementation file, its format can be changed without prior notice.
+#Thu Mar 26 13:42:54 CST 2026
+@default-central-https\://repo.maven.apache.org/maven2/.lastUpdated=1774503774745
+https\://repo.maven.apache.org/maven2/.error=Could not transfer artifact org.springframework.cloud\:spring-cloud-dependencies\:pom\:2023.0.1 from/to central (https\://repo.maven.apache.org/maven2)\: Permission denied\: getsockopt
