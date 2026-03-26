@@ -3,13 +3,23 @@ import { cn } from "@/lib/utils";
 
 export interface HeaderProps extends React.HTMLAttributes<HTMLHeadElement> {}
 
-export function Header({ className, children, ...props }: HeaderProps) {
+export function Header({
+  className,
+  children,
+  style,
+  ...props
+}: HeaderProps & { style?: React.CSSProperties }) {
   return (
     <header
       className={cn(
-        "border-subtle bg-card flex h-16 items-center justify-between border-b px-6 shadow-sm",
+        "border-cb-border bg-cb-bg-card z-10 flex h-16 items-center justify-between border-b px-6 shadow-sm",
         className
       )}
+      style={{
+        backdropFilter: "var(--cb-card-backdrop)",
+        WebkitBackdropFilter: "var(--cb-card-backdrop)",
+        ...style,
+      }}
       {...props}
     >
       <div className="flex items-center gap-4">

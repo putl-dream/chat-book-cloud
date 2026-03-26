@@ -29,7 +29,7 @@ export function AdminShell({
   }));
 
   return (
-    <div className="bg-main flex h-screen w-full overflow-hidden">
+    <div className="bg-cb-bg-main flex h-screen w-full overflow-hidden">
       <Sidebar groups={sidebarGroups} />
 
       <div className="flex flex-1 flex-col overflow-hidden">

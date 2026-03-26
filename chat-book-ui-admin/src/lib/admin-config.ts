@@ -49,6 +49,11 @@ export const adminNavigation: NavGroup[] = [
         label: "系统接入",
         description: "梳理微服务接入状态、接口缺口与后续改造计划。",
       },
+      {
+        href: "/theme",
+        label: "主题设置",
+        description: "切换系统主题风格。",
+      },
     ],
   },
 ];

@@ -1,28 +1,40 @@
-import * as React from "react";
 import { cn } from "@/lib/utils";
+import React from "react";
 
-export interface BadgeProps extends React.HTMLAttributes<HTMLDivElement> {
-  variant?: "primary" | "neutral" | "success" | "warning" | "error" | "outline";
+type BadgeType = "success" | "warning" | "error" | "default";
+
+interface BadgeProps extends React.HTMLAttributes<HTMLSpanElement> {
+  children?: React.ReactNode;
+  type?: BadgeType;
+  variant?: string; // for backward compatibility with old code
 }
 
-function Badge({ className, variant = "primary", ...props }: BadgeProps) {
+const typeMap: Record<BadgeType, string> = {
+  success: "bg-cb-tag-success-bg text-cb-tag-success-text",
+  warning: "bg-cb-tag-warning-bg text-cb-tag-warning-text",
+  error: "bg-cb-tag-error-bg text-cb-tag-error-text",
+  default: "bg-cb-bg-main text-cb-text-secondary border border-cb-border",
+};
+
+export const Badge: React.FC<BadgeProps> = ({
+  children,
+  type = "default",
+  className,
+  variant,
+  ...props
+}) => {
   return (
-    <div
+    <span
       className={cn(
-        "focus:ring-primary inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:ring-2 focus:ring-offset-2 focus:outline-none",
-        {
-          "bg-primary/10 text-primary border-transparent": variant === "primary",
-          "bg-neutral/10 text-neutral border-transparent": variant === "neutral",
-          "bg-success/10 text-success border-transparent": variant === "success",
-          "bg-warning/10 text-warning border-transparent": variant === "warning",
-          "bg-error/10 text-error border-transparent": variant === "error",
-          "text-card-foreground border-subtle": variant === "outline",
-        },
+        "text-sub inline-flex items-center gap-1.5 rounded-full px-3 py-1 font-medium", // 精致的小胶囊样式
+        typeMap[type],
+        variant === "outline" ? "border-cb-border border bg-transparent" : "",
         className
       )}
       {...props}
-    />
+    >
+      {/* (可选) 在这里加入一个小小的状态圆点图标 */}
+      {children}
+    </span>
   );
-}
-
-export { Badge };
+};

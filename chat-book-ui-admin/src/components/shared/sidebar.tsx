@@ -28,19 +28,24 @@ export function Sidebar({ groups, className, ...props }: SidebarProps) {
   return (
     <aside
       className={cn(
-        "border-subtle bg-card text-card-foreground flex w-64 flex-col gap-6 border-r px-4 py-6",
+        "border-cb-border flex w-56 flex-col gap-6 border-r px-4 py-6 z-20",
+        "bg-cb-bg-sidebar text-cb-text-inverse",
         className
       )}
+      style={{
+        backdropFilter: "var(--cb-sidebar-backdrop)",
+        WebkitBackdropFilter: "var(--cb-sidebar-backdrop)"
+      }}
       {...props}
     >
       <div className="flex items-center px-2">
-        <h1 className="text-primary text-xl font-bold tracking-tight">Admin Console</h1>
+        <h1 className="text-cb-primary text-xl font-semibold tracking-tight">Admin Console</h1>
       </div>
 
       <nav className="flex flex-1 flex-col gap-6 overflow-y-auto">
         {groups.map((group, idx) => (
           <div key={idx} className="flex flex-col gap-2">
-            <h2 className="text-neutral/60 px-2 text-xs font-semibold tracking-wider uppercase">
+            <h2 className="text-cb-text-inverse/60 px-2 text-xs font-semibold tracking-wider uppercase">
               {group.title}
             </h2>
             <div className="flex flex-col gap-1">
@@ -51,14 +56,22 @@ export function Sidebar({ groups, className, ...props }: SidebarProps) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-colors",
+                      "group flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all duration-200 ease-in-out",
                       isActive
-                        ? "bg-primary/10 text-primary"
-                        : "text-card-foreground/70 hover:bg-neutral/5 hover:text-card-foreground"
+                        ? "bg-cb-nav-active-bg text-cb-nav-active-text shadow-sm"
+                        : "text-cb-text-inverse/70 hover:bg-black/5 dark:hover:bg-white/5 hover:text-cb-text-inverse"
                     )}
                   >
-                    {item.icon}
-                    {item.label}
+                    <div className={cn(
+                      "flex h-5 w-5 items-center justify-center transition-colors",
+                      isActive ? "text-cb-nav-active-text" : "text-cb-nav-icon group-hover:text-cb-nav-icon/80"
+                    )}>
+                      {item.icon}
+                    </div>
+                    <span className="tracking-tight">{item.label}</span>
+                    {isActive && (
+                      <span className="ml-auto h-1.5 w-1.5 rounded-full bg-cb-primary" />
+                    )}
                   </Link>
                 );
               })}
