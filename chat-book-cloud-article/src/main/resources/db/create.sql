@@ -74,3 +74,18 @@ create table article_info
         foreign key (article_id) references article (id)
 )
     comment '文章详情表' row_format = DYNAMIC;
+
+create table article_review_log
+(
+    id            bigint auto_increment primary key,
+    article_id    int                                    not null comment '文章ID',
+    reviewer_id   int                                    not null comment '审核人ID',
+    reviewer_name varchar(48)  default ''                not null comment '审核人用户名快照',
+    review_action varchar(16)                            not null comment '审核动作 APPROVE/REJECT',
+    review_reason varchar(255) default ''                not null comment '审核原因/备注',
+    batch_id      varchar(64)  default ''                null comment '批量审核批次号',
+    create_time   datetime     default CURRENT_TIMESTAMP not null comment '审核时间',
+    key idx_article_review_article_id (article_id),
+    key idx_article_review_reviewer_id (reviewer_id)
+)
+    comment '文章审核日志表' row_format = DYNAMIC;

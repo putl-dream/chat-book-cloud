@@ -97,8 +97,8 @@ export const dashboardHighlights: HighlightCard[] = [
     status: "stable",
   },
   {
-    title: "审核链路已能读取待审队列",
-    description: "当前可以查询待审核文章，但通过、驳回、批量处理接口尚未补齐。",
+    title: "审核链路已形成基础闭环",
+    description: "管理员已可处理待审核文章的通过、驳回和批量审核，详情字段与审计查询仍待补齐。",
     status: "partial",
   },
   {
@@ -119,8 +119,8 @@ export const dashboardServices: ServiceReadiness[] = [
   {
     service: "chat-book-cloud-article",
     responsibility: "待审核文章队列、标签体系、内容运营入口",
-    currentApi: "/page/adminArticlePage, /tag/page, /tag/list, /tag/*",
-    backendGap: "缺少审核动作、全站内容分页、标签权限收口",
+    currentApi: "/page/adminArticlePage, /article/admin/review/*, /tag/page, /tag/list, /tag/*",
+    backendGap: "待补全站内容分页、详情字段与审核记录查询",
     priority: "high",
   },
   {

@@ -1,9 +1,11 @@
 import { clearAdminSession, readClientToken } from "@/lib/auth";
 import type {
+  ArticleReviewResult,
   AdminTag,
   AdminTagFormValues,
   CommonApiResponse,
   CurrentAdminUser,
+  ReviewAction,
 } from "@/lib/types";
 
 function normalizeApiBase(baseUrl: string) {
@@ -137,4 +139,37 @@ export function updateTag(values: AdminTagFormValues) {
 
 export function deleteTag(tagId: number) {
   return requestBrowser<void>(`/tag/delete?tagId=${tagId}`, { method: "DELETE" }, { redirectOnUnauthorized: true });
+}
+
+export function approveReviewArticle(articleId: number) {
+  return requestBrowser<ArticleReviewResult>(
+    "/article/admin/review/approve",
+    {
+      method: "POST",
+      body: JSON.stringify({ articleId }),
+    },
+    { redirectOnUnauthorized: true }
+  );
+}
+
+export function rejectReviewArticle(articleId: number, reason: string) {
+  return requestBrowser<ArticleReviewResult>(
+    "/article/admin/review/reject",
+    {
+      method: "POST",
+      body: JSON.stringify({ articleId, reason }),
+    },
+    { redirectOnUnauthorized: true }
+  );
+}
+
+export function batchReviewArticles(articleIds: number[], action: ReviewAction, reason?: string) {
+  return requestBrowser<ArticleReviewResult[]>(
+    "/article/admin/review/batch",
+    {
+      method: "POST",
+      body: JSON.stringify({ articleIds, action, reason }),
+    },
+    { redirectOnUnauthorized: true }
+  );
 }

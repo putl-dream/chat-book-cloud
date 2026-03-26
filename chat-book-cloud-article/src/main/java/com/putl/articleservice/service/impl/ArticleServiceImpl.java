@@ -3,14 +3,18 @@ package com.putl.articleservice.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.articleservice.controller.vo.ArticleCommandResult;
+import com.putl.articleservice.controller.vo.ArticleReviewResultVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
+import com.putl.articleservice.enums.ArticleReviewAction;
 import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.exception.ArticleNotFoundException;
 import com.putl.articleservice.exception.BusinessException;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
+import com.putl.articleservice.mapper.ArticleReviewLogMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.mapper.entity.ArticleInfoDO;
+import com.putl.articleservice.mapper.entity.ArticleReviewLogDO;
 import com.putl.articleservice.service.ArticleService;
 import com.putl.articleservice.service.TagService;
 import com.putl.articleservice.utils.PageResult;
@@ -29,7 +33,12 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Set;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -39,6 +48,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
 
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
+    private final ArticleReviewLogMapper articleReviewLogMapper;
     private final InteractionClient interactionClient;
     private final UserClient userClient;
     private final TagService tagService;
@@ -150,6 +160,42 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .id(articleId)
                 .status(status)
                 .build());
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "articleCache", key = "#articleId")
+    public ArticleReviewResultVO approveArticle(Integer articleId) {
+        return reviewArticleInternal(articleId, ArticleReviewAction.APPROVE, null, null);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "articleCache", key = "#articleId")
+    public ArticleReviewResultVO rejectArticle(Integer articleId, String reason) {
+        return reviewArticleInternal(articleId, ArticleReviewAction.REJECT, reason, null);
+    }
+
+    @Override
+    @Transactional
+    @CacheEvict(value = "articleCache", allEntries = true)
+    public List<ArticleReviewResultVO> batchReviewArticles(List<Integer> articleIds, ArticleReviewAction action, String reason) {
+        if (articleIds == null || articleIds.isEmpty()) {
+            throw new BusinessException(400, "待审核文章列表不能为空");
+        }
+        if (action == null) {
+            throw new BusinessException(400, "审核动作不能为空");
+        }
+
+        Set<Integer> deduplicatedIds = new LinkedHashSet<>(articleIds);
+        String batchId = deduplicatedIds.size() > 1 ? UUID.randomUUID().toString() : null;
+        List<ArticleReviewResultVO> results = new ArrayList<>(deduplicatedIds.size());
+
+        for (Integer articleId : deduplicatedIds) {
+            results.add(reviewArticleInternal(articleId, action, reason, batchId));
+        }
+
+        return results;
     }
 
     private ArticleCommandResult upsertArticle(ArticleVO command, ArticleStatus targetStatus) {
@@ -319,5 +365,61 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             throw new IllegalStateException("用户信息未找到，请重新登录");
         }
         return Integer.valueOf(userId);
+    }
+
+    private ArticleReviewResultVO reviewArticleInternal(Integer articleId, ArticleReviewAction action, String reason, String batchId) {
+        ArticleDO articleDO = articleMapper.selectById(articleId);
+        if (articleDO == null || articleDO.getStatus() == ArticleStatus.DELETED) {
+            throw new ArticleNotFoundException(articleId);
+        }
+        if (articleDO.getStatus() != ArticleStatus.PENDING_REVIEW) {
+            throw new BusinessException(409, "文章当前不在待审核状态，无法重复审核");
+        }
+
+        String normalizedReason = normalizeReviewReason(action, reason);
+        Integer reviewerId = currentUserId();
+        String reviewerName = UserContext.getUsername() != null && !UserContext.getUsername().isBlank()
+                ? UserContext.getUsername()
+                : "admin-" + reviewerId;
+        LocalDateTime reviewedAt = LocalDateTime.now();
+        ArticleStatus targetStatus = action == ArticleReviewAction.APPROVE ? ArticleStatus.PUBLISHED : ArticleStatus.DRAFT;
+
+        articleMapper.updateById(ArticleDO.builder()
+                .id(articleId)
+                .status(targetStatus)
+                .updateTime(reviewedAt)
+                .build());
+
+        articleReviewLogMapper.insert(ArticleReviewLogDO.builder()
+                .articleId(articleId)
+                .reviewerId(reviewerId)
+                .reviewerName(reviewerName)
+                .reviewAction(action.name())
+                .reviewReason(normalizedReason)
+                .batchId(batchId)
+                .createTime(reviewedAt)
+                .build());
+
+        log.info("管理员完成文章审核: articleId={}, action={}, reviewerId={}, batchId={}",
+                articleId, action.name(), reviewerId, batchId);
+
+        return ArticleReviewResultVO.builder()
+                .articleId(articleId)
+                .status(targetStatus)
+                .reviewAction(action)
+                .reviewReason(normalizedReason)
+                .reviewerId(reviewerId)
+                .reviewerName(reviewerName)
+                .reviewedAt(reviewedAt)
+                .batchId(batchId)
+                .build();
+    }
+
+    private String normalizeReviewReason(ArticleReviewAction action, String reason) {
+        String normalized = reason == null ? "" : reason.trim();
+        if (action == ArticleReviewAction.REJECT && normalized.isEmpty()) {
+            throw new BusinessException(400, "驳回时必须填写原因");
+        }
+        return normalized;
     }
 }

@@ -1,0 +1,53 @@
+[data-theme="retro"] {
+  /* 复古/极客 (Retro/Cyber): "Sharp & Tech" */
+  --cb-bg-main: #000000;
+  --cb-bg-card: #111111;
+  --cb-bg-sidebar: #0a0a0a;
+
+  /* 文本 (高饱和度荧光色) */
+  --cb-text-primary: #00ff00;
+  --cb-text-secondary: #008800;
+  --cb-text-inverse: #000000;
+
+  /* 边框 (双层描边) */
+  --cb-border-subtle: #00ff00;
+  --cb-border-width: 3px;
+  --cb-border-style: double;
+
+  /* 强调色 */
+  --cb-primary: #00ff00;
+  --cb-primary-hover: #00cc00;
+
+  /* 阴影 */
+  --cb-shadow-card: 4px 4px 0px 0px #00ff00;
+  --cb-shadow-sidebar: 3px 0 0 0 #00ff00;
+  --cb-hover-shadow: 6px 6px 0px 0px #00ff00;
+
+  /* 圆角 (Sharp corners 0) */
+  --cb-radius-base: 0px;
+  --cb-radius-card: 0px;
+  
+  /* 标签页形状 */
+  --cb-tab-radius: 0px;
+  --cb-tab-active-radius: 0px;
+
+  /* 特有变量 */
+  --cb-card-backdrop: none;
+  --cb-sidebar-backdrop: none;
+  --cb-nav-active-bg: rgba(0, 255, 0, 0.1);
+  --cb-nav-active-text: #00ff00;
+  --cb-icon-color: #00ff00;
+  
+  /* 状态色 */
+  --cb-tag-success-bg: rgba(0, 255, 0, 0.2);
+  --cb-tag-success-text: #00ff00;
+  --cb-tag-warning-bg: rgba(255, 255, 0, 0.2);
+  --cb-tag-warning-text: #ffff00;
+  --cb-tag-error-bg: rgba(255, 0, 0, 0.2);
+  --cb-tag-error-text: #ff0000;
+
+  /* 网格纹理背景 */
+  --cb-bg-image: linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px),
+                 linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px);
+  --cb-bg-size: 30px 30px;
+}

@@ -147,6 +147,118 @@ export default function ThemePage() {
             </div>
           </div>
         </Card>
+
+        {/* Theme 4: Playful / Bubble & Ears */}
+        <Card
+          className={cn(
+            "hover:border-cb-primary cursor-pointer transition-all hover:shadow-md",
+            currentTheme === "playful" ? "border-cb-primary ring-cb-primary/20 ring-2" : ""
+          )}
+          onClick={() => setTheme("playful")}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="relative flex h-32 items-center justify-center overflow-hidden rounded-3xl border-2 border-[#ffb6c1] bg-[#fff0f5]">
+              <div className="absolute top-0 bottom-0 left-0 w-1/4 border-r-2 border-[#ffb6c1] bg-white"></div>
+              <div className="z-10 w-3/4 max-w-[200px] rounded-2xl border-2 border-[#ffb6c1] bg-white p-4 shadow-sm">
+                <div className="mb-2 h-2 w-1/2 rounded-full bg-[#ff69b4]"></div>
+                <div className="h-2 w-full rounded-full bg-[#ffe4e1]"></div>
+                <div className="mt-2 h-2 w-3/4 rounded-full bg-[#ffe4e1]"></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-cb-text-primary text-lg font-semibold tracking-tight">
+                  萌系/活泼
+                </h3>
+                {currentTheme === "playful" && (
+                  <span className="rounded-md bg-[#ff69b4]/10 px-2 py-1 text-xs font-semibold text-[#ff69b4]">
+                    当前使用
+                  </span>
+                )}
+              </div>
+              <p className="text-cb-text-secondary mt-1 text-sm">
+                "Bubble & Ears" - 大圆角、加粗的彩色边框、带有“猫耳”形状的标签页。
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Theme 5: Retro / Sharp & Tech */}
+        <Card
+          className={cn(
+            "hover:border-cb-primary cursor-pointer transition-all hover:shadow-md",
+            currentTheme === "retro" ? "border-cb-primary ring-cb-primary/20 ring-2" : ""
+          )}
+          onClick={() => setTheme("retro")}
+        >
+          <div className="flex flex-col gap-4">
+            <div
+              className="relative flex h-32 items-center justify-center overflow-hidden rounded-none border-[3px] border-double border-[#00ff00] bg-black"
+              style={{
+                backgroundImage:
+                  "linear-gradient(rgba(0, 255, 0, 0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0, 255, 0, 0.1) 1px, transparent 1px)",
+                backgroundSize: "15px 15px",
+              }}
+            >
+              <div className="absolute top-0 bottom-0 left-0 w-1/4 border-r-[3px] border-double border-[#00ff00] bg-[#0a0a0a]"></div>
+              <div className="z-10 w-3/4 max-w-[200px] rounded-none border-[3px] border-double border-[#00ff00] bg-[#111111] p-4 shadow-[4px_4px_0_0_#00ff00]">
+                <div className="mb-2 h-2 w-1/2 bg-[#00ff00]"></div>
+                <div className="h-2 w-full bg-[#008800]"></div>
+                <div className="mt-2 h-2 w-3/4 bg-[#008800]"></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-cb-text-primary text-lg font-semibold tracking-tight">
+                  复古/极客
+                </h3>
+                {currentTheme === "retro" && (
+                  <span className="rounded-none bg-[#00ff00]/10 px-2 py-1 text-xs font-semibold text-[#00ff00]">
+                    当前使用
+                  </span>
+                )}
+              </div>
+              <p className="text-cb-text-secondary mt-1 text-sm">
+                "Sharp & Tech" - 0 圆角、双层描边、高饱和度荧光色文字、网格纹理背景。
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Theme 6: Minimal / Soft & Airy */}
+        <Card
+          className={cn(
+            "hover:border-cb-primary cursor-pointer transition-all hover:shadow-md",
+            currentTheme === "minimal" ? "border-cb-primary ring-cb-primary/20 ring-2" : ""
+          )}
+          onClick={() => setTheme("minimal")}
+        >
+          <div className="flex flex-col gap-4">
+            <div className="relative flex h-32 items-center justify-center overflow-hidden rounded border border-[#e5e5e5] bg-[#fafafa]">
+              <div className="absolute top-0 bottom-0 left-0 w-1/4 border-r border-[#e5e5e5] bg-white"></div>
+              <div className="z-10 w-3/4 max-w-[200px] rounded border border-[#e5e5e5] bg-white p-4 shadow-[0_10px_40px_-10px_rgba(0,0,0,0.08)]">
+                <div className="mb-2 h-2 w-1/2 rounded-sm bg-[#171717]"></div>
+                <div className="h-2 w-full rounded-sm bg-[#f5f5f5]"></div>
+                <div className="mt-2 h-2 w-3/4 rounded-sm bg-[#f5f5f5]"></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-cb-text-primary text-lg font-semibold tracking-tight">
+                  商务/优雅
+                </h3>
+                {currentTheme === "minimal" && (
+                  <span className="rounded-md bg-[#f5f5f5] px-2 py-1 text-xs font-semibold text-[#171717]">
+                    当前使用
+                  </span>
+                )}
+              </div>
+              <p className="text-cb-text-secondary mt-1 text-sm">
+                "Soft & Airy" - 极细边框、微小圆角、轻微的悬浮阴影。
+              </p>
+            </div>
+          </div>
+        </Card>
       </div>
     </div>
   );

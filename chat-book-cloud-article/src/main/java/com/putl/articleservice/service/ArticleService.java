@@ -1,9 +1,13 @@
 package com.putl.articleservice.service;
 
 import com.putl.articleservice.controller.vo.ArticleCommandResult;
+import com.putl.articleservice.controller.vo.ArticleReviewResultVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
+import com.putl.articleservice.enums.ArticleReviewAction;
 import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.utils.PageResult;
+
+import java.util.List;
 
 /**
  * 文章基础功能
@@ -33,5 +37,11 @@ public interface ArticleService {
     void deleteArticleBatch(Integer[] articleIds);
 
     void updateArticleStatus(Integer articleId, ArticleStatus status);
+
+    ArticleReviewResultVO approveArticle(Integer articleId);
+
+    ArticleReviewResultVO rejectArticle(Integer articleId, String reason);
+
+    List<ArticleReviewResultVO> batchReviewArticles(List<Integer> articleIds, ArticleReviewAction action, String reason);
 }
 

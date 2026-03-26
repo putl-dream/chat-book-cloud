@@ -15,7 +15,12 @@ export default function RootLayout({
   return (
     <html lang="zh-CN" suppressHydrationWarning>
       <body>
-        <ThemeProvider attribute="data-theme" defaultTheme="linear" enableSystem={false}>
+        <ThemeProvider 
+          attribute="data-theme" 
+          defaultTheme="linear" 
+          enableSystem={false}
+          themes={["linear", "glassmorphism", "charcoal", "playful", "retro", "minimal"]}
+        >
           {children}
         </ThemeProvider>
       </body>

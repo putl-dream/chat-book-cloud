@@ -1,0 +1,50 @@
+[data-theme="minimal"] {
+  /* 商务/优雅 (Minimal): "Soft & Airy" */
+  --cb-bg-main: #fafafa;
+  --cb-bg-card: #ffffff;
+  --cb-bg-sidebar: #ffffff;
+
+  /* 文本 */
+  --cb-text-primary: #171717;
+  --cb-text-secondary: #737373;
+  --cb-text-inverse: #ffffff;
+
+  /* 边框 (极细边框 1px thin) */
+  --cb-border-subtle: #e5e5e5;
+  --cb-border-width: 1px;
+  --cb-border-style: solid;
+
+  /* 强调色 */
+  --cb-primary: #171717;
+  --cb-primary-hover: #404040;
+
+  /* 阴影 */
+  --cb-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
+  --cb-shadow-sidebar: 1px 0 0 0 var(--cb-border-subtle);
+  
+  /* 轻微的悬浮阴影 (Float shadow) */
+  --cb-hover-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
+
+  /* 圆角 (微小的圆角 4px) */
+  --cb-radius-base: 4px;
+  --cb-radius-card: 4px;
+  
+  /* 标签页形状 */
+  --cb-tab-radius: 4px;
+  --cb-tab-active-radius: 4px;
+
+  /* 特有变量 */
+  --cb-card-backdrop: none;
+  --cb-sidebar-backdrop: none;
+  --cb-nav-active-bg: #f5f5f5;
+  --cb-nav-active-text: #171717;
+  --cb-icon-color: #737373;
+  
+  /* 状态色 */
+  --cb-tag-success-bg: #f0fdf4;
+  --cb-tag-success-text: #166534;
+  --cb-tag-warning-bg: #fffbeb;
+  --cb-tag-warning-text: #b45309;
+  --cb-tag-error-bg: #fef2f2;
+  --cb-tag-error-text: #991b1b;
+}
