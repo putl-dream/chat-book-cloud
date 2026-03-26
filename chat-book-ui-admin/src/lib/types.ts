@@ -36,15 +36,35 @@ export type DashboardSnapshot = {
   services: ServiceReadiness[];
 };
 
+export type CommonApiResponse<T> = {
+  code?: number;
+  data?: T;
+  msg?: string;
+};
+
+export type PaginatedResult<T> = {
+  list: T[];
+  total: number;
+  pageNo: number;
+  pageSize: number;
+  totalPages: number;
+};
+
+export type AdminSession = {
+  token: string;
+  user: CurrentAdminUser;
+};
+
 export type AdminUser = {
   id: number;
   userId: number;
   username: string;
   email: string;
-  role: "admin" | "user";
-  profile: string;
-  status: "active" | "draft" | "disabled";
-  createdAt: string;
+  photo?: string | null;
+  role: "admin" | "user" | string;
+  profile?: string | null;
+  status?: "active" | "draft" | "disabled";
+  createdAt?: string;
 };
 
 export type AdminArticle = {
@@ -64,13 +84,37 @@ export type AdminArticle = {
   collectCount: number;
 };
 
+export type ReviewArticle = {
+  id: number;
+  userId: number;
+  title: string;
+  cover?: string | null;
+  summary: string;
+  userName: string;
+  authorAvatar?: string | null;
+  category: number;
+  createdAt: string;
+  praiseCount: number;
+  commentCount: number;
+  viewCount: number;
+  collectCount: number;
+};
+
 export type AdminTag = {
   id: number;
+  name: string;
+  type: 1 | 2 | number;
+  color: string;
+  sort: number;
+  relatedArticles?: number;
+};
+
+export type AdminTagFormValues = {
+  id?: number;
   name: string;
   type: 1 | 2;
   color: string;
   sort: number;
-  relatedArticles: number;
 };
 
 export type InteractionEvent = {
@@ -82,4 +126,20 @@ export type InteractionEvent = {
   scope: string;
   summary: string;
   createdAt: string;
+};
+
+export type CurrentAdminUser = {
+  id: number;
+  userId: number;
+  username: string;
+  email: string;
+  photo?: string | null;
+  profile?: string | null;
+  role: "admin" | "user" | string;
+};
+
+export type AdminCount = {
+  userCount: number;
+  articleCount: number;
+  reviewCount: number;
 };

@@ -1,4 +1,4 @@
-import type { NavGroup } from "@/lib/types";
+import type { HighlightCard, NavGroup, ServiceReadiness } from "@/lib/types";
 
 export const adminNavigation: NavGroup[] = [
   {
@@ -90,8 +90,66 @@ export const actionTypeMap: Record<string, string> = {
   BROWSE: "浏览",
 };
 
+export const dashboardHighlights: HighlightCard[] = [
+  {
+    title: "用户与标签模块可以优先转真实后台",
+    description: "用户统计、分页查询和标签 CRUD 已有现成接口，适合作为第一批真实接入。",
+    status: "stable",
+  },
+  {
+    title: "审核链路已能读取待审队列",
+    description: "当前可以查询待审核文章，但通过、驳回、批量处理接口尚未补齐。",
+    status: "partial",
+  },
+  {
+    title: "互动治理仍停留在监控入口",
+    description: "评论、通知与异常行为仍缺少管理员视角的聚合接口，首页仅保留未接入提示。",
+    status: "gap",
+  },
+];
+
+export const dashboardServices: ServiceReadiness[] = [
+  {
+    service: "chat-book-cloud-user",
+    responsibility: "用户统计、后台分页、管理员身份识别",
+    currentApi: "/user/admin/count, /user/admin/user, /user/bySelf",
+    backendGap: "缺少角色调整、禁用/恢复、操作审计",
+    priority: "high",
+  },
+  {
+    service: "chat-book-cloud-article",
+    responsibility: "待审核文章队列、标签体系、内容运营入口",
+    currentApi: "/page/adminArticlePage, /tag/page, /tag/list, /tag/*",
+    backendGap: "缺少审核动作、全站内容分页、标签权限收口",
+    priority: "high",
+  },
+  {
+    service: "chat-book-cloud-interaction",
+    responsibility: "评论治理、通知抽查、异常行为聚合",
+    currentApi: "仅前台用户视角接口",
+    backendGap: "缺少后台评论分页、屏蔽/删除、告警中心接口",
+    priority: "high",
+  },
+];
+
 export function findCurrentNav(pathname: string) {
   return adminNavigation.flatMap((group) => group.items).find((item) => item.href === pathname);
+}
+
+export function buildBreadcrumbs(pathname: string) {
+  const current = findCurrentNav(pathname);
+
+  if (!current) {
+    return [
+      { href: "/dashboard", label: "后台首页" },
+      { href: pathname, label: "当前页面" },
+    ];
+  }
+
+  return [
+    { href: "/dashboard", label: "后台首页" },
+    { href: current.href, label: current.label },
+  ];
 }
 
 export function getPriorityTone(priority: "high" | "medium" | "low") {
@@ -104,4 +162,12 @@ export function getStatusTone(status: "stable" | "partial" | "gap") {
   if (status === "stable") return "safe";
   if (status === "partial") return "warn";
   return "danger";
+}
+
+export function getRoleLabel(role: string) {
+  return role === "admin" ? "管理员" : "普通用户";
+}
+
+export function getRoleTone(role: string) {
+  return role === "admin" ? "safe" : "neutral";
 }

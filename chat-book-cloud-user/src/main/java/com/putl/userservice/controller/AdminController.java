@@ -6,16 +6,18 @@ import com.putl.userservice.controller.vo.DataCount;
 import com.putl.userservice.controller.vo.UserVO;
 import com.putl.userservice.service.UserService;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
+import fun.amireux.chat.book.framework.mvc.security.annotation.RequireAdmin;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-@Tag(name = "管理员服务")
+@Tag(name = "Admin API")
 @RestController
 @RequiredArgsConstructor
 @RequestMapping("/user/admin")
+@RequireAdmin
 public class AdminController {
 
     private final UserService userService;
@@ -26,7 +28,7 @@ public class AdminController {
         DataCount dataCount = new DataCount();
         dataCount.setUserCount(userService.count());
         dataCount.setArticleCount(articleClient.queryCount());
-        dataCount.setReviewCount(0L); // TODO: 从 interaction-service 获取评论数
+        dataCount.setReviewCount(0L);
         return CommonResult.success(dataCount);
     }
 

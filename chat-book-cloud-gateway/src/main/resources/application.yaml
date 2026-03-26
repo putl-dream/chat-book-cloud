@@ -107,3 +107,16 @@ spring:
             - Path=/api/chat/ws
           filters:
             - StripPrefix=1
+
+authentication:
+  rules:
+    - name: admin-user-api
+      pattern: /api/user/admin/**
+    - name: admin-review-page-api
+      pattern: /api/page/adminArticlePage
+    - name: admin-tag-create-api
+      pattern: /api/tag/create
+    - name: admin-tag-update-api
+      pattern: /api/tag/update
+    - name: admin-tag-delete-api
+      pattern: /api/tag/delete

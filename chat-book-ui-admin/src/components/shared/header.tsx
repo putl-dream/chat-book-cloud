@@ -1,10 +1,15 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
 
-export interface HeaderProps extends React.HTMLAttributes<HTMLHeadElement> {}
+export interface HeaderProps extends React.HTMLAttributes<HTMLElement> {
+  left?: React.ReactNode;
+  right?: React.ReactNode;
+}
 
 export function Header({
   className,
+  left,
+  right,
   children,
   style,
   ...props
@@ -22,13 +27,8 @@ export function Header({
       }}
       {...props}
     >
-      <div className="flex items-center gap-4">
-        {/* Left side (e.g. mobile menu trigger, breadcrumbs) */}
-      </div>
-      <div className="flex items-center gap-4">
-        {/* Right side (e.g. user profile, theme toggle) */}
-        {children}
-      </div>
+      <div className="flex min-w-0 flex-1 items-center gap-4">{left}</div>
+      <div className="flex items-center gap-3">{right ?? children}</div>
     </header>
   );
 }

@@ -14,11 +14,21 @@ import java.io.IOException;
 public class JsonAuthenticationEntryPoint implements AuthenticationEntryPoint {
 
     @Override
-    public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException, ServletException {
+    public void commence(
+            HttpServletRequest request,
+            HttpServletResponse response,
+            AuthenticationException authException
+    ) throws IOException, ServletException {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
         response.setCharacterEncoding("UTF-8");
-        response.getWriter().write("{\"code\":401,\"message\":\"未授权访问: " + authException.getMessage() + "\",\"data\":null}");
+        response.getWriter().write("""
+                {
+                    "code": 401,
+                    "msg":"Unauthorized",
+                    "data": null
+                }
+                """);
         response.getWriter().close();
     }
 }
