@@ -1,4 +1,4 @@
- import { cn } from "@/lib/utils"; // 一个常用的工具函数，用于合并 className
+import { cn } from "@/lib/utils"; // 一个常用的工具函数，用于合并 className
 import React from "react";
 
 interface CardProps extends React.HTMLAttributes<HTMLDivElement> {
@@ -13,6 +13,8 @@ export const Card: React.FC<CardProps> = ({ children, className, style, ...props
         className
       )}
       style={{
+        borderWidth: "var(--cb-border-width, 1px)",
+        borderStyle: "var(--cb-border-style, solid)",
         backdropFilter: "var(--cb-card-backdrop)",
         WebkitBackdropFilter: "var(--cb-card-backdrop)",
         ...style,

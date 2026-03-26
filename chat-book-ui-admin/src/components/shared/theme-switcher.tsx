@@ -1,6 +1,6 @@
 "use client";
 
-import { Monitor, PanelsTopLeft, Sparkles } from "lucide-react";
+import { Monitor, PanelsTopLeft, Sparkles, Smile, Terminal, Wind } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
@@ -9,6 +9,9 @@ const themeOptions = [
   { value: "linear", label: "Linear", icon: PanelsTopLeft },
   { value: "glassmorphism", label: "Glass", icon: Sparkles },
   { value: "charcoal", label: "Charcoal", icon: Monitor },
+  { value: "playful", label: "Playful", icon: Smile },
+  { value: "retro", label: "Retro", icon: Terminal },
+  { value: "minimal", label: "Minimal", icon: Wind },
 ] as const;
 
 export function ThemeSwitcher() {

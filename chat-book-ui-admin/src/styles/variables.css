@@ -1,6 +1,9 @@
 @import "./themes/linear.css";
 @import "./themes/glassmorphism.css";
 @import "./themes/charcoal.css";
+@import "./themes/playful.css";
+@import "./themes/retro.css";
+@import "./themes/minimal.css";
 
 /* ========================================= */
 /* 1. 全局定义 (全局 CSS 变量)          */
@@ -27,6 +30,15 @@
   /* 3. 布局与结构 tokens */
   --cb-radius-base: 8px; /* 基础圆角 (按钮) */
   --cb-spacing-unit: 4px; /* 间距步进基础 */
+
+  /* 新增的通用结构 tokens */
+  --cb-border-width: 1px;
+  --cb-border-style: solid;
+  --cb-bg-image: none;
+  --cb-bg-size: auto;
+  --cb-tab-radius: 9999px;
+  --cb-tab-active-radius: 9999px;
+  --cb-hover-shadow: none;
 
   /* 默认兜底使用 linear 主题的值，确保即使没有 data-theme 属性也有样式 */
   --cb-bg-main: #f8fafc;

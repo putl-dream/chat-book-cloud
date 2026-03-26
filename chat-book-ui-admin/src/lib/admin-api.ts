@@ -74,15 +74,34 @@ function normalizeApiBase(baseUrl: string) {
   return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
 }
 
+function readForwardedValue(value: string | null) {
+  return value?.split(",")[0]?.trim() ?? "";
+}
+
+function normalizeHost(host: string) {
+  return host.replace(/^[a-z]+:\/\//i, "").trim();
+}
+
 async function getServerOrigin() {
   const headerStore = await headers();
-  const host =
-    headerStore.get("x-forwarded-host") ?? headerStore.get("host") ?? "localhost:3000";
+  const host = normalizeHost(
+    readForwardedValue(headerStore.get("x-forwarded-host")) ||
+      readForwardedValue(headerStore.get("host")) ||
+      "localhost:3000"
+  );
+  const forwardedProtocol = readForwardedValue(headerStore.get("x-forwarded-proto"));
   const protocol =
-    headerStore.get("x-forwarded-proto") ??
-    (host.includes("localhost") || host.startsWith("127.0.0.1") ? "http" : "https");
+    forwardedProtocol === "http" || forwardedProtocol === "https"
+      ? forwardedProtocol
+      : host.includes("localhost") || host.startsWith("127.0.0.1") || host.startsWith("[::1]")
+        ? "http"
+        : "https";
 
-  return `${protocol}://${host}`;
+  try {
+    return new URL(`${protocol}://${host}`).origin;
+  } catch {
+    return "http://localhost:3000";
+  }
 }
 
 async function getServerApiBaseUrl() {
@@ -140,11 +159,22 @@ async function requestServer<T>(
     headersInit.set("token", token);
   }
 
-  const response = await fetch(`${apiBaseUrl}${path}`, {
-    ...init,
-    headers: headersInit,
-    cache: "no-store",
-  });
+  let response: Response;
+
+  try {
+    response = await fetch(`${apiBaseUrl}${path}`, {
+      ...init,
+      headers: headersInit,
+      cache: "no-store",
+    });
+  } catch (error) {
+    const message =
+      error instanceof Error && error.message
+        ? `Admin API request failed: ${error.message}`
+        : "Admin API request failed. Please verify the gateway URL and backend availability.";
+
+    throw new AdminApiError(message, 503);
+  }
 
   const body = await parseResponseBody<CommonApiResponse<T> | { msg?: string }>(response);
   const result =

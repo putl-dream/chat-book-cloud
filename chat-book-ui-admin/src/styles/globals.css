@@ -10,6 +10,8 @@
 
   body {
     background-color: var(--cb-bg-main);
+    background-image: var(--cb-bg-image, none);
+    background-size: var(--cb-bg-size, auto);
     color: var(--cb-text-primary);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
@@ -37,8 +39,8 @@
   .page-hero {
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--cb-border-subtle);
-    border-radius: 28px;
+    border: var(--cb-border-width, 1px) var(--cb-border-style, solid) var(--cb-border-subtle);
+    border-radius: var(--cb-radius-card, 28px);
     padding: 32px;
     background:
       radial-gradient(circle at top right, rgb(15 118 110 / 10%), transparent 30%),
@@ -88,12 +90,20 @@
   .panel,
   .state-panel,
   .login-panel {
-    border: 1px solid var(--cb-border-subtle);
-    border-radius: 24px;
+    border: var(--cb-border-width, 1px) var(--cb-border-style, solid) var(--cb-border-subtle);
+    border-radius: var(--cb-radius-card, 24px);
     background: color-mix(in srgb, var(--cb-bg-card) 90%, transparent);
     box-shadow: var(--cb-shadow-card);
     backdrop-filter: var(--cb-card-backdrop);
     -webkit-backdrop-filter: var(--cb-card-backdrop);
+    transition:
+      box-shadow 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  .metric-card:hover,
+  .panel:hover {
+    box-shadow: var(--cb-hover-shadow, var(--cb-shadow-card));
   }
 
   .metric-card {
@@ -203,20 +213,23 @@
   }
 
   .field input,
-  .field select {
-    @apply rounded-2xl border px-4 py-3 text-sm outline-none transition;
+  .field select,
+  .field textarea {
+    @apply rounded-2xl border px-4 py-3 text-sm transition outline-none;
     border-color: var(--cb-border-subtle);
     background: color-mix(in srgb, var(--cb-bg-card) 92%, transparent);
   }
 
   .field input:focus,
-  .field select:focus {
+  .field select:focus,
+  .field textarea:focus {
     border-color: var(--cb-primary);
     box-shadow: 0 0 0 3px rgb(15 23 42 / 0.08);
   }
 
   .field input:disabled,
-  .field select:disabled {
+  .field select:disabled,
+  .field textarea:disabled {
     @apply cursor-not-allowed opacity-65;
   }
 
@@ -297,6 +310,20 @@
     @apply flex flex-wrap items-center justify-between gap-3;
   }
 
+  .review-card-actions,
+  .review-bulk-bar {
+    @apply mt-4 flex flex-wrap items-center justify-between gap-3;
+  }
+
+  .review-select-toggle {
+    @apply inline-flex items-center gap-2 text-sm;
+    color: var(--cb-text-secondary);
+  }
+
+  .review-select-toggle input {
+    accent-color: var(--cb-primary);
+  }
+
   .chip-row {
     @apply mt-4 flex flex-wrap gap-2;
   }
@@ -359,15 +386,18 @@
     @apply hidden rounded-full border p-1 lg:flex;
     border-color: var(--cb-border-subtle);
     background: color-mix(in srgb, var(--cb-bg-card) 82%, transparent);
+    border-radius: var(--cb-radius-card, 9999px);
   }
 
   .header-segment-button {
-    @apply inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium text-cb-text-secondary transition;
+    @apply text-cb-text-secondary inline-flex items-center gap-2 rounded-full px-3 py-2 text-xs font-medium transition;
+    border-radius: var(--cb-tab-radius, 9999px);
   }
 
   .header-segment-button.is-active {
     background: var(--cb-primary);
     color: white;
+    border-radius: var(--cb-tab-active-radius, var(--cb-tab-radius, 9999px));
   }
 
   .header-profile {
@@ -402,8 +432,8 @@
   .login-showcase {
     position: relative;
     overflow: hidden;
-    border: 1px solid var(--cb-border-subtle);
-    border-radius: 32px;
+    border: var(--cb-border-width, 1px) var(--cb-border-style, solid) var(--cb-border-subtle);
+    border-radius: var(--cb-radius-card, 32px);
     padding: 32px;
     background:
       radial-gradient(circle at top left, rgb(14 165 233 / 14%), transparent 36%),
@@ -501,13 +531,12 @@
 
   .skeleton-block {
     @apply animate-pulse;
-    background:
-      linear-gradient(
-        90deg,
-        rgb(148 163 184 / 0.12) 0%,
-        rgb(148 163 184 / 0.2) 50%,
-        rgb(148 163 184 / 0.12) 100%
-      );
+    background: linear-gradient(
+      90deg,
+      rgb(148 163 184 / 0.12) 0%,
+      rgb(148 163 184 / 0.2) 50%,
+      rgb(148 163 184 / 0.12) 100%
+    );
   }
 }
 

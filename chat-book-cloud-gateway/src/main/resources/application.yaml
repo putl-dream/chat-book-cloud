@@ -114,6 +114,8 @@ authentication:
       pattern: /api/user/admin/**
     - name: admin-review-page-api
       pattern: /api/page/adminArticlePage
+    - name: admin-article-review-action-api
+      pattern: /api/article/admin/**
     - name: admin-tag-create-api
       pattern: /api/tag/create
     - name: admin-tag-update-api

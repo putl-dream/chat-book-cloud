@@ -84,6 +84,19 @@ export type AdminArticle = {
   collectCount: number;
 };
 
+export type ReviewAction = "APPROVE" | "REJECT";
+
+export type ArticleReviewResult = {
+  articleId: number;
+  status: number;
+  reviewAction: ReviewAction;
+  reviewReason?: string | null;
+  reviewerId: number;
+  reviewerName: string;
+  reviewedAt: string;
+  batchId?: string | null;
+};
+
 export type ReviewArticle = {
   id: number;
   userId: number;

@@ -20,7 +20,9 @@ export function AdminShell({
 }>) {
   const pathname = usePathname();
   const currentNav = findCurrentNav(pathname);
-  const breadcrumbs = buildBreadcrumbs(pathname);
+  const breadcrumbs = buildBreadcrumbs(pathname).filter(
+    (item, index, items) => index === 0 || item.href !== items[index - 1]?.href
+  );
 
   const sidebarGroups = adminNavigation.map((group) => ({
     title: group.title,
@@ -42,7 +44,7 @@ export function AdminShell({
               <p className="header-kicker">Admin Control Plane</p>
               <div className="breadcrumb-row">
                 {breadcrumbs.map((item, index) => (
-                  <React.Fragment key={item.href}>
+                  <React.Fragment key={`${item.href}-${index}`}>
                     {index > 0 ? <ChevronRight className="h-3.5 w-3.5 opacity-40" /> : null}
                     <span className={index === breadcrumbs.length - 1 ? "is-current" : ""}>
                       {item.label}
