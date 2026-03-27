@@ -2,7 +2,7 @@
   <div class="bg-cb-bg-main min-h-screen w-full">
     <aside class="admin-sidebar px-4 py-6">
       <div class="flex items-center px-2">
-        <h1 class="text-cb-primary text-xl font-semibold tracking-tight">Admin Console</h1>
+        <h1 class="text-cb-primary text-xl font-semibold tracking-tight">Admin Control Plane</h1>
       </div>
 
       <nav class="mt-6 flex flex-1 flex-col gap-6 overflow-y-auto">

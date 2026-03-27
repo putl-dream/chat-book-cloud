@@ -1,6 +1,7 @@
 import { dashboardHighlights, dashboardServices } from "@/data/admin-config";
 import { contentArticles, interactionEvents } from "@/data/mock-data";
-import { clearAdminSession, readClientToken } from "@/services/auth";
+import { clearAdminSession, readAccessToken, readRefreshToken, saveAdminSession } from "@/services/auth";
+import type { LoginVO } from "@/services/auth";
 import type {
   AdminArticle,
   AdminCount,
@@ -107,14 +108,61 @@ export class BrowserApiError extends Error {
   }
 }
 
+// ==================== Token 刷新状态 ====================
+let isRefreshing = false;
+let refreshingPromise: Promise<boolean> | null = null;
+
+/**
+ * 尝试刷新 Token，成功返回 true
+ */
+async function tryRefreshToken(): Promise<boolean> {
+  if (isRefreshing && refreshingPromise) {
+    return refreshingPromise;
+  }
+
+  const refreshToken = readRefreshToken();
+  if (!refreshToken) {
+    return false;
+  }
+
+  isRefreshing = true;
+
+  refreshingPromise = (async () => {
+    try {
+      const response = await fetch(
+        `${getBrowserApiBaseUrl()}/auth/account/refresh`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ refreshToken }),
+        }
+      );
+      const body = await parseResponseBody<CommonApiResponse<LoginVO> | { msg?: string }>(response);
+      const data = body && typeof body === 'object' && 'data' in body ? (body as CommonApiResponse<LoginVO>).data : null;
+      if (data?.accessToken) {
+        saveAdminSession(data);
+        return true;
+      }
+      return false;
+    } catch {
+      return false;
+    } finally {
+      isRefreshing = false;
+      refreshingPromise = null;
+    }
+  })();
+
+  return refreshingPromise;
+}
+
 async function requestBrowser<T>(
   path: string,
   init?: RequestInit,
-  options?: { auth?: boolean; redirectOnUnauthorized?: boolean }
-) {
+  options?: { auth?: boolean; redirectOnUnauthorized?: boolean; _retryCount?: number }
+): Promise<T> {
   const authEnabled = options?.auth ?? true;
   const redirectOnUnauthorized = options?.redirectOnUnauthorized ?? true;
-  const token = readClientToken();
+  const token = readAccessToken();
   const headers = new Headers(init?.headers);
 
   if (!headers.has("Content-Type") && init?.body) {
@@ -144,13 +192,24 @@ async function requestBrowser<T>(
       result.code
     );
 
-    if ((error.status === 401 || error.status === 403) && redirectOnUnauthorized) {
-      clearAdminSession();
-
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
-        const reason = error.status === 403 ? "forbidden" : "session-expired";
-        window.location.href = error.status === 403 ? "/forbidden" : `/login?reason=${reason}`;
+    if (error.status === 401 && redirectOnUnauthorized) {
+      const refreshed = await tryRefreshToken();
+      if (refreshed && (options?._retryCount ?? 0) === 0) {
+        // 刷新成功，重试原请求（最多一次）
+        return requestBrowser(path, init, { ...options, _retryCount: (options?._retryCount ?? 0) + 1 });
       }
+      clearAdminSession();
+      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+        window.location.href = `/login?reason=session-expired`;
+      }
+      throw error;
+    }
+
+    if (error.status === 403 && redirectOnUnauthorized) {
+      if (typeof window !== "undefined" && window.location.pathname !== "/forbidden") {
+        window.location.href = "/forbidden";
+      }
+      throw error;
     }
 
     throw error;
@@ -209,7 +268,7 @@ function mapReviewArticle(article: BackendReviewArticle): ReviewArticle {
 }
 
 export function loginAdmin(username: string, password: string) {
-  return requestBrowser<string>(
+  return requestBrowser<LoginVO>(
     "/auth/account/login",
     {
       method: "POST",

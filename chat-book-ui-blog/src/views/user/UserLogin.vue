@@ -217,17 +217,17 @@ const handleGoogleLogin = () => oauthLogin('google');
 const handleGithubLogin = () => oauthLogin('github');
 
 // Handle OAuth callback - check for token in URL
+import { setTokens } from '@/utils/token.js';
 onMounted(() => {
     const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('token');
+    const accessToken = urlParams.get('accessToken');
+    const refreshToken = urlParams.get('refreshToken');
     const error = urlParams.get('error');
 
-    if (token) {
-        // Store token and redirect to home
-        localStorage.setItem('token', token);
+    if (accessToken && refreshToken) {
+        setTokens({ accessToken, refreshToken });
         window.location.href = '/';
     } else if (error) {
-        // Handle OAuth error
         console.error('OAuth login failed:', error);
         ElMessage.error('第三方登录失败: ' + error);
     }

@@ -2,6 +2,11 @@ package com.putl.articleservice.api;
 
 import com.putl.articleservice.api.dto.ArticleListVO;
 import com.putl.articleservice.api.dto.ArticleVO;
+import com.putl.articleservice.api.dto.CreateDraftRequest;
+import com.putl.articleservice.api.dto.CreateDraftResponse;
+import com.putl.articleservice.api.dto.CreateDraftVersionRequest;
+import com.putl.articleservice.api.dto.DraftDetailDTO;
+import com.putl.articleservice.api.dto.DraftVersionAdoptRequest;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -24,4 +29,16 @@ public interface ArticleClient {
 
     @PostMapping(USER_SERVICE_URL + "queryCount")
     Long queryCount();
+
+    @PostMapping("/draft/internal/create")
+    CommonResult<CreateDraftResponse> createDraft(@RequestBody CreateDraftRequest request);
+
+    @PostMapping("/draft/internal/version/create")
+    CommonResult<CreateDraftResponse> createDraftVersion(@RequestBody CreateDraftVersionRequest request);
+
+    @GetMapping("/draft/internal/detail")
+    CommonResult<DraftDetailDTO> getDraftDetail(@RequestParam("draftId") Integer draftId);
+
+    @PostMapping("/draft/internal/version/adopt")
+    CommonResult<Void> adoptDraftVersion(@RequestBody DraftVersionAdoptRequest request);
 }

@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
-import { clearAdminSession, readClientToken, saveAdminSession } from "@/services/auth";
+import { revokeAndClearSession, saveAdminSession, readAccessToken } from "@/services/auth";
+import type { LoginVO } from "@/services/auth";
 import { BrowserApiError, getCurrentAdminUser, loginAdmin } from "@/services/admin-api";
 import type { CurrentAdminUser } from "@/types/admin";
 
@@ -16,7 +17,7 @@ export const useAuthStore = defineStore("auth", {
   },
   actions: {
     hydrateToken() {
-      this.token = readClientToken() ?? "";
+      this.token = readAccessToken() ?? "";
     },
     async ensureSession(force = false) {
       if (!force && this.user && this.token) {
@@ -44,7 +45,7 @@ export const useAuthStore = defineStore("auth", {
         this.initialized = true;
         return user;
       } catch (error) {
-        clearAdminSession();
+        revokeAndClearSession();
         this.token = "";
         this.user = null;
         this.initialized = true;
@@ -54,9 +55,9 @@ export const useAuthStore = defineStore("auth", {
       }
     },
     async login(username: string, password: string) {
-      const token = await loginAdmin(username, password);
-      saveAdminSession(token);
-      this.token = token;
+      const loginVO: LoginVO = await loginAdmin(username, password);
+      saveAdminSession(loginVO);
+      this.token = loginVO.accessToken;
 
       try {
         const user = await getCurrentAdminUser({ redirectOnUnauthorized: false });
@@ -69,14 +70,14 @@ export const useAuthStore = defineStore("auth", {
         this.initialized = true;
         return user;
       } catch (error) {
-        clearAdminSession();
+        revokeAndClearSession();
         this.token = "";
         this.user = null;
         throw error;
       }
     },
-    logout() {
-      clearAdminSession();
+    async logout() {
+      await revokeAndClearSession();
       this.token = "";
       this.user = null;
       this.initialized = true;
