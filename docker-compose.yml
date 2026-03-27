@@ -121,6 +121,26 @@ services:
     networks:
       - chat-book-net
 
+  agent:
+    image: chat-book-cloud-agent:local
+    container_name: agent
+    restart: always
+    build: ./chat-book-cloud-agent
+    ports:
+      - "8087:8087"
+    environment:
+      SPRING_PROFILES_ACTIVE: local
+      NACOS_SERVER_ADDR: nacos:8848
+      MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+    depends_on:
+      - mysql
+      - redis
+    networks:
+      - chat-book-net
+
   # --- 8. 用户服务 ---
   user:
     image: chat-book-cloud-user:local

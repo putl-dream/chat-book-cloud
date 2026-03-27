@@ -6,4 +6,4 @@ spring:
     active: ${SPRING_PROFILES_ACTIVE:local}
 
 server:
-  port: 8086
+  port: 8087
