@@ -43,6 +43,7 @@
         <easyexcel.version>3.3.3</easyexcel.version>
         <!-- AI 模型集成 -->
         <langchain4j.version>0.31.0</langchain4j.version>
+        <anthropic.java.version>2.15.0</anthropic.java.version>
         <mybatis-plus.version>3.5.7</mybatis-plus.version>
         <mybatis.version>3.0.3</mybatis.version>
         <jsoup.version>1.15.3</jsoup.version>
@@ -257,6 +258,12 @@
                 <groupId>dev.langchain4j</groupId>
                 <artifactId>langchain4j-open-ai</artifactId>
                 <version>${langchain4j.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>com.anthropic</groupId>
+                <artifactId>anthropic-java</artifactId>
+                <version>${anthropic.java.version}</version>
             </dependency>
 
             <dependency>

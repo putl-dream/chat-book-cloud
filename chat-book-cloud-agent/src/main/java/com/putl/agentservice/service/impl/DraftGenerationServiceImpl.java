@@ -1,0 +1,69 @@
+package com.putl.agentservice.service.impl;
+
+import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.mapper.AgentMessageMapper;
+import com.putl.agentservice.mapper.AgentSessionMapper;
+import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.mapper.entity.AgentSessionDO;
+import com.putl.agentservice.model.dto.GenerateDraftRequest;
+import com.putl.agentservice.model.vo.ArticleDraftResult;
+import com.putl.agentservice.model.vo.DraftGenerateResponse;
+import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.service.DraftGenerationService;
+import com.putl.articleservice.api.ArticleClient;
+import com.putl.articleservice.api.dto.CreateDraftRequest;
+import com.putl.articleservice.api.dto.CreateDraftResponse;
+import fun.amireux.chat.book.framework.common.utils.JsonUtil;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class DraftGenerationServiceImpl implements DraftGenerationService {
+
+    private final AgentSessionMapper agentSessionMapper;
+    private final AgentMessageMapper agentMessageMapper;
+    private final ArticleAiGateway articleAiGateway;
+    private final ArticleClient articleClient;
+
+    public DraftGenerationServiceImpl(AgentSessionMapper agentSessionMapper,
+                                      AgentMessageMapper agentMessageMapper,
+                                      ArticleAiGateway articleAiGateway,
+                                      ArticleClient articleClient) {
+        this.agentSessionMapper = agentSessionMapper;
+        this.agentMessageMapper = agentMessageMapper;
+        this.articleAiGateway = articleAiGateway;
+        this.articleClient = articleClient;
+    }
+
+    @Override
+    public DraftGenerateResponse generateDraft(GenerateDraftRequest request) {
+        AgentSessionDO session = agentSessionMapper.selectById(request.getSessionId());
+        List<AgentMessageDO> messages = agentMessageMapper.selectList(Wrappers.<AgentMessageDO>lambdaQuery()
+                .eq(AgentMessageDO::getSessionId, request.getSessionId())
+                .orderByAsc(AgentMessageDO::getId));
+        NotebookSummary notebook = JsonUtil.parseObject(session.getNotebookSummary(), NotebookSummary.class);
+        ArticleDraftResult result = articleAiGateway.generateDraft(messages, notebook);
+
+        CreateDraftRequest createDraftRequest = new CreateDraftRequest();
+        createDraftRequest.setUserId(session.getUserId());
+        createDraftRequest.setSourceSessionId(session.getId());
+        createDraftRequest.setTitle(result.getTitle());
+        createDraftRequest.setSummary(result.getSummary());
+        createDraftRequest.setContent(result.getContent());
+        createDraftRequest.setSourceType("CREATE");
+        createDraftRequest.setInstruction("Generate draft from agent session");
+
+        CreateDraftResponse response = articleClient.createDraft(createDraftRequest).getData();
+        agentSessionMapper.updateById(AgentSessionDO.builder()
+                .id(session.getId())
+                .targetDraftId(response.getDraftId())
+                .build());
+
+        return DraftGenerateResponse.builder()
+                .draftId(response.getDraftId())
+                .versionNo(response.getVersionNo())
+                .build();
+    }
+}

@@ -1,0 +1,34 @@
+spring:
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:10.0.0.2}:${MYSQL_PORT:3306}/chat_book_agent?useUnicode=true&characterEncoding=utf-8&useSSL=false&serverTimezone=Asia/Shanghai
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: ${MYSQL_USERNAME:root}
+    password: ${MYSQL_PASSWORD:root}
+
+  data:
+    redis:
+      host: ${REDIS_HOST:10.0.0.2}
+      port: ${REDIS_PORT:6379}
+      password: ${REDIS_PASSWORD:}
+
+agent:
+  ai:
+    provider: anthropic
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      base-url: ${ANTHROPIC_BASE_URL:https://api.anthropic.com}
+      timeout-ms: ${ANTHROPIC_TIMEOUT_MS:30000}
+      model:
+        chat: ${ANTHROPIC_CHAT_MODEL:claude-sonnet-4-5}
+        generate: ${ANTHROPIC_GENERATE_MODEL:claude-sonnet-4-5}
+        optimize: ${ANTHROPIC_OPTIMIZE_MODEL:claude-sonnet-4-5}
+        notebook: ${ANTHROPIC_NOTEBOOK_MODEL:claude-sonnet-4-5}
+      max-tokens:
+        chat: ${ANTHROPIC_CHAT_MAX_TOKENS:2048}
+        generate: ${ANTHROPIC_GENERATE_MAX_TOKENS:4096}
+        optimize: ${ANTHROPIC_OPTIMIZE_MAX_TOKENS:4096}
+        notebook: ${ANTHROPIC_NOTEBOOK_MAX_TOKENS:2048}
+
+logging:
+  level:
+    com.putl.agentservice: info
