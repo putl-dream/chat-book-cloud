@@ -19,5 +19,5 @@
     "types": ["vite/client"]
   },
   "include": ["env.d.ts", "vite.config.ts", "tailwind.config.ts", "src/**/*.ts", "src/**/*.d.ts", "src/**/*.vue"],
-  "exclude": ["node_modules", "dist", ".next", "middleware.ts", "src/app/**/*", "src/components/**/*.tsx", "src/lib/**/*"]
+  "exclude": ["node_modules", "dist"]
 }
