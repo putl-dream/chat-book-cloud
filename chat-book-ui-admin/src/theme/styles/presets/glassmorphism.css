@@ -1,0 +1,39 @@
+[data-theme="glassmorphism"] {
+  --cb-bg-main: linear-gradient(135deg, #f3e7e9 0%, #e3eeff 99%, #e3eeff 100%);
+  --cb-bg-card: rgba(255, 255, 255, 0.7);
+  --cb-bg-sidebar: rgba(255, 255, 255, 0.4);
+  --cb-text-primary: #1e293b;
+  --cb-text-secondary: #64748b;
+  --cb-text-inverse: #1e293b;
+  --cb-border-subtle: rgba(255, 255, 255, 0.5);
+  --cb-primary: #8b5cf6;
+  --cb-primary-hover: #7c3aed;
+  --cb-shadow-card: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+  --cb-shadow-sidebar: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
+  --cb-radius-base: 12px;
+  --cb-radius-card: 20px;
+  --cb-card-backdrop: blur(16px);
+  --cb-sidebar-backdrop: blur(16px);
+  --cb-nav-active-bg: linear-gradient(
+    90deg,
+    rgba(139, 92, 246, 0.1) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  --cb-nav-active-text: #8b5cf6;
+  --cb-icon-color: #8b5cf6;
+  --cb-panel-surface: rgba(255, 255, 255, 0.58);
+  --cb-control-surface: rgba(255, 255, 255, 0.62);
+  --cb-field-surface: rgba(255, 255, 255, 0.68);
+  --cb-header-surface: rgba(255, 255, 255, 0.55);
+  --cb-chip-surface: rgba(255, 255, 255, 0.52);
+  --cb-showcase-badge-surface: rgba(255, 255, 255, 0.58);
+  --cb-showcase-card-surface: rgba(255, 255, 255, 0.54);
+  --cb-dialog-surface: rgba(255, 255, 255, 0.72);
+  --cb-page-hero-background:
+    radial-gradient(circle at top right, rgb(139 92 246 / 18%), transparent 34%),
+    linear-gradient(135deg, rgb(255 255 255 / 80%), rgb(227 238 255 / 62%));
+  --cb-showcase-background:
+    radial-gradient(circle at top left, rgb(139 92 246 / 18%), transparent 36%),
+    radial-gradient(circle at bottom right, rgb(59 130 246 / 16%), transparent 28%),
+    linear-gradient(135deg, rgb(255 255 255 / 78%), rgb(243 231 233 / 56%));
+}

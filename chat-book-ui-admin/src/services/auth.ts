@@ -1,6 +1,5 @@
 export const ADMIN_SESSION_COOKIE = "chat_book_admin_token";
 export const ADMIN_SESSION_STORAGE_KEY = "chat_book_admin_token";
-export const ADMIN_THEME_STORAGE_KEY = "chat_book_admin_theme";
 export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 export function normalizeNextPath(nextPath?: string | null) {

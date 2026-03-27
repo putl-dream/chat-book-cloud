@@ -1,0 +1,39 @@
+[data-theme="charcoal"] {
+  --cb-bg-main: #0a0a0a;
+  --cb-bg-card: #171717;
+  --cb-bg-sidebar: #121212;
+  --cb-text-primary: #ededed;
+  --cb-text-secondary: #a1a1aa;
+  --cb-text-inverse: #ededed;
+  --cb-border-subtle: #2d2d30;
+  --cb-primary: #ededed;
+  --cb-primary-hover: #ffffff;
+  --cb-shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
+  --cb-shadow-sidebar: 4px 0 24px rgba(0, 0, 0, 0.8);
+  --cb-radius-base: 8px;
+  --cb-radius-card: 16px;
+  --cb-card-backdrop: none;
+  --cb-sidebar-backdrop: blur(12px);
+  --cb-nav-active-bg: #27272a;
+  --cb-nav-active-text: #ffffff;
+  --cb-icon-color: #818cf8;
+  --cb-panel-surface: color-mix(in srgb, var(--cb-bg-card) 96%, transparent);
+  --cb-control-surface: rgb(23 23 23 / 92%);
+  --cb-control-hover-surface: rgb(39 39 42 / 96%);
+  --cb-field-surface: rgb(23 23 23 / 94%);
+  --cb-chip-surface: rgb(23 23 23 / 88%);
+  --cb-subtle-surface: rgb(39 39 42 / 78%);
+  --cb-state-neutral-surface: rgb(23 23 23 / 92%);
+  --cb-header-surface: rgb(18 18 18 / 90%);
+  --cb-page-hero-background:
+    radial-gradient(circle at top right, rgb(99 102 241 / 16%), transparent 28%),
+    linear-gradient(135deg, rgb(24 24 27 / 96%), rgb(10 10 10 / 98%));
+  --cb-showcase-background:
+    radial-gradient(circle at top left, rgb(99 102 241 / 14%), transparent 34%),
+    radial-gradient(circle at bottom right, rgb(255 255 255 / 5%), transparent 24%),
+    linear-gradient(135deg, rgb(24 24 27 / 96%), rgb(10 10 10 / 99%));
+  --cb-showcase-badge-surface: rgb(23 23 23 / 90%);
+  --cb-showcase-card-surface: rgb(23 23 23 / 94%);
+  --cb-dialog-surface: rgb(18 18 18 / 96%);
+  --cb-dialog-backdrop: rgb(0 0 0 / 0.5);
+}

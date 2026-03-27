@@ -1,0 +1,13 @@
+:root {
+  --cb-bg-main: #f8fafc;
+  --cb-bg-card: #ffffff;
+  --cb-bg-sidebar: #ffffff;
+  --cb-text-primary: #0f172a;
+  --cb-text-secondary: #475569;
+  --cb-text-inverse: #ffffff;
+  --cb-primary: #0f172a;
+  --cb-primary-hover: #334155;
+  --cb-icon-color: #64748b;
+  --cb-bg-image: none;
+  --cb-bg-size: auto;
+}

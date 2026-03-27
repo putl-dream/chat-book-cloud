@@ -1,18 +1,6 @@
 import { defineStore } from "pinia";
-import { themeOptions } from "@/data/admin-config";
-import { ADMIN_THEME_STORAGE_KEY } from "@/services/auth";
-
-type ThemeName = (typeof themeOptions)[number]["value"];
-
-const DEFAULT_THEME: ThemeName = "linear";
-
-function applyTheme(theme: ThemeName) {
-  if (typeof document === "undefined") {
-    return;
-  }
-
-  document.documentElement.setAttribute("data-theme", theme);
-}
+import { DEFAULT_THEME, themeOptions, type ThemeName } from "@/theme/config";
+import { applyTheme, persistTheme, resolveStoredTheme } from "@/theme/dom";
 
 export const useThemeStore = defineStore("theme", {
   state: () => ({
@@ -23,26 +11,13 @@ export const useThemeStore = defineStore("theme", {
   },
   actions: {
     initialize() {
-      if (typeof window === "undefined") {
-        return;
-      }
-
-      const savedTheme = window.localStorage.getItem(ADMIN_THEME_STORAGE_KEY) as ThemeName | null;
-      const nextTheme =
-        savedTheme && themeOptions.some((option) => option.value === savedTheme)
-          ? savedTheme
-          : DEFAULT_THEME;
-
+      const nextTheme = resolveStoredTheme();
       this.currentTheme = nextTheme;
       applyTheme(nextTheme);
     },
     setTheme(theme: ThemeName) {
       this.currentTheme = theme;
-
-      if (typeof window !== "undefined") {
-        window.localStorage.setItem(ADMIN_THEME_STORAGE_KEY, theme);
-      }
-
+      persistTheme(theme);
       applyTheme(theme);
     },
   },

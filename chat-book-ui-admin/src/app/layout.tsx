@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/components/theme-provider";
-import "@/styles/globals.css";
+import "@/styles/index.css";
 
 export const metadata: Metadata = {
   title: "Chat Book Cloud Admin",

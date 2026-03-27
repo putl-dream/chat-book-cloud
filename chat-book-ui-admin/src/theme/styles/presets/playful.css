@@ -1,0 +1,47 @@
+[data-theme="playful"] {
+  --cb-bg-main: #fff0f5;
+  --cb-bg-card: #fffafc;
+  --cb-bg-sidebar: #ffe8f0;
+  --cb-text-primary: #333333;
+  --cb-text-secondary: #666666;
+  --cb-text-inverse: #4a2132;
+  --cb-border-subtle: #ffb6c1;
+  --cb-border-width: 2px;
+  --cb-border-style: solid;
+  --cb-primary: #ff69b4;
+  --cb-primary-hover: #ff1493;
+  --cb-shadow-card: 0 8px 24px rgba(255, 105, 180, 0.15);
+  --cb-shadow-sidebar: 2px 0 12px rgba(255, 105, 180, 0.12);
+  --cb-hover-shadow: 0 12px 32px rgba(255, 105, 180, 0.25);
+  --cb-radius-base: 24px;
+  --cb-radius-card: 32px;
+  --cb-tab-radius: 12px;
+  --cb-tab-active-radius: 16px 16px 4px 4px;
+  --cb-card-backdrop: none;
+  --cb-sidebar-backdrop: none;
+  --cb-nav-active-bg: #ffd1dc;
+  --cb-nav-active-text: #ff1493;
+  --cb-icon-color: #ff69b4;
+  --cb-tag-success-bg: #d1fae5;
+  --cb-tag-success-text: #059669;
+  --cb-tag-warning-bg: #fef3c7;
+  --cb-tag-warning-text: #d97706;
+  --cb-tag-error-bg: #fee2e2;
+  --cb-tag-error-text: #dc2626;
+  --cb-panel-surface: rgb(255 250 252 / 92%);
+  --cb-control-surface: rgb(255 255 255 / 86%);
+  --cb-control-hover-surface: rgb(255 209 220 / 78%);
+  --cb-field-surface: rgb(255 250 252 / 96%);
+  --cb-chip-surface: rgb(255 255 255 / 84%);
+  --cb-header-surface: rgb(255 250 252 / 88%);
+  --cb-page-hero-background:
+    radial-gradient(circle at top right, rgb(255 105 180 / 18%), transparent 32%),
+    linear-gradient(135deg, rgb(255 250 252 / 96%), rgb(255 232 240 / 92%));
+  --cb-showcase-background:
+    radial-gradient(circle at top left, rgb(255 105 180 / 18%), transparent 32%),
+    radial-gradient(circle at bottom right, rgb(255 182 193 / 22%), transparent 24%),
+    linear-gradient(135deg, rgb(255 250 252 / 96%), rgb(255 232 240 / 92%));
+  --cb-showcase-badge-surface: rgb(255 255 255 / 88%);
+  --cb-showcase-card-surface: rgb(255 250 252 / 86%);
+  --cb-dialog-surface: rgb(255 250 252 / 96%);
+}

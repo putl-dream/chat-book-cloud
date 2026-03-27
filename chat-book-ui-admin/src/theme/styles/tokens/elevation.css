@@ -1,0 +1,7 @@
+:root {
+  --cb-shadow-card: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --cb-shadow-sidebar: 1px 0 0 0 var(--cb-border-subtle);
+  --cb-hover-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --cb-sidebar-backdrop: none;
+  --cb-card-backdrop: none;
+}

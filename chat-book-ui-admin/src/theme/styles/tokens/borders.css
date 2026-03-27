@@ -1,0 +1,9 @@
+:root {
+  --cb-border-subtle: #e2e8f0;
+  --cb-border-width: 1px;
+  --cb-border-style: solid;
+  --cb-radius-base: 8px;
+  --cb-radius-card: 16px;
+  --cb-tab-radius: 9999px;
+  --cb-tab-active-radius: var(--cb-tab-radius);
+}

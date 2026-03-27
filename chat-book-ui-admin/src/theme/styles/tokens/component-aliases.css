@@ -1,0 +1,28 @@
+:root {
+  --cb-nav-active-bg: #f1f5f9;
+  --cb-nav-active-text: var(--cb-primary);
+  --cb-nav-icon: var(--cb-icon-color);
+  --cb-menu-item-transition: all 0.2s ease;
+
+  --cb-page-hero-background:
+    radial-gradient(circle at top right, rgb(15 118 110 / 10%), transparent 30%),
+    linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(248 250 252 / 92%));
+  --cb-panel-surface: color-mix(in srgb, var(--cb-bg-card) 90%, transparent);
+  --cb-control-surface: rgb(255 255 255 / 72%);
+  --cb-control-hover-surface: rgb(15 23 42 / 0.06);
+  --cb-section-surface: color-mix(in srgb, var(--cb-bg-main) 55%, transparent);
+  --cb-field-surface: color-mix(in srgb, var(--cb-bg-card) 92%, transparent);
+  --cb-table-head-surface: color-mix(in srgb, var(--cb-bg-main) 88%, transparent);
+  --cb-chip-surface: color-mix(in srgb, var(--cb-bg-card) 72%, transparent);
+  --cb-subtle-surface: color-mix(in srgb, var(--cb-bg-main) 82%, transparent);
+  --cb-state-neutral-surface: color-mix(in srgb, var(--cb-bg-card) 88%, transparent);
+  --cb-header-surface: color-mix(in srgb, var(--cb-bg-card) 84%, transparent);
+  --cb-showcase-background:
+    radial-gradient(circle at top left, rgb(14 165 233 / 14%), transparent 36%),
+    radial-gradient(circle at bottom right, rgb(15 118 110 / 14%), transparent 28%),
+    linear-gradient(135deg, rgb(255 255 255 / 96%), rgb(248 250 252 / 90%));
+  --cb-showcase-badge-surface: color-mix(in srgb, var(--cb-bg-card) 84%, transparent);
+  --cb-showcase-card-surface: color-mix(in srgb, var(--cb-bg-card) 82%, transparent);
+  --cb-dialog-surface: color-mix(in srgb, var(--cb-bg-card) 94%, transparent);
+  --cb-dialog-backdrop: rgb(0 0 0 / 0.35);
+}
