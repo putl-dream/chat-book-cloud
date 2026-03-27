@@ -36,4 +36,27 @@
   );
   --cb-nav-active-text: #8b5cf6;
   --cb-icon-color: #8b5cf6;
+
+  @layer components {
+    .admin-sidebar {
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      z-index: var(--cb-sider-z); /* 使用新定义的 z-index */
+      width: var(--cb-sider-width);
+      background-color: var(--cb-bg-sidebar);
+      backdrop-filter: var(--cb-sidebar-backdrop);
+      border-right: var(--cb-border-width) var(--cb-border-style) var(--cb-border-subtle);
+      box-shadow: var(--cb-shadow-sidebar); /* 关键：确保 shadow 变量在主题文件中被覆盖 */
+    }
+
+    /* 菜单项交互：利用变量统一控制 */
+    .menu-item {
+      color: var(--cb-text-secondary);
+      transition: all 0.2s ease;
+    }
+    .menu-item.active {
+      background-color: var(--cb-nav-active-bg);
+      color: var(--cb-nav-active-text);
+    }
+  }
 }

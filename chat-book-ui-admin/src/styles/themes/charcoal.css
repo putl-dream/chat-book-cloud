@@ -2,7 +2,7 @@
   /* 背景与卡片 */
   --cb-bg-main: #0a0a0a;
   --cb-bg-card: #171717;
-  --cb-bg-sidebar: rgba(10, 10, 10, 0.8);
+  --cb-bg-sidebar: #121212;
 
   /* 文本 */
   --cb-text-primary: #ededed;
@@ -10,7 +10,7 @@
   --cb-text-inverse: #ededed;
 
   /* 边框 */
-  --cb-border-subtle: #27272a;
+  --cb-border-subtle: #2d2d30; /* 略微加亮边框 */
 
   /* 强调色 */
   --cb-primary: #ededed;
@@ -18,7 +18,7 @@
 
   /* 阴影 */
   --cb-shadow-card: 0 0 0 1px rgba(255, 255, 255, 0.05), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
-  --cb-shadow-sidebar: 1px 0 0 0 rgba(255, 255, 255, 0.05);
+  --cb-shadow-sidebar: 4px 0 24px rgba(0, 0, 0, 0.8);
 
   /* 圆角 */
   --cb-radius-base: 8px;

@@ -3,6 +3,10 @@ import { RequestStatePanel } from "@/components/shared/request-state-panel";
 import { AdminApiError, requireAdminSession } from "@/lib/admin-api";
 import type { CurrentAdminUser } from "@/lib/types";
 
+// 强制动态渲染：此 Layout 依赖 Cookie（admin session），不能被静态预渲染
+// requireAdminSession 已用 React cache() 包装，同一渲染树内多次调用只发一次后端请求
+export const dynamic = "force-dynamic";
+
 const fallbackAdminUser: CurrentAdminUser = {
   id: 0,
   userId: 0,

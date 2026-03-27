@@ -9,9 +9,11 @@ import com.putl.articleservice.enums.ArticleReviewAction;
 import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.exception.ArticleNotFoundException;
 import com.putl.articleservice.exception.BusinessException;
+import com.putl.articleservice.mapper.AdminOperationLogMapper;
 import com.putl.articleservice.mapper.ArticleInfoMapper;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.ArticleReviewLogMapper;
+import com.putl.articleservice.mapper.entity.AdminOperationLogDO;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.mapper.entity.ArticleInfoDO;
 import com.putl.articleservice.mapper.entity.ArticleReviewLogDO;
@@ -26,6 +28,7 @@ import com.putl.userservice.api.dto.UserResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
+import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -37,6 +40,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 
@@ -49,6 +53,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
     private final ArticleReviewLogMapper articleReviewLogMapper;
+    private final AdminOperationLogMapper adminOperationLogMapper;
     private final InteractionClient interactionClient;
     private final UserClient userClient;
     private final TagService tagService;
@@ -421,5 +426,99 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             throw new BusinessException(400, "驳回时必须填写原因");
         }
         return normalized;
+    }
+
+    // ==================== 后台内容治理动作 ====================
+
+    @Override
+    @Transactional
+    public void publishArticle(Integer articleId) {
+        ArticleDO article = articleMapper.selectById(articleId);
+        if (article == null) {
+            throw new ArticleNotFoundException(articleId);
+        }
+        article.setStatus(ArticleStatus.PUBLISHED);
+        article.setUpdateTime(LocalDateTime.now());
+        articleMapper.updateById(article);
+        insertOpLog("ARTICLE_PUBLISH", "ARTICLE", articleId, null);
+    }
+
+    @Override
+    @Transactional
+    public void unpublishArticle(Integer articleId) {
+        ArticleDO article = articleMapper.selectById(articleId);
+        if (article == null) {
+            throw new ArticleNotFoundException(articleId);
+        }
+        article.setStatus(ArticleStatus.DRAFT);
+        article.setUpdateTime(LocalDateTime.now());
+        articleMapper.updateById(article);
+        insertOpLog("ARTICLE_UNPUBLISH", "ARTICLE", articleId, null);
+    }
+
+    @Override
+    @Transactional
+    public void adminDeleteArticle(Integer articleId) {
+        ArticleDO article = articleMapper.selectById(articleId);
+        if (article == null) {
+            throw new ArticleNotFoundException(articleId);
+        }
+        article.setStatus(ArticleStatus.DELETED);
+        article.setUpdateTime(LocalDateTime.now());
+        articleMapper.updateById(article);
+        insertOpLog("ARTICLE_DELETE", "ARTICLE", articleId, null);
+    }
+
+    @Override
+    @Transactional
+    public void restoreArticle(Integer articleId) {
+        ArticleDO article = articleMapper.selectById(articleId);
+        if (article == null) {
+            throw new ArticleNotFoundException(articleId);
+        }
+        article.setStatus(ArticleStatus.DRAFT);
+        article.setUpdateTime(LocalDateTime.now());
+        articleMapper.updateById(article);
+        insertOpLog("ARTICLE_RESTORE", "ARTICLE", articleId, null);
+    }
+
+    @Override
+    public void batchPublish(List<Integer> articleIds) {
+        articleIds.forEach(this::publishArticle);
+    }
+
+    @Override
+    public void batchUnpublish(List<Integer> articleIds) {
+        articleIds.forEach(this::unpublishArticle);
+    }
+
+    @Override
+    public void batchDelete(List<Integer> articleIds) {
+        articleIds.forEach(this::adminDeleteArticle);
+    }
+
+    private void insertOpLog(String action, String targetType, Integer targetId, Map<String, Object> detail) {
+        Integer operatorId = null;
+        try {
+            operatorId = currentUserId();
+        } catch (Exception e) {
+            log.warn("insertOpLog: 无法获取操作人ID", e);
+        }
+        String operatorName = UserContext.getUsername();
+        AdminOperationLogDO logDO = AdminOperationLogDO.builder()
+                .operatorId(operatorId)
+                .operatorName(operatorName)
+                .action(action)
+                .targetType(targetType)
+                .targetId(targetId)
+                .detail(detail != null ? JsonUtil.toJsonString(detail) : null)
+                .ip(UserContext.getClientIp())
+                .createTime(LocalDateTime.now())
+                .build();
+        try {
+            adminOperationLogMapper.insert(logDO);
+        } catch (Exception e) {
+            log.error("记录管理员操作日志失败: action={}, targetId={}", action, targetId, e);
+        }
     }
 }

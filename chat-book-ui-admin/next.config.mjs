@@ -10,7 +10,8 @@ function normalizeApiBase(baseUrl) {
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  reactStrictMode: true,
+  // 仅在生产模式开启 strictMode，避免开发环境因双倍渲染带来的明显卡顿感
+  reactStrictMode: process.env.NODE_ENV === "production",
   async rewrites() {
     const apiBaseUrl = normalizeApiBase(
       process.env.API_BASE_URL || process.env.NEXT_PUBLIC_API_BASE_URL

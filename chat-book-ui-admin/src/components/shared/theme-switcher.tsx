@@ -1,17 +1,15 @@
 "use client";
 
-import { Monitor, PanelsTopLeft, Sparkles, Smile, Terminal, Wind } from "lucide-react";
+import { Monitor, Sparkles, Smile, Wind } from "lucide-react";
 import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/utils";
 
 const themeOptions = [
-  { value: "linear", label: "Linear", icon: PanelsTopLeft },
+  { value: "minimal", label: "Minimal", icon: Wind },
   { value: "glassmorphism", label: "Glass", icon: Sparkles },
   { value: "charcoal", label: "Charcoal", icon: Monitor },
   { value: "playful", label: "Playful", icon: Smile },
-  { value: "retro", label: "Retro", icon: Terminal },
-  { value: "minimal", label: "Minimal", icon: Wind },
 ] as const;
 
 export function ThemeSwitcher() {
@@ -34,7 +32,7 @@ export function ThemeSwitcher() {
     <div className="header-segment" aria-label="主题切换">
       {themeOptions.map((option) => {
         const Icon = option.icon;
-        const isActive = (theme || "linear") === option.value;
+        const isActive = (theme || "minimal") === option.value;
 
         return (
           <button

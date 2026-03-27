@@ -1,5 +1,6 @@
 import "server-only";
 
+import { cache } from "react";
 import { cookies, headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { ADMIN_SESSION_COOKIE } from "@/lib/auth";
@@ -82,7 +83,24 @@ function normalizeHost(host: string) {
   return host.replace(/^[a-z]+:\/\//i, "").trim();
 }
 
-async function getServerOrigin() {
+// ─── API Base URL: 进程级缓存，避免每次请求重复读 headers() ───────────────────
+// 仅在没有配置 API_BASE_URL 环境变量时才需要从 headers 推断，生产环境几乎不会走到该分支。
+let _resolvedApiBaseUrl: string | null = null;
+
+async function getServerApiBaseUrl() {
+  // 如果环境变量已配置（通常情况），直接返回，无需任何异步 I/O
+  const configuredBase =
+    process.env.API_BASE_URL?.trim() ?? process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? "";
+
+  if (configuredBase) {
+    if (!_resolvedApiBaseUrl) {
+      _resolvedApiBaseUrl = normalizeApiBase(configuredBase);
+    }
+    return _resolvedApiBaseUrl;
+  }
+
+  // Fallback: 从请求 headers 推断（开发环境未配置环境变量时）
+  // 这里不缓存，因为 host 可能在不同请求中不同（反向代理场景）
   const headerStore = await headers();
   const host = normalizeHost(
     readForwardedValue(headerStore.get("x-forwarded-host")) ||
@@ -98,21 +116,10 @@ async function getServerOrigin() {
         : "https";
 
   try {
-    return new URL(`${protocol}://${host}`).origin;
+    return normalizeApiBase(new URL(`${protocol}://${host}`).origin);
   } catch {
-    return "http://localhost:3000";
+    return "http://localhost:3000/api";
   }
-}
-
-async function getServerApiBaseUrl() {
-  const configuredBase =
-    process.env.API_BASE_URL?.trim() ?? process.env.NEXT_PUBLIC_API_BASE_URL?.trim() ?? "";
-
-  if (configuredBase) {
-    return normalizeApiBase(configuredBase);
-  }
-
-  return normalizeApiBase(await getServerOrigin());
 }
 
 async function parseResponseBody<T>(response: Response) {
@@ -141,10 +148,14 @@ export class AdminApiError extends Error {
   }
 }
 
+// ─── 核心请求函数 ─────────────────────────────────────────────────────────────
+// revalidate: undefined = 遵循 Next.js 默认（静态缓存）
+// revalidate: 0         = 每次请求都重新获取（等同于原先的 cache: "no-store"，但允许 dedupe）
+// revalidate: N         = N 秒后重新验证
 async function requestServer<T>(
   path: string,
   init?: RequestInit,
-  options?: { token?: string; auth?: boolean }
+  options?: { token?: string; auth?: boolean; revalidate?: number }
 ) {
   const authEnabled = options?.auth ?? true;
   const cookieStore = await cookies();
@@ -159,13 +170,21 @@ async function requestServer<T>(
     headersInit.set("token", token);
   }
 
+  // 构建 next 缓存配置
+  // revalidate=0 表示"每次都重新获取但允许同一渲染内去重"，比 cache:"no-store" 更优
+  const nextConfig: { revalidate?: number } = {};
+  if (options?.revalidate !== undefined) {
+    nextConfig.revalidate = options.revalidate;
+  }
+
   let response: Response;
 
   try {
     response = await fetch(`${apiBaseUrl}${path}`, {
       ...init,
       headers: headersInit,
-      cache: "no-store",
+      // 使用 next.revalidate 替代 cache:"no-store"，允许同一渲染周期内请求去重
+      next: Object.keys(nextConfig).length > 0 ? nextConfig : { revalidate: 0 },
     });
   } catch (error) {
     const message =
@@ -196,6 +215,8 @@ async function requestServer<T>(
 
   return result.data as T;
 }
+
+// ─── 数据映射 ─────────────────────────────────────────────────────────────────
 
 function mapUserPage(page: BackendUserPage<AdminUser>): PaginatedResult<AdminUser> {
   const pageNo = toNumber(page.current) || 1;
@@ -246,7 +267,14 @@ function mapReviewArticle(article: BackendReviewArticle): ReviewArticle {
   };
 }
 
-export async function requireAdminSession(): Promise<AdminSession> {
+// ─── 业务 API ─────────────────────────────────────────────────────────────────
+
+/**
+ * requireAdminSession
+ * 使用 React cache() 包装：在同一次 SSR 渲染树中，无论被调用多少次（Layout + Page 各一次），
+ * 只向后端发起一次请求，彻底消除重复验证开销。
+ */
+export const requireAdminSession = cache(async (): Promise<AdminSession> => {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
 
@@ -255,7 +283,12 @@ export async function requireAdminSession(): Promise<AdminSession> {
   }
 
   try {
-    const user = await requestServer<CurrentAdminUser>("/user/bySelf", { method: "GET" }, { token });
+    const user = await requestServer<CurrentAdminUser>(
+      "/user/bySelf",
+      { method: "GET" },
+      // session 验证必须实时，不缓存
+      { token, revalidate: 0 }
+    );
 
     if (user.role !== "admin") {
       redirect("/forbidden");
@@ -273,18 +306,26 @@ export async function requireAdminSession(): Promise<AdminSession> {
 
     throw error;
   }
-}
+});
 
+/**
+ * getDashboardSnapshot
+ * 首页统计数据：30 秒缓存，统计数字轻微延迟影响不大，但大幅减少后端压力和等待时间。
+ */
 export async function getDashboardSnapshot(token?: string): Promise<DashboardSnapshot> {
   const [count, reviewPage] = await Promise.all([
-    requestServer<AdminCount>("/user/admin/count", { method: "GET" }, { token }),
+    requestServer<AdminCount>(
+      "/user/admin/count",
+      { method: "GET" },
+      { token, revalidate: 30 }
+    ),
     requestServer<BackendPageResult<BackendReviewArticle>>(
       "/page/adminArticlePage",
       {
         method: "POST",
         body: JSON.stringify({ pageNo: 1, pageSize: 8 }),
       },
-      { token }
+      { token, revalidate: 30 }
     ),
   ]);
 
@@ -320,6 +361,10 @@ export async function getDashboardSnapshot(token?: string): Promise<DashboardSna
   };
 }
 
+/**
+ * getUsersPage
+ * 用户列表：10 秒缓存，分页数据变化不频繁，可接受轻微延迟。
+ */
 export async function getUsersPage(params?: {
   page?: number;
   size?: number;
@@ -335,12 +380,16 @@ export async function getUsersPage(params?: {
   const result = await requestServer<BackendUserPage<AdminUser>>(
     `/user/admin/user?${searchParams.toString()}`,
     { method: "GET" },
-    { token: params?.token }
+    { token: params?.token, revalidate: 10 }
   );
 
   return mapUserPage(result);
 }
 
+/**
+ * getReviewArticlesPage
+ * 审核队列：实时，不缓存（revalidate: 0）。审核结果必须即时反映。
+ */
 export async function getReviewArticlesPage(params?: {
   page?: number;
   size?: number;
@@ -354,7 +403,7 @@ export async function getReviewArticlesPage(params?: {
       method: "POST",
       body: JSON.stringify({ pageNo: page, pageSize: size }),
     },
-    { token: params?.token }
+    { token: params?.token, revalidate: 0 }
   );
 
   const mappedPage = mapPageResult(result, page, size);
@@ -365,6 +414,10 @@ export async function getReviewArticlesPage(params?: {
   };
 }
 
+/**
+ * getTagsPage / getTagList
+ * 标签数据：60 秒缓存，标签很少变动，可以大胆缓存。
+ */
 export async function getTagsPage(params?: {
   page?: number;
   size?: number;
@@ -383,14 +436,18 @@ export async function getTagsPage(params?: {
         type: params?.type ?? undefined,
       }),
     },
-    { token: params?.token }
+    { token: params?.token, revalidate: 60 }
   );
 
   return mapPageResult(result, page, size);
 }
 
 export async function getTagList(token?: string): Promise<AdminTag[]> {
-  return requestServer<AdminTag[]>("/tag/list", { method: "GET" }, { token });
+  return requestServer<AdminTag[]>(
+    "/tag/list",
+    { method: "GET" },
+    { token, revalidate: 60 }
+  );
 }
 
 export async function getContentArticles(): Promise<AdminArticle[]> {

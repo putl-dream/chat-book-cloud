@@ -112,6 +112,12 @@
             <groupId>fun.amireux</groupId>
             <artifactId>chat-book-cloud-minio</artifactId>
         </dependency>
+        <dependency>
+            <groupId>org.apache.xmlbeans</groupId>
+            <artifactId>xmlbeans</artifactId>
+            <version>5.3.0</version>
+            <scope>compile</scope>
+        </dependency>
     </dependencies>
     <build>
         <plugins>

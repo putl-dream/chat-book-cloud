@@ -2,6 +2,7 @@ package com.putl.userservice.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.putl.userservice.common.enums.RoleEnum;
 import com.putl.userservice.controller.vo.UserVO;
 import com.putl.userservice.mapper.entity.UserDO;
 
@@ -32,4 +33,19 @@ public interface UserService extends IService<UserDO> {
      * @param userVO
      */
     void updateUser(Integer currentUserId, UserVO userVO);
+
+    /**
+     * 调整用户角色（管理员用）
+     */
+    void updateUserRole(Integer operatorId, Integer targetUserId, RoleEnum roleEnum);
+
+    /**
+     * 禁用用户账号（管理员用）
+     */
+    void disableUser(Integer operatorId, Integer targetUserId);
+
+    /**
+     * 恢复用户账号（管理员用）
+     */
+    void enableUser(Integer operatorId, Integer targetUserId);
 }

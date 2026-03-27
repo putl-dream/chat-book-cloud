@@ -1,7 +1,6 @@
 @import "tailwindcss";
-@config "../../tailwind.config.ts";
-
 @import "./variables.css";
+@config "../../tailwind.config.ts";
 
 @layer base {
   * {
@@ -9,12 +8,26 @@
   }
 
   body {
-    background-color: var(--cb-bg-main);
+    margin: 0;
+    min-height: 100vh;
+    background: var(--cb-bg-main);
     background-image: var(--cb-bg-image, none);
     background-size: var(--cb-bg-size, auto);
     color: var(--cb-text-primary);
+    font-family:
+      "Inter",
+      "PingFang SC",
+      "Microsoft YaHei",
+      ui-sans-serif,
+      system-ui,
+      sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+  }
+
+  a {
+    color: inherit;
+    text-decoration: none;
   }
   h1,
   h2,
@@ -28,6 +41,34 @@
 }
 
 @layer components {
+  .admin-sidebar {
+    @apply fixed left-0 top-0 bottom-0 z-40 flex flex-col transition-all;
+    width: 260px; /* 或者你定义的变量 */
+    background-color: var(--cb-bg-sidebar);
+    border-right: var(--cb-border-width) var(--cb-border-style) var(--cb-border-subtle);
+    box-shadow: var(--cb-shadow-sidebar);
+  }
+
+  /* 适配主内容区的偏移，防止被侧边栏遮挡 */
+  .admin-main-layout {
+    @apply pl-[260px] min-h-screen;
+  }
+
+  .menu-item {
+    color: var(--cb-text-secondary);
+    background: transparent;
+  }
+
+  .menu-item:hover {
+    background: color-mix(in srgb, var(--cb-bg-card) 78%, transparent);
+    color: var(--cb-text-primary);
+  }
+
+  .menu-item.active {
+    background: var(--cb-nav-active-bg);
+    color: var(--cb-nav-active-text);
+  }
+
   .page-shell {
     @apply flex flex-col gap-6 pb-8;
   }
@@ -48,11 +89,7 @@
     box-shadow: var(--cb-shadow-card);
   }
 
-  [data-theme="charcoal"] .page-hero {
-    background:
-      radial-gradient(circle at top right, rgb(96 165 250 / 18%), transparent 30%),
-      linear-gradient(135deg, rgb(23 23 23 / 96%), rgb(10 10 10 / 96%));
-  }
+
 
   .page-hero.compact {
     padding: 28px;
@@ -344,6 +381,25 @@
     @apply flex flex-wrap items-center gap-2;
   }
 
+  .timeline {
+    @apply flex flex-col gap-4;
+  }
+
+  .timeline-item {
+    @apply relative flex gap-4 rounded-[20px] border p-4;
+    border-color: color-mix(in srgb, var(--cb-border-subtle) 84%, transparent);
+    background: color-mix(in srgb, var(--cb-bg-main) 60%, transparent);
+  }
+
+  .timeline-dot {
+    @apply mt-2 h-3 w-3 shrink-0 rounded-full;
+    background: var(--cb-primary);
+  }
+
+  .timeline-body {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
   .pagination-button.is-disabled {
     @apply pointer-events-none opacity-45;
   }
@@ -541,6 +597,18 @@
 }
 
 @media (max-width: 1023px) {
+  .admin-sidebar {
+    position: static;
+    width: auto;
+    height: auto;
+    border-right: none;
+    border-bottom: var(--cb-border-width, 1px) var(--cb-border-style, solid) var(--cb-border-subtle);
+  }
+
+  .admin-main-layout {
+    padding-left: 0;
+  }
+
   .page-hero,
   .panel,
   .metric-card,

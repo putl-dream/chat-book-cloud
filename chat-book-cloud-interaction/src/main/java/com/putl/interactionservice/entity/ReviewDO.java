@@ -18,4 +18,6 @@ public class ReviewDO {
     private String content;
     private LocalDateTime createTime;
     private LocalDateTime updateTime;
+    /** 评论状态 0-正常 1-已删除 2-已屏蔽 */
+    private Integer status;
 }

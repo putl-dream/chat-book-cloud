@@ -1,17 +1,22 @@
 package com.putl.userservice.service.impl;
 
+
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.putl.userservice.common.enums.RoleEnum;
 import com.putl.userservice.controller.vo.UserVO;
+import com.putl.userservice.mapper.AdminOperationLogMapper;
 import com.putl.userservice.mapper.UserInfoMapper;
 import com.putl.userservice.mapper.UserMapper;
+import com.putl.userservice.mapper.entity.AdminOperationLogDO;
 import com.putl.userservice.mapper.entity.UserDO;
 import com.putl.userservice.mapper.entity.UserInfoDO;
 import com.putl.userservice.service.UserInfoService;
 import com.putl.userservice.service.UserService;
+import fun.amireux.chat.book.framework.common.context.UserContext;
+import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
@@ -20,6 +25,7 @@ import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +40,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     private final UserMapper userMapper;
     private final UserInfoService userInfoService;
     private final UserInfoMapper userInfoMapper;
+    private final AdminOperationLogMapper adminOperationLogMapper;
 
     @Override
     @Cacheable(value = "userCache", key = "#id", unless = "#result == null")
@@ -56,6 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .photo(userInfo.getPhoto())
                 .profile(userInfo.getProfile())
                 .role(role)
+                .status(user != null ? user.getStatus() : null)
                 .build();
     }
 
@@ -98,6 +106,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                     .photo(userInfo.getPhoto())
                     .profile(userInfo.getProfile())
                     .role(role)
+                    .status(user != null ? user.getStatus() : null)
                     .build());
         }
         return result;
@@ -155,5 +164,80 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         existing.setPhoto(userVO.getPhoto());
         existing.setProfile(userVO.getProfile());
         userInfoService.update(existing);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "userCache", key = "#targetUserId"),
+            @CacheEvict(value = "userBatchCache", allEntries = true)
+    })
+    public void updateUserRole(Integer operatorId, Integer targetUserId, RoleEnum roleEnum) {
+        UserInfoDO info = userInfoService.getByUserId(targetUserId);
+        if (info == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        RoleEnum oldRole = info.getRole();
+        info.setRole(roleEnum);
+        userInfoService.update(info);
+        insertOpLog(operatorId, "USER_ROLE_CHANGE", "USER", targetUserId,
+                Map.of("oldRole", oldRole.name(), "newRole", roleEnum.name()));
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "userCache", key = "#targetUserId"),
+            @CacheEvict(value = "userBatchCache", allEntries = true)
+    })
+    public void disableUser(Integer operatorId, Integer targetUserId) {
+        UserDO user = this.getById(targetUserId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setStatus(1);
+        this.updateById(user);
+        UserInfoDO info = userInfoService.getByUserId(targetUserId);
+        if (info != null) {
+            info.setStatus(1);
+            userInfoService.update(info);
+        }
+        insertOpLog(operatorId, "USER_DISABLE", "USER", targetUserId, null);
+    }
+
+    @Override
+    @Transactional
+    @Caching(evict = {
+            @CacheEvict(value = "userCache", key = "#targetUserId"),
+            @CacheEvict(value = "userBatchCache", allEntries = true)
+    })
+    public void enableUser(Integer operatorId, Integer targetUserId) {
+        UserDO user = this.getById(targetUserId);
+        if (user == null) {
+            throw new RuntimeException("用户不存在");
+        }
+        user.setStatus(0);
+        this.updateById(user);
+        UserInfoDO info = userInfoService.getByUserId(targetUserId);
+        if (info != null) {
+            info.setStatus(0);
+            userInfoService.update(info);
+        }
+        insertOpLog(operatorId, "USER_ENABLE", "USER", targetUserId, null);
+    }
+
+    private void insertOpLog(Integer operatorId, String action, String targetType,
+            Integer targetId, Map<String, Object> detail) {
+        AdminOperationLogDO logDO = AdminOperationLogDO.builder()
+                .operatorId(operatorId)
+                .operatorName(UserContext.getUsername())
+                .action(action)
+                .targetType(targetType)
+                .targetId(targetId)
+                .detail(detail != null ? JsonUtil.toJsonString(detail) : null)
+                .ip(UserContext.getClientIp())
+                .createTime(LocalDateTime.now())
+                .build();
+        adminOperationLogMapper.insert(logDO);
     }
 }

@@ -2,12 +2,14 @@
   /* 商务/优雅 (Minimal): "Soft & Airy" */
   --cb-bg-main: #fafafa;
   --cb-bg-card: #ffffff;
-  --cb-bg-sidebar: #ffffff;
+  /* 侧边栏用极浅冷灰，与主背景 #fafafa 形成分层，不再同色 */
+  --cb-bg-sidebar: #f4f4f5;
 
   /* 文本 */
   --cb-text-primary: #171717;
   --cb-text-secondary: #737373;
-  --cb-text-inverse: #ffffff;
+  /* 侧边栏文字颜色修正为深色，以适应浅色侧边栏 */
+  --cb-text-inverse: #171717;
 
   /* 边框 (极细边框 1px thin) */
   --cb-border-subtle: #e5e5e5;
@@ -21,14 +23,14 @@
   /* 阴影 */
   --cb-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.04);
   --cb-shadow-sidebar: 1px 0 0 0 var(--cb-border-subtle);
-  
+
   /* 轻微的悬浮阴影 (Float shadow) */
   --cb-hover-shadow: 0 10px 40px -10px rgba(0, 0, 0, 0.08);
 
   /* 圆角 (微小的圆角 4px) */
   --cb-radius-base: 4px;
   --cb-radius-card: 4px;
-  
+
   /* 标签页形状 */
   --cb-tab-radius: 4px;
   --cb-tab-active-radius: 4px;
@@ -36,10 +38,12 @@
   /* 特有变量 */
   --cb-card-backdrop: none;
   --cb-sidebar-backdrop: none;
-  --cb-nav-active-bg: #f5f5f5;
-  --cb-nav-active-text: #171717;
-  --cb-icon-color: #737373;
-  
+  /* 激活背景：深一级的灰，与侧边栏底色 #f4f4f5 明确区分 */
+  --cb-nav-active-bg: #e4e4e7;
+  /* 激活文字：带轻微蓝灰色相的深色，比全黑更柔和 */
+  --cb-nav-active-text: #18181b;
+  --cb-icon-color: #52525b;
+
   /* 状态色 */
   --cb-tag-success-bg: #f0fdf4;
   --cb-tag-success-text: #166534;
@@ -48,3 +52,4 @@
   --cb-tag-error-bg: #fef2f2;
   --cb-tag-error-text: #991b1b;
 }
+
