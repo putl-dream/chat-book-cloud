@@ -2,11 +2,15 @@ package fun.amireux.chat.book.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import com.auth0.jwt.interfaces.DecodedJWT;
 import fun.amireux.chat.book.auth.mapper.UserInfoMapper;
 import fun.amireux.chat.book.auth.mapper.UserMapper;
+import fun.amireux.chat.book.auth.projectobject.LoginVO;
+import fun.amireux.chat.book.auth.projectobject.RefreshTokenInfo;
 import fun.amireux.chat.book.auth.projectobject.UserDO;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
 import fun.amireux.chat.book.auth.service.CaptchaService;
+import fun.amireux.chat.book.auth.service.RefreshTokenService;
 import fun.amireux.chat.book.auth.service.UserService;
 import fun.amireux.chat.book.auth.service.dto.UserDTO;
 import fun.amireux.chat.book.auth.utils.PwdUtil;
@@ -18,6 +22,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -30,11 +35,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     private final UserMapper userMapper;
     private final UserInfoMapper userInfoMapper;
-    private final JwtUtil jwtUtil = new JwtUtil("chat-book", "auth-service");
+    private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
     private final CaptchaService captchaService;
 
     @Override
-    public String login(UserDTO user) {
+    public LoginVO login(UserDTO user) {
         if (StringUtils.isAllBlank(user.getUsername(), user.getEmail())) {
             log.error("Username or email is required");
             throw new AuthenticationException("Login payload is incomplete");
@@ -52,7 +58,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         };
     }
 
-    private String verificationCodeLogin(UserDTO user) {
+    private LoginVO verificationCodeLogin(UserDTO user) {
         if (StringUtils.isBlank(user.getVerificationCode())) {
             throw new AuthenticationException("Verification code is required");
         }
@@ -71,7 +77,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         return buildToken(userDO, userInfo);
     }
 
-    private String passwordLogin(UserDTO user) {
+    private LoginVO passwordLogin(UserDTO user) {
         if (StringUtils.isBlank(user.getPassword())) {
             throw new AuthenticationException("Password is required");
         }
@@ -112,7 +118,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     @Transactional
-    public String signIn(UserDTO signInVO) {
+    public LoginVO signIn(UserDTO signInVO) {
         if (!captchaService.verifyCaptcha(signInVO.getEmail(), signInVO.getVerificationCode())) {
             throw new AuthenticationException("Verification code is invalid");
         }
@@ -191,7 +197,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         return userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userId));
     }
 
-    private String buildToken(UserDO userDO, UserInfoDO userInfo) {
+    private LoginVO buildToken(UserDO userDO, UserInfoDO userInfo) {
         Map<String, Object> claims = new LinkedHashMap<>();
         claims.put("id", userDO.getId());
 
@@ -200,7 +206,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }
 
         claims.put("roles", resolveRoleClaim(userInfo));
-        return jwtUtil.generateToken(claims);
+
+        String accessToken  = jwtUtil.generateAccessToken(claims);
+        String refreshToken = jwtUtil.generateRefreshToken(claims);
+
+        // Decode refresh token to extract jti and expiry
+        DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
+        String jti = jwtUtil.getJti(refreshJwt);
+        long refreshExpSeconds = refreshJwt.getExpiresAt().getTime() / 1000;
+
+        // Store refresh token metadata in Redis
+        RefreshTokenInfo info = new RefreshTokenInfo(
+                userDO.getId(),
+                Instant.now(),
+                Instant.ofEpochSecond(refreshExpSeconds),
+                null
+        );
+        refreshTokenService.store(jti, info, refreshExpSeconds);
+
+        return new LoginVO(accessToken, refreshToken, jwtUtil.getAccessExpirationSeconds());
     }
 
     private String resolveRoleClaim(UserInfoDO userInfo) {

@@ -43,5 +43,28 @@ public interface ArticleService {
     ArticleReviewResultVO rejectArticle(Integer articleId, String reason);
 
     List<ArticleReviewResultVO> batchReviewArticles(List<Integer> articleIds, ArticleReviewAction action, String reason);
+
+    // ==================== 后台治理动作 ====================
+
+    /** 管理员上架文章 */
+    void publishArticle(Integer articleId);
+
+    /** 管理员下架文章 */
+    void unpublishArticle(Integer articleId);
+
+    /** 管理员删除文章 */
+    void adminDeleteArticle(Integer articleId);
+
+    /** 管理员恢复文章 */
+    void restoreArticle(Integer articleId);
+
+    /** 批量上架 */
+    void batchPublish(List<Integer> articleIds);
+
+    /** 批量下架 */
+    void batchUnpublish(List<Integer> articleIds);
+
+    /** 批量删除 */
+    void batchDelete(List<Integer> articleIds);
 }
 

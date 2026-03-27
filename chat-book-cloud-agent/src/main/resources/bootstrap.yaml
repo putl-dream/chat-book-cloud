@@ -1,0 +1,9 @@
+spring:
+  application:
+    name: chat-book-cloud-agent
+
+  profiles:
+    active: ${SPRING_PROFILES_ACTIVE:local}
+
+server:
+  port: 8087

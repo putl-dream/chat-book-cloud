@@ -48,5 +48,8 @@ public class UserInfoDO {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     private Date updateTime;
 
+    //用户状态 0-正常 1-禁用
+    private Integer status;
+
 }
 

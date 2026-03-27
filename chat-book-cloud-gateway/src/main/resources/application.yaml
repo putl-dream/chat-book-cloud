@@ -122,3 +122,5 @@ authentication:
       pattern: /api/tag/update
     - name: admin-tag-delete-api
       pattern: /api/tag/delete
+    - name: admin-review-api
+      pattern: /api/interaction/admin/review/**

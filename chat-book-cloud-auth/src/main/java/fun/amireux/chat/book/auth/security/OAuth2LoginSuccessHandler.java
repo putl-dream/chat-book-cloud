@@ -1,9 +1,12 @@
 package fun.amireux.chat.book.auth.security;
 
+import com.auth0.jwt.interfaces.DecodedJWT;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import fun.amireux.chat.book.auth.mapper.UserInfoMapper;
 import fun.amireux.chat.book.auth.projectobject.LoginMethod;
+import fun.amireux.chat.book.auth.projectobject.RefreshTokenInfo;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
+import fun.amireux.chat.book.auth.service.RefreshTokenService;
 import fun.amireux.chat.book.auth.service.UserService;
 import fun.amireux.chat.book.auth.service.dto.UserDTO;
 import fun.amireux.chat.book.framework.common.utils.JwtUtil;
@@ -17,6 +20,7 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -28,14 +32,21 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     private final UserService userService;
     private final UserInfoMapper userInfoMapper;
     private final JwtUtil jwtUtil;
+    private final RefreshTokenService refreshTokenService;
 
     @Value("${oauth2.success.redirect-url:http://localhost:5173/login}")
     private String redirectUrl;
 
-    public OAuth2LoginSuccessHandler(UserService userService, UserInfoMapper userInfoMapper) {
+    public OAuth2LoginSuccessHandler(
+            UserService userService,
+            UserInfoMapper userInfoMapper,
+            JwtUtil jwtUtil,
+            RefreshTokenService refreshTokenService
+    ) {
         this.userService = userService;
         this.userInfoMapper = userInfoMapper;
-        this.jwtUtil = new JwtUtil("chat-book", "auth-service");
+        this.jwtUtil = jwtUtil;
+        this.refreshTokenService = refreshTokenService;
     }
 
     @Override
@@ -92,8 +103,22 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         }
         claims.put("roles", resolveRoleClaim(userInfo));
 
-        String token = jwtUtil.generateToken(claims);
-        response.sendRedirect(redirectUrl + "?token=" + token);
+        String accessToken  = jwtUtil.generateAccessToken(claims);
+        String refreshToken = jwtUtil.generateRefreshToken(claims);
+
+        // Store refresh token in Redis
+        DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
+        String jti = jwtUtil.getJti(refreshJwt);
+        long refreshExpSeconds = refreshJwt.getExpiresAt().getTime() / 1000;
+        RefreshTokenInfo info = new RefreshTokenInfo(
+                userId, Instant.now(), Instant.ofEpochSecond(refreshExpSeconds), null
+        );
+        refreshTokenService.store(jti, info, refreshExpSeconds);
+
+        // Redirect with both tokens as query params
+        response.sendRedirect(redirectUrl
+                + "?accessToken="  + accessToken
+                + "&refreshToken=" + refreshToken);
     }
 
     private String resolveRoleClaim(UserInfoDO userInfo) {

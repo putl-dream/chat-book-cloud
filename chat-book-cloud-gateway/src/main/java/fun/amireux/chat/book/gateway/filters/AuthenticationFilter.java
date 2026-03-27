@@ -37,6 +37,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         String userId = null;
         String username = null;
         String roles = null;
+        String tokenType = null;
 
         if (token != null && token.startsWith("Bearer ")) {
             token = token.substring(7);
@@ -45,6 +46,14 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
         if (token != null) {
             try {
                 com.auth0.jwt.interfaces.DecodedJWT decodedJWT = jwtUtil.verifyToken(token);
+
+                // Extract token type (null for pre-existing tokens without a type claim)
+                try {
+                    tokenType = decodedJWT.getClaim("type").asString();
+                } catch (Exception ignored) {
+                    // pre-existing tokens have no type claim
+                }
+
                 if (!decodedJWT.getClaim("id").isNull()) {
                     userId = String.valueOf(decodedJWT.getClaim("id").asLong());
                     if (userId == null || "null".equals(userId)) {
@@ -52,12 +61,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     }
                 }
                 username = decodedJWT.getClaim("username").asString();
-                // 尝试获取 roles，如果不存在则为 null
                 if (!decodedJWT.getClaim("roles").isNull()) {
-                     // 假设 roles 存的是 "ROLE_USER,ROLE_ADMIN" 这种逗号分隔字符串，或者是 JSON 数组
-                     // 这里简化处理，尝试直接获取字符串。如果是数组需要根据实际情况解析
                      roles = decodedJWT.getClaim("roles").asString();
                 }
+            } catch (fun.amireux.chat.book.framework.common.exceptions.AuthenticationException e) {
+                // Re-throw auth exceptions as 401
+                throw e;
             } catch (Exception e) {
                 log.error("Token verification failed: {}", e.getMessage());
             }
@@ -74,6 +83,12 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
                     break;
                 }
             }
+        }
+
+        // Reject refresh tokens on protected routes — treat as unauthenticated
+        if (JwtUtil.TOKEN_TYPE_REFRESH.equals(tokenType) && isMandatory) {
+            log.warn("Refresh token used on protected route: {}", path);
+            throw new AuthenticationException("Refresh token cannot be used to access protected resources");
         }
 
         if (isMandatory && userId == null) {

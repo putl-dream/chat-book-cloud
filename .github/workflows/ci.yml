@@ -94,7 +94,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`chat_book_auth\`; CREATE DATABASE IF NOT EXISTS \`chat_book_user\`; CREATE DATABASE IF NOT EXISTS \`chat_book_article\`; CREATE DATABASE IF NOT EXISTS \`chat_book_interaction\`; CREATE DATABASE IF NOT EXISTS \`chat_book_social\`;"
+          mysql -h 127.0.0.1 -u root -proot -e "CREATE DATABASE IF NOT EXISTS \`chat_book_auth\`; CREATE DATABASE IF NOT EXISTS \`chat_book_user\`; CREATE DATABASE IF NOT EXISTS \`chat_book_article\`; CREATE DATABASE IF NOT EXISTS \`chat_book_interaction\`; CREATE DATABASE IF NOT EXISTS \`chat_book_social\`; CREATE DATABASE IF NOT EXISTS \`chat_book_agent\`;"
           mysql -h 127.0.0.1 -u root -proot -e "USE chat_book_user; CREATE TABLE IF NOT EXISTS user_foot (id INT AUTO_INCREMENT PRIMARY KEY, user_id INT, document_id INT, document_type INT, document_user_id INT, collection_stat INT, read_stat INT, comment_stat INT, praise_stat INT, create_time DATETIME, update_time DATETIME); CREATE TABLE IF NOT EXISTS review (id INT AUTO_INCREMENT PRIMARY KEY, text_id INT, user_id INT, parent_id INT, content TEXT, create_time DATETIME, update_time DATETIME);"
 
       - name: Run Maven tests

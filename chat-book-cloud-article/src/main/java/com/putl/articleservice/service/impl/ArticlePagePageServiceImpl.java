@@ -1,6 +1,8 @@
 package com.putl.articleservice.service.impl;
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.putl.articleservice.controller.dto.AdminArticlePageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.mapper.ArticleTagMapper;
@@ -13,6 +15,7 @@ import com.putl.articleservice.utils.PageResult;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.*;
@@ -63,7 +66,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     /**
      * 获取热门文章列表。
      * 返回最近30天内审核通过的文章，按创建时间倒序排列。
-     *
+     * <p>
      * 注意：当前实现基于时间维度的简化版本。
      * 完整的热门算法应综合考虑浏览量、点赞数、收藏数等因素，
      * 建议后续引入 Redis 缓存 + 定时任务计算热门度。
@@ -86,7 +89,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     /**
      * 获取今日热门文章列表。
      * 返回今天创建的审核通过的文章，按创建时间倒序排列。
-     *
+     * <p>
      * 注意：当前实现基于今日发布的文章。
      * 完整的今日热门算法应基于今日浏览量、点赞数等实时数据排序，
      * 建议后续引入 Redis 实时统计。
@@ -109,9 +112,9 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     /**
      * 根据分类ID获取文章列表，按照创建时间倒序排列。
      *
-     * @param pageNo    分页页码
-     * @param pageSize  每页大小
-     * @param category  分类ID
+     * @param pageNo   分页页码
+     * @param pageSize 每页大小
+     * @param category 分类ID
      * @return 包含文章数据的分页结果
      */
     @Override
@@ -141,7 +144,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     /**
      * 获取系统推荐文章列表。
      * 返回本周内审核通过的文章，按创建时间倒序排列。
-     *
+     * <p>
      * 注意：当前实现为降级策略，返回本周优质文章。
      * 完整的推荐算法应基于：
      * 1. 内容质量（点赞、收藏、阅读量综合评分）
@@ -157,17 +160,17 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     public PageResult<ArticleListVO> getSystemRecommendPage(Integer pageNo, Integer pageSize) {
         // 降级策略：返回所有审核通过的文章
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                        .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
 //                .ge(ArticleDO::getCreateTime, weekStart)
 //                .le(ArticleDO::getCreateTime, weekEnd)
-                .orderByDesc(ArticleDO::getCreateTime)
+                        .orderByDesc(ArticleDO::getCreateTime)
         );
     }
 
     /**
      * 获取个性化推荐文章列表。
      * 基于用户兴趣推荐相关文章，当前返回最新发布的文章。
-     *
+     * <p>
      * 注意：当前实现为降级策略，返回最新文章。
      * 完整的个性化推荐算法应基于：
      * 1. 用户历史阅读行为分析
@@ -266,6 +269,48 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getStatus, ArticleStatus.PENDING_REVIEW)
                 .orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    /**
+     * 管理员全站文章分页查询，支持多条件筛选。
+     *
+     * @param request 查询条件
+     * @return 包含文章数据的分页结果
+     */
+    @Override
+    public PageResult<ArticleListVO> getAdminFullPage(AdminArticlePageRequestDTO request) {
+        LambdaQueryWrapper<ArticleDO> wrapper = new LambdaQueryWrapper<>();
+        // status: null=不限（排除已删除），有值=精确匹配
+        if (request.getStatus() != null) {
+            ArticleStatus targetStatus = resolveArticleStatus(request.getStatus());
+            if (targetStatus != null) {
+                wrapper.eq(ArticleDO::getStatus, targetStatus);
+            }
+        } else {
+            wrapper.ne(ArticleDO::getStatus, ArticleStatus.DELETED);
+        }
+        wrapper.eq(request.getCategory() != null, ArticleDO::getCategory, request.getCategory());
+        wrapper.eq(request.getContentType() != null, ArticleDO::getContentType, request.getContentType());
+        wrapper.eq(request.getUserId() != null, ArticleDO::getUserId, request.getUserId());
+        if (StringUtils.hasText(request.getKeyword())) {
+            wrapper.and(w -> w.like(ArticleDO::getTitle, request.getKeyword())
+                    .or().like(ArticleDO::getAbstractText, request.getKeyword()));
+        }
+        if ("asc".equalsIgnoreCase(request.getOrderDirection())) {
+            wrapper.orderByAsc(ArticleDO::getCreateTime);
+        } else {
+            wrapper.orderByDesc(ArticleDO::getCreateTime);
+        }
+        return toBean(request.getPageNo(), request.getPageSize(), wrapper);
+    }
+
+    private ArticleStatus resolveArticleStatus(Integer code) {
+        for (ArticleStatus s : ArticleStatus.values()) {
+            if (s.getStatus() == code) {
+                return s;
+            }
+        }
+        return null;
     }
 
     /**

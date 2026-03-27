@@ -16,6 +16,7 @@
         <module>chat-book-cloud-framework</module>
         <module>chat-book-cloud-gateway</module>
         <module>chat-book-cloud-auth</module>
+        <module>chat-book-cloud-agent</module>
         <module>chat-book-cloud-article</module>
         <module>chat-book-cloud-user</module>
         <module>chat-book-cloud-interaction</module>

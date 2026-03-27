@@ -1,0 +1,12 @@
+:root {
+  --cb-success: #10b981;
+  --cb-warning: #f59e0b;
+  --cb-error: #ef4444;
+
+  --cb-tag-success-bg: color-mix(in srgb, var(--cb-success) 12%, transparent);
+  --cb-tag-success-text: var(--cb-success);
+  --cb-tag-warning-bg: color-mix(in srgb, var(--cb-warning) 12%, transparent);
+  --cb-tag-warning-text: var(--cb-warning);
+  --cb-tag-error-bg: color-mix(in srgb, var(--cb-error) 12%, transparent);
+  --cb-tag-error-text: var(--cb-error);
+}

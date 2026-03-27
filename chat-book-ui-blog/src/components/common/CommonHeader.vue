@@ -134,6 +134,7 @@ import router from "@/router/index.js";
 import { useRoute } from "vue-router";
 import UserCard from "@/views/user/components/UserCard.vue";
 import { getUserBySelf } from "@/views/user/_domain/user.js";
+import { logoutAndRevoke } from "@/utils/token.js";
 
 const props = defineProps({
     showSearch: {
@@ -157,13 +158,12 @@ const handleSearchMobile = async () => {
     }
 };
 
-const handleCommand = (command) => {
+const handleCommand = async (command) => {
     switch (command) {
         case 'logout':
             console.log('退出登录');
-            localStorage.removeItem('token');
-            localStorage.removeItem('avatar');
-            router.push('/login')
+            await logoutAndRevoke();
+            router.push('/login');
             break;
         case 'user':
             console.log('查看个人资料');

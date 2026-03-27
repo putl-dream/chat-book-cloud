@@ -9,6 +9,7 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,12 +25,18 @@ public class AuthConfiguration {
     // ===================================== 鉴权 配置 ==============================================
     private String JWT_SECRET = "chat-book";
     private String JWT_ISSUER = "auth-service";
-    private long JWT_ACCESS_EXPIRATION;
-    private long JWT_REFRESH_EXPIRATION;
+    private long jwtAccessExpiration  = 15;  // 分钟，0 表示使用默认值
+    private long jwtRefreshExpiration = 7;   // 天，   0 表示使用默认值
 
     @Bean
     @ConditionalOnMissingBean
     public JwtUtil jwtUtil() {
-        return new JwtUtil(JWT_SECRET, JWT_ISSUER);
+        Duration access  = jwtAccessExpiration > 0
+                ? Duration.ofMinutes(jwtAccessExpiration)
+                : Duration.ofMinutes(15);
+        Duration refresh = jwtRefreshExpiration > 0
+                ? Duration.ofDays(jwtRefreshExpiration)
+                : Duration.ofDays(7);
+        return new JwtUtil(JWT_SECRET, JWT_ISSUER, access, refresh);
     }
 }

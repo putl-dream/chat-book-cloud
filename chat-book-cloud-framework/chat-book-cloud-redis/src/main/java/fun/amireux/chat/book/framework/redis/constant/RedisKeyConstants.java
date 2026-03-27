@@ -16,7 +16,8 @@ public class RedisKeyConstants {
     }
 
     // ==================== Auth Module ====================
-    public static final String AUTH_CAPTCHA = "cbc:%s:auth:captcha:%s"; // email
+    public static final String AUTH_CAPTCHA = "cbc:%s:auth:captcha:%s";           // email
+    public static final String AUTH_REFRESH_TOKEN = "cbc:%s:auth:refresh:%s";     // jti
 
     // ==================== Article Module ====================
     public static final String ARTICLE_CACHE = "cbc:%s:article:cache:%s"; // articleId
@@ -43,6 +44,10 @@ public class RedisKeyConstants {
      */
     public static String authCaptcha(String env, String email) {
         return String.format(AUTH_CAPTCHA, env, email);
+    }
+
+    public static String authRefreshToken(String env, String jti) {
+        return String.format(AUTH_REFRESH_TOKEN, env, jti);
     }
 
     public static String articleCache(String env, String articleId) {

@@ -1,5 +1,6 @@
 package com.putl.articleservice.service;
 
+import com.putl.articleservice.controller.dto.AdminArticlePageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.utils.PageResult;
 
@@ -57,6 +58,9 @@ public interface ArticlePageService {
 
     // 管理员审核文章列表
     PageResult<ArticleListVO> getAdminArticlePage(Integer pageNo, Integer pageSize);
+
+    // 管理员全站文章分页查询
+    PageResult<ArticleListVO> getAdminFullPage(AdminArticlePageRequestDTO request);
 
     // 根据ID列表查询文章列表
     List<ArticleListVO> selectIds(List<Integer> ids);

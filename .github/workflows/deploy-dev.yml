@@ -40,6 +40,8 @@ jobs:
       MINIO_ACCESS_KEY: ${{ vars.MINIO_ACCESS_KEY || '' }}
       MINIO_SECRET_KEY: ${{ vars.MINIO_SECRET_KEY || '' }}
       MINIO_BUCKET: ${{ vars.MINIO_BUCKET || 'chat-book-images' }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY || vars.ANTHROPIC_API_KEY || '' }}
+      ANTHROPIC_BASE_URL: ${{ vars.ANTHROPIC_BASE_URL || 'https://api.anthropic.com' }}
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || '' }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET || '' }}
       OAUTH2_SUCCESS_REDIRECT_URL: ${{ vars.OAUTH2_SUCCESS_REDIRECT_URL || 'http://180.184.30.1/login' }}
@@ -88,6 +90,7 @@ jobs:
           service_map = {
               "chat-book-cloud-gateway/": ("gateway", "chat-book-cloud-gateway"),
               "chat-book-cloud-auth/": ("auth", "chat-book-cloud-auth"),
+              "chat-book-cloud-agent/": ("agent", "chat-book-cloud-agent"),
               "chat-book-cloud-user/": ("user", "chat-book-cloud-user"),
               "chat-book-cloud-article/": ("article", "chat-book-cloud-article"),
               "chat-book-cloud-interaction/": ("interaction", "chat-book-cloud-interaction"),
@@ -98,6 +101,7 @@ jobs:
           backend_services = [
               ("gateway", "chat-book-cloud-gateway"),
               ("auth", "chat-book-cloud-auth"),
+              ("agent", "chat-book-cloud-agent"),
               ("user", "chat-book-cloud-user"),
               ("article", "chat-book-cloud-article"),
               ("interaction", "chat-book-cloud-interaction"),

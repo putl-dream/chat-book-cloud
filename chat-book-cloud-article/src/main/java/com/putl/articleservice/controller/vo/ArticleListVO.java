@@ -11,6 +11,7 @@ import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.List;
 
 
 @Data
@@ -45,6 +46,15 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "文章分类ID")
     private Integer category;
 
+    @Schema(description = "内容类型：0-学习/教程 1-实战/项目")
+    private Integer contentType;
+
+    @Schema(description = "标签ID列表")
+    private List<Integer> tagIds;
+
+    @Schema(description = "文章状态：0-草稿 1-待审核 2-已发布 -1-已删除")
+    private Integer status;
+
     @Schema(description = "点赞数量")
     private Long praiseCount;
 
@@ -60,5 +70,9 @@ public class ArticleListVO implements Serializable {
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
     @Schema(description = "文章创建时间")
     private LocalDateTime createTime;
+
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    @Schema(description = "文章更新时间")
+    private LocalDateTime updateTime;
 }
 

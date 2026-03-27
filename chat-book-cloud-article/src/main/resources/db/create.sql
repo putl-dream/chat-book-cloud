@@ -89,3 +89,37 @@ create table article_review_log
     key idx_article_review_reviewer_id (reviewer_id)
 )
     comment '文章审核日志表' row_format = DYNAMIC;
+
+create table article_draft
+(
+    id                 int auto_increment primary key,
+    user_id            int                                    not null comment '用户ID',
+    source_session_id  int                                    null comment '来源会话ID',
+    title              varchar(255) default ''                not null comment '当前标题',
+    summary            text                                   null comment '当前摘要',
+    content            longtext                               null comment '当前正文',
+    current_version_no int          default 1                 not null comment '当前版本号',
+    status             varchar(16)  default 'DRAFT'           not null comment 'DRAFT/PUBLISHED/ABANDONED',
+    create_time        datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time        datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    key idx_article_draft_user_id (user_id),
+    key idx_article_draft_source_session_id (source_session_id)
+)
+    comment '文章草稿表' row_format = DYNAMIC;
+
+create table article_draft_version
+(
+    id          int auto_increment primary key,
+    draft_id    int                                    not null comment '草稿ID',
+    version_no  int                                    not null comment '版本号',
+    source_type varchar(16)                            not null comment 'CREATE/OPTIMIZE/USER_EDIT',
+    instruction text                                   null comment '生成或优化指令',
+    title       varchar(255) default ''                not null comment '标题',
+    summary     text                                   null comment '摘要',
+    content     longtext                               null comment '正文',
+    adopted     tinyint      default 0                 not null comment '是否采用',
+    create_time datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    unique key uk_article_draft_version (draft_id, version_no),
+    key idx_article_draft_version_draft_id (draft_id)
+)
+    comment '文章草稿版本表' row_format = DYNAMIC;

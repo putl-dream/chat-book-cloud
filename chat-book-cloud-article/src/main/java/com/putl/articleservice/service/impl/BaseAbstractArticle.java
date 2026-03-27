@@ -9,6 +9,7 @@ import com.putl.userservice.api.dto.UserResult;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleMapper;
+import com.putl.articleservice.mapper.ArticleTagMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
@@ -19,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
@@ -43,6 +45,9 @@ public abstract class BaseAbstractArticle {
 
     @Resource
     protected ArticleMapper articleMapper;
+
+    @Resource
+    private ArticleTagMapper articleTagMapper;
 
     @Resource
     private UserClient userClient;
@@ -130,6 +135,29 @@ public abstract class BaseAbstractArticle {
             log.warn("批量获取文章统计数据失败, articleIds: {}", articleIds, e);
         }
 
+        // 批量查询 ArticleDO 补充 contentType / status / updateTime
+        Map<Integer, ArticleDO> articleDOMap = new HashMap<>();
+        if (!articleIds.isEmpty()) {
+            try {
+                List<ArticleDO> dos = articleMapper.selectBatchIds(articleIds);
+                for (ArticleDO d : dos) {
+                    articleDOMap.put(d.getId(), d);
+                }
+            } catch (Exception e) {
+                log.warn("批量获取文章DO失败, articleIds: {}", articleIds, e);
+            }
+        }
+
+        // 批量查询标签 Map
+        Map<Integer, List<Integer>> tagMap = new HashMap<>();
+        if (!articleIds.isEmpty()) {
+            try {
+                tagMap = articleTagMapper.selectTagIdMapByArticleIds(articleIds);
+            } catch (Exception e) {
+                log.warn("批量获取文章标签失败, articleIds: {}", articleIds, e);
+            }
+        }
+
         // 设置到每个文章对象
         for (ArticleListVO article : articles) {
             // 设置作者头像
@@ -150,6 +178,15 @@ public abstract class BaseAbstractArticle {
                 article.setCommentCount(0L);
                 article.setCollectCount(0L);
             }
+
+            // 设置 contentType / status / updateTime / tagIds
+            ArticleDO articleDO = articleDOMap.get(article.getId());
+            if (articleDO != null) {
+                article.setContentType(articleDO.getContentType());
+                article.setStatus(articleDO.getStatus() != null ? articleDO.getStatus().getStatus() : null);
+                article.setUpdateTime(articleDO.getUpdateTime());
+            }
+            article.setTagIds(tagMap.get(article.getId()));
         }
     }
 }

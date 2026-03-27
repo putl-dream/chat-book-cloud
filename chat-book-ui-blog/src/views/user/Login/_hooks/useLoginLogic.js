@@ -1,6 +1,7 @@
 import { ref, reactive } from 'vue';
 import { ElMessage } from "element-plus";
 import { captcha, login, signUp, loginByEmailCode } from "@/views/user/_domain/user.js";
+import { setTokens } from "@/utils/token.js";
 
 export function useLoginLogic() {
   const signupForm = reactive({
@@ -39,9 +40,11 @@ export function useLoginLogic() {
       return;
     }
     try {
-      const params = await signUp(signupForm);
-      if (params) {
+      const data = await signUp(signupForm);
+      if (data?.accessToken) {
+        setTokens(data);
         ElMessage.success('注册成功');
+        window.location.href = '/';
         return true;
       }
     } catch (e) {
@@ -53,9 +56,9 @@ export function useLoginLogic() {
   const handleSignIn = async () => {
     try {
       const data = await login(signInForm);
-      if (data) {
+      if (data?.accessToken) {
         ElMessage.success('登录成功');
-        localStorage.setItem("token", data);
+        setTokens(data);
         window.location.href = '/';
         return true;
       }
@@ -75,9 +78,9 @@ export function useLoginLogic() {
         email: signInForm.email,
         verificationCode: signInForm.captcha
       });
-      if (data) {
+      if (data?.accessToken) {
         ElMessage.success('登录成功');
-        localStorage.setItem("token", data);
+        setTokens(data);
         window.location.href = '/';
         return true;
       }

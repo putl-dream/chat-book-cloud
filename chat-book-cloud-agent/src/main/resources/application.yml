@@ -1,0 +1,24 @@
+spring:
+  config:
+    import: optional:nacos:agent-service-${spring.profiles.active}.yml
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+
+knife4j:
+  enable: true
+  setting:
+    language: zh_cn
+
+agent:
+  ai:
+    provider: anthropic
+    anthropic:
+      api-key: ${ANTHROPIC_API_KEY:}
+      base-url: https://api.anthropic.com
+      timeout-ms: 30000
