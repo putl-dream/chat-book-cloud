@@ -7,6 +7,7 @@ import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.mapper.entity.AgentSessionDO;
 import com.putl.agentservice.model.dto.GenerateDraftRequest;
+import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.DraftGenerateResponse;
 import com.putl.agentservice.model.vo.NotebookSummary;
@@ -44,14 +45,14 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                 .eq(AgentMessageDO::getSessionId, request.getSessionId())
                 .orderByAsc(AgentMessageDO::getId));
         NotebookSummary notebook = JsonUtil.parseObject(session.getNotebookSummary(), NotebookSummary.class);
-        ArticleDraftResult result = articleAiGateway.generateDraft(messages, notebook);
+        AiInvocationResult<ArticleDraftResult> result = articleAiGateway.generateDraft(messages, notebook);
 
         CreateDraftRequest createDraftRequest = new CreateDraftRequest();
         createDraftRequest.setUserId(session.getUserId());
         createDraftRequest.setSourceSessionId(session.getId());
-        createDraftRequest.setTitle(result.getTitle());
-        createDraftRequest.setSummary(result.getSummary());
-        createDraftRequest.setContent(result.getContent());
+        createDraftRequest.setTitle(result.getData().getTitle());
+        createDraftRequest.setSummary(result.getData().getSummary());
+        createDraftRequest.setContent(result.getData().getContent());
         createDraftRequest.setSourceType("CREATE");
         createDraftRequest.setInstruction("Generate draft from agent session");
 

@@ -8,6 +8,7 @@ import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.mapper.entity.AgentSessionDO;
 import com.putl.agentservice.model.dto.AgentChatRequest;
+import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.AgentChatResponse;
 import com.putl.agentservice.model.vo.NotebookSummary;
 import com.putl.agentservice.service.AgentConversationService;
@@ -39,21 +40,30 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 .eq(AgentMessageDO::getSessionId, request.getSessionId())
                 .orderByAsc(AgentMessageDO::getId));
         NotebookSummary notebook = JsonUtil.parseObject(session.getNotebookSummary(), NotebookSummary.class);
-        String reply = articleAiGateway.chat(messages, notebook);
-        saveMessage(request.getSessionId(), AgentMessageRole.ASSISTANT, reply);
+        AiInvocationResult<String> reply = articleAiGateway.chat(messages, notebook);
+        saveMessage(request.getSessionId(), AgentMessageRole.ASSISTANT, reply.getData(), reply.getTokenInput(), reply.getTokenOutput(), reply.getLatencyMs());
         return AgentChatResponse.builder()
-                .reply(reply)
+                .reply(reply.getData())
                 .build();
     }
 
     private void saveMessage(Integer sessionId, AgentMessageRole role, String content) {
+        saveMessage(sessionId, role, content, 0, 0, 0);
+    }
+
+    private void saveMessage(Integer sessionId,
+                             AgentMessageRole role,
+                             String content,
+                             Integer tokenInput,
+                             Integer tokenOutput,
+                             Integer latencyMs) {
         agentMessageMapper.insert(AgentMessageDO.builder()
                 .sessionId(sessionId)
                 .role(role)
                 .content(content)
-                .tokenInput(0)
-                .tokenOutput(0)
-                .latencyMs(0)
+                .tokenInput(tokenInput)
+                .tokenOutput(tokenOutput)
+                .latencyMs(latencyMs)
                 .build());
     }
 }

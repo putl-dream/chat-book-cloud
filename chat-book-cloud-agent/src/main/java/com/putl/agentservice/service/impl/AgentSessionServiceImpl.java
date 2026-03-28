@@ -1,6 +1,7 @@
 package com.putl.agentservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.putl.agentservice.config.AnthropicProperties;
 import com.putl.agentservice.enums.AgentSessionStatus;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.AgentSessionMapper;
@@ -24,13 +25,16 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     private final AgentSessionMapper agentSessionMapper;
     private final AgentMessageMapper agentMessageMapper;
     private final AgentNotebookService agentNotebookService;
+    private final AnthropicProperties anthropicProperties;
 
     public AgentSessionServiceImpl(AgentSessionMapper agentSessionMapper,
                                    AgentMessageMapper agentMessageMapper,
-                                   AgentNotebookService agentNotebookService) {
+                                   AgentNotebookService agentNotebookService,
+                                   AnthropicProperties anthropicProperties) {
         this.agentSessionMapper = agentSessionMapper;
         this.agentMessageMapper = agentMessageMapper;
         this.agentNotebookService = agentNotebookService;
+        this.anthropicProperties = anthropicProperties;
     }
 
     @Override
@@ -44,7 +48,7 @@ public class AgentSessionServiceImpl implements AgentSessionService {
                 .title(request.getTitle())
                 .status(AgentSessionStatus.ACTIVE)
                 .notebookSummary(JsonUtil.toJsonString(notebook))
-                .model("claude-sonnet-4-5")
+                .model(anthropicProperties.getAnthropic().getModel().getChat())
                 .promptVersion("v1")
                 .build();
         agentSessionMapper.insert(session);
