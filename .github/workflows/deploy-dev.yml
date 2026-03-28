@@ -71,6 +71,15 @@ jobs:
           tar -xzf "${archive_file}" -C "${GITHUB_WORKSPACE}" --strip-components=1
           rm -f "${archive_file}"
 
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: |
+            chat-book-ui-blog/package-lock.json
+            chat-book-ui-admin/package-lock.json
+
       - name: Detect changed areas
         id: changes
         run: |
