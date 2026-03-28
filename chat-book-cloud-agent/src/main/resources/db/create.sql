@@ -31,6 +31,6 @@ create table agent_message
     token_output int          default 0                 null comment '输出token',
     latency_ms   int          default 0                 null comment '耗时毫秒',
     create_time  datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
-    key idx_session_id (session_id)
+    key idx_session_id_id (session_id, id)
 )
     comment '文章 Agent 消息表' row_format = DYNAMIC;

@@ -10,7 +10,7 @@ import org.springframework.util.StringUtils;
 import java.time.Duration;
 
 @Configuration
-@EnableConfigurationProperties(AnthropicProperties.class)
+@EnableConfigurationProperties({AnthropicProperties.class, AgentChatProperties.class})
 public class AnthropicConfig {
 
     @Bean(destroyMethod = "close")

@@ -1,11 +1,14 @@
 package com.putl.agentservice.client;
 
 import com.anthropic.client.AnthropicClient;
+import com.anthropic.core.http.StreamResponse;
 import com.anthropic.models.messages.ContentBlock;
 import com.anthropic.models.messages.Message;
 import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.MessageDeltaUsage;
 import com.anthropic.models.messages.MessageParam;
-import com.anthropic.models.messages.Usage;
+import com.anthropic.models.messages.RawContentBlockDelta;
+import com.anthropic.models.messages.RawMessageStreamEvent;
 import com.putl.agentservice.config.AnthropicProperties;
 import com.putl.agentservice.constants.PromptTemplateConstants;
 import com.putl.agentservice.enums.AgentMessageRole;
@@ -15,23 +18,23 @@ import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.NotebookSummary;
 import com.putl.agentservice.prompt.PromptTemplateLoader;
 import fun.amireux.chat.book.framework.common.utils.JsonUtil;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Component
 public class AnthropicArticleAiGateway implements ArticleAiGateway {
-
-    private static final Logger log = LoggerFactory.getLogger(AnthropicArticleAiGateway.class);
 
     private final AnthropicClient anthropicClient;
     private final AnthropicProperties properties;
@@ -47,15 +50,14 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
 
     @Override
     public AiInvocationResult<String> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary) {
-        MessageCreateParams.Builder builder = baseRequest(
-                properties.getAnthropic().getModel().getChat(),
-                properties.getAnthropic().getMaxTokens().getChat(),
-                0.7,
-                renderTemplate(PromptTemplateConstants.ARTICLE_CHAT, Map.of(
-                        "notebook_json", prettyJson(normalizeNotebook(notebookSummary))
-                )));
-        toAnthropicMessages(messages).forEach(builder::addMessage);
-        return invokeForText(builder.build());
+        return invokeForText(buildChatParams(messages, notebookSummary));
+    }
+
+    @Override
+    public AiInvocationResult<String> chatStream(List<AgentMessageDO> messages,
+                                                 NotebookSummary notebookSummary,
+                                                 Consumer<String> chunkConsumer) {
+        return invokeForTextStream(buildChatParams(messages, notebookSummary), chunkConsumer);
     }
 
     @Override
@@ -106,6 +108,18 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
                 .system(systemPrompt);
     }
 
+    private MessageCreateParams buildChatParams(List<AgentMessageDO> messages, NotebookSummary notebookSummary) {
+        MessageCreateParams.Builder builder = baseRequest(
+                properties.getAnthropic().getModel().getChat(),
+                properties.getAnthropic().getMaxTokens().getChat(),
+                0.7,
+                renderTemplate(PromptTemplateConstants.ARTICLE_CHAT, Map.of(
+                        "notebook_json", prettyJson(normalizeNotebook(notebookSummary))
+                )));
+        toAnthropicMessages(messages).forEach(builder::addMessage);
+        return builder.build();
+    }
+
     private AiInvocationResult<String> invokeForText(MessageCreateParams params) {
         Instant startedAt = Instant.now();
         Message response = anthropicClient.messages().create(params);
@@ -116,6 +130,52 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
                 toInt(response.usage().outputTokens()),
                 latencyMs,
                 response.model().asString());
+    }
+
+    private AiInvocationResult<String> invokeForTextStream(MessageCreateParams params, Consumer<String> chunkConsumer) {
+        Instant startedAt = Instant.now();
+        StringBuilder content = new StringBuilder();
+        AtomicInteger tokenInput = new AtomicInteger(0);
+        AtomicInteger tokenOutput = new AtomicInteger(0);
+        AtomicReference<String> model = new AtomicReference<>(params.model().asString());
+        Consumer<String> safeChunkConsumer = chunkConsumer == null ? ignored -> { } : chunkConsumer;
+        try (StreamResponse<RawMessageStreamEvent> streamResponse = anthropicClient.messages().createStreaming(params)) {
+            streamResponse.stream().forEachOrdered(event -> {
+                if (event.isMessageStart()) {
+                    Message message = event.asMessageStart().message();
+                    tokenInput.set(toInt(message.usage().inputTokens()));
+                    tokenOutput.set(toInt(message.usage().outputTokens()));
+                    model.set(message.model().asString());
+                    return;
+                }
+                if (event.isMessageDelta()) {
+                    MessageDeltaUsage usage = event.asMessageDelta().usage();
+                    tokenOutput.set(toInt(usage.outputTokens()));
+                    if (usage.inputTokens().isPresent()) {
+                        tokenInput.set(toInt(usage.inputTokens().get()));
+                    }
+                    return;
+                }
+                if (!event.isContentBlockDelta()) {
+                    return;
+                }
+                RawContentBlockDelta delta = event.asContentBlockDelta().delta();
+                if (!delta.isText()) {
+                    return;
+                }
+                String chunk = delta.asText().text();
+                if (!StringUtils.hasText(chunk)) {
+                    return;
+                }
+                content.append(chunk);
+                safeChunkConsumer.accept(chunk);
+            });
+        }
+        int latencyMs = toInt(Duration.between(startedAt, Instant.now()).toMillis());
+        if (!StringUtils.hasText(content.toString())) {
+            throw new IllegalStateException("Anthropic 流式响应未返回可解析的文本内容");
+        }
+        return new AiInvocationResult<>(content.toString(), tokenInput.get(), tokenOutput.get(), latencyMs, model.get());
     }
 
     private <T> AiInvocationResult<T> invokeForJson(MessageCreateParams params, Class<T> targetType) {

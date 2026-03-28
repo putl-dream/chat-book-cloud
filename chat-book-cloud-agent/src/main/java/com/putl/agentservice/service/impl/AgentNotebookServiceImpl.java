@@ -3,13 +3,11 @@ package com.putl.agentservice.service.impl;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.mapper.AgentMessageMapper;
-import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
-import com.putl.agentservice.mapper.entity.AgentSessionDO;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.service.AgentNotebookCacheService;
 import com.putl.agentservice.service.AgentNotebookService;
-import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -17,16 +15,16 @@ import java.util.List;
 @Service
 public class AgentNotebookServiceImpl implements AgentNotebookService {
 
-    private final AgentSessionMapper agentSessionMapper;
     private final AgentMessageMapper agentMessageMapper;
     private final ArticleAiGateway articleAiGateway;
+    private final AgentNotebookCacheService agentNotebookCacheService;
 
-    public AgentNotebookServiceImpl(AgentSessionMapper agentSessionMapper,
-                                    AgentMessageMapper agentMessageMapper,
-                                    ArticleAiGateway articleAiGateway) {
-        this.agentSessionMapper = agentSessionMapper;
+    public AgentNotebookServiceImpl(AgentMessageMapper agentMessageMapper,
+                                    ArticleAiGateway articleAiGateway,
+                                    AgentNotebookCacheService agentNotebookCacheService) {
         this.agentMessageMapper = agentMessageMapper;
         this.articleAiGateway = articleAiGateway;
+        this.agentNotebookCacheService = agentNotebookCacheService;
     }
 
     @Override
@@ -39,16 +37,12 @@ public class AgentNotebookServiceImpl implements AgentNotebookService {
 
     @Override
     public NotebookSummary refreshNotebook(Integer sessionId) {
-        AgentSessionDO session = agentSessionMapper.selectById(sessionId);
         List<AgentMessageDO> messages = agentMessageMapper.selectList(Wrappers.<AgentMessageDO>lambdaQuery()
                 .eq(AgentMessageDO::getSessionId, sessionId)
                 .orderByAsc(AgentMessageDO::getId));
-        NotebookSummary currentNotebook = JsonUtil.parseObject(session.getNotebookSummary(), NotebookSummary.class);
+        NotebookSummary currentNotebook = agentNotebookCacheService.getNotebook(sessionId);
         AiInvocationResult<NotebookSummary> refreshed = articleAiGateway.summarizeNotebook(messages, currentNotebook);
-        agentSessionMapper.updateById(AgentSessionDO.builder()
-                .id(sessionId)
-                .notebookSummary(JsonUtil.toJsonString(refreshed.getData()))
-                .build());
+        agentNotebookCacheService.saveNotebook(sessionId, refreshed.getData());
         return refreshed.getData();
     }
 }

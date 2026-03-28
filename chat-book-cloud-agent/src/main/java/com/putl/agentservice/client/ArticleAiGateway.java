@@ -6,10 +6,13 @@ import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.NotebookSummary;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface ArticleAiGateway {
 
     AiInvocationResult<String> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
+
+    AiInvocationResult<String> chatStream(List<AgentMessageDO> messages, NotebookSummary notebookSummary, Consumer<String> chunkConsumer);
 
     AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
 
