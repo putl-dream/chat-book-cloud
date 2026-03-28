@@ -63,7 +63,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .photo(userInfo.getPhoto())
                 .profile(userInfo.getProfile())
                 .role(role)
-                .status(user != null ? user.getStatus() : null)
+                .status(user.getStatus())
                 .build();
     }
 
@@ -106,7 +106,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                     .photo(userInfo.getPhoto())
                     .profile(userInfo.getProfile())
                     .role(role)
-                    .status(user != null ? user.getStatus() : null)
+                    .status(user.getStatus())
                     .build());
         }
         return result;
@@ -197,11 +197,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }
         user.setStatus(1);
         this.updateById(user);
-        UserInfoDO info = userInfoService.getByUserId(targetUserId);
-        if (info != null) {
-            info.setStatus(1);
-            userInfoService.update(info);
-        }
         insertOpLog(operatorId, "USER_DISABLE", "USER", targetUserId, null);
     }
 
@@ -218,11 +213,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }
         user.setStatus(0);
         this.updateById(user);
-        UserInfoDO info = userInfoService.getByUserId(targetUserId);
-        if (info != null) {
-            info.setStatus(0);
-            userInfoService.update(info);
-        }
         insertOpLog(operatorId, "USER_ENABLE", "USER", targetUserId, null);
     }
 
