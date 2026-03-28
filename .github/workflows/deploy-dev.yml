@@ -71,14 +71,31 @@ jobs:
           tar -xzf "${archive_file}" -C "${GITHUB_WORKSPACE}" --strip-components=1
           rm -f "${archive_file}"
 
-      - name: Set up Node.js 24
-        uses: actions/setup-node@v6
-        with:
-          node-version: "24"
-          cache: npm
-          cache-dependency-path: |
-            chat-book-ui-blog/package-lock.json
-            chat-book-ui-admin/package-lock.json
+      - name: Use local Node.js 24
+        run: |
+          set -euo pipefail
+
+          export NVM_DIR="${NVM_DIR:-$HOME/.nvm}"
+
+          if [ -s "${NVM_DIR}/nvm.sh" ]; then
+            . "${NVM_DIR}/nvm.sh"
+            nvm use 24 > /dev/null
+          fi
+
+          command -v node > /dev/null
+          command -v npm > /dev/null
+
+          node_major="$(node -p 'process.versions.node.split(".")[0]')"
+          if [ "${node_major}" -lt 24 ]; then
+            echo "Node.js 24+ is required on the self-hosted runner, found: $(node -v)"
+            exit 1
+          fi
+
+          dirname "$(command -v node)" >> "${GITHUB_PATH}"
+          dirname "$(command -v npm)" >> "${GITHUB_PATH}"
+
+          node -v
+          npm -v
 
       - name: Detect changed areas
         id: changes
@@ -372,8 +389,8 @@ jobs:
             exit 1
           fi
 
-          if [ "${node_major}" -lt 18 ]; then
-            echo "Node.js 18+ is required on the self-hosted runner, found: ${node_major}"
+          if [ "${node_major}" -lt 24 ]; then
+            echo "Node.js 24+ is required on the self-hosted runner, found: ${node_major}"
             exit 1
           fi
 
