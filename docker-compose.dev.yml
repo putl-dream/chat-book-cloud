@@ -199,7 +199,7 @@ services:
     restart: always
     build: ./chat-book-ui-admin
     ports:
-      - "${ADMIN_UI_PORT:-3000}:3000"
+      - "${ADMIN_UI_PORT:-3000}:80"
     environment:
       GATEWAY_PROXY_TARGET: http://gateway:8080
       MINIO_PROXY_TARGET: ${MINIO_PROXY_TARGET:-http://10.0.0.2:9000}
