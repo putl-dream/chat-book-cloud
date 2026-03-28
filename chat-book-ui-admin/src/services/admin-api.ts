@@ -1,6 +1,13 @@
 import { dashboardHighlights, dashboardServices } from "@/data/admin-config";
 import { contentArticles, interactionEvents } from "@/data/mock-data";
-import { clearAdminSession, readAccessToken, readRefreshToken, saveAdminSession } from "@/services/auth";
+import {
+  clearAdminSession,
+  getBrowserApiBaseUrl,
+  normalizeLoginVO,
+  readAccessToken,
+  readRefreshToken,
+  saveAdminSession,
+} from "@/services/auth";
 import type { LoginVO } from "@/services/auth";
 import type {
   AdminArticle,
@@ -68,20 +75,6 @@ function toNumber(value: number | string | null | undefined) {
   return 0;
 }
 
-function normalizeApiBase(baseUrl: string) {
-  const normalized = baseUrl.replace(/\/$/, "");
-  return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
-}
-
-function getBrowserApiBaseUrl() {
-  const configuredBase =
-    import.meta.env.VITE_API_BASE_URL?.trim() ||
-    import.meta.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
-    "";
-
-  return configuredBase ? normalizeApiBase(configuredBase) : "/api";
-}
-
 async function parseResponseBody<T>(response: Response) {
   const text = await response.text();
 
@@ -139,8 +132,9 @@ async function tryRefreshToken(): Promise<boolean> {
       );
       const body = await parseResponseBody<CommonApiResponse<LoginVO> | { msg?: string }>(response);
       const data = body && typeof body === 'object' && 'data' in body ? (body as CommonApiResponse<LoginVO>).data : null;
-      if (data?.accessToken) {
-        saveAdminSession(data);
+      const loginVO = normalizeLoginVO(data);
+      if (loginVO?.accessToken) {
+        saveAdminSession(loginVO);
         return true;
       }
       return false;
@@ -158,10 +152,16 @@ async function tryRefreshToken(): Promise<boolean> {
 async function requestBrowser<T>(
   path: string,
   init?: RequestInit,
-  options?: { auth?: boolean; redirectOnUnauthorized?: boolean; _retryCount?: number }
+  options?: {
+    auth?: boolean;
+    redirectOnUnauthorized?: boolean;
+    refreshOnUnauthorized?: boolean;
+    _retryCount?: number;
+  }
 ): Promise<T> {
   const authEnabled = options?.auth ?? true;
   const redirectOnUnauthorized = options?.redirectOnUnauthorized ?? true;
+  const refreshOnUnauthorized = options?.refreshOnUnauthorized ?? authEnabled;
   const token = readAccessToken();
   const headers = new Headers(init?.headers);
 
@@ -192,14 +192,17 @@ async function requestBrowser<T>(
       result.code
     );
 
-    if (error.status === 401 && redirectOnUnauthorized) {
+    if (error.status === 401 && refreshOnUnauthorized) {
       const refreshed = await tryRefreshToken();
       if (refreshed && (options?._retryCount ?? 0) === 0) {
         // 刷新成功，重试原请求（最多一次）
         return requestBrowser(path, init, { ...options, _retryCount: (options?._retryCount ?? 0) + 1 });
       }
+    }
+
+    if (error.status === 401) {
       clearAdminSession();
-      if (typeof window !== "undefined" && window.location.pathname !== "/login") {
+      if (redirectOnUnauthorized && typeof window !== "undefined" && window.location.pathname !== "/login") {
         window.location.href = `/login?reason=session-expired`;
       }
       throw error;
@@ -279,10 +282,19 @@ export function loginAdmin(username: string, password: string) {
       }),
     },
     { auth: false, redirectOnUnauthorized: false }
-  );
+  ).then((result) => {
+    const loginVO = normalizeLoginVO(result);
+    if (!loginVO) {
+      throw new BrowserApiError("登录接口未返回 refresh token，无法启用 JWT 刷新机制。", 200);
+    }
+    return loginVO;
+  });
 }
 
-export function getCurrentAdminUser(options?: { redirectOnUnauthorized?: boolean }) {
+export function getCurrentAdminUser(options?: {
+  redirectOnUnauthorized?: boolean;
+  refreshOnUnauthorized?: boolean;
+}) {
   return requestBrowser<CurrentAdminUser>("/user/bySelf", { method: "GET" }, options);
 }
 

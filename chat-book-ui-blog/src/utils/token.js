@@ -4,6 +4,24 @@ const REFRESH_TOKEN_KEY = 'refreshToken';
 let isRefreshing = false;
 let refreshingPromise = null;
 
+function normalizeLoginTokens(loginVO) {
+    if (!loginVO || typeof loginVO !== 'object') {
+        return null;
+    }
+
+    const accessToken = typeof loginVO.accessToken === 'string' ? loginVO.accessToken.trim() : '';
+    const refreshToken = typeof loginVO.refreshToken === 'string' ? loginVO.refreshToken.trim() : '';
+
+    if (!accessToken || !refreshToken) {
+        return null;
+    }
+
+    return {
+        accessToken,
+        refreshToken
+    };
+}
+
 /**
  * 获取 Access Token
  */
@@ -23,8 +41,13 @@ export function getRefreshToken() {
  * @param {Object} loginVO - { accessToken, refreshToken, expiresIn }
  */
 export function setTokens(loginVO) {
-    localStorage.setItem(ACCESS_TOKEN_KEY, loginVO.accessToken);
-    localStorage.setItem(REFRESH_TOKEN_KEY, loginVO.refreshToken);
+    const normalized = normalizeLoginTokens(loginVO);
+    if (!normalized) {
+        throw new Error('登录接口未返回 refreshToken，无法启用 JWT 刷新机制');
+    }
+
+    localStorage.setItem(ACCESS_TOKEN_KEY, normalized.accessToken);
+    localStorage.setItem(REFRESH_TOKEN_KEY, normalized.refreshToken);
 }
 
 /**
@@ -64,8 +87,14 @@ export async function refreshAccessToken() {
             const res = await response.json();
 
             if (res.code === 200 && res.data) {
-                setTokens(res.data);
-                return res.data.accessToken;
+                const normalized = normalizeLoginTokens(res.data);
+                if (!normalized) {
+                    clearTokens();
+                    return null;
+                }
+
+                setTokens(normalized);
+                return normalized.accessToken;
             }
 
             clearTokens();

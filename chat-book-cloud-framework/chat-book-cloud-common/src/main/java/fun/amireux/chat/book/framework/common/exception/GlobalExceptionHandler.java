@@ -4,6 +4,8 @@ import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -19,23 +21,29 @@ public class GlobalExceptionHandler {
      * 认证异常
      */
     @ExceptionHandler(AuthenticationException.class)
-    public CommonResult<Void> handleAuthentication(AuthenticationException ex) {
+    public ResponseEntity<CommonResult<Void>> handleAuthentication(AuthenticationException ex) {
         log.warn("认证失败: {}", ex.getMessage());
-        return CommonResult.error(ErrorType.ERROR_401.code(), ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body(CommonResult.error(ErrorType.ERROR_401.code(), ex.getMessage()));
     }
 
     @ExceptionHandler({IllegalArgumentException.class, IllegalStateException.class})
-    public CommonResult<Void> handleBadRequest(RuntimeException ex) {
+    public ResponseEntity<CommonResult<Void>> handleBadRequest(RuntimeException ex) {
         log.warn("请求参数或状态异常: {}", ex.getMessage());
-        return CommonResult.error(ErrorType.ERROR_400.code(), ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(CommonResult.error(ErrorType.ERROR_400.code(), ex.getMessage()));
     }
 
     /**
      * 兜底异常处理
      */
     @ExceptionHandler(Exception.class)
-    public CommonResult<Void> handleException(Exception ex) {
+    public ResponseEntity<CommonResult<Void>> handleException(Exception ex) {
         log.error("系统异常: {}", ex.getMessage(), ex);
-        return CommonResult.error(ErrorType.ERROR_500);
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(CommonResult.error(ErrorType.ERROR_500));
     }
 }

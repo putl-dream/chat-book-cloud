@@ -35,17 +35,21 @@ export const useAuthStore = defineStore("auth", {
       this.loading = true;
 
       try {
-        const user = await getCurrentAdminUser({ redirectOnUnauthorized: false });
+        const user = await getCurrentAdminUser({
+          redirectOnUnauthorized: false,
+          refreshOnUnauthorized: true,
+        });
 
         if (user.role !== "admin") {
           throw new BrowserApiError("当前账号不是管理员，无法访问后台。", 403, 403);
         }
 
+        this.token = readAccessToken() ?? "";
         this.user = user;
         this.initialized = true;
         return user;
       } catch (error) {
-        revokeAndClearSession();
+        await revokeAndClearSession();
         this.token = "";
         this.user = null;
         this.initialized = true;
@@ -60,17 +64,21 @@ export const useAuthStore = defineStore("auth", {
       this.token = loginVO.accessToken;
 
       try {
-        const user = await getCurrentAdminUser({ redirectOnUnauthorized: false });
+        const user = await getCurrentAdminUser({
+          redirectOnUnauthorized: false,
+          refreshOnUnauthorized: true,
+        });
 
         if (user.role !== "admin") {
           throw new BrowserApiError("当前账号不是管理员，无法访问后台。", 403, 403);
         }
 
+        this.token = readAccessToken() ?? "";
         this.user = user;
         this.initialized = true;
         return user;
       } catch (error) {
-        revokeAndClearSession();
+        await revokeAndClearSession();
         this.token = "";
         this.user = null;
         throw error;

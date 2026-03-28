@@ -96,8 +96,8 @@ const themeStore = useThemeStore();
 const currentNav = computed(() => findCurrentNav(route.path));
 const breadcrumbs = computed(() => buildBreadcrumbs(route.path));
 
-function handleLogout() {
-  authStore.logout();
+async function handleLogout() {
+  await authStore.logout();
   router.replace("/login");
 }
 </script>

@@ -1,12 +1,30 @@
-export const ADMIN_SESSION_COOKIE = "chat_book_admin_token";
 export const ADMIN_TOKEN_KEY = "chat_book_admin_token";
 export const ADMIN_REFRESH_TOKEN_KEY = "chat_book_admin_refresh_token";
-export const ADMIN_SESSION_MAX_AGE = 60 * 60 * 24 * 7;
 
 export interface LoginVO {
-    accessToken: string;
-    refreshToken: string;
-    expiresIn: number;
+  accessToken: string;
+  refreshToken: string;
+  expiresIn?: number;
+}
+
+type LoginResponse = Partial<LoginVO> | null | undefined;
+
+export function normalizeLoginVO(payload: LoginResponse): LoginVO | null {
+  if (!payload || typeof payload !== "object") {
+    return null;
+  }
+
+  const accessToken = typeof payload.accessToken === "string" ? payload.accessToken.trim() : "";
+  const refreshToken = typeof payload.refreshToken === "string" ? payload.refreshToken.trim() : "";
+  if (!accessToken || !refreshToken) {
+    return null;
+  }
+
+  return {
+    accessToken,
+    refreshToken,
+    expiresIn: payload.expiresIn,
+  };
 }
 
 export function normalizeNextPath(nextPath?: string | null) {
@@ -15,6 +33,24 @@ export function normalizeNextPath(nextPath?: string | null) {
   }
 
   return nextPath;
+}
+
+function normalizeApiBase(baseUrl: string) {
+  const normalized = baseUrl.replace(/\/$/, "");
+  return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
+}
+
+export function getBrowserApiBaseUrl() {
+  const configuredBase =
+    import.meta.env.VITE_API_BASE_URL?.trim() ||
+    import.meta.env.NEXT_PUBLIC_API_BASE_URL?.trim() ||
+    "";
+
+  return configuredBase ? normalizeApiBase(configuredBase) : "/api";
+}
+
+function shouldRevokeSessionOnLogout() {
+  return import.meta.env.VITE_AUTH_REVOKE_ON_LOGOUT?.trim() === "true";
 }
 
 /**
@@ -38,19 +74,16 @@ export function readRefreshToken(): string | null {
 }
 
 /**
- * 存储双 Token（登录成功后调用）
+ * 存储 Token（登录成功后调用）
  */
 export function saveAdminSession(loginVO: LoginVO) {
-  if (typeof window !== "undefined") {
-    window.localStorage.setItem(ADMIN_TOKEN_KEY, loginVO.accessToken);
-    window.localStorage.setItem(ADMIN_REFRESH_TOKEN_KEY, loginVO.refreshToken);
+  const normalized = normalizeLoginVO(loginVO);
+  if (!normalized || typeof window === "undefined") {
+    return;
   }
 
-  if (typeof document !== "undefined") {
-    const secure = window.location.protocol === "https:" ? "; Secure" : "";
-    document.cookie =
-      `${ADMIN_SESSION_COOKIE}=${encodeURIComponent(loginVO.accessToken)}; Path=/; Max-Age=${loginVO.expiresIn}; SameSite=Lax${secure}`;
-  }
+  window.localStorage.setItem(ADMIN_TOKEN_KEY, normalized.accessToken);
+  window.localStorage.setItem(ADMIN_REFRESH_TOKEN_KEY, normalized.refreshToken);
 }
 
 /**
@@ -61,10 +94,6 @@ export function clearAdminSession() {
     window.localStorage.removeItem(ADMIN_TOKEN_KEY);
     window.localStorage.removeItem(ADMIN_REFRESH_TOKEN_KEY);
   }
-
-  if (typeof document !== "undefined") {
-    document.cookie = `${ADMIN_SESSION_COOKIE}=; Path=/; Max-Age=0; SameSite=Lax`;
-  }
 }
 
 /**
@@ -72,16 +101,15 @@ export function clearAdminSession() {
  */
 export async function revokeAndClearSession(): Promise<void> {
   const refreshToken = readRefreshToken();
-  if (refreshToken) {
+  if (refreshToken && shouldRevokeSessionOnLogout()) {
     try {
-      const baseURL = import.meta.env.NEXT_PUBLIC_API_BASE_URL || '';
-      await fetch(`${baseURL}/api/auth/account/logout`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+      await fetch(`${getBrowserApiBaseUrl()}/auth/account/logout`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ refreshToken }),
       });
     } catch (e) {
-      console.warn('Logout revoke failed:', e);
+      console.warn("Logout revoke failed:", e);
     }
   }
   clearAdminSession();
