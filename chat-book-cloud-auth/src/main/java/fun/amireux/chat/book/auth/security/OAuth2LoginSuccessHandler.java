@@ -109,11 +109,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         // Store refresh token in Redis
         DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
         String jti = jwtUtil.getJti(refreshJwt);
-        long refreshExpSeconds = refreshJwt.getExpiresAt().getTime() / 1000;
+        Instant refreshExpiresAt = refreshJwt.getExpiresAt().toInstant();
         RefreshTokenInfo info = new RefreshTokenInfo(
-                userId, Instant.now(), Instant.ofEpochSecond(refreshExpSeconds), null
+                userId, Instant.now(), refreshExpiresAt, null
         );
-        refreshTokenService.store(jti, info, refreshExpSeconds);
+        refreshTokenService.store(jti, info, refreshExpiresAt);
 
         // Redirect with both tokens as query params
         response.sendRedirect(redirectUrl

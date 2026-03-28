@@ -213,16 +213,16 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         // Decode refresh token to extract jti and expiry
         DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
         String jti = jwtUtil.getJti(refreshJwt);
-        long refreshExpSeconds = refreshJwt.getExpiresAt().getTime() / 1000;
+        Instant refreshExpiresAt = refreshJwt.getExpiresAt().toInstant();
 
         // Store refresh token metadata in Redis
         RefreshTokenInfo info = new RefreshTokenInfo(
                 userDO.getId(),
                 Instant.now(),
-                Instant.ofEpochSecond(refreshExpSeconds),
+                refreshExpiresAt,
                 null
         );
-        refreshTokenService.store(jti, info, refreshExpSeconds);
+        refreshTokenService.store(jti, info, refreshExpiresAt);
 
         return new LoginVO(accessToken, refreshToken, jwtUtil.getAccessExpirationSeconds());
     }

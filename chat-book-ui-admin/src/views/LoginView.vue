@@ -118,7 +118,7 @@ onMounted(async () => {
     await authStore.ensureSession();
     router.replace(safeNextPath);
   } catch {
-    authStore.logout();
+    // ensureSession 已在失败分支中清理会话，这里避免重复触发 logout。
   } finally {
     checking.value = false;
   }
@@ -132,7 +132,6 @@ async function handleSubmit() {
     await authStore.login(username.value.trim(), password.value);
     router.replace(safeNextPath);
   } catch (error) {
-    authStore.logout();
     errorMessage.value =
       error instanceof BrowserApiError
         ? error.message

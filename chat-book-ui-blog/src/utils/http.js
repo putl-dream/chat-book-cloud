@@ -156,22 +156,19 @@ service.interceptors.response.use(
         const { response, message } = error;
         const status = response ? response.status : null;
         const errorMsg = response?.data?.msg || message;
+        const originalRequest = error.config;
 
         // 401: 尝试自动刷新 Token
         if (status === 401) {
-            if (!window._isRefreshing) {
-                window._isRefreshing = true;
-                try {
-                    const newToken = await refreshAccessToken();
-                    window._isRefreshing = false;
-                    if (newToken) {
-                        // Token 已刷新，重新发起原请求
-                        error.config.headers['Authorization'] = `Bearer ${newToken}`;
-                        error.config.headers['token'] = newToken;
-                        return service(error.config);
-                    }
-                } catch (e) {
-                    window._isRefreshing = false;
+            if (!originalRequest?._retry) {
+                originalRequest._retry = true;
+                const newToken = await refreshAccessToken();
+                if (newToken) {
+                    // Token 已刷新，重试原请求一次
+                    originalRequest.headers = originalRequest.headers || {};
+                    originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+                    originalRequest.headers['token'] = newToken;
+                    return service(originalRequest);
                 }
             }
 

@@ -41,12 +41,10 @@ export function useLoginLogic() {
     }
     try {
       const data = await signUp(signupForm);
-      if (data?.accessToken) {
-        setTokens(data);
-        ElMessage.success('注册成功');
-        window.location.href = '/';
-        return true;
-      }
+      setTokens(data);
+      ElMessage.success('注册成功');
+      window.location.href = '/';
+      return true;
     } catch (e) {
       console.error(e);
     }
@@ -56,12 +54,10 @@ export function useLoginLogic() {
   const handleSignIn = async () => {
     try {
       const data = await login(signInForm);
-      if (data?.accessToken) {
-        ElMessage.success('登录成功');
-        setTokens(data);
-        window.location.href = '/';
-        return true;
-      }
+      setTokens(data);
+      ElMessage.success('登录成功');
+      window.location.href = '/';
+      return true;
     } catch (e) {
       console.error(e);
     }
@@ -78,12 +74,10 @@ export function useLoginLogic() {
         email: signInForm.email,
         verificationCode: signInForm.captcha
       });
-      if (data?.accessToken) {
-        ElMessage.success('登录成功');
-        setTokens(data);
-        window.location.href = '/';
-        return true;
-      }
+      setTokens(data);
+      ElMessage.success('登录成功');
+      window.location.href = '/';
+      return true;
     } catch (e) {
       console.error(e);
     }

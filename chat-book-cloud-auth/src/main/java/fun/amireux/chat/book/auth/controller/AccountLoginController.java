@@ -123,12 +123,12 @@ public class AccountLoginController {
 
         DecodedJWT newRefreshDecoded = jwtUtil.verifyToken(newRefresh);
         String newJti = jwtUtil.getJti(newRefreshDecoded);
-        long refreshExpSeconds = newRefreshDecoded.getExpiresAt().getTime() / 1000;
+        Instant refreshExpiresAt = newRefreshDecoded.getExpiresAt().toInstant();
 
         RefreshTokenInfo newInfo = new RefreshTokenInfo(
-                info.getUserId(), Instant.now(), Instant.ofEpochSecond(refreshExpSeconds), null
+                info.getUserId(), Instant.now(), refreshExpiresAt, null
         );
-        refreshTokenService.store(newJti, newInfo, refreshExpSeconds);
+        refreshTokenService.store(newJti, newInfo, refreshExpiresAt);
 
         return new LoginVO(newAccess, newRefresh, jwtUtil.getAccessExpirationSeconds());
     }

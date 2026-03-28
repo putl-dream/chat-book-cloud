@@ -8,6 +8,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -23,8 +25,9 @@ public class RefreshTokenService {
     /**
      * Store refresh token metadata in Redis with TTL matching the token's expiry.
      */
-    public void store(String jti, RefreshTokenInfo info, long ttlSeconds) {
+    public void store(String jti, RefreshTokenInfo info, Instant expiresAt) {
         String key = RedisKeyConstants.authRefreshToken(env, jti);
+        long ttlSeconds = Math.max(1L, Duration.between(Instant.now(), expiresAt).getSeconds());
         objectRedisTemplate.opsForValue().set(key, info, ttlSeconds, TimeUnit.SECONDS);
         log.debug("Stored refresh token jti={}, ttl={}s", jti, ttlSeconds);
     }
