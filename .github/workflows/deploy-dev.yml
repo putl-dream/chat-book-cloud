@@ -97,6 +97,7 @@ jobs:
               "chat-book-cloud-social/": ("social", "chat-book-cloud-social"),
               "chat-book-cloud-chat/": ("chat", "chat-book-cloud-chat"),
               "chat-book-ui-blog/": ("frontend", None),
+              "chat-book-ui-admin/": ("admin-frontend", None),
           }
           backend_services = [
               ("gateway", "chat-book-cloud-gateway"),
@@ -109,8 +110,8 @@ jobs:
               ("chat", "chat-book-cloud-chat"),
           ]
           backend_service_map = dict(backend_services)
-          compose_service_names = set(backend_service_map) | {"frontend"}
-          deploy_order = [name for name, _ in backend_services] + ["frontend"]
+          compose_service_names = set(backend_service_map) | {"frontend", "admin-frontend"}
+          deploy_order = [name for name, _ in backend_services] + ["frontend", "admin-frontend"]
           common_backend_prefixes = (
               "chat-book-cloud-framework/",
               "chat-book-cloud-api/",
@@ -238,6 +239,7 @@ jobs:
 
           full_backend = files is None
           build_frontend = files is None
+          build_admin_frontend = files is None
           backend_modules = set()
           deploy_services = set()
 
@@ -251,6 +253,7 @@ jobs:
                   if path == "pom.xml":
                       full_backend = True
                       build_frontend = True
+                      build_admin_frontend = True
                       continue
 
                   if path == "docker-compose.dev.yml":
@@ -258,12 +261,16 @@ jobs:
                       if not compose_services:
                           full_backend = True
                           build_frontend = True
+                          build_admin_frontend = True
                           continue
 
                       for service in compose_services:
                           if service == "frontend":
                               build_frontend = True
                               deploy_services.add("frontend")
+                          elif service == "admin-frontend":
+                              build_admin_frontend = True
+                              deploy_services.add("admin-frontend")
                           else:
                               backend_modules.add(backend_service_map[service])
                               deploy_services.add(service)
@@ -280,6 +287,9 @@ jobs:
                           if service == "frontend":
                               build_frontend = True
                               deploy_services.add("frontend")
+                          elif service == "admin-frontend":
+                              build_admin_frontend = True
+                              deploy_services.add("admin-frontend")
                           else:
                               backend_modules.add(module)
                               deploy_services.add(service)
@@ -290,6 +300,7 @@ jobs:
 
                   full_backend = True
                   build_frontend = True
+                  build_admin_frontend = True
 
           if full_backend:
               backend_modules = {module for _, module in backend_services}
@@ -297,6 +308,9 @@ jobs:
 
           if build_frontend:
               deploy_services.add("frontend")
+
+          if build_admin_frontend:
+              deploy_services.add("admin-frontend")
 
           ordered_backend_modules = ordered_unique(
               backend_modules,
@@ -310,6 +324,7 @@ jobs:
               out.write(f"build_backend={'true' if ordered_backend_modules else 'false'}\n")
               out.write(f"backend_modules={','.join(ordered_backend_modules)}\n")
               out.write(f"build_frontend={'true' if build_frontend else 'false'}\n")
+              out.write(f"build_admin_frontend={'true' if build_admin_frontend else 'false'}\n")
               out.write(f"maven_threads={maven_threads}\n")
               out.write(f"deploy_services={','.join(ordered_deploy_services)}\n")
           PY
@@ -322,6 +337,7 @@ jobs:
           echo "build_backend=${{ steps.changes.outputs.build_backend }}"
           echo "backend_modules=${{ steps.changes.outputs.backend_modules }}"
           echo "build_frontend=${{ steps.changes.outputs.build_frontend }}"
+          echo "build_admin_frontend=${{ steps.changes.outputs.build_admin_frontend }}"
           echo "maven_threads=${{ steps.changes.outputs.maven_threads }}"
           echo "deploy_services=${{ steps.changes.outputs.deploy_services }}"
 
@@ -371,6 +387,16 @@ jobs:
       - name: Build frontend
         if: steps.changes.outputs.build_frontend == 'true'
         working-directory: chat-book-ui-blog
+        run: npm run build
+
+      - name: Install admin frontend dependencies
+        if: steps.changes.outputs.build_admin_frontend == 'true'
+        working-directory: chat-book-ui-admin
+        run: npm ci --prefer-offline --no-audit --fund=false
+
+      - name: Build admin frontend
+        if: steps.changes.outputs.build_admin_frontend == 'true'
+        working-directory: chat-book-ui-admin
         run: npm run build
 
       - name: Deploy services on VPN server
