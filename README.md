@@ -75,7 +75,8 @@ chat-book-cloud
 │   ├── chat-book-cloud-api-article   # 文章服务 API 客户端
 │   ├── chat-book-cloud-api-interaction # 互动服务 API 客户端
 │   └── chat-book-cloud-api-social    # 社交服务 API 客户端
-└── chat-book-ui-blog              # 前端工程 (Vue 3 + Vite)
+├── chat-book-ui-blog              # 前台博客 (Vue 3 + Vite)
+└── chat-book-ui-admin             # 后台管理台 (Vue 3 + Vite)
 ```
 
 ## 📦 模块功能深度解析
@@ -145,7 +146,7 @@ chat-book-cloud
 
 1.  **环境准备**: 自动配置 JDK 17 和 Node.js 环境。
 2.  **后端构建**: Maven 并行构建所有微服务模块。
-3.  **前端构建**: 注入环境变量 (`VITE_API_BASE_URL`) 并执行 `npm run build`。
+3.  **前端构建**: 按变更范围构建前台博客与后台管理台，并执行 `npm run build`。
 4.  **制品整理**: 自动收集 Jar 包、Dist 文件及 Docker 配置。
 5.  **自动部署**: 通过 SSH 将构建制品传输至服务器，并使用 Docker Compose 零停机更新服务。
 
@@ -204,7 +205,12 @@ chat-book-cloud
     npm install
     npm run dev
     ```
-4.  **访问验证**: 打开浏览器访问 `http://localhost:5173` (前端) 或 `http://localhost:15020/doc.html` (网关 Knife4j 文档).
+    ```bash
+    cd chat-book-ui-admin
+    npm install
+    npm run dev
+    ```
+4.  **访问验证**: 打开浏览器访问 `http://localhost:5173` (博客前台), `http://localhost:3000` (后台管理台) 或 `http://localhost:15020/doc.html` (网关 Knife4j 文档).
 
 ### Docker Compose 环境变量
 

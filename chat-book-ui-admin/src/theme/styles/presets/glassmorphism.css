@@ -1,39 +1,284 @@
+/* ==========================================================
+   Refined Glassmorphism (V2) - 精致霓虹玻璃主题
+   Core Concept: Deep depth, polished edge-cut, fluid neon environment
+   ========================================================== */
+
 [data-theme="glassmorphism"] {
-  --cb-bg-main: linear-gradient(135deg, #f3e7e9 0%, #e3eeff 99%, #e3eeff 100%);
-  --cb-bg-card: rgba(255, 255, 255, 0.7);
-  --cb-bg-sidebar: rgba(255, 255, 255, 0.4);
-  --cb-text-primary: #1e293b;
-  --cb-text-secondary: #64748b;
-  --cb-text-inverse: #1e293b;
-  --cb-border-subtle: rgba(255, 255, 255, 0.5);
-  --cb-primary: #8b5cf6;
-  --cb-primary-hover: #7c3aed;
-  --cb-shadow-card: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
-  --cb-shadow-sidebar: 0 8px 32px 0 rgba(31, 38, 135, 0.05);
-  --cb-radius-base: 12px;
-  --cb-radius-card: 20px;
-  --cb-card-backdrop: blur(16px);
-  --cb-sidebar-backdrop: blur(16px);
-  --cb-nav-active-bg: linear-gradient(
-    90deg,
-    rgba(139, 92, 246, 0.1) 0%,
-    rgba(255, 255, 255, 0) 100%
-  );
-  --cb-nav-active-text: #8b5cf6;
-  --cb-icon-color: #8b5cf6;
-  --cb-panel-surface: rgba(255, 255, 255, 0.58);
-  --cb-control-surface: rgba(255, 255, 255, 0.62);
-  --cb-field-surface: rgba(255, 255, 255, 0.68);
-  --cb-header-surface: rgba(255, 255, 255, 0.55);
-  --cb-chip-surface: rgba(255, 255, 255, 0.52);
-  --cb-showcase-badge-surface: rgba(255, 255, 255, 0.58);
-  --cb-showcase-card-surface: rgba(255, 255, 255, 0.54);
-  --cb-dialog-surface: rgba(255, 255, 255, 0.72);
-  --cb-page-hero-background:
-    radial-gradient(circle at top right, rgb(139 92 246 / 18%), transparent 34%),
-    linear-gradient(135deg, rgb(255 255 255 / 80%), rgb(227 238 255 / 62%));
-  --cb-showcase-background:
-    radial-gradient(circle at top left, rgb(139 92 246 / 18%), transparent 36%),
-    radial-gradient(circle at bottom right, rgb(59 130 246 / 16%), transparent 28%),
-    linear-gradient(135deg, rgb(255 255 255 / 78%), rgb(243 231 233 / 56%));
+  /* 1. 基础文字与配色：协调的暗色背景与半透明白文 */
+  --cb-text-primary: #ffffff;
+  --cb-text-secondary: rgba(255, 255, 255, 0.65); /* 微弱的半透明白文字，增强层次 */
+  --cb-text-inverse: #000000;
+
+  /* 2. 品牌核心色 (霓虹紫)：保留图像中的核心色调 */
+  --cb-primary: #a855f7; /* 图像中看到的霓虹紫色 */
+  --cb-primary-hover: #c084fc;
+  --cb-icon-color: #a855f7;
+
+  /* 3. 玻璃材质基底 (Glass Material Base) */
+  --cb-bg-card: rgba(255, 255, 255, 0.01); /* 极低透明度的底色 */
+  --cb-bg-sidebar: rgba(10, 14, 27, 0.4); /* 深沉、凉爽的侧边栏 */
+
+  /* ==========================================================
+     解决 `page-hero.compact` 不协调问题！
+     将其也定义为具有深邃景深和霓虹边缘的“玻璃卡片”。
+     ========================================================== */
+  --cb-page-hero-background: linear-gradient(135deg, rgba(168, 85, 247, 0.05) 0%, rgba(10, 14, 27, 0.01) 100%);
+
+  /* 核心卡片表面渐变：模拟光线穿透玻璃的深邃感 */
+  --cb-panel-surface: linear-gradient(135deg, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.01) 100%);
+
+  --cb-section-surface: rgba(255, 255, 255, 0.02);
+  --cb-table-head-surface: rgba(255, 255, 255, 0.04);
+  --cb-field-surface: rgba(0, 0, 0, 0.3); /* 深色输入框，增加对比 */
+  --cb-header-surface: rgba(255, 255, 255, 0.03);
+
+  /* 4. 玻璃核心效果 (Blurs - 毛玻璃模糊) */
+  --cb-card-backdrop: blur(28px) saturate(160%); /* 增加模糊度和饱和度，营造霓虹感 */
+  --cb-sidebar-backdrop: blur(34px) saturate(120%);
+  --cb-dialog-backdrop: rgba(0, 0, 0, 0.5); /* 遮罩层更暗，突出弹窗 */
+
+  /* 5. 边框 (Refined "Glass Cut" Edge - 精致玻璃切边) */
+  --cb-border-width: 1px;
+  --cb-border-style: solid;
+  /* 极细、极弱的半透明白边，模拟玻璃的物理切边 */
+  --cb-border-subtle: linear-gradient(to right, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.03));
+  /* 定义一个精确的切边颜色变量，用于配合多重内阴影 */
+  --cb-border-cut: rgba(255, 255, 255, 0.12);
+
+  /* 6. 圆角 (Modern, smooth, consistent - 现代平滑圆角) */
+  --cb-radius-card: 26px; /* 平滑的大圆角 */
+  --cb-tab-radius: 12px;
+  --cb-tab-active-radius: 12px;
+
+  /* 7. 阴影 (Deep but soft - 深邃但柔和，营造悬浮感) */
+  --cb-shadow-card: 0 8px 32px 0 rgba(0, 0, 0, 0.36);
+  --cb-shadow-sidebar: 4px 0 24px 0 rgba(0, 0, 0, 0.2);
+  --cb-hover-shadow: 0 12px 48px 0 rgba(0, 0, 0, 0.5); /* 悬浮时阴影拉长 */
+
+  /* 8. 导航状态 */
+  --cb-nav-active-bg: rgba(255, 255, 255, 0.1);
+  --cb-nav-active-text: #ffffff;
+
+  /* 9. 标签与 Pill (暗霓虹对比调和) */
+  --cb-tag-success-bg: rgba(52, 211, 153, 0.15); /* 半透明翡翠绿 */
+  --cb-tag-success-text: #6ee7b7;
+  --cb-tag-warning-bg: rgba(251, 191, 36, 0.15); /* 半透明琥珀黄 */
+  --cb-tag-warning-text: #fcd34d;
+  --cb-tag-error-bg: rgba(248, 113, 113, 0.15); /* 半透明珊瑚红 */
+  --cb-tag-error-text: #fca5a5;
+  --cb-chip-surface: rgba(255, 255, 255, 0.08);
+
+  /* 精致细节覆盖组件 CSS */
+  --cb-btn-radius: 10px; /* 按钮圆角微调 */
+}
+
+/* ==========================================================
+   背景环境效果 (Aurora Flow - 极光光流动画)
+   为整个页面注入缓慢流动的环境霓虹光影
+   ========================================================== */
+
+/* 强制为主要布局注入动态环境背景 */
+[data-theme="glassmorphism"] body,
+[data-theme="glassmorphism"] .admin-main-layout,
+[data-theme="glassmorphism"] .login-shell {
+  background-color: #0a0e1b;
+  /* 使用多重径向渐变，营造深邃且流动的极光效果 */
+  background-image:
+          radial-gradient(at 10% 10%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+          radial-gradient(at 90% 10%, rgba(99, 102, 241, 0.08) 0px, transparent 50%),
+          radial-gradient(at 90% 90%, rgba(168, 85, 247, 0.08) 0px, transparent 50%),
+          radial-gradient(at 10% 90%, rgba(56, 189, 248, 0.08) 0px, transparent 50%);
+  background-attachment: fixed;
+  background-size: 200% 200%;
+  animation: aurora-flow 20s ease infinite alternate;
+}
+
+@keyframes aurora-flow {
+  0% { background-position: 0% 0%; }
+  50% { background-position: 100% 100%; }
+  100% { background-position: 0% 100%; }
+}
+
+/* ==========================================================
+   组件特效与动画 (Component Animations & Effects)
+   ========================================================== */
+
+/* 1. 所有玻璃面板：精致的 "Glass Cut" (玻璃切边) 细节 */
+[data-theme="glassmorphism"] .page-hero,
+[data-theme="glassmorphism"] .metric-card,
+[data-theme="glassmorphism"] .panel,
+[data-theme="glassmorphism"] .state-panel,
+[data-theme="glassmorphism"] .login-panel {
+  box-shadow:
+          var(--cb-shadow-card),
+          inset 0 1px 1px rgba(255, 255, 255, 0.1), /* 顶部高光切边 */
+          inset 1px 0 0 rgba(255, 255, 255, 0.03), /* 左侧切边 */
+          inset -1px 0 0 rgba(0, 0, 0, 0.1), /* 右侧暗部切边 */
+          inset 0 -1px 0 rgba(0, 0, 0, 0.15); /* 底部暗部切边 */
+}
+
+/* 2. 增强卡片悬浮特效 (Soft Neon Lift - 柔和霓虹悬浮) */
+[data-theme="glassmorphism"] .metric-card:hover,
+[data-theme="glassmorphism"] .panel:hover {
+  box-shadow:
+          var(--cb-hover-shadow),
+          inset 0 1px 1px rgba(255, 255, 255, 0.15), /* Brighter top highlight */
+          0 0 10px rgba(168, 85, 247, 0.1); /* Subtle neon halo */
+  /* 让背景渐变在悬浮时更透一点 */
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
+}
+
+/* 3. 彻底解决 `page-hero.compact` 不协调问题！ */
+[data-theme="glassmorphism"] .page-hero {
+  /* 使用新的玻璃背景变量，配合多重内阴影，使其成为精致的霓虹玻璃卡片 */
+  background-image: var(--cb-page-hero-background);
+  box-shadow:
+          var(--cb-shadow-card),
+          inset 0 1px 1px rgba(255, 255, 255, 0.15),
+          inset 0 0 15px rgba(168, 85, 247, 0.05); /* 内部弱霓虹发光 */
+  border-color: var(--cb-border-cut);
+}
+
+/* 4. 玻璃化 Header 元素与用户信息块 */
+[data-theme="glassmorphism"] .header-segment,
+[data-theme="glassmorphism"] .header-profile,
+[data-theme="glassmorphism"] .header-chip,
+[data-theme="glassmorphism"] .header-icon-button {
+  background-color: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  box-shadow:
+          inset 0 1px 1px rgba(255, 255, 255, 0.1),
+          var(--cb-shadow-card);
+}
+
+/* 当前选中的主题按钮 (Linear, glassmorphism 等) */
+[data-theme="glassmorphism"] .header-segment-button.is-active {
+  background-color: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 10px rgba(168, 85, 247, 0.2); /* Subtle halo for active segment */
+}
+
+/* 顶部 Header 元素悬浮反馈 */
+[data-theme="glassmorphism"] .header-profile:hover,
+[data-theme="glassmorphism"] .header-chip:hover,
+[data-theme="glassmorphism"] .header-icon-button:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+  box-shadow:
+          inset 0 1px 1px rgba(255, 255, 255, 0.2),
+          var(--cb-hover-shadow);
+}
+
+/* 5. 按钮：玻璃化动作与霓虹主按钮 */
+[data-theme="glassmorphism"] .panel-action-button,
+[data-theme="glassmorphism"] .header-action-button,
+[data-theme="glassmorphism"] .pagination-button,
+[data-theme="glassmorphism"] .login-submit {
+  backdrop-filter: blur(8px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.08);
+}
+
+/* 动作按钮悬浮：柔和悬浮、边缘抛光 */
+[data-theme="glassmorphism"] .panel-action-button:hover,
+[data-theme="glassmorphism"] .header-action-button:hover,
+[data-theme="glassmorphism"] .pagination-button:hover {
+  box-shadow:
+          0 4px 12px rgba(0, 0, 0, 0.15),
+          inset 0 1px 1px rgba(255, 255, 255, 0.2);
+}
+
+/* 主按钮 (Primary) & 登录按钮: 霓虹脉冲发光动画 (Neon Pulse Glow) */
+[data-theme="glassmorphism"] .panel-action-button.primary,
+[data-theme="glassmorphism"] .login-submit {
+  background: linear-gradient(135deg, rgba(168, 85, 247, 0.8) 0%, rgba(107, 33, 168, 0.8) 100%);
+  border-color: rgba(255, 255, 255, 0.2);
+  /* 注入霓虹脉冲发光动画 */
+  animation: neon-pulse 3s ease infinite alternate;
+}
+
+[data-theme="glassmorphism"] .panel-action-button.primary:hover,
+[data-theme="glassmorphism"] .login-submit:hover {
+  background: linear-gradient(135deg, rgba(192, 132, 252, 0.9) 0%, rgba(126, 34, 206, 0.9) 100%);
+  box-shadow: 0 0 20px rgba(168, 85, 247, 0.6);
+  transform: translateY(-2px);
+}
+
+@keyframes neon-pulse {
+  0% { box-shadow: 0 0 10px rgba(168, 85, 247, 0.4); }
+  100% { box-shadow: 0 0 20px rgba(168, 85, 247, 0.6); }
+}
+
+/* 6. 输入框 (Inputs)：精致暗玻璃与霓虹聚焦描边 */
+[data-theme="glassmorphism"] .field input,
+[data-theme="glassmorphism"] .field select,
+[data-theme="glassmorphism"] .field textarea {
+  box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.2);
+  border-color: var(--cb-border-cut);
+}
+
+[data-theme="glassmorphism"] .field input:focus,
+[data-theme="glassmorphism"] .field select:focus,
+[data-theme="glassmorphism"] .field textarea:focus {
+  background: rgba(0, 0, 0, 0.4);
+  border-color: var(--cb-primary);
+  box-shadow: 0 0 0 1px var(--cb-primary), inset 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* 7. 菜单项 (Menu Items)：精致切边与平滑过渡 */
+[data-theme="glassmorphism"] .menu-item {
+  border-radius: var(--cb-tab-radius);
+  margin: 4px 12px;
+  width: calc(100% - 24px);
+}
+
+[data-theme="glassmorphism"] .menu-item:hover {
+  background: rgba(255, 255, 255, 0.05);
+  transform: translateX(4px); /* Subtle playful lateral move retained */
+}
+
+[data-theme="glassmorphism"] .menu-item.active {
+  background: rgba(255, 255, 255, 0.08);
+  box-shadow:
+          inset 0 1px 1px rgba(255, 255, 255, 0.12),
+          0 0 10px rgba(168, 85, 247, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* 激活菜单项左侧增加霓虹光条 */
+[data-theme="glassmorphism"] .menu-item.active::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 10%;
+  height: 80%;
+  width: 3px;
+  background: var(--cb-primary);
+  border-radius: 0 4px 4px 0;
+  box-shadow: 0 0 10px var(--cb-primary);
+}
+
+/* 8. 表格细节微调 */
+[data-theme="glassmorphism"] .table-wrap {
+  border-color: var(--cb-border-cut);
+}
+
+[data-theme="glassmorphism"] .table-action-button {
+  color: var(--cb-text-inverse);
+}
+[data-theme="glassmorphism"] .table-action-button.danger {
+  color: var(--cb-icon-color);
+}
+[data-theme="glassmorphism"] .data-table td {
+  border-top: 1px solid rgba(255, 255, 255, 0.03);
+}
+[data-theme="glassmorphism"] .data-table thead {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* 9. Pill & Chip (精致切边) */
+[data-theme="glassmorphism"] .pill,
+[data-theme="glassmorphism"] .chip {
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  color: var(--cb-text-inverse);
 }

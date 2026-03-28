@@ -210,6 +210,21 @@ services:
     networks:
       - chat-book-net
 
+  admin-frontend:
+    image: chat-book-ui-admin:local
+    container_name: admin-frontend
+    restart: always
+    build: ./chat-book-ui-admin
+    ports:
+      - "${ADMIN_UI_PORT:-3000}:80"
+    environment:
+      GATEWAY_PROXY_TARGET: http://gateway:8080
+      MINIO_PROXY_TARGET: http://minio:9000
+    depends_on:
+      - gateway
+    networks:
+      - chat-book-net
+
   # --- 11. 互动服务 ---
   interaction:
     image: chat-book-cloud-interaction:local

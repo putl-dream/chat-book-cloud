@@ -1,47 +1,257 @@
 [data-theme="playful"] {
-  --cb-bg-main: #fff0f5;
-  --cb-bg-card: #fffafc;
-  --cb-bg-sidebar: #ffe8f0;
-  --cb-text-primary: #333333;
-  --cb-text-secondary: #666666;
-  --cb-text-inverse: #4a2132;
-  --cb-border-subtle: #ffb6c1;
-  --cb-border-width: 2px;
+  /* 1. 结构与背景：去粉色化，回归中性，拉开卡片和背景的层次 */
+  --cb-bg-card: #ffffff; /* 纯白卡片，让内容浮出来 */
+  --cb-bg-sidebar: #ffffff; /* 侧边栏也用纯白，显得更干净 */
+  --cb-text-inverse: #ffffff;
+
+  /* 3. 边框：改薄、改灰（这是去油腻的关键） */
   --cb-border-style: solid;
+
+  /* 4. 品牌核心色：保留你的猛男粉，但仅做点缀 */
   --cb-primary: #ff69b4;
   --cb-primary-hover: #ff1493;
-  --cb-shadow-card: 0 8px 24px rgba(255, 105, 180, 0.15);
-  --cb-shadow-sidebar: 2px 0 12px rgba(255, 105, 180, 0.12);
-  --cb-hover-shadow: 0 12px 32px rgba(255, 105, 180, 0.25);
-  --cb-radius-base: 24px;
-  --cb-radius-card: 32px;
-  --cb-tab-radius: 12px;
-  --cb-tab-active-radius: 16px 16px 4px 4px;
-  --cb-card-backdrop: none;
-  --cb-sidebar-backdrop: none;
-  --cb-nav-active-bg: #ffd1dc;
-  --cb-nav-active-text: #ff1493;
   --cb-icon-color: #ff69b4;
-  --cb-tag-success-bg: #d1fae5;
-  --cb-tag-success-text: #059669;
-  --cb-tag-warning-bg: #fef3c7;
-  --cb-tag-warning-text: #d97706;
-  --cb-tag-error-bg: #fee2e2;
-  --cb-tag-error-text: #dc2626;
-  --cb-panel-surface: rgb(255 250 252 / 92%);
-  --cb-control-surface: rgb(255 255 255 / 86%);
-  --cb-control-hover-surface: rgb(255 209 220 / 78%);
-  --cb-field-surface: rgb(255 250 252 / 96%);
-  --cb-chip-surface: rgb(255 255 255 / 84%);
-  --cb-header-surface: rgb(255 250 252 / 88%);
-  --cb-page-hero-background:
-    radial-gradient(circle at top right, rgb(255 105 180 / 18%), transparent 32%),
-    linear-gradient(135deg, rgb(255 250 252 / 96%), rgb(255 232 240 / 92%));
-  --cb-showcase-background:
-    radial-gradient(circle at top left, rgb(255 105 180 / 18%), transparent 32%),
-    radial-gradient(circle at bottom right, rgb(255 182 193 / 22%), transparent 24%),
-    linear-gradient(135deg, rgb(255 250 252 / 96%), rgb(255 232 240 / 92%));
-  --cb-showcase-badge-surface: rgb(255 255 255 / 88%);
-  --cb-showcase-card-surface: rgb(255 250 252 / 86%);
-  --cb-dialog-surface: rgb(255 250 252 / 96%);
+
+  /* 6. 圆角：收敛夸张的弧度，恢复专业感 */
+  --cb-tab-radius: 8px;
+  --cb-tab-active-radius: 8px 8px 0 0;
+
+
+  /* 8. 表面材质层 (Surface) 优化 */
+  --cb-panel-surface: rgba(255, 255, 255, 0.95);
+  --cb-control-surface: rgba(255, 255, 255, 1);
+  --cb-control-hover-surface: #fdf2f8;
+  --cb-field-surface: #f9fafb;
+  --cb-header-surface: rgba(255, 255, 255, 0.9);
+
+  /* 保留你的渐变特效，但降低了粉色的透明度占比 */
+  --cb-page-hero-background: radial-gradient(circle at top right, rgba(255, 105, 180, 0.08), transparent 32%), linear-gradient(135deg, rgba(255, 255, 255, 0.96), rgba(249, 250, 251, 0.92));
+
+  /* 卡片：默认悬浮 (Elevated) */
+  --cb-card-elevated-bg: var(--cb-bg-card);
+  --cb-card-elevated-shadow: var(--cb-shadow-card);
+  --cb-card-elevated-border: none;
+
+  /* 卡片：线框 (Outlined) - 使用极浅的灰色边框 */
+  --cb-card-outlined-bg: transparent;
+  --cb-card-outlined-shadow: none;
+  --cb-card-outlined-border: 1px solid var(--cb-border-subtle);
+
+  /* 卡片：扁平 (Flat) - 融入大背景色，适合内部嵌套 */
+  --cb-card-flat-bg: var(--cb-bg-main);
+  --cb-card-flat-shadow: none;
+  --cb-card-flat-border: none;
+
+  /* 卡片：毛玻璃 (Glass) - Playful 主题专属的透白质感 */
+  --cb-card-glass-bg: rgba(255, 255, 255, 0.7);
+  --cb-card-glass-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
+  --cb-card-glass-border: 1px solid rgba(255, 255, 255, 0.5);
+  --cb-card-glass-backdrop: blur(12px);
+
+  /* 定义可爱的按钮颜色和阴影 */
+  --cb-btn-bg: #ffb6c1; /* 柔和的浅粉色 */
+  --cb-btn-text: #4a2132;
+  --cb-btn-border: 2px solid #4a2132; /* 深色描边增加漫画感 */
+
+  /* 核心魔法：不规则的手绘风圆角 */
+  /* 斜杠前是水平半径，斜杠后是垂直半径，营造出随性边缘 */
+  --cb-btn-radius-organic: 255px 15px 225px 15px / 15px 225px 15px 255px;
+
+  /* 核心：把原本灰色的边框和文字，全部换成深巧克力色，增加漫画描边感 */
+  --cb-text-primary: #2d1b22;
+  --cb-text-secondary: #5e4851;
+  --cb-border-subtle: #2d1b22; /* 漫画风的灵魂：深色实体边框 */
+
+  /* 2. 边框：加粗、变为深色实线 */
+  --cb-border-width: 3px;
+
+  /* 3. 非线性圆角 (Organic Radius)
+     利用 8 值写法，让矩形变成不规则的“手绘/微胖”形状 */
+  --cb-radius-card: 2% 98% 3% 97% / 96% 2% 98% 4%;
+  --cb-radius-base: 255px 15px 225px 15px / 15px 225px 15px 255px;
+
+  /* 4. 品牌色保持猛男粉 */
+  --cb-nav-active-bg: #ffe8f0;
+  --cb-nav-active-text: #e11d48;
+
+  /* 5. 阴影：废弃弥散阴影，改用硬朗的“实体错位阴影” */
+  --cb-shadow-card: 6px 6px 0px 0px #2d1b22;
+  --cb-shadow-sidebar: 4px 0px 0px 0px #2d1b22;
+  --cb-hover-shadow: 10px 10px 0px 0px #2d1b22; /* 悬浮时影子拉长 */
+
+  /* 6. 标签：高饱和马卡龙色 + 深色字 */
+  --cb-tag-success-bg: #bbf7d0;
+  --cb-tag-success-text: #2d1b22;
+  --cb-tag-warning-bg: #fef08a;
+  --cb-tag-warning-text: #2d1b22;
+  --cb-tag-error-bg: #fecaca;
+  --cb-tag-error-text: #2d1b22;
+  --cb-chip-surface: #fce7f3;
+}
+
+/* ==========================================================
+   非线性动画注入：覆盖 components.css 的默认行为
+   ========================================================== */
+
+/* 1. 让所有卡片 Hover 时产生俏皮的倾斜 */
+[data-theme="playful"] .metric-card:hover,
+[data-theme="playful"] .panel:hover,
+[data-theme="playful"] .review-card:hover {
+  transform: translateY(-4px) rotate(1deg);
+}
+
+/* 2. 按钮组件的“果冻弹簧”特效 */
+/* 注意：这里的选择器权重高于你 components.css 里的类，所以会完美覆盖 */
+[data-theme="playful"] .panel-action-button,
+[data-theme="playful"] .table-action-button,
+[data-theme="playful"] .header-action-button,
+[data-theme="playful"] .pagination-button,
+[data-theme="playful"] .login-submit {
+  /* 覆盖 Tailwind 的 rounded-full，使用手绘圆角 */
+  border-radius: var(--cb-radius-base);
+  /* 按钮的小一号实体阴影 */
+  box-shadow: 3px 3px 0px 0px var(--cb-border-subtle);
+  /* 注入贝塞尔曲线，产生 Q 弹感 */
+  transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 按钮悬浮：稍微放大并反向微倾斜 */
+[data-theme="playful"] .panel-action-button:hover,
+[data-theme="playful"] .table-action-button:hover,
+[data-theme="playful"] .header-action-button:hover,
+[data-theme="playful"] .login-submit:hover {
+  transform: translateY(-3px) rotate(-1.5deg);
+  box-shadow: 6px 6px 0px 0px var(--cb-border-subtle);
+  /* 悬浮时切换成另一种不对称圆角，产生动态“蠕动”感 */
+  border-radius: 15px 255px 15px 225px / 255px 15px 225px 15px;
+}
+
+/* 按钮按下：吃掉阴影，实现真实物理按压感 */
+[data-theme="playful"] .panel-action-button:active,
+[data-theme="playful"] .table-action-button:active,
+[data-theme="playful"] .header-action-button:active,
+[data-theme="playful"] .login-submit:active {
+  transform: translateY(3px) translateX(3px) rotate(0deg);
+  box-shadow: 0px 0px 0px 0px var(--cb-border-subtle);
+  transition: all 0.1s ease-out; /* 按下时动作要快 */
+}
+
+/* 表格头部也加上粗描边区分 */
+[data-theme="playful"] .data-table th {
+  border-bottom: var(--cb-border-width) solid var(--cb-border-subtle);
+  font-weight: 700;
+  color: var(--cb-text-primary);
+}
+
+/* ==========================================================
+   Playful Theme: 侧边栏菜单 (Menu Items) 漫画风定制
+   ========================================================== */
+
+/* 1. 基础状态：注入灵魂弹簧动画，并为阴影预留空间 */
+[data-theme="playful"] .menu-item {
+  /* 稍微往里收一点，防止激活时的粗阴影被侧边栏边缘裁切 */
+  margin: 4px 12px;
+  width: calc(100% - 24px);
+  border-radius: var(--cb-radius-base);
+  border: var(--cb-border-width) solid transparent; /* 透明粗边框占位，防止切换状态时内容跳动 */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 2. 悬浮状态：不展示阴影，但有个俏皮的“探头”动作 */
+[data-theme="playful"] .menu-item:hover {
+  background: var(--cb-bg-main); /* 使用极浅的粉色底 */
+  transform: translateX(4px); /* 整体往右侧平移一丢丢，像是在吸引注意力 */
+  color: var(--cb-primary);
+}
+
+/* 3. 激活状态（Active）：火力全开的贴纸效果 */
+[data-theme="playful"] .menu-item.active {
+  background: var(--cb-primary); /* 用高饱和的亮粉色镇住视觉重心 */
+  color: #ffffff; /* 保证文字的绝对清晰 */
+  border: var(--cb-border-width) solid var(--cb-border-subtle); /* 巧克力色粗描边 */
+  box-shadow: 4px 4px 0px 0px var(--cb-border-subtle); /* 实体错位阴影 */
+  transform: translateY(-2px) rotate(-1.5deg); /* 微微浮起并带一点倾斜 */
+
+  /* 关键：给激活的菜单也换上动态的不对称/手绘圆角 */
+  border-radius: 15px 255px 15px 225px / 255px 15px 225px 15px;
+  font-weight: bold;
+}
+
+/* 4. 激活状态下的点击反馈：按下时压实 */
+[data-theme="playful"] .menu-item.active:active {
+  transform: translateY(2px) translateX(2px) rotate(0deg);
+  box-shadow: 0px 0px 0px 0px var(--cb-border-subtle);
+  transition: all 0.1s ease-out;
+}
+
+/* ==========================================================
+   Playful Theme: 顶部 Header 区域 (Theme Switcher & Profile)
+   100% 漫画贴纸风补全计划
+   ========================================================== */
+
+/* 1. 给右上角的主干容器（主题切换器、用户信息框）穿上贴纸外衣 */
+[data-theme="playful"] .header-segment,
+[data-theme="playful"] .header-profile,
+[data-theme="playful"] .header-chip,
+[data-theme="playful"] .header-icon-button {
+  background: var(--cb-bg-card); /* 纯白底色，和页面背景拉开差距 */
+  border: var(--cb-border-width) solid var(--cb-border-subtle); /* 巧克力粗描边 */
+  box-shadow: 4px 4px 0px 0px var(--cb-border-subtle); /* 实体硬阴影 */
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px; /* 经典手绘微胖圆角 */
+  transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* 2. 容器悬浮：俏皮的倾斜与阴影拉伸 */
+[data-theme="playful"] .header-segment:hover,
+[data-theme="playful"] .header-profile:hover,
+[data-theme="playful"] .header-chip:hover,
+[data-theme="playful"] .header-icon-button:hover {
+  transform: translateY(-2px) rotate(1.5deg); /* 向右上角微微翘起 */
+  box-shadow: 6px 6px 0px 0px var(--cb-border-subtle);
+  /* 蠕动感：反向手绘圆角 */
+  border-radius: 15px 255px 15px 225px / 255px 15px 225px 15px;
+}
+
+/* 3. 容器按下：吃掉阴影，真实物理按压 */
+[data-theme="playful"] .header-segment:active,
+[data-theme="playful"] .header-profile:active,
+[data-theme="playful"] .header-chip:active,
+[data-theme="playful"] .header-icon-button:active {
+  transform: translateY(4px) translateX(4px) rotate(0deg);
+  box-shadow: 0px 0px 0px 0px var(--cb-border-subtle);
+  transition: all 0.1s ease-out;
+}
+
+/* 4. 主题切换器内部的各个按钮 (Linear, Glass, Playful 等) */
+[data-theme="playful"] .header-segment-button {
+  border-radius: var(--cb-radius-base); /* 继承不规则圆角 */
+  transition: all 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+  font-weight: 700;
+  color: var(--cb-text-secondary);
+}
+
+/* 5. 当前选中的主题按钮（也就是高亮的 Playful） */
+[data-theme="playful"] .header-segment-button.is-active {
+  background: var(--cb-primary); /* 猛男粉填满 */
+  color: #ffffff;
+  border: 2px solid var(--cb-border-subtle); /* 内部按钮也加个小细线描边，像贴纸上的高亮标记 */
+  box-shadow: 2px 2px 0px 0px var(--cb-border-subtle); /* 内部小阴影 */
+  transform: scale(1.05) rotate(-2deg); /* 重点凸显：稍微放大并且调皮地歪一点 */
+}
+
+/* 6. 右侧用户头像 (Init) 单独处理，让它看起来像一颗不规则的糖果 */
+[data-theme="playful"] .header-avatar {
+  border: 2px solid var(--cb-border-subtle);
+  background: #ffb6c1; /* 给默认头像一个粉色底 */
+  color: var(--cb-text-primary);
+  /* 这是一个更极端的有机圆角，让头像框看起来像一个水滴或被捏过的橡皮泥 */
+  border-radius: 40% 60% 70% 30% / 40% 50% 60% 50%;
+  font-weight: 900;
+  transition: all 0.3s ease;
+}
+
+[data-theme="playful"] .header-profile:hover .header-avatar {
+  /* 鼠标放到用户卡片上时，头像自己也会形变旋转 */
+  border-radius: 60% 40% 30% 70% / 50% 50% 40% 60%;
+  transform: rotate(15deg) scale(1.1);
 }
