@@ -32,6 +32,7 @@ import java.util.Map;
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
 
     private static final int ADMIN_ROLE_CODE = 1;
+    private static final int USER_STATUS_DISABLED = 1;
 
     private final UserMapper userMapper;
     private final UserInfoMapper userInfoMapper;
@@ -72,6 +73,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }
 
         UserDO userDO = getUserInfo(user);
+        validateUserStatus(userDO);
         UserInfoDO userInfo = findUserInfo(userDO.getId());
         log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
         return buildToken(userDO, userInfo);
@@ -83,6 +85,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         }
 
         UserDO userDO = getUserInfo(user);
+        validateUserStatus(userDO);
         if (!PwdUtil.checkPassword(user.getPassword(), userDO.getPassword())) {
             log.error("Password check failed");
             throw new AuthenticationException("Password is invalid");
@@ -138,6 +141,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         UserDO userDO = UserDO.builder()
                 .email(signInVO.getEmail())
                 .password(PwdUtil.hashPassword(signInVO.getPassword()))
+                .status(0)
                 .build();
         userMapper.insert(userDO);
 
@@ -157,6 +161,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         UserDO existingUser = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
 
         if (existingUser != null) {
+            validateUserStatus(existingUser);
             UserInfoDO userInfo = findUserInfo(existingUser.getId());
             if (userInfo != null) {
                 boolean updated = false;
@@ -178,6 +183,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         UserDO newUser = UserDO.builder()
                 .email(user.getEmail())
                 .password(PwdUtil.hashPassword(""))
+                .status(0)
                 .build();
         userMapper.insert(newUser);
 
@@ -195,6 +201,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     private UserInfoDO findUserInfo(Integer userId) {
         return userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userId));
+    }
+
+    private void validateUserStatus(UserDO userDO) {
+        if (userDO != null && Integer.valueOf(USER_STATUS_DISABLED).equals(userDO.getStatus())) {
+            throw new AuthenticationException("Account has been disabled");
+        }
     }
 
     private LoginVO buildToken(UserDO userDO, UserInfoDO userInfo) {

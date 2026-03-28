@@ -4,6 +4,7 @@ create table user
         primary key,
     email       varchar(255) default ''                not null comment '邮箱',
     password    varchar(120) default ''                not null,
+    status      tinyint      default 0                 not null comment '账号状态 0-正常 1-禁用',
     create_time datetime     default CURRENT_TIMESTAMP not null,
     update_time datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP,
     constraint user_pk_2
