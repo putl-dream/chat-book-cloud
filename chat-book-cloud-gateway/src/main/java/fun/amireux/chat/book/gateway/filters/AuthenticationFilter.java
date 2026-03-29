@@ -24,6 +24,19 @@ import java.util.List;
 @RequiredArgsConstructor
 public class AuthenticationFilter implements GlobalFilter, Ordered {
 
+    private static final List<String> PUBLIC_AUTH_PATH_PATTERNS = List.of(
+            "/api/auth/account/login",
+            "/api/auth/account/login/password",
+            "/api/auth/account/login/captcha",
+            "/api/auth/account/register",
+            "/api/auth/account/registered",
+            "/api/auth/account/captcha",
+            "/api/auth/account/refresh",
+            "/api/auth/account/logout",
+            "/api/auth/oauth2/**",
+            "/api/auth/login/oauth2/**"
+    );
+
     private final JwtUtil jwtUtil;
     private final AuthenticationProperties authenticationProperties;
     private final AntPathMatcher antPathMatcher = new AntPathMatcher();
@@ -32,6 +45,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
+        boolean skipTokenVerification = isPublicAuthPath(path);
 
         String token = extractToken(request);
         String userId = null;
@@ -43,7 +57,7 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             token = token.substring(7);
         }
 
-        if (token != null) {
+        if (token != null && !skipTokenVerification) {
             try {
                 com.auth0.jwt.interfaces.DecodedJWT decodedJWT = jwtUtil.verifyToken(token);
 
@@ -70,6 +84,8 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             } catch (Exception e) {
                 log.error("Token verification failed: {}", e.getMessage());
             }
+        } else if (token != null) {
+            log.debug("Skip token verification on public auth path: {}", path);
         }
 
         List<AuthenticationProperties.AuthenticationRule> rules = authenticationProperties.getRules();
@@ -154,6 +170,15 @@ public class AuthenticationFilter implements GlobalFilter, Ordered {
             }
         }
         return token;
+    }
+
+    private boolean isPublicAuthPath(String path) {
+        for (String pattern : PUBLIC_AUTH_PATH_PATTERNS) {
+            if (antPathMatcher.match(pattern, path)) {
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override

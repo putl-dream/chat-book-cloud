@@ -24,7 +24,7 @@ public class AccountLoginController {
     private final AuthTokenService authTokenService;
 
     // 控制器只接收场景化请求，再转换成内部命令对象交给应用服务。
-    @PostMapping("/login/password")
+    @PostMapping({"/login", "/login/password"})
     public CommonResult<LoginVO> passwordLogin(@RequestBody PasswordLoginRequest request) {
         return CommonResult.success(authApplicationService.login(
                 new PasswordLoginCommand(request.username(), request.email(), request.password())

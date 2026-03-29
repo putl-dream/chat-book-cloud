@@ -6,6 +6,7 @@ import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -34,6 +35,14 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.BAD_REQUEST)
                 .body(CommonResult.error(ErrorType.ERROR_400.code(), ex.getMessage()));
+    }
+
+    @ExceptionHandler(NoResourceFoundException.class)
+    public ResponseEntity<CommonResult<Void>> handleNoResourceFound(NoResourceFoundException ex) {
+        log.warn("资源未找到: {}", ex.getResourcePath());
+        return ResponseEntity
+                .status(HttpStatus.NOT_FOUND)
+                .body(CommonResult.error(ErrorType.ERROR_404.code(), "资源不存在: " + ex.getResourcePath()));
     }
 
     /**
