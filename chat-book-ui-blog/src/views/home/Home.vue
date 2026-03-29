@@ -44,10 +44,10 @@
         </template>
       </div>
 
-      <div v-if="loading" class="loading">
-        <div class="spinner"></div>
+      <div v-if="loading" class="loading c-loading-state">
+        <div class="spinner c-spinner"></div>
       </div>
-      <div v-if="noMoreArticles" class="no-more">
+      <div v-if="noMoreArticles" class="no-more c-status-note">
         <span>到底啦</span>
       </div>
     </div>
@@ -216,6 +216,16 @@ onUnmounted(() => {
   mix-blend-mode: overlay;
 }
 
+.hot-item :deep(.article-card-inner),
+.bento-item :deep(.article-card-inner) {
+  --article-shell-bg: transparent;
+  --article-shell-border: transparent;
+  --article-shell-shadow: none;
+  --article-shell-hover-bg: transparent;
+  --article-shell-hover-border: transparent;
+  --article-shell-hover-shadow: none;
+}
+
 @keyframes border-pulse {
   0%, 100% {
     border-color: var(--border-color-glass);
@@ -271,35 +281,18 @@ onUnmounted(() => {
 }
 
 .loading {
-  text-align: center;
-  padding: 20px 0 40px;
-  display: flex;
-  justify-content: center;
+  --feedback-loading-padding: 20px 0 40px;
   flex-shrink: 0;
 }
 
 .spinner {
-  width: 32px;
-  height: 32px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-top-color: var(--color-primary);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
 }
 
 .no-more {
-  text-align: center;
-  padding: 20px 0 40px;
-  color: var(--text-color-placeholder);
-  font-size: 13px;
-  letter-spacing: 1px;
+  --feedback-note-padding: 20px 0 40px;
+  --feedback-note-size: 13px;
+  --feedback-note-spacing: 1px;
   flex-shrink: 0;
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
 }
 
 @keyframes fadeInUp {

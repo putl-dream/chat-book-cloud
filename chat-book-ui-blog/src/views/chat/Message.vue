@@ -1,15 +1,14 @@
 <template>
     <div class="message-page">
         <div class="message-container">
-            <div class="message-header">
-                <h2 class="page-title">
+            <div class="message-header c-page-header c-page-header--accent">
+                <h2 class="page-title c-page-header__title">
                     <span class="u-text-gradient">消息通知</span>
                 </h2>
-                <div class="header-decoration"></div>
             </div>
 
             <div class="message-list-wrapper custom-scrollbar">
-                <div v-if="loading" class="loading">
+                <div v-if="loading" class="loading c-loading-state c-glass-panel">
                     <el-skeleton :rows="5" animated />
                 </div>
 
@@ -106,27 +105,14 @@ onMounted(() => {
 }
 
 .message-header {
-    margin-bottom: 32px;
-    position: relative;
-    padding-left: 16px;
+    --page-header-margin: 0 0 32px;
+    --page-header-accent-padding: 16px;
     flex-shrink: 0;
 }
 
-.header-decoration {
-    position: absolute;
-    left: 0;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 4px;
-    height: 32px;
-    background: linear-gradient(to bottom, var(--color-primary), #a0c4ff);
-    border-radius: 4px;
-}
-
 .page-title {
-    font-size: 28px;
-    font-weight: 800;
-    margin: 0;
+    --page-header-title-size: 28px;
+    --page-header-title-margin: 0;
     line-height: 1.2;
 }
 
@@ -222,9 +208,13 @@ onMounted(() => {
 }
 
 .loading {
-    padding: 24px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
+    --feedback-loading-padding: 24px;
+    --surface-padding: 24px;
+    --surface-bg: rgba(255, 255, 255, 0.5);
+    --surface-radius: 16px;
+    --surface-border: transparent;
+    --surface-shadow: none;
+    --surface-blur: 0px;
 }
 
 .empty-state {

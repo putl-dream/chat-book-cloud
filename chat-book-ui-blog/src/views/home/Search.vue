@@ -22,7 +22,7 @@
 
 
                 <div class="search-main-list c-glass-panel">
-                    <div v-if="loading && currentPage === 1" class="loading">
+                    <div v-if="loading && currentPage === 1" class="loading c-loading-state c-glass-panel">
                         <el-skeleton :rows="5" animated />
                     </div>
                     <template v-else>
@@ -33,11 +33,11 @@
                             </div>
                         </transition-group>
 
-                        <div v-if="loading && currentPage > 1" class="loading">
+                        <div v-if="loading && currentPage > 1" class="loading c-loading-state c-glass-panel">
                             <el-skeleton :rows="2" animated />
                         </div>
-                        <div v-if="noMoreArticles && posts.length > 0" class="no-more">没有更多文章啦</div>
-                        <div v-if="posts.length === 0 && !loading" class="empty-state">
+                        <div v-if="noMoreArticles && posts.length > 0" class="no-more c-status-note">没有更多文章啦</div>
+                        <div v-if="posts.length === 0 && !loading" class="empty-state c-empty-panel">
                             <el-empty description="未找到相关文章" />
                         </div>
                     </template>
@@ -243,17 +243,11 @@ onUnmounted(() => {
 
 .post-item {
     margin-bottom: 20px;
-    border-radius: var(--border-radius-large);
     transition: all 0.3s ease;
-    background: rgba(255, 255, 255, 0.4);
-    border: 1px solid transparent;
 }
 
 .post-item:hover {
-    background: var(--bg-color-white);
     transform: translateY(-4px);
-    box-shadow: var(--box-shadow-hover);
-    border-color: var(--border-color-light);
 }
 
 .search-sidebar {
@@ -261,13 +255,26 @@ onUnmounted(() => {
     flex-shrink: 0;
 }
 
-.loading,
-.no-more,
+.loading {
+    --feedback-loading-padding: 40px 0;
+    --surface-padding: 24px;
+    --surface-bg: rgba(255, 255, 255, 0.35);
+    --surface-border: transparent;
+    --surface-shadow: none;
+    --surface-blur: 0px;
+}
+
+.no-more {
+    --feedback-note-padding: 40px 0;
+    --feedback-note-color: var(--text-color-secondary);
+    --feedback-note-weight: 500;
+}
+
 .empty-state {
-    text-align: center;
-    padding: 40px 0;
-    color: var(--text-color-secondary);
-    font-weight: 500;
+    --empty-panel-padding: 40px 0;
+    --empty-panel-border: none;
+    --empty-panel-bg: transparent;
+    --empty-panel-blur: 0px;
 }
 
 /* List Transitions */

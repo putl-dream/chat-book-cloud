@@ -1,12 +1,12 @@
 <template>
     <div class="tags-page">
-        <div class="tags-header">
-            <h1>技术标签</h1>
-            <p class="subtitle">探索不同技术栈的优质文章</p>
+        <div class="tags-header c-page-header c-page-header--center">
+            <h1 class="c-page-header__title">技术标签</h1>
+            <p class="subtitle c-page-header__subtitle">探索不同技术栈的优质文章</p>
         </div>
 
         <div class="tags-content">
-            <div class="tag-section">
+            <div class="tag-section c-solid-panel">
                 <h2 class="c-section-heading c-section-heading--compact c-section-heading__title c-section-heading__title--md">
                     <el-icon><Monitor /></el-icon>
                     技术栈
@@ -25,7 +25,7 @@
                 </div>
             </div>
 
-            <div class="tag-section">
+            <div class="tag-section c-solid-panel">
                 <h2 class="c-section-heading c-section-heading--compact c-section-heading__title c-section-heading__title--md">
                     <el-icon><Guide /></el-icon>
                     学习路径
@@ -90,20 +90,11 @@ onMounted(() => {
 }
 
 .tags-header {
-    text-align: center;
-    margin-bottom: 48px;
-}
-
-.tags-header h1 {
-    font-size: 32px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-bottom: 12px;
+    --page-header-margin: 0 0 48px;
 }
 
 .subtitle {
-    font-size: 16px;
-    color: var(--text-color-secondary);
+    --page-header-subtitle-size: 16px;
 }
 
 .tags-content {
@@ -113,10 +104,8 @@ onMounted(() => {
 }
 
 .tag-section {
-    background: var(--bg-color-white);
-    border-radius: 16px;
-    padding: 32px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+    --solid-panel-padding: 32px;
+    --solid-panel-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
 .tag-cloud {

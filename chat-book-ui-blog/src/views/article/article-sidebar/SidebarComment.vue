@@ -1,10 +1,10 @@
 <template>
-    <div class="panel-content b-comment-panel">
-        <div class="panel-header">
+    <div class="panel-content b-comment-panel c-sidebar-panel">
+        <div class="panel-header c-sidebar-panel__header">
             <span class="title">评论 <span class="count" v-if="totalComments > 0">({{ totalComments }})</span></span>
         </div>
 
-        <div class="input-section">
+        <div class="input-section c-sidebar-panel__section">
             <el-input v-model="mainCommentContent" type="textarea" :rows="3"
                 placeholder="请输入您的评论... (Enter 发送，Shift+Enter 换行)" class="b-textarea" resize="none"
                 @keydown="handleKeydown($event, true)" />
@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <div class="comments-container">
+        <div class="comments-container c-sidebar-panel__body">
             <div class="comments-list" v-if="comments.length > 0">
                 <div v-for="(comment, index) in comments" :key="comment.id || index" class="comment-item">
                     <div class="comment-main">
@@ -86,7 +86,7 @@
                 </div>
             </div>
 
-            <div v-else class="empty-state">
+            <div v-else class="empty-state c-empty-panel c-empty-panel--plain">
                 <span class="empty-text">暂无评论</span>
             </div>
         </div>
@@ -151,17 +151,12 @@ onMounted(() => {
 
 <style scoped>
 .b-comment-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background-color: #fff;
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
 .panel-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid #ebeef5;
-    flex-shrink: 0;
+    --sidebar-panel-header-padding: 12px 16px;
+    --sidebar-panel-divider: #ebeef5;
 }
 
 .title {
@@ -177,10 +172,8 @@ onMounted(() => {
 }
 
 .input-section {
-    padding: 16px;
-    border-bottom: 1px solid #ebeef5;
-    background-color: #fff;
-    flex-shrink: 0;
+    --sidebar-panel-section-padding: 16px;
+    --sidebar-panel-divider: #ebeef5;
 }
 
 .b-textarea :deep(.el-textarea__inner) {
@@ -196,8 +189,6 @@ onMounted(() => {
 }
 
 .comments-container {
-    flex: 1;
-    overflow-y: auto;
     padding: 0;
 }
 
@@ -323,8 +314,7 @@ onMounted(() => {
 }
 
 .empty-state {
-    padding: 32px 0;
-    text-align: center;
+    --empty-panel-padding: 32px 0;
 }
 
 .empty-text {

@@ -1,5 +1,5 @@
 <template>
-    <div class="post-card">
+    <div class="post-card c-article-card-shell">
         <div class="post-picture" @click='openArticle(post.id)'>
             <el-image :src="post.cover" fit="cover" style="width: 150px;height: 100px" />
         </div>
@@ -42,9 +42,9 @@
                         </el-text>
                     </div>
                 </div>
-                <div class="post-controls">
-                    <button class="controls-txt" @click="handleEdit(post.id)">编辑</button>
-                    <button class="controls-txt">删除</button>
+                <div class="post-controls c-article-card-actions">
+                    <button class="controls-txt c-article-card-action" @click="handleEdit(post.id)">编辑</button>
+                    <button class="controls-txt c-article-card-action c-article-card-action--danger">删除</button>
                 </div>
             </div>
         </div>
@@ -75,20 +75,8 @@ const handleEdit = async (id) => {
 <style scoped>
 .post-card {
     display: flex;
-    padding: 24px;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    --article-shell-padding: 24px;
     margin-bottom: 16px;
-}
-
-.post-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
-    background: rgba(255, 255, 255, 0.9);
 }
 
 .post-picture {
@@ -188,36 +176,10 @@ const handleEdit = async (id) => {
 }
 
 .post-controls {
-    display: flex;
-    gap: 8px;
+    flex-shrink: 0;
 }
 
 .controls-txt {
-    background: rgba(59, 130, 246, 0.1);
-    padding: 6px 16px;
-    border-radius: 20px;
-    font-size: 12px;
-    color: #3b82f6;
-    border: 1px solid transparent;
-    cursor: pointer;
-    transition: all 0.2s;
-    font-weight: 500;
-}
-
-.controls-txt:hover {
-    background: #3b82f6;
-    color: white;
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.3);
-}
-
-.controls-txt:last-child {
-    background: rgba(239, 68, 68, 0.1);
-    color: #ef4444;
-}
-
-.controls-txt:last-child:hover {
-    background: #ef4444;
-    color: white;
-    box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
+    margin: 0;
 }
 </style>

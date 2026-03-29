@@ -107,6 +107,48 @@
 
 .c-creator-card__actions .el-button {
     margin: 0;
+    min-width: 88px;
+}
+
+.c-creator-card__stats {
+    display: flex;
+    gap: 24px;
+    padding: 0 24px;
+    border-left: 1px solid rgba(229, 231, 235, 0.5);
+    border-right: 1px solid rgba(229, 231, 235, 0.5);
+}
+
+.c-creator-card__stat {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    min-width: 48px;
+    cursor: default;
+}
+
+.c-creator-card__stat-icon {
+    font-size: 20px;
+    color: #9ca3af;
+    margin-bottom: 4px;
+    transition: all 0.3s;
+}
+
+.c-creator-card__stat-value {
+    font-size: 16px;
+    font-weight: 700;
+    color: #4b5563;
+    line-height: 1.2;
+}
+
+.c-creator-card__stat-label {
+    font-size: 12px;
+    color: #9ca3af;
+    margin-top: 2px;
+}
+
+.c-creator-card:hover .c-creator-card__stat:hover .c-creator-card__stat-icon {
+    color: #3b82f6;
+    transform: scale(1.1);
 }
 
 .c-creator-empty {
@@ -131,5 +173,13 @@
     .c-creator-card__actions {
         width: 100%;
         padding-left: 0;
+    }
+
+    .c-creator-card__stats {
+        width: 100%;
+        border: none;
+        border-top: 1px solid #e5e7eb;
+        padding: 16px 0 0 0;
+        justify-content: space-between;
     }
 }

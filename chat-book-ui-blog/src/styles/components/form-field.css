@@ -1,0 +1,28 @@
+.c-form-field .el-form-item__label {
+    font-weight: var(--form-field-label-weight);
+    color: var(--form-field-label-color);
+    padding-bottom: var(--form-field-label-padding);
+}
+
+.c-form-field .el-input__wrapper,
+.c-form-field .el-textarea__inner {
+    background-color: var(--form-field-bg);
+    box-shadow: var(--form-field-shadow);
+    border: var(--form-field-border);
+    border-radius: var(--form-field-radius);
+    padding: var(--form-field-padding);
+    transition: var(--form-field-transition);
+}
+
+.c-form-field .el-input__wrapper:hover,
+.c-form-field .el-textarea__inner:hover {
+    background-color: var(--form-field-hover-bg);
+    border-color: var(--form-field-hover-border);
+}
+
+.c-form-field .el-input__wrapper.is-focus,
+.c-form-field .el-textarea__inner:focus {
+    background-color: var(--form-field-focus-bg);
+    box-shadow: var(--form-field-focus-ring);
+    border-color: var(--form-field-focus-border);
+}

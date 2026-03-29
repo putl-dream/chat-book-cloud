@@ -1,9 +1,9 @@
 <template>
-    <div class="panel-content ai-panel">
-        <div class="panel-header">
+    <div class="panel-content ai-panel c-sidebar-panel">
+        <div class="panel-header c-sidebar-panel__header">
             <el-text size="large"><b>AI 助手</b></el-text>
         </div>
-        <div class="ai-chat-history">
+        <div class="ai-chat-history c-sidebar-panel__body">
             <div v-for="(msg, idx) in aiChatHistory" :key="idx" class="ai-msg" :class="msg.role">
                 <div class="msg-content">
                     <RichTextViewer
@@ -12,7 +12,7 @@
                 </div>
             </div>
         </div>
-        <div class="ai-input-area">
+        <div class="ai-input-area c-sidebar-panel__footer">
             <el-input v-model="aiMessage" placeholder="向AI讨论..." @keyup.enter="sendAiMessage">
                 <template #append>
                     <el-button @click="sendAiMessage">发送</el-button>
@@ -35,25 +35,15 @@ const renderMessageHtml = (message) => buildRichTextHtml(message?.content || '',
 
 <style scoped>
 .panel-content {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    overflow: hidden;
+    --sidebar-panel-header-padding: 16px;
+    --sidebar-panel-footer-padding: 16px;
 }
 
 .panel-header {
-    padding: 16px;
-    border-bottom: 1px solid var(--border-color-light);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    background: #fff;
-    flex-shrink: 0;
+    min-height: 56px;
 }
 
 .ai-chat-history {
-    flex: 1;
-    overflow-y: auto;
     padding: 16px;
     display: flex;
     flex-direction: column;
@@ -97,7 +87,5 @@ const renderMessageHtml = (message) => buildRichTextHtml(message?.content || '',
 
 .ai-input-area {
     padding: 16px;
-    border-top: 1px solid var(--border-color-light);
-    flex-shrink: 0;
 }
 </style>

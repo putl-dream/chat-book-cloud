@@ -23,34 +23,34 @@
                         </div>
                     </div>
 
-                    <div class="article-stats">
-                        <div class="stat-item" title="阅读量">
-                            <el-icon class="stat-icon">
+                    <div class="article-stats c-creator-card__stats">
+                        <div class="stat-item c-creator-card__stat" title="阅读量">
+                            <el-icon class="stat-icon c-creator-card__stat-icon">
                                 <View />
                             </el-icon>
-                            <span class="stat-value">{{ formatNumber(article.viewCount) }}</span>
-                            <span class="stat-label">阅读</span>
+                            <span class="stat-value c-creator-card__stat-value">{{ formatNumber(article.viewCount) }}</span>
+                            <span class="stat-label c-creator-card__stat-label">阅读</span>
                         </div>
-                        <div class="stat-item" title="评论量">
-                            <el-icon class="stat-icon">
+                        <div class="stat-item c-creator-card__stat" title="评论量">
+                            <el-icon class="stat-icon c-creator-card__stat-icon">
                                 <ChatDotSquare />
                             </el-icon>
-                            <span class="stat-value">{{ formatNumber(article.commentCount) }}</span>
-                            <span class="stat-label">评论</span>
+                            <span class="stat-value c-creator-card__stat-value">{{ formatNumber(article.commentCount) }}</span>
+                            <span class="stat-label c-creator-card__stat-label">评论</span>
                         </div>
-                        <div class="stat-item" title="点赞数">
-                            <el-icon class="stat-icon">
+                        <div class="stat-item c-creator-card__stat" title="点赞数">
+                            <el-icon class="stat-icon c-creator-card__stat-icon">
                                 <Star />
                             </el-icon>
-                            <span class="stat-value">{{ formatNumber(article.praiseCount) }}</span>
-                            <span class="stat-label">点赞</span>
+                            <span class="stat-value c-creator-card__stat-value">{{ formatNumber(article.praiseCount) }}</span>
+                            <span class="stat-label c-creator-card__stat-label">点赞</span>
                         </div>
-                        <div class="stat-item" title="收藏数">
-                            <el-icon class="stat-icon">
+                        <div class="stat-item c-creator-card__stat" title="收藏数">
+                            <el-icon class="stat-icon c-creator-card__stat-icon">
                                 <Collection />
                             </el-icon>
-                            <span class="stat-value">{{ formatNumber(article.collectCount) }}</span>
-                            <span class="stat-label">收藏</span>
+                            <span class="stat-value c-creator-card__stat-value">{{ formatNumber(article.collectCount) }}</span>
+                            <span class="stat-label c-creator-card__stat-label">收藏</span>
                         </div>
                     </div>
 
@@ -102,47 +102,6 @@ const {
     cursor: pointer;
 }
 
-.article-stats {
-    display: flex;
-    gap: 24px;
-    padding: 0 24px;
-    border-left: 1px solid rgba(229, 231, 235, 0.5);
-    border-right: 1px solid rgba(229, 231, 235, 0.5);
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-width: 48px;
-    cursor: default;
-}
-
-.stat-icon {
-    font-size: 20px;
-    color: #9ca3af;
-    margin-bottom: 4px;
-    transition: all 0.3s;
-}
-
-.stat-value {
-    font-size: 16px;
-    font-weight: 700;
-    color: #4b5563;
-    line-height: 1.2;
-}
-
-.stat-label {
-    font-size: 12px;
-    color: #9ca3af;
-    margin-top: 2px;
-}
-
-.article-card:hover .stat-item:hover .stat-icon {
-    color: #3b82f6;
-    transform: scale(1.1);
-}
-
 .card-actions .el-button {
     margin: 0;
 }
@@ -156,14 +115,6 @@ const {
 
 /* Responsive */
 @media (max-width: 1024px) {
-    .article-stats {
-        width: 100%;
-        border: none;
-        border-top: 1px solid #e5e7eb;
-        padding: 16px 0 0 0;
-        justify-content: space-between;
-    }
-
     .card-actions {
         flex-direction: row;
         width: 100%;

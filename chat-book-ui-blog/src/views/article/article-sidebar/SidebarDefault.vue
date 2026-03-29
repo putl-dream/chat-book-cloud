@@ -5,7 +5,7 @@
             <div class="reading-progress-bar" :style="{ width: readingProgress + '%' }"></div>
         </div>
 
-        <div class="sidebar-module toc-module">
+        <div class="sidebar-module toc-module c-solid-panel">
             <ArticleViewerToc :articleHtml="articleHtml" :contentTarget="contentTarget" />
         </div>
 
@@ -132,11 +132,10 @@ onUnmounted(() => {
 .sidebar-module {
     display: block;
     width: 100%;
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-light);
-    overflow: hidden;
+}
+
+.toc-module {
+    --solid-panel-padding: 0;
 }
 
 

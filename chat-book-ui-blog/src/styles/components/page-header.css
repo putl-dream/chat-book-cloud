@@ -1,0 +1,42 @@
+.c-page-header {
+    margin: var(--page-header-margin);
+    text-align: var(--page-header-align);
+}
+
+.c-page-header--split {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--page-header-gap);
+}
+
+.c-page-header--accent {
+    position: relative;
+    padding-left: var(--page-header-accent-padding);
+    border-left: var(--page-header-accent-width) solid var(--page-header-accent-color);
+}
+
+.c-page-header--center {
+    --page-header-align: center;
+}
+
+.c-page-header__title {
+    margin: var(--page-header-title-margin);
+    font-size: var(--page-header-title-size);
+    font-weight: var(--page-header-title-weight);
+    color: var(--page-header-title-color);
+    letter-spacing: var(--page-header-title-spacing);
+}
+
+.c-page-header__title--gradient {
+    background: var(--page-header-title-gradient);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.c-page-header__subtitle {
+    margin: var(--page-header-subtitle-margin);
+    color: var(--page-header-subtitle-color);
+    font-size: var(--page-header-subtitle-size);
+    font-weight: var(--page-header-subtitle-weight);
+}

@@ -1,0 +1,28 @@
+.c-user-metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 16px;
+}
+
+.c-user-metric-card {
+    padding: 20px;
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.46);
+    text-align: center;
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.06);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+}
+
+.c-user-metric-card__label {
+    color: var(--text-color-secondary);
+    font-weight: 700;
+}
+
+.c-user-metric-card__value {
+    margin: 10px 0 0;
+    color: var(--text-color-primary);
+    font-size: 1.2em;
+    font-weight: 700;
+}

@@ -57,10 +57,6 @@ const {
     cursor: pointer;
 }
 
-.card-actions .el-button {
-    margin: 0;
-}
-
 .pagination-wrapper {
     margin-top: 32px;
     display: flex;

@@ -1,9 +1,11 @@
 <template>
-    <div class="article-card-inner" :class="[`variant-${variant}`]">
-        <!-- 纯文本几何纹理背�?-->
+    <div
+        class="article-card-inner c-article-card-shell"
+        :class="[`variant-${variant}`, { 'c-article-card-shell--plain': ['feature', 'image', 'large-image'].includes(variant) }]">
+        <!-- 纯文本几何纹理背?-->
         <div v-if="variant === 'text-only'" class="card-geometric-bg"></div>
 
-        <!-- 图片展示�?-->
+        <!-- 图片展示?-->
         <div v-if="showCover" class="card-cover-wrapper" :class="{ 'ratio-80': variant === 'large-image' }">
             <el-image :src="post.cover || defaultCover" lazy fit="cover" class="cover-image">
                 <template #placeholder>
@@ -15,7 +17,7 @@
             <div class="category-badge" v-if="variant === 'feature'">{{ getCategoryName(post.category) }}</div>
         </div>
 
-        <!-- 文本内容�?-->
+        <!-- 文本内容?-->
         <div class="card-content">
             <div class="post-header">
                 <h4 class="post-title" :class="{ 'title-large': variant === 'feature' }" :title="post.title">{{
@@ -86,11 +88,12 @@ const showCover = computed(() => {
     display: flex;
     flex-direction: column;
     height: 100%;
+    --article-shell-padding: 0;
+    --article-shell-hover-transform: none;
 }
 
 .variant-text-only {
-    padding: 24px;
-    background: transparent;
+    --article-shell-padding: 24px;
     overflow: hidden;
 }
 
@@ -110,14 +113,6 @@ const showCover = computed(() => {
     pointer-events: none;
 }
 
-.variant-feature,
-.variant-image,
-.variant-large-image,
-.variant-default {
-    padding: 0;
-    background: transparent;
-}
-
 .card-cover-wrapper {
     position: relative;
     width: 100%;
@@ -125,7 +120,7 @@ const showCover = computed(() => {
     overflow: hidden;
 }
 
-/* Feature 占满卡片，更具张�?*/
+/* Feature 占满卡片，更具张?*/
 .variant-feature .card-cover-wrapper {
     aspect-ratio: 21 / 9;
 }

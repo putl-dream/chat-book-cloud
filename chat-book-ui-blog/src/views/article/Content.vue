@@ -2,14 +2,14 @@
     <div class="dashboard">
         <!-- 文章列表卡片 -->
         <div class="articles-container" @scroll="handleScroll">
-            <div v-if="loading" class="loading">
+            <div v-if="loading" class="loading c-loading-state c-glass-panel">
                 <el-skeleton :rows="5" animated />
             </div>
             <div v-for="(article, index) in articles" :key="index" class="article-card">
                 <ArticleImgCard :post="article" />
             </div>
-            <div v-if="noMoreArticles" class="no-more">没有了</div>
-            <div v-if="articles.length === 0" class="no-more">这里空空如也</div>
+            <div v-if="noMoreArticles" class="no-more c-status-note c-status-note--lines">没有了</div>
+            <div v-if="articles.length === 0" class="no-more c-status-note c-status-note--lines">这里空空如也</div>
         </div>
     </div>
 </template>
@@ -74,40 +74,21 @@ onMounted(() => {
 }
 
 .loading {
-    padding: 20px;
-    background: rgba(255, 255, 255, 0.5);
-    border-radius: 12px;
+    --feedback-loading-padding: 20px;
+    --surface-padding: 20px;
+    --surface-bg: rgba(255, 255, 255, 0.5);
+    --surface-radius: 12px;
+    --surface-border: transparent;
+    --surface-shadow: none;
+    --surface-blur: 0px;
     margin-bottom: 20px;
 }
 
 .no-more {
-    margin: 32px 0;
-    color: #9ca3af;
-    text-align: center;
-    font-size: 14px;
-    position: relative;
-}
-
-.no-more::before,
-.no-more::after {
-    content: '';
-    position: absolute;
-    top: 50%;
-    width: 50px;
-    height: 1px;
-    background: #e5e7eb;
-}
-
-.no-more::before {
-    margin-right: 15px;
-    right: 50%;
-    transform: translateX(-20px);
-}
-
-.no-more::after {
-    margin-left: 15px;
-    left: 50%;
-    transform: translateX(20px);
+    --feedback-note-padding: 32px 0;
+    --feedback-note-size: 14px;
+    --feedback-note-line-color: #e5e7eb;
+    margin: 0;
 }
 
 @keyframes fadeIn {

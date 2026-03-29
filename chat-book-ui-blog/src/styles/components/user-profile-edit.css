@@ -1,0 +1,48 @@
+.c-user-profile-edit {
+    min-height: 100%;
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: visible;
+    padding: 20px 20px calc(env(safe-area-inset-bottom, 0px) + 112px);
+    box-sizing: border-box;
+    background-color: var(--bg-color-base);
+}
+
+.c-user-profile-edit__header {
+    --page-header-margin: 0 0 40px;
+    --page-header-gap: 24px;
+}
+
+.c-user-profile-edit__section {
+    margin-bottom: 40px;
+}
+
+.c-user-profile-edit__form-grid {
+    display: grid;
+    gap: 24px;
+    margin-bottom: 40px;
+}
+
+.c-user-profile-edit__actions {
+    --form-actions-margin: 40px 0 0;
+}
+
+.c-user-profile-edit__action {
+    margin: 0;
+}
+
+@media (max-width: 768px) {
+    .c-user-profile-edit {
+        padding: 20px 16px calc(env(safe-area-inset-bottom, 0px) + 104px);
+    }
+
+    .c-user-profile-edit__actions {
+        flex-direction: column;
+    }
+
+    .c-user-profile-edit__action {
+        width: 100%;
+    }
+}

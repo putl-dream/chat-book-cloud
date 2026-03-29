@@ -1,6 +1,6 @@
 <template>
-    <div class="article-tag-card">
-        <h3 class="card-title">文章标签</h3>
+    <div class="article-tag-card c-solid-panel">
+        <h3 class="card-title c-panel-title c-panel-title--compact">文章标签</h3>
         <div v-if="articleTags.length > 0" class="tag-list">
             <div v-if="techTags.length > 0" class="tag-section">
                 <div class="tag-section-title">技术栈</div>
@@ -33,7 +33,7 @@
                 </div>
             </div>
         </div>
-        <div v-else class="empty-state">
+        <div v-else class="empty-state c-empty-panel c-empty-panel--plain">
             <span>暂无标签</span>
         </div>
     </div>
@@ -63,27 +63,8 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-.article-tag-card {
-    padding: 20px;
-    background: var(--bg-color-white);
-}
-
 .card-title {
-    font-size: 1rem;
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-bottom: 16px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.card-title::before {
-    content: '';
-    width: 4px;
-    height: 16px;
-    background: var(--color-primary);
-    border-radius: var(--border-radius-round);
+    --panel-title-margin: 0 0 16px;
 }
 
 .tag-list {
@@ -122,8 +103,7 @@ onMounted(async () => {
 }
 
 .empty-state {
-    text-align: center;
-    padding: 16px 0;
+    --empty-panel-padding: 16px 0;
     color: var(--text-color-secondary);
     font-size: 0.875rem;
 }
