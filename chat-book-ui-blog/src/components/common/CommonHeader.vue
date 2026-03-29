@@ -1,7 +1,7 @@
 <template>
     <el-menu class="el-menu" mode="horizontal" :ellipsis="false" router>
         <div class="logo" @click="router.push('/')">
-            <img src="@/assets/logo.svg" alt="Logo">
+            <img :src="logoUrl" alt="Logo">
         </div>
 
         <div class="nav-links" v-if="!isMobile">
@@ -135,6 +135,7 @@ import { useRoute } from "vue-router";
 import UserCard from "@/views/user/components/UserCard.vue";
 import { getUserBySelf } from "@/views/user/_domain/user.js";
 import { logoutAndRevoke } from "@/utils/token.js";
+import logoUrl from "@/assets/logo.svg";
 
 const props = defineProps({
     showSearch: {
