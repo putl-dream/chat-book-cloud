@@ -24,8 +24,8 @@ public class VerificationCodeLoginStrategy implements LoginStrategy {
     private final CaptchaService captchaService;
 
     @Override
-    public LoginMethod support() {
-        return LoginMethod.VERIFICATION_CODE;
+    public boolean supports(LoginMethod loginMethod) {
+        return LoginMethod.VERIFICATION_CODE == loginMethod;
     }
 
     @Override

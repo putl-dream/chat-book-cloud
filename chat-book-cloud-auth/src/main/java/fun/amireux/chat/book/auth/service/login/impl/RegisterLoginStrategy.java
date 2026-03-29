@@ -16,8 +16,8 @@ public class RegisterLoginStrategy implements LoginStrategy {
     private final UserService userService;
 
     @Override
-    public LoginMethod support() {
-        return LoginMethod.REGISTER;
+    public boolean supports(LoginMethod loginMethod) {
+        return LoginMethod.REGISTER == loginMethod;
     }
 
     @Override

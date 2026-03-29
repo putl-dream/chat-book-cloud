@@ -23,8 +23,8 @@ public class PasswordLoginStrategy implements LoginStrategy {
     private final UserService userService;
 
     @Override
-    public LoginMethod support() {
-        return LoginMethod.PASSWORD;
+    public boolean supports(LoginMethod loginMethod) {
+        return LoginMethod.PASSWORD == loginMethod;
     }
 
     @Override
