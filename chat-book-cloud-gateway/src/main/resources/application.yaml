@@ -75,6 +75,14 @@ spring:
           filters:
             - StripPrefix=1
 
+        # Agent 服务 - /api/agent/**
+        - id: agent-service
+          uri: ${AGENT_SERVICE_URI:lb://chat-book-cloud-agent}
+          predicates:
+            - Path=/api/agent/**
+          filters:
+            - StripPrefix=1
+
         # 互动服务 - /api/interaction/**
         - id: interaction-service
           uri: ${INTERACTION_SERVICE_URI:lb://chat-book-cloud-interaction}
@@ -110,6 +118,36 @@ spring:
 
 authentication:
   rules:
+    - name: user-self-api
+      pattern: /api/user/bySelf
+    - name: user-update-api
+      pattern: /api/user/update
+    - name: user-history-page-api
+      pattern: /api/page/userHistoryPage
+    - name: user-collect-page-api
+      pattern: /api/page/userCollectPage
+    - name: user-article-page-api
+      pattern: /api/page/userArticlePage
+    - name: user-draft-page-api
+      pattern: /api/page/userDraftArticlePage
+    - name: social-api
+      pattern: /api/social/**
+    - name: chat-history-api
+      pattern: /api/chat/messages
+    - name: chat-unread-api
+      pattern: /api/chat/unread/count
+    - name: chat-read-api
+      pattern: /api/chat/messages/read
+    - name: interaction-praise-api
+      pattern: /api/interaction/foot/praise
+    - name: interaction-collection-api
+      pattern: /api/interaction/foot/collection
+    - name: interaction-comment-api
+      pattern: /api/interaction/foot/comment
+    - name: interaction-history-api
+      pattern: /api/interaction/foot/getHistory
+    - name: interaction-notification-api
+      pattern: /api/interaction/foot/getNotifications
     - name: admin-user-api
       pattern: /api/user/admin/**
     - name: admin-review-page-api
