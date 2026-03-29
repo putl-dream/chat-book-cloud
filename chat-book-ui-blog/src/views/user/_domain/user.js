@@ -2,22 +2,27 @@ import { AUTH_CONFIG } from '@/config'
 import request from '@/utils/http.js'
 
 export function login(params) {
-    return request.post('/auth/account/login', {
-        ...params,
-        loginMethod: 'PASSWORD'
+    return request.post('/auth/account/login/password', {
+        username: params.username,
+        email: params.email,
+        password: params.password
     });
 }
 
 export function loginByEmailCode(params) {
-    return request.post('/auth/account/login', {
+    return request.post('/auth/account/login/captcha', {
         email: params.email,
-        loginMethod: 'VERIFICATION_CODE',
-        verificationCode: params.verificationCode
+        captcha: params.verificationCode
     });
 }
 
 export function signUp(params) {
-    return request.post('/auth/account/registered', params);
+    return request.post('/auth/account/register', {
+        email: params.email,
+        username: params.username,
+        password: params.password,
+        captcha: params.verificationCode
+    });
 }
 
 export function captcha(email) {

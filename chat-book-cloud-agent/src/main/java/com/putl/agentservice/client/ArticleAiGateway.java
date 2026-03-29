@@ -1,18 +1,22 @@
 package com.putl.agentservice.client;
 
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.NotebookSummary;
 
 import java.util.List;
+import java.util.function.Consumer;
 
 public interface ArticleAiGateway {
 
-    String chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
+    AiInvocationResult<String> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
 
-    ArticleDraftResult generateDraft(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
+    AiInvocationResult<String> chatStream(List<AgentMessageDO> messages, NotebookSummary notebookSummary, Consumer<String> chunkConsumer);
 
-    ArticleDraftResult optimizeDraft(String instruction, String currentTitle, String currentSummary, String currentContent);
+    AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
 
-    NotebookSummary summarizeNotebook(List<AgentMessageDO> messages, NotebookSummary currentNotebook);
+    AiInvocationResult<ArticleDraftResult> optimizeDraft(String instruction, String currentTitle, String currentSummary, String currentContent);
+
+    AiInvocationResult<NotebookSummary> summarizeNotebook(List<AgentMessageDO> messages, NotebookSummary currentNotebook);
 }

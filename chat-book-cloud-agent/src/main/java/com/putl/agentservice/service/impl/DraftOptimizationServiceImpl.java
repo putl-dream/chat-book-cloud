@@ -3,6 +3,7 @@ package com.putl.agentservice.service.impl;
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.model.dto.AdoptDraftVersionRequest;
 import com.putl.agentservice.model.dto.OptimizeDraftRequest;
+import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.DraftOptimizeResponse;
 import com.putl.agentservice.service.DraftOptimizationService;
@@ -27,7 +28,7 @@ public class DraftOptimizationServiceImpl implements DraftOptimizationService {
     @Override
     public DraftOptimizeResponse optimizeDraft(OptimizeDraftRequest request) {
         DraftDetailDTO draft = articleClient.getDraftDetail(request.getDraftId()).getData();
-        ArticleDraftResult optimized = articleAiGateway.optimizeDraft(
+        AiInvocationResult<ArticleDraftResult> optimized = articleAiGateway.optimizeDraft(
                 request.getInstruction(),
                 draft.getTitle(),
                 draft.getSummary(),
@@ -35,9 +36,9 @@ public class DraftOptimizationServiceImpl implements DraftOptimizationService {
 
         CreateDraftVersionRequest versionRequest = new CreateDraftVersionRequest();
         versionRequest.setDraftId(request.getDraftId());
-        versionRequest.setTitle(optimized.getTitle());
-        versionRequest.setSummary(optimized.getSummary());
-        versionRequest.setContent(optimized.getContent());
+        versionRequest.setTitle(optimized.getData().getTitle());
+        versionRequest.setSummary(optimized.getData().getSummary());
+        versionRequest.setContent(optimized.getData().getContent());
         versionRequest.setSourceType("OPTIMIZE");
         versionRequest.setInstruction(request.getInstruction());
 

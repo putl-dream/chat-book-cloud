@@ -16,6 +16,14 @@ knife4j:
     language: zh_cn
 
 agent:
+  chat:
+    recent-window-size: ${AGENT_CHAT_RECENT_WINDOW_SIZE:12}
+    recent-window-ttl-minutes: ${AGENT_CHAT_RECENT_WINDOW_TTL_MINUTES:30}
+    notebook-ttl-minutes: ${AGENT_CHAT_NOTEBOOK_TTL_MINUTES:120}
+    stream-timeout-ms: ${AGENT_CHAT_STREAM_TIMEOUT_MS:60000}
+    stream-executor-core-pool-size: ${AGENT_CHAT_STREAM_EXECUTOR_CORE_POOL_SIZE:4}
+    stream-executor-max-pool-size: ${AGENT_CHAT_STREAM_EXECUTOR_MAX_POOL_SIZE:16}
+    stream-executor-queue-capacity: ${AGENT_CHAT_STREAM_EXECUTOR_QUEUE_CAPACITY:200}
   ai:
     provider: anthropic
     anthropic:

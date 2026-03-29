@@ -1,15 +1,11 @@
 package fun.amireux.chat.book.auth.security;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.baomidou.mybatisplus.core.toolkit.Wrappers;
-import fun.amireux.chat.book.auth.mapper.UserInfoMapper;
-import fun.amireux.chat.book.auth.projectobject.LoginMethod;
-import fun.amireux.chat.book.auth.projectobject.RefreshTokenInfo;
-import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
-import fun.amireux.chat.book.auth.service.RefreshTokenService;
-import fun.amireux.chat.book.auth.service.UserService;
-import fun.amireux.chat.book.auth.service.dto.UserDTO;
-import fun.amireux.chat.book.framework.common.utils.JwtUtil;
+import fun.amireux.chat.book.auth.projectobject.LoginVO;
+import fun.amireux.chat.book.auth.security.oauth.OAuthResolveException;
+import fun.amireux.chat.book.auth.security.oauth.OAuthUserResolver;
+import fun.amireux.chat.book.auth.security.oauth.OAuthUserResolverFactory;
+import fun.amireux.chat.book.auth.service.command.OAuthLoginCommand;
+import fun.amireux.chat.book.auth.service.AuthApplicationService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,33 +16,22 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
 
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private static final int ADMIN_ROLE_CODE = 1;
-
-    private final UserService userService;
-    private final UserInfoMapper userInfoMapper;
-    private final JwtUtil jwtUtil;
-    private final RefreshTokenService refreshTokenService;
+    private final OAuthUserResolverFactory oAuthUserResolverFactory;
+    private final AuthApplicationService authApplicationService;
 
     @Value("${oauth2.success.redirect-url:http://localhost:5173/login}")
     private String redirectUrl;
 
     public OAuth2LoginSuccessHandler(
-            UserService userService,
-            UserInfoMapper userInfoMapper,
-            JwtUtil jwtUtil,
-            RefreshTokenService refreshTokenService
+            OAuthUserResolverFactory oAuthUserResolverFactory,
+            AuthApplicationService authApplicationService
     ) {
-        this.userService = userService;
-        this.userInfoMapper = userInfoMapper;
-        this.jwtUtil = jwtUtil;
-        this.refreshTokenService = refreshTokenService;
+        this.oAuthUserResolverFactory = oAuthUserResolverFactory;
+        this.authApplicationService = authApplicationService;
     }
 
     @Override
@@ -58,73 +43,17 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         OAuth2AuthenticationToken oauthToken = (OAuth2AuthenticationToken) authentication;
         OAuth2User oauth2User = oauthToken.getPrincipal();
         String provider = oauthToken.getAuthorizedClientRegistrationId();
+        try {
+            OAuthUserResolver resolver = oAuthUserResolverFactory.getResolver(provider);
+            OAuthLoginCommand command = resolver.resolve(oauth2User.getAttributes());
+            LoginVO loginVO = authApplicationService.login(command);
 
-        Map<String, Object> attributes = oauth2User.getAttributes();
-        String email;
-        String username;
-        String avatar = null;
-
-        if ("google".equals(provider)) {
-            email = (String) attributes.get("email");
-            username = (String) attributes.get("name");
-            avatar = (String) attributes.get("picture");
-        } else if ("github".equals(provider)) {
-            email = (String) attributes.get("email");
-            username = (String) attributes.get("login");
-            Object avatarUrl = attributes.get("avatar_url");
-            if (avatarUrl != null) {
-                avatar = avatarUrl.toString();
-            }
-        } else {
-            response.sendRedirect(redirectUrl + "?error=unsupported_provider");
-            return;
+            // 前端现有回调协议仍保持不变。
+            response.sendRedirect(redirectUrl
+                    + "?accessToken=" + loginVO.getAccessToken()
+                    + "&refreshToken=" + loginVO.getRefreshToken());
+        } catch (OAuthResolveException ex) {
+            response.sendRedirect(redirectUrl + "?error=" + ex.getErrorCode());
         }
-
-        if (email == null || email.isEmpty()) {
-            response.sendRedirect(redirectUrl + "?error=no_email");
-            return;
-        }
-
-        UserDTO userDTO = new UserDTO();
-        userDTO.setEmail(email);
-        userDTO.setUsername(username);
-        userDTO.setPhoto(avatar);
-        userDTO.setLoginMethod(LoginMethod.valueOf(provider.toUpperCase()));
-
-        Integer userId = userService.oauth2Login(userDTO);
-        UserInfoDO userInfo = userInfoMapper.selectOne(
-                Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userId)
-        );
-
-        Map<String, Object> claims = new LinkedHashMap<>();
-        claims.put("id", userId);
-        if (userInfo != null && userInfo.getUsername() != null && !userInfo.getUsername().isBlank()) {
-            claims.put("username", userInfo.getUsername());
-        }
-        claims.put("roles", resolveRoleClaim(userInfo));
-
-        String accessToken  = jwtUtil.generateAccessToken(claims);
-        String refreshToken = jwtUtil.generateRefreshToken(claims);
-
-        // Store refresh token in Redis
-        DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
-        String jti = jwtUtil.getJti(refreshJwt);
-        Instant refreshExpiresAt = refreshJwt.getExpiresAt().toInstant();
-        RefreshTokenInfo info = new RefreshTokenInfo(
-                userId, Instant.now(), refreshExpiresAt, null
-        );
-        refreshTokenService.store(jti, info, refreshExpiresAt);
-
-        // Redirect with both tokens as query params
-        response.sendRedirect(redirectUrl
-                + "?accessToken="  + accessToken
-                + "&refreshToken=" + refreshToken);
-    }
-
-    private String resolveRoleClaim(UserInfoDO userInfo) {
-        if (userInfo != null && Integer.valueOf(ADMIN_ROLE_CODE).equals(userInfo.getRole())) {
-            return "ROLE_ADMIN";
-        }
-        return "ROLE_USER";
     }
 }

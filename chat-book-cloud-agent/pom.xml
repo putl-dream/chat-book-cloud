@@ -45,8 +45,8 @@
         </dependency>
 
         <dependency>
-            <groupId>com.baomidou</groupId>
-            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <groupId>fun.amireux</groupId>
+            <artifactId>chat-book-cloud-mybatis</artifactId>
         </dependency>
 
         <dependency>
@@ -54,10 +54,10 @@
             <artifactId>chat-book-cloud-redis</artifactId>
         </dependency>
 
-        <dependency>
-            <groupId>fun.amireux</groupId>
-            <artifactId>chat-book-cloud-security-mvc</artifactId>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>fun.amireux</groupId>-->
+<!--            <artifactId>chat-book-cloud-security-mvc</artifactId>-->
+<!--        </dependency>-->
 
         <dependency>
             <groupId>fun.amireux</groupId>
