@@ -1,0 +1,20 @@
+@keyframes u-fade-in-up {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.u-animate-fade-in {
+    animation: u-fade-in-up 0.6s ease-out;
+}
+
+.u-animate-list-in {
+    opacity: 0;
+    animation: u-fade-in-up 0.5s ease-out forwards;
+}

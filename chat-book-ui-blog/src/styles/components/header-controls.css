@@ -1,0 +1,26 @@
+.c-icon-trigger {
+    width: var(--icon-trigger-size, 36px);
+    height: var(--icon-trigger-size, 36px);
+    padding: 0;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--icon-trigger-color, var(--text-color-primary));
+    border-radius: var(--icon-trigger-radius, 8px);
+    background: var(--icon-trigger-bg, transparent);
+    transition: background-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.c-icon-trigger:hover {
+    background: var(--icon-trigger-hover-bg, var(--bg-color-hover, rgba(0, 0, 0, 0.05)));
+    color: var(--icon-trigger-hover-color, var(--icon-trigger-color, var(--text-color-primary)));
+}
+
+.c-dropdown-panel {
+    padding: var(--dropdown-panel-padding, 10px);
+    border: 1px solid var(--border-color-light);
+    border-radius: var(--dropdown-panel-radius, 20px);
+    background: var(--app-dropdown-bg);
+    box-shadow: var(--box-shadow-hover);
+}
