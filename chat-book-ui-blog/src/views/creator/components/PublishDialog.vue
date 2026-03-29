@@ -1,13 +1,22 @@
 <template>
-    <el-drawer v-model="visible" title="发布文章" direction="rtl" size="480px" :append-to-body="true" class="modern-drawer"
+    <el-drawer
+        v-model="visible"
+        title="发布文章"
+        direction="rtl"
+        size="480px"
+        :append-to-body="true"
+        class="modern-drawer"
+        header-class="modern-drawer__header"
+        body-class="modern-drawer__body"
+        footer-class="modern-drawer__footer"
         :close-on-click-modal="true">
         <div class="publish-form-content">
             <div class="form-item">
                 <div class="form-label">文章分类</div>
                 <el-select v-model="publishForm.category" placeholder="请选择分类" class="modern-select"
                     :popper-append-to-body="false">
-                    <el-option v-for="(name, key) in categoryOptions" :key="key" :label="name"
-                        :value="parseInt(key, 10)" />
+                    <el-option v-for="option in normalizedCategoryOptions" :key="option.value" :label="option.label"
+                        :value="option.value" />
                 </el-select>
             </div>
 
@@ -54,7 +63,7 @@
                 <el-upload class="modern-uploader" action="" :http-request="handleCoverUpload" :show-file-list="false"
                     :before-upload="beforeCoverUpload">
                     <div v-if="publishForm.cover" class="cover-preview-wrapper">
-                        <img :src="publishForm.cover" class="cover-preview" />
+                        <img :src="publishForm.cover" alt="文章封面预览" class="cover-preview" />
                         <div class="cover-preview-overlay">更换封面</div>
                     </div>
                     <div v-else class="cover-uploader-trigger">
@@ -77,9 +86,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
-import { UploadFilled } from '@element-plus/icons-vue';
-import { ElMessage } from 'element-plus';
+import {computed} from 'vue';
+import {UploadFilled} from '@element-plus/icons-vue';
+import {ElMessage} from 'element-plus';
 
 const props = defineProps({
     modelValue: {
@@ -128,6 +137,13 @@ const visible = computed({
         emit('update:modelValue', value);
     }
 });
+
+const normalizedCategoryOptions = computed(() => (
+    Object.entries(props.categoryOptions).map(([value, label]) => ({
+        value: Number(value),
+        label,
+    }))
+));
 
 const contentType = computed({
     get: () => props.publishForm.contentType || 0,
@@ -179,7 +195,6 @@ console.log('PublishDialog rendering with Drawer UI');
     color: var(--text-color-primary, #333);
     display: flex;
     align-items: baseline;
-    letter-spacing: 0.2px;
 }
 
 .label-hint {
@@ -189,29 +204,32 @@ console.log('PublishDialog rendering with Drawer UI');
     color: var(--text-color-secondary, #888);
 }
 
-/* Base structural overrides for Ele UI Form Elements inside Drawer */
-:deep(.modern-select .el-input__wrapper),
-:deep(.modern-textarea .el-textarea__inner) {
-    background-color: var(--bg-color-secondary, #f5f5f5) !important;
-    box-shadow: none !important;
-    border: none !important;
-    border-radius: 12px !important;
-    padding: 12px 16px !important;
-    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1) !important;
+.modern-select,
+.modern-textarea {
+    --el-border-radius-base: 12px;
+    --el-border-color: transparent;
+    --el-border-color-hover: transparent;
+    --el-input-border-color: transparent;
+    --el-input-hover-border-color: transparent;
+    --el-input-focus-border-color: transparent;
+    --el-input-bg-color: var(--bg-color-secondary, #f5f5f5);
+    --el-fill-color-blank: var(--bg-color-secondary, #f5f5f5);
+    --el-fill-color-light: var(--bg-color-hover, #ebebeb);
+    --el-text-color-placeholder: var(--text-color-placeholder, #9ca3af);
+    transition: all 0.25s cubic-bezier(0.2, 0, 0, 1);
 }
 
-:deep(.modern-select .el-input__wrapper:hover),
-:deep(.modern-textarea .el-textarea__inner:hover),
-:deep(.modern-select .el-input__wrapper.is-focus),
-:deep(.modern-textarea .el-textarea__inner:focus) {
-    background-color: var(--bg-color-hover, #ebebeb) !important;
-    box-shadow: 0 0 0 2px rgba(26, 26, 26, 0.05) !important;
-    /* soft outline effect */
+.modern-select:hover,
+.modern-select:focus-within,
+.modern-textarea:hover,
+.modern-textarea:focus-within {
+    --el-input-bg-color: var(--bg-color-hover, #ebebeb);
+    --el-fill-color-blank: var(--bg-color-hover, #ebebeb);
 }
 
-:deep(.modern-select .el-input__wrapper) {
-    padding: 6px 16px !important;
-    /* Adjust height for select */
+.modern-uploader {
+    display: block;
+    width: 100%;
 }
 
 /* Tag Styles */
@@ -242,11 +260,9 @@ console.log('PublishDialog rendering with Drawer UI');
 }
 
 .modern-tag.capsule.is-selected {
-    background-color: transparent;
+    background-color: #fff;
     color: var(--text-color-primary, #333);
     border-color: rgba(0, 0, 0, 0.08);
-    /* Subtle border for selected */
-    background-color: #fff;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
     font-weight: 500;
 }
@@ -302,16 +318,6 @@ console.log('PublishDialog rendering with Drawer UI');
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
     /* Soft shadow for active state */
     font-weight: 600;
-}
-
-/* Cover Uploader */
-.modern-uploader {
-    width: 100%;
-}
-
-:deep(.modern-uploader .el-upload) {
-    display: block;
-    width: 100%;
 }
 
 .cover-uploader-trigger {
@@ -440,34 +446,9 @@ console.log('PublishDialog rendering with Drawer UI');
     box-shadow: -10px 0 40px rgba(0, 0, 0, 0.08) !important;
 }
 
-.modern-drawer .el-drawer__header {
-    margin-bottom: 0 !important;
-    padding: 24px 32px 16px !important;
-    font-size: 20px !important;
-    font-weight: 700 !important;
-    color: var(--text-color-primary, #1a1a1a) !important;
-    border-bottom: none !important;
-}
-
-.modern-drawer .el-drawer__body {
-    padding: 16px 32px !important;
-}
-
-.modern-drawer .el-drawer__footer {
-    padding: 20px 32px !important;
-    border-top: none !important;
-}
-
 @media (max-width: 768px) {
     .modern-drawer {
         width: 100% !important;
-    }
-
-    .modern-drawer .el-drawer__body,
-    .modern-drawer .el-drawer__header,
-    .modern-drawer .el-drawer__footer {
-        padding-left: 20px !important;
-        padding-right: 20px !important;
     }
 }
 </style>
