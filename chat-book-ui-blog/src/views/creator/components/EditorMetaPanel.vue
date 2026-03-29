@@ -82,22 +82,3 @@ const handlePathTagChange = (value) => {
     emit('change-path-tag', value);
 };
 </script>
-
-<style scoped>
-.tag-selection {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.tag-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tag-group-label {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-}
-</style>

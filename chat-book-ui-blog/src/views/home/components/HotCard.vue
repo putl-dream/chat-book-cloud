@@ -46,10 +46,3 @@ onMounted(() => {
     queryHotRequest();
 })
 </script>
-
-<style scoped>
-.hot-articles-card {
-    padding: 20px;
-    background: var(--bg-color-white);
-}
-</style>

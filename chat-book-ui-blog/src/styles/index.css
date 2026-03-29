@@ -28,3 +28,10 @@
 @import "./components/user-history.css";
 @import "./components/user-profile-edit.css";
 @import "./components/user-profile.css";
+@import "./components/home-page.css";
+@import "./components/search-page.css";
+@import "./components/tags-page.css";
+@import "./components/hot-articles.css";
+@import "./components/article-module.css";
+@import "./components/chat-module.css";
+@import "./components/creator-module.css";

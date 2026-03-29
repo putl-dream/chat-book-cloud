@@ -73,7 +73,6 @@
 
 <script setup>
 import { useCreativeLogic, useCreativeFormatter } from './_hooks/useCreativeLogic.js';
-import UserDataCard from "@/views/user/components/UserDataCard.vue";
 import { View, ChatDotSquare, Star, Collection } from '@element-plus/icons-vue';
 
 const {
@@ -91,35 +90,3 @@ const {
     formatDate
 } = useCreativeFormatter();
 </script>
-
-<style scoped>
-.article-card {
-    margin-bottom: 0;
-    /* Handled by flex gap */
-}
-
-.article-title {
-    cursor: pointer;
-}
-
-.card-actions .el-button {
-    margin: 0;
-}
-
-.pagination-wrapper {
-    margin-top: 32px;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 32px;
-}
-
-/* Responsive */
-@media (max-width: 1024px) {
-    .card-actions {
-        flex-direction: row;
-        width: 100%;
-        justify-content: flex-end;
-        padding-left: 0;
-    }
-}
-</style>

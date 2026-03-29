@@ -51,25 +51,3 @@ const {
     formatDate
 } = useDraftFormatter();
 </script>
-
-<style scoped>
-.draft-title {
-    cursor: pointer;
-}
-
-.pagination-wrapper {
-    margin-top: 32px;
-    display: flex;
-    justify-content: center;
-    margin-bottom: 32px;
-}
-
-@media (max-width: 1024px) {
-    .card-actions {
-        flex-direction: row;
-        width: 100%;
-        justify-content: flex-end;
-        padding-left: 0;
-    }
-}
-</style>
