@@ -120,11 +120,49 @@ function handleError(code, msg) {
     });
 }
 
+function isUnauthorized(code) {
+    return code === HTTP_STATUS.UNAUTHORIZED || code === 401;
+}
+
+function isRefreshRequest(config) {
+    const url = String(config?.url || '');
+    return url.includes('/auth/account/refresh');
+}
+
+function redirectToLogin() {
+    clearTokens();
+    if (router.currentRoute.value.name !== 'Login') {
+        router.push({ name: 'Login' });
+    }
+}
+
+async function tryRefreshAndRetry(originalRequest) {
+    if (!originalRequest || originalRequest._retry || isRefreshRequest(originalRequest)) {
+        return null;
+    }
+
+    originalRequest._retry = true;
+    const newToken = await refreshAccessToken();
+    if (!newToken) {
+        return null;
+    }
+
+    // 旧请求在 removePending 中可能已被 AbortController 标记为中止，重试前需要移除 signal。
+    if (originalRequest.signal) {
+        delete originalRequest.signal;
+    }
+
+    originalRequest.headers = originalRequest.headers || {};
+    originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
+    originalRequest.headers['token'] = newToken;
+    return service(originalRequest);
+}
+
 /**
  * 响应拦截器
  */
 service.interceptors.response.use(
-    (response) => {
+    async (response) => {
         NProgress.done();
         removePending(response.config);
 
@@ -136,6 +174,16 @@ service.interceptors.response.use(
 
         if (res.code === 200 || res.code === 0 || !res.code) {
             return res.data !== undefined ? res.data : res;
+        }
+
+        if (isUnauthorized(res.code)) {
+            handleError(res.code, res.msg);
+            const retryResponse = await tryRefreshAndRetry(response.config);
+            if (retryResponse) {
+                return retryResponse;
+            }
+            redirectToLogin();
+            return Promise.reject(new Error(res.msg || 'Unauthorized'));
         }
 
         handleError(res.code, res.msg);
@@ -158,25 +206,14 @@ service.interceptors.response.use(
         const errorMsg = response?.data?.msg || message;
         const originalRequest = error.config;
 
-        // 401: 尝试自动刷新 Token
-        if (status === 401) {
-            if (!originalRequest?._retry) {
-                originalRequest._retry = true;
-                const newToken = await refreshAccessToken();
-                if (newToken) {
-                    // Token 已刷新，重试原请求一次
-                    originalRequest.headers = originalRequest.headers || {};
-                    originalRequest.headers['Authorization'] = `Bearer ${newToken}`;
-                    originalRequest.headers['token'] = newToken;
-                    return service(originalRequest);
-                }
+        // HTTP 401: 尝试自动刷新 Token
+        if (isUnauthorized(status)) {
+            handleError(status, errorMsg);
+            const retryResponse = await tryRefreshAndRetry(originalRequest);
+            if (retryResponse) {
+                return retryResponse;
             }
-
-            // 刷新失败，跳转登录页
-            clearTokens();
-            if (router.currentRoute.value.name !== 'Login') {
-                router.push({ name: 'Login' });
-            }
+            redirectToLogin();
             return Promise.reject(error);
         }
 
