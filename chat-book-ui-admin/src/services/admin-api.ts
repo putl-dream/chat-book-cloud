@@ -274,13 +274,12 @@ function mapReviewArticle(article: BackendReviewArticle): ReviewArticle {
 
 export function loginAdmin(username: string, password: string) {
   return requestBrowser<LoginVO>(
-    "/auth/account/login",
+    "/auth/account/login/password",
     {
       method: "POST",
       body: JSON.stringify({
         username,
         password,
-        loginMethod: "PASSWORD",
       }),
     },
     { auth: false, redirectOnUnauthorized: false }
@@ -301,7 +300,7 @@ export function getCurrentAdminUser(options?: {
 }
 
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
-  const [count, reviewPage] = await Promise.all([
+  const [count, reviewPage]: [AdminCount, BackendPageResult<BackendReviewArticle>] = await Promise.all([
     requestBrowser<AdminCount>("/user/admin/count", { method: "GET" }),
     requestBrowser<BackendPageResult<BackendReviewArticle>>("/page/adminArticlePage", {
       method: "POST",

@@ -3,8 +3,9 @@ package fun.amireux.chat.book.auth.service.login.impl;
 import fun.amireux.chat.book.auth.projectobject.LoginMethod;
 import fun.amireux.chat.book.auth.projectobject.UserDO;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
+import fun.amireux.chat.book.auth.service.command.LoginCommand;
+import fun.amireux.chat.book.auth.service.command.PasswordLoginCommand;
 import fun.amireux.chat.book.auth.service.UserService;
-import fun.amireux.chat.book.auth.service.dto.UserDTO;
 import fun.amireux.chat.book.auth.service.login.AuthenticatedUser;
 import fun.amireux.chat.book.auth.service.login.LoginStrategy;
 import fun.amireux.chat.book.auth.utils.PwdUtil;
@@ -27,15 +28,16 @@ public class PasswordLoginStrategy implements LoginStrategy {
     }
 
     @Override
-    public AuthenticatedUser authenticate(UserDTO user) {
-        if (StringUtils.isBlank(user.getPassword())) {
+    public AuthenticatedUser authenticate(LoginCommand command) {
+        PasswordLoginCommand loginCommand = (PasswordLoginCommand) command;
+        if (StringUtils.isBlank(loginCommand.password())) {
             throw new AuthenticationException("Password is required");
         }
 
         // 策略内部只处理“如何认证”，不参与 Token 签发。
-        UserDO userDO = userService.getUserInfo(user);
+        UserDO userDO = userService.getUserByUsernameOrEmail(loginCommand.username(), loginCommand.email());
         userService.ensureUserEnabled(userDO);
-        if (!PwdUtil.checkPassword(user.getPassword(), userDO.getPassword())) {
+        if (!PwdUtil.checkPassword(loginCommand.password(), userDO.getPassword())) {
             log.error("Password check failed");
             throw new AuthenticationException("Password is invalid");
         }

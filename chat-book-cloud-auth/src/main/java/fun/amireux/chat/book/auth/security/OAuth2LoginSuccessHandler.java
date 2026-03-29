@@ -4,8 +4,8 @@ import fun.amireux.chat.book.auth.projectobject.LoginVO;
 import fun.amireux.chat.book.auth.security.oauth.OAuthResolveException;
 import fun.amireux.chat.book.auth.security.oauth.OAuthUserResolver;
 import fun.amireux.chat.book.auth.security.oauth.OAuthUserResolverFactory;
+import fun.amireux.chat.book.auth.service.command.OAuthLoginCommand;
 import fun.amireux.chat.book.auth.service.AuthApplicationService;
-import fun.amireux.chat.book.auth.service.dto.UserDTO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -45,8 +45,8 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         String provider = oauthToken.getAuthorizedClientRegistrationId();
         try {
             OAuthUserResolver resolver = oAuthUserResolverFactory.getResolver(provider);
-            UserDTO userDTO = resolver.resolve(oauth2User.getAttributes());
-            LoginVO loginVO = authApplicationService.login(userDTO);
+            OAuthLoginCommand command = resolver.resolve(oauth2User.getAttributes());
+            LoginVO loginVO = authApplicationService.login(command);
 
             // 前端现有回调协议仍保持不变。
             response.sendRedirect(redirectUrl

@@ -3,7 +3,8 @@ package fun.amireux.chat.book.auth.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import fun.amireux.chat.book.auth.projectobject.UserDO;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
-import fun.amireux.chat.book.auth.service.dto.UserDTO;
+import fun.amireux.chat.book.auth.service.command.OAuthLoginCommand;
+import fun.amireux.chat.book.auth.service.command.RegisterCommand;
 import fun.amireux.chat.book.auth.service.login.AuthenticatedUser;
 
 public interface UserService extends IService<UserDO> {
@@ -12,15 +13,16 @@ public interface UserService extends IService<UserDO> {
      *
      * @return 已认证用户
      */
-    AuthenticatedUser register(UserDTO signInVO);
+    AuthenticatedUser register(RegisterCommand command);
 
     /**
      * 获取用户信息
      *
-     * @param userDTO 用户名或邮箱
+     * @param username 用户名
+     * @param email 邮箱
      * @return 用户信息
      */
-    UserDO getUserInfo(UserDTO userDTO);
+    UserDO getUserByUsernameOrEmail(String username, String email);
 
     /**
      * 获取用户资料信息
@@ -43,5 +45,5 @@ public interface UserService extends IService<UserDO> {
      * @param user 用户信息
      * @return 已认证用户
      */
-    AuthenticatedUser oauth2Login(UserDTO user);
+    AuthenticatedUser oauth2Login(OAuthLoginCommand user);
 }

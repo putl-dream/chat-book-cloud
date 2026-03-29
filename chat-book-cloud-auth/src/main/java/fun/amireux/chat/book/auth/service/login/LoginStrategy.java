@@ -1,7 +1,7 @@
 package fun.amireux.chat.book.auth.service.login;
 
 import fun.amireux.chat.book.auth.projectobject.LoginMethod;
-import fun.amireux.chat.book.auth.service.dto.UserDTO;
+import fun.amireux.chat.book.auth.service.command.LoginCommand;
 
 /**
  * 登录策略
@@ -11,5 +11,5 @@ public interface LoginStrategy {
     LoginMethod support();
 
     // 登录
-    AuthenticatedUser authenticate(UserDTO user);
+    AuthenticatedUser authenticate(LoginCommand command);
 }
