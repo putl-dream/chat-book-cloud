@@ -4,6 +4,7 @@ import com.auth0.jwt.interfaces.DecodedJWT;
 import fun.amireux.chat.book.auth.projectobject.LoginVO;
 import fun.amireux.chat.book.auth.projectobject.RefreshTokenInfo;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
+import fun.amireux.chat.book.auth.service.login.AuthenticatedUser;
 import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException;
 import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
@@ -22,6 +23,11 @@ public class AuthTokenService {
 
     private final JwtUtil jwtUtil;
     private final RefreshTokenService refreshTokenService;
+
+    // 接收策略层产出的认证结果，统一进入 Token 签发流程。
+    public LoginVO issueTokens(AuthenticatedUser authenticatedUser) {
+        return issueTokens(authenticatedUser.userId(), authenticatedUser.userInfo());
+    }
 
     // 统一封装 claims 构建、JWT 签发和 refresh token 持久化逻辑。
     public LoginVO issueTokens(Integer userId, UserInfoDO userInfo) {

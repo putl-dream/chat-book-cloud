@@ -4,13 +4,12 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import fun.amireux.chat.book.auth.mapper.UserInfoMapper;
 import fun.amireux.chat.book.auth.mapper.UserMapper;
-import fun.amireux.chat.book.auth.projectobject.LoginVO;
 import fun.amireux.chat.book.auth.projectobject.UserDO;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
-import fun.amireux.chat.book.auth.service.AuthTokenService;
 import fun.amireux.chat.book.auth.service.CaptchaService;
 import fun.amireux.chat.book.auth.service.UserService;
 import fun.amireux.chat.book.auth.service.dto.UserDTO;
+import fun.amireux.chat.book.auth.service.login.AuthenticatedUser;
 import fun.amireux.chat.book.auth.utils.PwdUtil;
 import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException;
 import lombok.RequiredArgsConstructor;
@@ -28,64 +27,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     private final UserMapper userMapper;
     private final UserInfoMapper userInfoMapper;
-    private final AuthTokenService authTokenService;
     private final CaptchaService captchaService;
-
-    @Override
-    public LoginVO login(UserDTO user) {
-        if (StringUtils.isAllBlank(user.getUsername(), user.getEmail())) {
-            log.error("Username or email is required");
-            throw new AuthenticationException("Login payload is incomplete");
-        }
-
-        if (user.getLoginMethod() == null) {
-            log.error("Login method is required");
-            throw new AuthenticationException("Login method is required");
-        }
-
-        return switch (user.getLoginMethod()) {
-            case VERIFICATION_CODE -> verificationCodeLogin(user);
-            case REGISTER -> signIn(user);
-            default -> passwordLogin(user);
-        };
-    }
-
-    private LoginVO verificationCodeLogin(UserDTO user) {
-        if (StringUtils.isBlank(user.getVerificationCode())) {
-            throw new AuthenticationException("Verification code is required");
-        }
-
-        if (StringUtils.isBlank(user.getEmail())) {
-            throw new AuthenticationException("Email is required");
-        }
-
-        if (!captchaService.verifyCaptcha(user.getEmail(), user.getVerificationCode())) {
-            throw new AuthenticationException("Verification code is invalid or expired");
-        }
-
-        UserDO userDO = getUserInfo(user);
-        validateUserStatus(userDO);
-        UserInfoDO userInfo = findUserInfo(userDO.getId());
-        log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
-        return authTokenService.issueTokens(userDO.getId(), userInfo);
-    }
-
-    private LoginVO passwordLogin(UserDTO user) {
-        if (StringUtils.isBlank(user.getPassword())) {
-            throw new AuthenticationException("Password is required");
-        }
-
-        UserDO userDO = getUserInfo(user);
-        validateUserStatus(userDO);
-        if (!PwdUtil.checkPassword(user.getPassword(), userDO.getPassword())) {
-            log.error("Password check failed");
-            throw new AuthenticationException("Password is invalid");
-        }
-
-        UserInfoDO userInfo = findUserInfo(userDO.getId());
-        log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
-        return authTokenService.issueTokens(userDO.getId(), userInfo);
-    }
 
     @Override
     public UserDO getUserInfo(UserDTO user) {
@@ -112,7 +54,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     @Transactional
-    public LoginVO signIn(UserDTO signInVO) {
+    public AuthenticatedUser register(UserDTO signInVO) {
         if (!captchaService.verifyCaptcha(signInVO.getEmail(), signInVO.getVerificationCode())) {
             throw new AuthenticationException("Verification code is invalid");
         }
@@ -143,7 +85,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .build();
         userInfoMapper.insert(userInfo);
 
-        return authTokenService.issueTokens(userDO.getId(), userInfo);
+        return new AuthenticatedUser(userDO.getId(), userInfo);
     }
 
     @Override
@@ -152,8 +94,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         UserDO existingUser = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
 
         if (existingUser != null) {
-            validateUserStatus(existingUser);
-            UserInfoDO userInfo = findUserInfo(existingUser.getId());
+            ensureUserEnabled(existingUser);
+            UserInfoDO userInfo = getUserProfile(existingUser.getId());
             if (userInfo != null) {
                 boolean updated = false;
                 if (user.getUsername() != null && !user.getUsername().equals(userInfo.getUsername())) {
@@ -190,11 +132,13 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         return newUser.getId();
     }
 
-    private UserInfoDO findUserInfo(Integer userId) {
+    @Override
+    public UserInfoDO getUserProfile(Integer userId) {
         return userInfoMapper.selectOne(Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userId));
     }
 
-    private void validateUserStatus(UserDO userDO) {
+    @Override
+    public void ensureUserEnabled(UserDO userDO) {
         if (userDO != null && Integer.valueOf(USER_STATUS_DISABLED).equals(userDO.getStatus())) {
             throw new AuthenticationException("Account has been disabled");
         }
