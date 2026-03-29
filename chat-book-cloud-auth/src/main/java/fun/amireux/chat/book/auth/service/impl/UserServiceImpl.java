@@ -90,7 +90,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
     @Override
     @Transactional
-    public Integer oauth2Login(UserDTO user) {
+    public AuthenticatedUser oauth2Login(UserDTO user) {
         UserDO existingUser = userMapper.selectOne(Wrappers.lambdaQuery(UserDO.class).eq(UserDO::getEmail, user.getEmail()));
 
         if (existingUser != null) {
@@ -110,7 +110,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                     userInfoMapper.updateById(userInfo);
                 }
             }
-            return existingUser.getId();
+            return new AuthenticatedUser(existingUser.getId(), userInfo);
         }
 
         UserDO newUser = UserDO.builder()
@@ -129,7 +129,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         userInfoMapper.insert(userInfo);
 
         log.info("OAuth user registered: {}, provider: {}", user.getEmail(), user.getLoginMethod());
-        return newUser.getId();
+        return new AuthenticatedUser(newUser.getId(), userInfo);
     }
 
     @Override

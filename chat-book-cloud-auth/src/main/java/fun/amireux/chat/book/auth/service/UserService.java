@@ -41,7 +41,7 @@ public interface UserService extends IService<UserDO> {
      * OAuth2第三方登录
      *
      * @param user 用户信息
-     * @return 用户ID
+     * @return 已认证用户
      */
-    Integer oauth2Login(UserDTO user);
+    AuthenticatedUser oauth2Login(UserDTO user);
 }
