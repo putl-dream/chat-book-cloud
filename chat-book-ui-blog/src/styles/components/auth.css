@@ -217,38 +217,43 @@
     position: relative;
     width: 100%;
     margin: var(--auth-field-margin);
+    display: flex;
+    align-items: center;
+    background: var(--auth-field-bg);
+    border: var(--auth-field-border);
+    border-radius: var(--auth-field-radius);
+    box-shadow: var(--auth-field-shadow);
+    transition: var(--auth-field-transition);
 }
 
 .c-auth-field__input {
-    background: var(--auth-field-bg);
-    border: var(--auth-field-border);
-    padding: var(--auth-field-padding);
+    background: transparent !important;
+    border: none !important;
+    padding: 12px 15px 12px 10px;
     width: 100%;
-    border-radius: var(--auth-field-radius);
     font-size: var(--auth-field-size);
     outline: none;
     transition: var(--auth-field-transition);
     color: var(--auth-field-color);
-    box-shadow: var(--auth-field-shadow);
+    text-align: left;
 }
 
-.c-auth-field__input:focus {
+.c-auth-field:focus-within {
     background: var(--auth-field-focus-bg);
     border-color: var(--auth-field-focus-border);
     box-shadow: var(--auth-field-focus-shadow);
 }
 
 .c-auth-field__icon {
-    position: absolute;
-    left: var(--auth-field-icon-left);
-    top: 50%;
-    transform: translateY(-50%);
+    margin-left: var(--auth-field-icon-left);
     display: inline-flex;
     align-items: center;
     justify-content: center;
     color: var(--auth-field-icon-color);
     transition: color 0.3s;
     pointer-events: none;
+    font-size: 1.25em;
+    z-index: 2;
 }
 
 .c-auth-field:focus-within .c-auth-field__icon {
