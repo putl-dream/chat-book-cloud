@@ -1,9 +1,5 @@
 import {createApp} from 'vue'
-import '@/styles/variables.css'
-import '@/styles/content-theme.css'
-import '@/styles/themes/site/light.css'
-import '@/styles/themes/site/reading.css'
-import '@/assets/style.css'
+import '@/styles/index.css'
 import 'element-plus/dist/index.css'
 // import store from './store'; // 引入 Vuex store
 import ElementPlus from 'element-plus'

@@ -69,4 +69,10 @@ public class ArticleController {
         articleService.deleteArticle(id);
         return CommonResult.success();
     }
+
+    @Operation(summary = "查询文章总数")
+    @GetMapping("/queryCount")
+    public CommonResult<Long> queryCount() {
+        return CommonResult.success(articleService.count());
+    }
 }

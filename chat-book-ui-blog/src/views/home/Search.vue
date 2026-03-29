@@ -7,9 +7,9 @@
         <div class="search-container">
             <div class="search-header-area">
                 <div class="search-bar-wrapper">
-                    <div class="search-input-group" @keyup.enter="handleSearch">
-                        <input type="text" v-model="keyValue" placeholder="搜索你感兴趣的文章.." />
-                        <button @click="handleSearch">
+                    <div class="search-input-group c-search-shell" @keyup.enter="handleSearch">
+                        <input class="c-search-shell__input" type="text" v-model="keyValue" placeholder="搜索你感兴趣的文章.." />
+                        <button class="c-search-shell__button" @click="handleSearch">
                             <el-icon class="search-icon">
                                 <Search />
                             </el-icon>
@@ -21,7 +21,7 @@
             <div class="search-content">
 
 
-                <div class="search-main-list glass-panel">
+                <div class="search-main-list c-glass-panel">
                     <div v-if="loading && currentPage === 1" class="loading">
                         <el-skeleton :rows="5" animated />
                     </div>
@@ -44,7 +44,7 @@
                 </div>
 
                 <div class="search-sidebar">
-                    <div class="sidebar-card glass-panel">
+                    <div class="sidebar-card c-glass-panel">
                         <HotCard />
                     </div>
                 </div>
@@ -190,54 +190,30 @@ onUnmounted(() => {
 }
 
 .search-input-group {
-    display: flex;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: var(--border-radius-round);
-    overflow: hidden;
-    height: 56px;
-    background: var(--bg-color-glass);
-    backdrop-filter: var(--blur-base);
-    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    --search-shell-height: 56px;
+    --search-shell-radius: var(--border-radius-round);
+    --search-shell-border: rgba(255, 255, 255, 0.5);
+    --search-shell-bg: var(--bg-color-glass);
+    --search-shell-blur: var(--blur-base);
+    --search-shell-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
+    --search-shell-focus-ring: 0 12px 40px rgba(37, 99, 235, 0.15);
+    --search-shell-button-width: 80px;
+    --search-shell-button-hover-bg: rgba(37, 99, 235, 0.1);
+    --search-shell-button-hover-transform: scale(1.05);
 }
 
 .search-input-group:focus-within {
-    border-color: var(--color-primary);
-    box-shadow: 0 12px 40px rgba(37, 99, 235, 0.15);
     transform: translateY(-2px);
 }
 
-.search-input-group input {
-    border: none;
+.search-input-group .c-search-shell__input {
     padding: 0 32px;
-    flex: 1;
-    outline: none;
     font-size: 1.1rem;
-    color: var(--text-color-primary);
-    background: transparent;
     font-weight: 500;
 }
 
-.search-input-group input::placeholder {
-    color: var(--text-color-placeholder);
+.search-input-group .c-search-shell__input::placeholder {
     font-weight: 400;
-}
-
-.search-input-group button {
-    width: 80px;
-    background: transparent;
-    border: none;
-    cursor: pointer;
-    transition: all 0.3s;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--color-primary);
-}
-
-.search-input-group button:hover {
-    background: rgba(37, 99, 235, 0.1);
-    transform: scale(1.05);
 }
 
 .search-icon {
@@ -252,13 +228,12 @@ onUnmounted(() => {
     animation: fadeInUp 0.8s ease-out 0.2s backwards;
 }
 
-.glass-panel {
-    background: var(--bg-color-glass);
-    backdrop-filter: var(--blur-large);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    border-radius: var(--border-radius-xl);
-    padding: 24px;
-    box-shadow: var(--box-shadow-glass);
+.search-main-list,
+.sidebar-card {
+    --surface-bg: var(--bg-color-glass);
+    --surface-blur: 20px;
+    --surface-border: rgba(255, 255, 255, 0.6);
+    --surface-shadow: var(--box-shadow-glass);
 }
 
 .search-main-list {

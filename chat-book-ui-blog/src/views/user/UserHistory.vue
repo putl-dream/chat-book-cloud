@@ -11,7 +11,7 @@
                     <transition-group name="staggered-fade">
                         <div v-for="(post, index) in posts" :key="post.id || index" class="history-item-wrapper"
                             :style="{ '--delay': `${(index % 10) * 0.05}s` }" @click="openArticle(post.id)">
-                            <div class="history-card glass-panel">
+                            <div class="history-card c-glass-panel">
                                 <ArticleCard :post="post" />
                             </div>
                         </div>
@@ -31,7 +31,7 @@
                     <span>已经到底啦</span>
                 </div>
 
-                <div v-if="!loading && posts.length === 0 && noMoreArticles" class="empty-state glass-panel">
+                <div v-if="!loading && posts.length === 0 && noMoreArticles" class="empty-state c-empty-panel">
                     <el-empty description="暂无浏览历史" />
                 </div>
             </div>
@@ -177,14 +177,14 @@ onUnmounted(() => {
 }
 
 .history-card {
-    border-radius: 20px;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.5);
     transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
     cursor: pointer;
     overflow: hidden;
-    padding: 4px;
+    --surface-padding: 4px;
+    --surface-radius: 20px;
+    --surface-bg: rgba(255, 255, 255, 0.7);
+    --surface-blur: 10px;
+    --surface-border: rgba(255, 255, 255, 0.5);
 }
 
 .history-card:hover {
@@ -224,12 +224,9 @@ onUnmounted(() => {
 }
 
 .empty-state {
-    padding: 60px 0;
-    display: flex;
-    justify-content: center;
-    background: rgba(255, 255, 255, 0.4);
-    border-radius: 24px;
-    backdrop-filter: blur(8px);
+    --empty-panel-radius: 24px;
+    --empty-panel-bg: rgba(255, 255, 255, 0.4);
+    --empty-panel-blur: 8px;
 }
 
 .load-more-trigger {

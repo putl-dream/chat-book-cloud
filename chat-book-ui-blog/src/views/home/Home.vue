@@ -2,11 +2,11 @@
   <div class="home">
     <div class="home-container">
       <div class="island-container">
-        <div class="section-header">
-          <h2 class="section-title">
-            <span class="text-gradient">Bento 热点舞台</span>
+        <div class="c-section-heading c-section-heading--line section-header">
+          <h2 class="c-section-heading__title c-section-heading__title--xl">
+            <span class="u-text-gradient">Bento 热点舞台</span>
           </h2>
-          <div class="header-line"></div>
+          <div class="c-section-heading__line"></div>
         </div>
 
         <div class="hot-bento-grid" v-if="recommendations && recommendations.length > 0">
@@ -27,12 +27,12 @@
         </div>
       </div>
 
-      <div class="section-header" style="margin-top: 40px;" v-if="posts && posts.length > 0">
-        <h2 class="section-title" style="display: flex; align-items: center; gap: 8px;">
+      <div class="c-section-heading c-section-heading--line home-stream-heading" v-if="posts && posts.length > 0">
+        <h2 class="c-section-heading__title c-section-heading__title--xl home-stream-title">
           <span class="animated-icon">🌊</span>
-          <span class="text-gradient">最新流动流</span>
+          <span class="u-text-gradient">最新流动流</span>
         </h2>
-        <div class="header-line"></div>
+        <div class="c-section-heading__line"></div>
       </div>
 
       <div class="bento-waterfall">
@@ -150,33 +150,17 @@ onUnmounted(() => {
 }
 
 .section-header {
-  margin-bottom: 32px;
-  position: relative;
-  display: flex;
-  align-items: center;
-  gap: 16px;
   flex-shrink: 0; /* 防止标题在空间不足时被挤压 */
 }
 
-.section-title {
-  font-size: 24px;
-  font-weight: 800;
-  margin: 0;
+.home-stream-heading {
+  margin-top: 40px;
 }
 
-.text-gradient {
-  background: linear-gradient(135deg, var(--text-color-primary) 0%, var(--color-primary) 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-}
-
-.header-line {
-  height: 2px;
-  flex: 1;
-  background: linear-gradient(90deg, var(--color-primary-light), transparent);
-  border-radius: 2px;
-  opacity: 0.5;
+.home-stream-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
 /* 3. Island 容器优化负边距导致的潜在溢出 */

@@ -3,12 +3,12 @@
         <div class="message-container">
             <div class="message-header">
                 <h2 class="page-title">
-                    <span class="text-gradient">消息通知</span>
+                    <span class="u-text-gradient">消息通知</span>
                 </h2>
                 <div class="header-decoration"></div>
             </div>
 
-            <div class="message-list-wrapper">
+            <div class="message-list-wrapper custom-scrollbar">
                 <div v-if="loading" class="loading">
                     <el-skeleton :rows="5" animated />
                 </div>
@@ -18,7 +18,7 @@
                         <div v-for="(message, index) in messages" :key="message.id || index"
                             class="message-card-wrapper" :style="{ '--delay': `${index * 0.1}s` }"
                             @click="openArticle(message.articleId)">
-                            <div class="message-card glass-panel">
+                            <div class="message-card c-glass-panel">
                                 <div class="message-icon-box">
                                     <el-icon :size="24">
                                         <BellFilled />
@@ -37,7 +37,7 @@
                     </transition-group>
                 </template>
 
-                <div v-else class="empty-state glass-panel">
+                <div v-else class="empty-state c-empty-panel">
                     <el-empty description="暂无新消息" />
                 </div>
             </div>
@@ -130,33 +130,14 @@ onMounted(() => {
     line-height: 1.2;
 }
 
-.text-gradient {
-    background: linear-gradient(135deg, var(--text-color-primary) 30%, var(--color-primary) 100%);
-    -webkit-background-clip: text;
-    background-clip: text;
-    -webkit-text-fill-color: transparent;
-}
-
 .message-list-wrapper {
     flex: 1;
     min-height: 0;
     overflow-y: auto;
     padding-right: 8px;
     padding-bottom: 20px;
-}
-
-.message-list-wrapper::-webkit-scrollbar {
-    width: 6px;
-}
-.message-list-wrapper::-webkit-scrollbar-track {
-    background: transparent;
-}
-.message-list-wrapper::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.3);
-    border-radius: 10px;
-}
-.message-list-wrapper::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.5);
+    --scrollbar-thumb: rgba(148, 163, 184, 0.3);
+    --scrollbar-thumb-hover: rgba(148, 163, 184, 0.5);
 }
 
 .message-grid {
@@ -186,14 +167,14 @@ onMounted(() => {
 .message-card {
     display: flex;
     align-items: center;
-    padding: 20px;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.8);
-    backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.6);
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
     cursor: pointer;
     transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    --surface-padding: 20px;
+    --surface-radius: 16px;
+    --surface-bg: rgba(255, 255, 255, 0.8);
+    --surface-blur: 12px;
+    --surface-border: rgba(255, 255, 255, 0.6);
+    --surface-shadow: 0 4px 6px rgba(0, 0, 0, 0.02);
 }
 
 .message-card:hover {
@@ -247,11 +228,8 @@ onMounted(() => {
 }
 
 .empty-state {
-    padding: 60px 0;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
+    --empty-panel-radius: 16px;
+    --empty-panel-bg: rgba(255, 255, 255, 0.5);
 }
 
 /* Transitions */

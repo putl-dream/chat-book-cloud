@@ -5,10 +5,10 @@
                 <div class="user-cover">
                     <div class="cover-overlay"></div>
                 </div>
-                <div class="user-info-card glass-panel">
+                <div class="user-info-card c-glass-panel">
                     <div class="avatar-wrapper">
                         <el-avatar :size="100" :src="user.photo" class="user-avatar">
-                            <img :src="DEFAULT_AVATAR" />
+                            <img :src="DEFAULT_AVATAR" alt="默认头像" />
                         </el-avatar>
                         <div class="avatar-border"></div>
                     </div>
@@ -41,7 +41,7 @@
             </div>
 
             <div class="profile-content">
-                <div class="content-left glass-panel">
+                <div class="content-left c-glass-panel">
                     <el-tabs v-model="activeTab" class="profile-tabs">
                         <el-tab-pane label="我的文章" name="articles">
                             <div class="article-list">
@@ -55,7 +55,7 @@
                                             <ArticleCard :post="post" />
                                         </div>
                                     </transition-group>
-                                    <div v-if="posts.length === 0" class="empty-state">
+                                    <div v-if="posts.length === 0" class="empty-state c-empty-panel">
                                         <el-empty description="暂无文章" />
                                     </div>
                                 </template>
@@ -68,7 +68,7 @@
                         </el-tab-pane>
                         <el-tab-pane label="关于我" name="about">
                             <div class="about-section">
-                                <h3 class="section-title">详细介绍</h3>
+                                <h3 class="about-title c-section-heading__title c-section-heading__title--md">详细介绍</h3>
                                 <div class="about-content">
                                     <p>{{ user.profile || '暂无详细介绍' }}</p>
                                 </div>
@@ -78,8 +78,8 @@
                 </div>
 
                 <div class="content-right">
-                    <div class="side-card glass-panel">
-                        <h3 class="side-title">个人成就</h3>
+                    <div class="side-card c-glass-panel">
+                        <h3 class="side-title c-panel-title">个人成就</h3>
                         <div class="achievement-list">
                             <div class="achievement-item">
                                 <div class="icon-box star">
@@ -106,8 +106,8 @@
                         </div>
                     </div>
 
-                    <div class="side-card glass-panel theme-side-card">
-                        <h3 class="side-title">主题风格</h3>
+                    <div class="side-card c-glass-panel theme-side-card">
+                        <h3 class="side-title c-panel-title">主题风格</h3>
                         <div class="theme-option-list">
                             <button
                                 v-for="option in themeOptions"
@@ -222,14 +222,6 @@ onMounted(async () => {
     position: absolute;
     inset: 0;
     background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, 0.3));
-}
-
-.glass-panel {
-    background: var(--theme-card-bg);
-    backdrop-filter: blur(20px);
-    border: 1px solid var(--theme-card-border);
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.05);
-    border-radius: 24px;
 }
 
 .user-info-card {
@@ -351,25 +343,6 @@ onMounted(async () => {
 
 .side-card {
     padding: 24px;
-}
-
-.side-title {
-    font-size: 18px;
-    margin: 0 0 20px;
-    color: var(--text-color-primary);
-    font-weight: 700;
-    display: flex;
-    align-items: center;
-}
-
-.side-title::before {
-    content: '';
-    display: block;
-    width: 4px;
-    height: 18px;
-    background: var(--color-primary);
-    border-radius: 2px;
-    margin-right: 10px;
 }
 
 .achievement-list {
@@ -573,7 +546,7 @@ onMounted(async () => {
 }
 
 .empty-state {
-    padding: 60px 0;
+    --empty-panel-bg: rgba(255, 255, 255, 0.5);
 }
 
 .empty-tab {
@@ -584,10 +557,8 @@ onMounted(async () => {
     padding: 10px;
 }
 
-.section-title {
-    font-size: 18px;
+.about-title {
     margin-bottom: 16px;
-    color: var(--text-color-primary);
 }
 
 .about-content {

@@ -29,7 +29,7 @@
                                         </el-icon>
                                         <span>更换头像</span>
                                     </div>
-                                    <img v-if="form.photo" :src="form.photo" class="avatar" />
+                                    <img v-if="form.photo" :src="form.photo" alt="用户头像预览" class="avatar" />
                                     <div v-else class="avatar-placeholder">
                                         <el-icon>
                                             <User />

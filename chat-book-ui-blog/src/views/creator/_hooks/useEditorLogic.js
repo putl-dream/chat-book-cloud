@@ -249,7 +249,9 @@ export function useEditorLogic() {
 
     const confirmPublish = () => {
         if (!title.value) return ElMessage.warning('请输入标题');
-        if (!publishForm.value.category) return ElMessage.warning('请选择分类');
+        if (publishForm.value.category === null || publishForm.value.category === undefined) {
+            return ElMessage.warning('请选择分类');
+        }
         publishDialogVisible.value = false;
         submitPublish();
     };

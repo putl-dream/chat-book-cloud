@@ -20,6 +20,8 @@
     /* Background Colors - Glassmorphism Base */
     --bg-color-base: #F3F4F6;
     --bg-color-white: #ffffff;
+    --bg-color-secondary: #e5e7eb;
+    --bg-color-hover: #dbe1ea;
     --bg-color-glass: rgba(255, 255, 255, 0.6);
     --bg-color-overlay: rgba(255, 255, 255, 0.85);
 
@@ -64,6 +66,8 @@
 
     --bg-color-base: #111827;
     --bg-color-white: #1f2937;
+    --bg-color-secondary: #1f2937;
+    --bg-color-hover: #374151;
     --bg-color-glass: rgba(31, 41, 55, 0.7);
     --bg-color-overlay: rgba(17, 24, 39, 0.85);
 
@@ -90,6 +94,8 @@
 
     --bg-color-base: #ecfdf5;
     --bg-color-white: #ffffff;
+    --bg-color-secondary: #d1fae5;
+    --bg-color-hover: #a7f3d0;
     --bg-color-glass: rgba(255, 255, 255, 0.65);
     --bg-color-overlay: rgba(236, 253, 245, 0.85);
 

@@ -193,6 +193,8 @@ onUnmounted(() => {
     min-height: 100%;
     background: var(--article-page-radial), var(--article-page-bg);
     position: relative;
+    --scrollbar-thumb: var(--article-scrollbar);
+    --scrollbar-thumb-hover: var(--article-scrollbar-hover);
 }
 
 .main-container {
@@ -313,23 +315,6 @@ onUnmounted(() => {
     height: calc(100vh - 60px);
     padding: 0 12px;
     min-width: 0;
-}
-
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: var(--article-scrollbar);
-    border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: var(--article-scrollbar-hover);
 }
 
 .fade-slide-enter-active,

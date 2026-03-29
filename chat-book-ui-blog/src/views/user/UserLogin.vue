@@ -186,7 +186,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { User, Lock, Message } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useLoginLogic } from "./Login/_hooks/useLoginLogic.js";
@@ -218,6 +217,7 @@ const handleGithubLogin = () => oauthLogin('github');
 
 // Handle OAuth callback - check for token in URL
 import { setTokens } from '@/utils/token.js';
+import {useRouter} from "vue-router";
 onMounted(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('accessToken');

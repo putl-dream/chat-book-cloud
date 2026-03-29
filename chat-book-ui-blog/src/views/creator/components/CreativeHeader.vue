@@ -24,7 +24,7 @@
                     <span v-if="index < breadcrumbItems.length - 1" class="breadcrumb-separator">/</span>
                 </div>
             </nav>
-            <div class="mobile-back-btn" v-if="isMobile" @click="router.back()" style="display: flex; align-items: center; justify-content: center; width: 32px; height: 32px; cursor: pointer; border-radius: 50%; background: rgba(0,0,0,0.05);">
+            <div class="mobile-back-btn c-icon-trigger" v-if="isMobile" @click="router.back()">
                 <el-icon><ArrowLeft /></el-icon>
             </div>
         </div>
@@ -76,7 +76,7 @@
             </el-dropdown>
 
             <!-- Mobile Hamburger Icon -->
-            <div class="mobile-menu-trigger" v-if="isMobile" @click="showMobileMenu = true">
+            <div class="mobile-menu-trigger c-icon-trigger" v-if="isMobile" @click="showMobileMenu = true">
                 <el-icon :size="24"><Menu /></el-icon>
             </div>
         </div>
@@ -414,18 +414,16 @@ onUnmounted(() => {
     color: var(--color-danger);
 }
 
-.mobile-menu-trigger {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    color: var(--text-color-primary);
-    padding: 8px;
-    border-radius: 8px;
-    transition: background-color 0.2s;
+.mobile-back-btn {
+    --icon-trigger-size: 32px;
+    --icon-trigger-radius: 50%;
+    --icon-trigger-bg: rgba(0, 0, 0, 0.05);
 }
 
-.mobile-menu-trigger:hover {
-    background: rgba(79, 70, 229, 0.08);
+.mobile-menu-trigger {
+    color: var(--text-color-primary);
+    --icon-trigger-size: 40px;
+    --icon-trigger-hover-bg: rgba(79, 70, 229, 0.08);
 }
 
 :deep(.creator-user-dropdown.el-popper) {

@@ -6,7 +6,7 @@
                 <el-col :span="7" class="friend-list-sidebar">
                     <div class="sidebar-header">
                         <h2 class="sidebar-title">
-                            <span class="text-gradient">消息列表</span>
+                            <span class="u-text-gradient">消息列表</span>
                         </h2>
                         <div class="sidebar-actions">
                             <el-button icon="Plus" circle size="small" class="glass-btn"></el-button>
@@ -173,12 +173,6 @@ onUnmounted(() => {
     font-size: 24px;
     font-weight: 800;
     letter-spacing: -0.5px;
-}
-
-.text-gradient {
-    background: linear-gradient(135deg, var(--color-primary) 0%, #a0c4ff 100%);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
 }
 
 .glass-btn {
@@ -426,21 +420,4 @@ onUnmounted(() => {
     font-weight: 700;
 }
 
-/* Custom Scrollbar */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 6px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 10px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
-}
 </style>

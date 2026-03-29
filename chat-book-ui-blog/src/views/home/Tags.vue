@@ -7,7 +7,7 @@
 
         <div class="tags-content">
             <div class="tag-section">
-                <h2 class="section-title">
+                <h2 class="c-section-heading c-section-heading--compact c-section-heading__title c-section-heading__title--md">
                     <el-icon><Monitor /></el-icon>
                     技术栈
                 </h2>
@@ -26,7 +26,7 @@
             </div>
 
             <div class="tag-section">
-                <h2 class="section-title">
+                <h2 class="c-section-heading c-section-heading--compact c-section-heading__title c-section-heading__title--md">
                     <el-icon><Guide /></el-icon>
                     学习路径
                 </h2>
@@ -117,16 +117,6 @@ onMounted(() => {
     border-radius: 16px;
     padding: 32px;
     box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-}
-
-.section-title {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 20px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-bottom: 24px;
 }
 
 .tag-cloud {

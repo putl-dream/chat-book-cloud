@@ -13,9 +13,9 @@
         </div>
 
         <div class="search-container" v-if="showSearch && !isMobile">
-            <div class="search-bar" @keyup.enter="handleSearch">
-                <input type="text" v-model="keyValue" placeholder="搜索..." />
-                <button @click="handleSearch">搜索</button>
+            <div class="search-bar c-search-shell" @keyup.enter="handleSearch">
+                <input class="c-search-shell__input" type="text" v-model="keyValue" placeholder="搜索..." />
+                <button class="c-search-shell__button" @click="handleSearch">搜索</button>
             </div>
         </div>
         <div class="flex-spacer" v-else-if="!isMobile"></div>
@@ -23,7 +23,7 @@
 
         <div class="right-actions">
             <!-- Mobile Search Icon -->
-            <div class="mobile-search-trigger" v-if="isMobile && showSearch" @click="showMobileSearch = !showMobileSearch">
+            <div class="mobile-search-trigger c-icon-trigger" v-if="isMobile && showSearch" @click="showMobileSearch = !showMobileSearch">
                 <el-icon :size="20"><Search /></el-icon>
             </div>
 
@@ -33,7 +33,7 @@
                         <el-avatar class="user-avatar" :size="36" :src="user.photo"></el-avatar>
                     </span>
                     <template #dropdown>
-                        <div class="dropdown-content">
+                        <div class="dropdown-content c-dropdown-panel">
                             <UserCard :user="user" />
                             <el-dropdown-item class="centered-item" @click="router.push('/profile')">
                                 个人信息
@@ -62,7 +62,7 @@
             </div>
 
             <!-- Mobile Hamburger Icon -->
-            <div class="mobile-menu-trigger" v-if="isMobile" @click="showMobileMenu = true">
+            <div class="mobile-menu-trigger c-icon-trigger" v-if="isMobile" @click="showMobileMenu = true">
                 <el-icon :size="24"><Menu /></el-icon>
             </div>
         </div>
@@ -275,51 +275,10 @@ onUnmounted(() => {
 }
 
 .search-bar {
-    display: flex;
-    border: 1px solid var(--border-color-light);
-    border-radius: var(--border-radius-large);
-    overflow: hidden;
-    height: 40px;
-    width: 100%;
     max-width: 480px;
-    background: var(--app-search-bg);
-    transition: var(--transition-base);
-}
-
-.search-bar:hover {
-    border-color: var(--border-color-base);
-}
-
-.search-bar:focus-within {
-    border-color: var(--color-primary);
-    background: var(--app-search-bg-focus);
-    box-shadow: 0 0 0 4px var(--app-search-ring);
-}
-
-.search-bar input {
-    border: none;
-    padding: 0 16px;
-    flex: 1;
-    outline: none;
-    color: var(--text-color-primary);
-    background: transparent;
-    font-size: 14px;
-}
-
-.search-bar button {
-    width: 60px;
-    background-color: transparent;
-    color: var(--color-primary);
-    border: none;
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    transition: var(--transition-fast);
-}
-
-.search-bar button:hover {
-    color: var(--color-primary-hover);
-    background: var(--color-primary-light);
+    --search-shell-bg: var(--app-search-bg);
+    --search-shell-focus-bg: var(--app-search-bg-focus);
+    --search-shell-focus-ring: 0 0 0 4px var(--app-search-ring);
 }
 
 .right-actions {
@@ -336,30 +295,10 @@ onUnmounted(() => {
 
 .dropdown-content {
     width: 260px;
-    padding: 10px;
-    background: var(--app-dropdown-bg);
-    border: 1px solid var(--border-color-light);
-    border-radius: 20px;
-    box-shadow: var(--box-shadow-hover);
 }
 
 .action-btn {
     margin-left: 10px;
-}
-
-/* Mobile Search Icon & Menu Triggers */
-.mobile-search-trigger, .mobile-menu-trigger {
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    color: var(--text-color-primary);
-    padding: 8px;
-    border-radius: 8px;
-    transition: background-color 0.2s;
-}
-
-.mobile-search-trigger:hover, .mobile-menu-trigger:hover {
-    background-color: var(--bg-color-hover, rgba(0,0,0,0.05));
 }
 
 .mobile-search-bar {
