@@ -2,7 +2,7 @@
     <div class="creative-header glass-effect">
         <div class="left-section">
             <div class="logo" @click="router.push('/')">
-                <img src="@/assets/logo.svg" alt="logo" />
+                <img :src="logoUrl" alt="logo" />
                 <span class="brand-name">ChatBook</span>
             </div>
             <nav class="breadcrumb-nav" aria-label="创作面包屑" v-if="!isMobile">
@@ -114,6 +114,7 @@ import UserCard from "@/views/user/components/UserCard.vue";
 import {getUserBySelf} from "@/views/user/_domain/user.js";
 import { Plus, CaretBottom, User, SwitchButton, Menu, ArrowLeft } from '@element-plus/icons-vue';
 import CreativeAside from '@/views/creator/components/CreativeAside.vue';
+import logoUrl from "@/assets/logo.svg";
 
 const route = useRoute();
 

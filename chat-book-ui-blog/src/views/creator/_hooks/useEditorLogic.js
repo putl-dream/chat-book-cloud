@@ -1,25 +1,21 @@
-import { ref, computed, reactive, watch, onMounted, onBeforeUnmount, unref } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { useEditor } from '@tiptap/vue-3';
+import {computed, onBeforeUnmount, onMounted, ref, unref, watch} from 'vue';
+import {useRoute, useRouter} from 'vue-router';
+import {ElMessage, ElMessageBox} from 'element-plus';
+import {useEditor} from '@tiptap/vue-3';
 
-import { publishArticle, saveDraftArticle, uploadFile } from '@/views/article/_domain/article.js';
-import { getTagsByType } from '@/views/article/_domain/tag.js';
-import { TAG_TYPE_ENUM } from '@/constants';
-import SocketService, { formatWsUrl } from '@/utils/websocket.js';
-import { API_CONFIG } from '@/config/index.js';
-import { saveDraft, loadDraft, clearDraft, isDraftNewer } from '@/utils/draftStorage.js';
-import {
-    applyRichTextEditorAttributes,
-    createRichTextExtensions,
-    createRichTextEditorAttributes
-} from '@/components/common/rich-text/editor-config.js';
+import {publishArticle, saveDraftArticle} from '@/views/article/_domain/article.js';
+import {getTagsByType} from '@/views/article/_domain/tag.js';
+import {TAG_TYPE_ENUM} from '@/constants';
+import SocketService, {formatWsUrl} from '@/utils/websocket.js';
+import {API_CONFIG} from '@/config/index.js';
+import {clearDraft, isDraftNewer, loadDraft, saveDraft} from '@/utils/draftStorage.js';
+import {applyRichTextEditorAttributes, createRichTextEditorAttributes, createRichTextExtensions} from '@/components/common/rich-text/editor-config.js';
 
-import { SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP, EDITOR_CONFIG } from '../_utils/constants.js';
-import { isValidCoverFile, hasMeaningfulContent, buildArticlePayload } from '../_domain/editor.js';
+import {EDITOR_CONFIG, SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP} from '../_utils/constants.js';
+import {buildArticlePayload, hasMeaningfulContent} from '../_domain/editor.js';
 
-import { useEditorLayout } from './useEditorLayout.js';
-import { useEditorForm } from './useEditorForm.js';
+import {useEditorLayout} from './useEditorLayout.js';
+import {useEditorForm} from './useEditorForm.js';
 
 export function useEditorLogic() {
     const SPELLCHECK_STORAGE_KEY = 'chat-book-editor-spellcheck';
