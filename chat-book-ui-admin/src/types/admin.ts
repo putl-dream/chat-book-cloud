@@ -156,3 +156,56 @@ export type AdminCount = {
   articleCount: number;
   reviewCount: number;
 };
+
+// 内容管理
+export type ContentArticle = {
+  id: number;
+  userId: number;
+  userName: string;
+  title: string;
+  cover?: string | null;
+  abstractText?: string | null;
+  authorAvatar?: string | null;
+  category: number;
+  contentType: number;
+  tagIds?: number[];
+  status: number;
+  praiseCount: number;
+  commentCount: number;
+  viewCount: number;
+  collectCount: number;
+  createTime: string;
+  updateTime: string;
+};
+
+export type ContentPageParams = {
+  pageNo?: number;
+  pageSize?: number;
+  status?: number | null;
+  category?: number | null;
+  contentType?: number | null;
+  userId?: number | null;
+  keyword?: string | null;
+  orderDirection?: "asc" | "desc";
+};
+
+// 互动治理
+export type InteractionReview = {
+  id: number;
+  articleId: number;
+  userId: number;
+  parentId?: number | null;
+  content: string;
+  status: number;
+  username: string;
+  headerImg?: string | null;
+  createTime: string;
+};
+
+export type InteractionReviewPage = {
+  records?: InteractionReview[];
+  total?: number;
+  current?: number;
+  size?: number;
+  pages?: number;
+};

@@ -1,5 +1,4 @@
 import { dashboardHighlights, dashboardServices } from "@/data/admin-config";
-import { contentArticles, interactionEvents } from "@/data/mock-data";
 import {
   clearAdminSession,
   getBrowserApiBaseUrl,
@@ -17,9 +16,12 @@ import type {
   AdminUser,
   ArticleReviewResult,
   CommonApiResponse,
+  ContentArticle,
+  ContentPageParams,
   CurrentAdminUser,
   DashboardSnapshot,
-  InteractionEvent,
+  InteractionReview,
+  InteractionReviewPage,
   PaginatedResult,
   ReviewAction,
   ReviewArticle,
@@ -465,10 +467,128 @@ export function batchReviewArticles(articleIds: number[], action: ReviewAction, 
   );
 }
 
-export async function getContentArticles(): Promise<AdminArticle[]> {
-  return clone(contentArticles);
+export async function getContentArticlesPage(params?: ContentPageParams): Promise<PaginatedResult<ContentArticle>> {
+  const pageNo = params?.pageNo ?? 1;
+  const pageSize = params?.pageSize ?? 10;
+  const searchParams = new URLSearchParams();
+  searchParams.set("pageNo", String(pageNo));
+  searchParams.set("pageSize", String(pageSize));
+  if (params?.status != null) searchParams.set("status", String(params.status));
+  if (params?.category != null) searchParams.set("category", String(params.category));
+  if (params?.contentType != null) searchParams.set("contentType", String(params.contentType));
+  if (params?.userId != null) searchParams.set("userId", String(params.userId));
+  if (params?.keyword) searchParams.set("keyword", params.keyword);
+  if (params?.orderDirection) searchParams.set("orderDirection", params.orderDirection);
+
+  const result = await requestBrowser<{ list: ContentArticle[]; total: number }>(
+    `/article/admin/page?${searchParams.toString()}`,
+    { method: "GET" }
+  );
+
+  return mapPageResult(result, pageNo, pageSize);
 }
 
-export async function getInteractionEvents(): Promise<InteractionEvent[]> {
-  return clone(interactionEvents);
+export async function publishArticle(articleId: number) {
+  return requestBrowser<void>(`/article/admin/${articleId}/publish`, { method: "PUT" }, { redirectOnUnauthorized: true });
+}
+
+export async function unpublishArticle(articleId: number) {
+  return requestBrowser<void>(`/article/admin/${articleId}/unpublish`, { method: "PUT" }, { redirectOnUnauthorized: true });
+}
+
+export async function deleteArticle(articleId: number) {
+  return requestBrowser<void>(`/article/admin/${articleId}`, { method: "DELETE" }, { redirectOnUnauthorized: true });
+}
+
+export async function restoreArticle(articleId: number) {
+  return requestBrowser<void>(`/article/admin/${articleId}/restore`, { method: "PUT" }, { redirectOnUnauthorized: true });
+}
+
+export async function batchPublish(articleIds: number[]) {
+  return requestBrowser<void>("/article/admin/batch/publish", {
+    method: "PUT",
+    body: JSON.stringify(articleIds),
+  }, { redirectOnUnauthorized: true });
+}
+
+export async function batchUnpublish(articleIds: number[]) {
+  return requestBrowser<void>("/article/admin/batch/unpublish", {
+    method: "PUT",
+    body: JSON.stringify(articleIds),
+  }, { redirectOnUnauthorized: true });
+}
+
+export async function batchDeleteArticles(articleIds: number[]) {
+  return requestBrowser<void>("/article/admin/batch", {
+    method: "DELETE",
+    body: JSON.stringify(articleIds),
+  }, { redirectOnUnauthorized: true });
+}
+
+export async function getInteractionReviewsPage(params?: {
+  page?: number;
+  size?: number;
+  articleId?: number | null;
+  userId?: number | null;
+  keyword?: string | null;
+  status?: number | null;
+  startTime?: string | null;
+  endTime?: string | null;
+}): Promise<PaginatedResult<InteractionReview>> {
+  const page = params?.page ?? 1;
+  const size = params?.size ?? 10;
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(page));
+  searchParams.set("size", String(size));
+  if (params?.articleId != null) searchParams.set("articleId", String(params.articleId));
+  if (params?.userId != null) searchParams.set("userId", String(params.userId));
+  if (params?.keyword) searchParams.set("keyword", params.keyword);
+  if (params?.status != null) searchParams.set("status", String(params.status));
+  if (params?.startTime) searchParams.set("startTime", params.startTime);
+  if (params?.endTime) searchParams.set("endTime", params.endTime);
+
+  const result = await requestBrowser<InteractionReviewPage>(
+    `/interaction/admin/review/page?${searchParams.toString()}`,
+    { method: "GET" }
+  );
+
+  const pageNo = toNumber(result.current) || 1;
+  const pageSize = toNumber(result.size) || size;
+  const total = toNumber(result.total);
+  const totalPages = toNumber(result.pages) || Math.max(1, Math.ceil(total / pageSize));
+
+  return {
+    list: result.records ?? [],
+    total,
+    pageNo,
+    pageSize,
+    totalPages,
+  };
+}
+
+export async function deleteReview(reviewId: number) {
+  return requestBrowser<void>(`/interaction/admin/review/${reviewId}`, { method: "DELETE" }, { redirectOnUnauthorized: true });
+}
+
+export async function hideReview(reviewId: number) {
+  return requestBrowser<void>(`/interaction/admin/review/${reviewId}/hide`, { method: "PUT" }, { redirectOnUnauthorized: true });
+}
+
+export async function restoreReview(reviewId: number) {
+  return requestBrowser<void>(`/interaction/admin/review/${reviewId}/restore`, { method: "PUT" }, { redirectOnUnauthorized: true });
+}
+
+export async function updateUserRole(userId: number, role: string) {
+  return requestBrowser<void>(`/user/admin/${userId}/role`, {
+    method: "PUT",
+    body: JSON.stringify({ role }),
+  }, { redirectOnUnauthorized: true });
+}
+
+export async function disableUser(userId: number) {
+  return requestBrowser<void>(`/user/admin/${userId}/disable`, { method: "PUT" }, { redirectOnUnauthorized: true });
+}
+
+export async function enableUser(userId: number) {
+  return requestBrowser<void>(`/user/admin/${userId}/enable`, { method: "PUT" }, { redirectOnUnauthorized: true });
 }
