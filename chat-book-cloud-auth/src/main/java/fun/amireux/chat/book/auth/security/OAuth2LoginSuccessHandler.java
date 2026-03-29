@@ -1,15 +1,13 @@
 package fun.amireux.chat.book.auth.security;
 
-import com.auth0.jwt.interfaces.DecodedJWT;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import fun.amireux.chat.book.auth.mapper.UserInfoMapper;
 import fun.amireux.chat.book.auth.projectobject.LoginMethod;
-import fun.amireux.chat.book.auth.projectobject.RefreshTokenInfo;
+import fun.amireux.chat.book.auth.projectobject.LoginVO;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
-import fun.amireux.chat.book.auth.service.RefreshTokenService;
+import fun.amireux.chat.book.auth.service.AuthTokenService;
 import fun.amireux.chat.book.auth.service.UserService;
 import fun.amireux.chat.book.auth.service.dto.UserDTO;
-import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,19 +18,14 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.Map;
 
 @Component
 public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
 
-    private static final int ADMIN_ROLE_CODE = 1;
-
     private final UserService userService;
     private final UserInfoMapper userInfoMapper;
-    private final JwtUtil jwtUtil;
-    private final RefreshTokenService refreshTokenService;
+    private final AuthTokenService authTokenService;
 
     @Value("${oauth2.success.redirect-url:http://localhost:5173/login}")
     private String redirectUrl;
@@ -40,13 +33,11 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
     public OAuth2LoginSuccessHandler(
             UserService userService,
             UserInfoMapper userInfoMapper,
-            JwtUtil jwtUtil,
-            RefreshTokenService refreshTokenService
+            AuthTokenService authTokenService
     ) {
         this.userService = userService;
         this.userInfoMapper = userInfoMapper;
-        this.jwtUtil = jwtUtil;
-        this.refreshTokenService = refreshTokenService;
+        this.authTokenService = authTokenService;
     }
 
     @Override
@@ -95,36 +86,12 @@ public class OAuth2LoginSuccessHandler implements AuthenticationSuccessHandler {
         UserInfoDO userInfo = userInfoMapper.selectOne(
                 Wrappers.lambdaQuery(UserInfoDO.class).eq(UserInfoDO::getUserId, userId)
         );
+        // OAuth2 登录成功后不再自行拼 claims，统一走 Token 服务签发与落库。
+        LoginVO loginVO = authTokenService.issueTokens(userId, userInfo);
 
-        Map<String, Object> claims = new LinkedHashMap<>();
-        claims.put("id", userId);
-        if (userInfo != null && userInfo.getUsername() != null && !userInfo.getUsername().isBlank()) {
-            claims.put("username", userInfo.getUsername());
-        }
-        claims.put("roles", resolveRoleClaim(userInfo));
-
-        String accessToken  = jwtUtil.generateAccessToken(claims);
-        String refreshToken = jwtUtil.generateRefreshToken(claims);
-
-        // Store refresh token in Redis
-        DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
-        String jti = jwtUtil.getJti(refreshJwt);
-        Instant refreshExpiresAt = refreshJwt.getExpiresAt().toInstant();
-        RefreshTokenInfo info = new RefreshTokenInfo(
-                userId, Instant.now(), refreshExpiresAt, null
-        );
-        refreshTokenService.store(jti, info, refreshExpiresAt);
-
-        // Redirect with both tokens as query params
+        // 前端现有回调协议仍保持不变。
         response.sendRedirect(redirectUrl
-                + "?accessToken="  + accessToken
-                + "&refreshToken=" + refreshToken);
-    }
-
-    private String resolveRoleClaim(UserInfoDO userInfo) {
-        if (userInfo != null && Integer.valueOf(ADMIN_ROLE_CODE).equals(userInfo.getRole())) {
-            return "ROLE_ADMIN";
-        }
-        return "ROLE_USER";
+                + "?accessToken=" + loginVO.getAccessToken()
+                + "&refreshToken=" + loginVO.getRefreshToken());
     }
 }

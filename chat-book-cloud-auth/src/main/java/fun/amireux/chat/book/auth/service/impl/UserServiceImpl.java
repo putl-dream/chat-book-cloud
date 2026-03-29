@@ -2,42 +2,33 @@ package fun.amireux.chat.book.auth.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import com.auth0.jwt.interfaces.DecodedJWT;
 import fun.amireux.chat.book.auth.mapper.UserInfoMapper;
 import fun.amireux.chat.book.auth.mapper.UserMapper;
 import fun.amireux.chat.book.auth.projectobject.LoginVO;
-import fun.amireux.chat.book.auth.projectobject.RefreshTokenInfo;
 import fun.amireux.chat.book.auth.projectobject.UserDO;
 import fun.amireux.chat.book.auth.projectobject.UserInfoDO;
+import fun.amireux.chat.book.auth.service.AuthTokenService;
 import fun.amireux.chat.book.auth.service.CaptchaService;
-import fun.amireux.chat.book.auth.service.RefreshTokenService;
 import fun.amireux.chat.book.auth.service.UserService;
 import fun.amireux.chat.book.auth.service.dto.UserDTO;
 import fun.amireux.chat.book.auth.utils.PwdUtil;
 import fun.amireux.chat.book.framework.common.exceptions.AuthenticationException;
-import fun.amireux.chat.book.framework.common.utils.JwtUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.time.Instant;
-import java.util.LinkedHashMap;
-import java.util.Map;
-
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements UserService {
 
-    private static final int ADMIN_ROLE_CODE = 1;
     private static final int USER_STATUS_DISABLED = 1;
 
     private final UserMapper userMapper;
     private final UserInfoMapper userInfoMapper;
-    private final JwtUtil jwtUtil;
-    private final RefreshTokenService refreshTokenService;
+    private final AuthTokenService authTokenService;
     private final CaptchaService captchaService;
 
     @Override
@@ -76,7 +67,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         validateUserStatus(userDO);
         UserInfoDO userInfo = findUserInfo(userDO.getId());
         log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
-        return buildToken(userDO, userInfo);
+        return authTokenService.issueTokens(userDO.getId(), userInfo);
     }
 
     private LoginVO passwordLogin(UserDTO user) {
@@ -93,7 +84,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
 
         UserInfoDO userInfo = findUserInfo(userDO.getId());
         log.info("User login succeeded: {}", userInfo != null ? userInfo.getUsername() : userDO.getEmail());
-        return buildToken(userDO, userInfo);
+        return authTokenService.issueTokens(userDO.getId(), userInfo);
     }
 
     @Override
@@ -152,7 +143,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .build();
         userInfoMapper.insert(userInfo);
 
-        return buildToken(userDO, userInfo);
+        return authTokenService.issueTokens(userDO.getId(), userInfo);
     }
 
     @Override
@@ -207,42 +198,5 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
         if (userDO != null && Integer.valueOf(USER_STATUS_DISABLED).equals(userDO.getStatus())) {
             throw new AuthenticationException("Account has been disabled");
         }
-    }
-
-    private LoginVO buildToken(UserDO userDO, UserInfoDO userInfo) {
-        Map<String, Object> claims = new LinkedHashMap<>();
-        claims.put("id", userDO.getId());
-
-        if (userInfo != null && StringUtils.isNotBlank(userInfo.getUsername())) {
-            claims.put("username", userInfo.getUsername());
-        }
-
-        claims.put("roles", resolveRoleClaim(userInfo));
-
-        String accessToken  = jwtUtil.generateAccessToken(claims);
-        String refreshToken = jwtUtil.generateRefreshToken(claims);
-
-        // Decode refresh token to extract jti and expiry
-        DecodedJWT refreshJwt = jwtUtil.verifyToken(refreshToken);
-        String jti = jwtUtil.getJti(refreshJwt);
-        Instant refreshExpiresAt = refreshJwt.getExpiresAt().toInstant();
-
-        // Store refresh token metadata in Redis
-        RefreshTokenInfo info = new RefreshTokenInfo(
-                userDO.getId(),
-                Instant.now(),
-                refreshExpiresAt,
-                null
-        );
-        refreshTokenService.store(jti, info, refreshExpiresAt);
-
-        return new LoginVO(accessToken, refreshToken, jwtUtil.getAccessExpirationSeconds());
-    }
-
-    private String resolveRoleClaim(UserInfoDO userInfo) {
-        if (userInfo != null && Integer.valueOf(ADMIN_ROLE_CODE).equals(userInfo.getRole())) {
-            return "ROLE_ADMIN";
-        }
-        return "ROLE_USER";
     }
 }
