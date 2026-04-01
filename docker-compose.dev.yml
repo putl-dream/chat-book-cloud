@@ -64,7 +64,7 @@ services:
       REDIS_HOST: ${REDIS_HOST:-10.0.0.2}
       REDIS_PORT: ${REDIS_PORT:-6379}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://https://api.minimaxi.com/anthropic}
     networks:
       - chat-book-net
 
