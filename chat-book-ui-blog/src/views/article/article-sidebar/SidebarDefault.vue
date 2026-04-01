@@ -5,7 +5,7 @@
             <div class="reading-progress-bar" :style="{ width: readingProgress + '%' }"></div>
         </div>
 
-        <div class="sidebar-module toc-module">
+        <div class="sidebar-module toc-module c-solid-panel">
             <ArticleViewerToc :articleHtml="articleHtml" :contentTarget="contentTarget" />
         </div>
 
@@ -95,73 +95,3 @@ onUnmounted(() => {
     window.removeEventListener('resize', calculateProgress);
 });
 </script>
-
-<style scoped>
-.default-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 8px; /* Explicit gap between the sidebar modules */
-    position: relative;
-    padding-bottom: 20px;
-}
-
-/* Hide individual scrollbars and use common styling */
-.custom-scrollbar::-webkit-scrollbar {
-    width: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb {
-    background: rgba(0, 0, 0, 0.1);
-    border-radius: 4px;
-}
-
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-    background: rgba(0, 0, 0, 0.2);
-}
-
-.reading-progress-container {
-    position: sticky;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 4px;
-    background-color: var(--border-color-light, #f1f5f9);
-    z-index: 10;
-    margin-bottom: -4px; /* Overlay on top of the first element */
-    opacity: 0;
-    transition: opacity 0.3s ease;
-}
-
-.reading-progress-container.is-visible {
-    opacity: 1;
-}
-
-.reading-progress-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #60a5fa, #3b82f6);
-    transition: width 0.15s ease-out;
-    border-radius: 0 4px 4px 0;
-}
-
-.sidebar-module {
-    display: block;
-    width: 100%;
-    background: var(--bg-color-white);
-    border-radius: var(--border-radius-xl);
-    box-shadow: var(--box-shadow-base);
-    border: 1px solid var(--border-color-light);
-    overflow: hidden;
-}
-
-
-
-@media (max-width: 768px) {
-    .sidebar-module:not(.toc-module) {
-        display: none !important;
-    }
-}
-</style>

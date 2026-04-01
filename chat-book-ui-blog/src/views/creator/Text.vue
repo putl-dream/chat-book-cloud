@@ -277,5 +277,3 @@ onBeforeRouteUpdate(async (to, from) => {
     return true;
 });
 </script>
-
-<style scoped src="./styles/text-layout.css"></style>

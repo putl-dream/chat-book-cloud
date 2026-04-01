@@ -1,8 +1,8 @@
 <!-- src/components/OutlineItem.vue -->
 <template>
     <li>
-        <div class="outline-item">
-            <button @click="toggleCollapse" class="collapse-button">
+        <div class="article-outline-item">
+            <button @click="toggleCollapse" class="article-outline-collapse-button">
                 {{ item.collapsed ? '📥' : '📤' }}
             </button>
             {{ item.title }}
@@ -14,7 +14,7 @@
 </template>
 
 <script setup>
-import {ref, computed} from 'vue';
+import {ref} from 'vue';
 
 const props = defineProps({
     item: {
@@ -32,22 +32,3 @@ const toggleCollapse = () => {
 
 const emit = defineEmits(['toggle-collapse']);
 </script>
-
-<style scoped>
-.outline-item {
-    display: flex;
-    align-items: center;
-}
-
-.collapse-button {
-    padding: 0 5px;
-    border: none;
-    background: none;
-    color: #007bff;
-    cursor: pointer;
-    font-size: 1.2em;
-    margin-right: 5px;
-}
-
-
-</style>

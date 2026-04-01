@@ -1,0 +1,46 @@
+.c-profile-stats {
+    display: flex;
+    align-items: center;
+    gap: var(--profile-stats-gap);
+}
+
+.c-profile-stats--grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: var(--profile-stats-grid-gap);
+}
+
+.c-profile-stats__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: var(--profile-stats-item-gap);
+    transition: transform 0.2s;
+}
+
+.c-profile-stats__item--interactive {
+    cursor: pointer;
+}
+
+.c-profile-stats__item--interactive:hover {
+    transform: var(--profile-stats-item-hover-transform);
+}
+
+.c-profile-stats__value {
+    font-size: var(--profile-stats-value-size);
+    font-weight: var(--profile-stats-value-weight);
+    color: var(--profile-stats-value-color);
+    line-height: 1.2;
+}
+
+.c-profile-stats__label {
+    margin: var(--profile-stats-label-margin);
+    font-size: var(--profile-stats-label-size);
+    color: var(--profile-stats-label-color);
+}
+
+.c-profile-stats__divider {
+    width: var(--profile-stats-divider-width);
+    height: var(--profile-stats-divider-height);
+    background: var(--profile-stats-divider-color);
+}

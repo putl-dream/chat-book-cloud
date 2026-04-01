@@ -1,0 +1,33 @@
+.c-user-history__container {
+    display: flex;
+    flex-direction: column;
+}
+
+.c-user-history__header {
+    --page-header-margin: 0 0 32px;
+    --page-header-accent-padding: 16px;
+    flex-shrink: 0;
+}
+
+.c-user-history__list-wrap {
+    flex: 1;
+    padding-bottom: 40px;
+}
+
+.c-user-history__loading {
+    --feedback-loading-padding: 32px 0;
+}
+
+.c-user-history__status {
+    --feedback-note-padding: 32px 0;
+    --feedback-note-size: 0.9rem;
+    --feedback-note-weight: 500;
+    --feedback-note-spacing: 1px;
+    --feedback-note-transform: uppercase;
+}
+
+.c-user-history__empty {
+    --empty-panel-radius: 24px;
+    --empty-panel-bg: rgba(255, 255, 255, 0.4);
+    --empty-panel-blur: 8px;
+}

@@ -1,0 +1,141 @@
+.c-creator-nav {
+    height: 100%;
+    padding: var(--creator-nav-padding, 20px 10px);
+}
+
+.c-creator-nav__header {
+    display: flex;
+    justify-content: center;
+    margin-bottom: var(--creator-nav-header-margin, 24px);
+    padding: var(--creator-nav-header-padding, 0 10px);
+}
+
+.c-creator-nav__cta {
+    width: 100%;
+    height: var(--creator-nav-cta-height, 44px);
+    border: none;
+    border-radius: var(--creator-nav-cta-radius, 12px);
+    background: var(--creator-nav-cta-bg, linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-hover) 100%));
+    box-shadow: var(--creator-nav-cta-shadow, 0 4px 10px rgba(37, 99, 235, 0.3));
+    font-size: var(--creator-nav-cta-size, 16px);
+    font-weight: var(--creator-nav-cta-weight, 600);
+    transition: var(--transition-base);
+}
+
+.c-creator-nav__cta:hover {
+    transform: var(--creator-nav-cta-hover-transform, translateY(-2px));
+    box-shadow: var(--creator-nav-cta-hover-shadow, 0 6px 14px rgba(37, 99, 235, 0.4));
+}
+
+.c-creator-nav__cta .el-icon {
+    margin-right: 8px;
+}
+
+.c-creator-nav__menu {
+    border-right: none;
+    background-color: transparent;
+}
+
+.c-creator-nav__item {
+    height: var(--creator-nav-item-height, 50px);
+    line-height: var(--creator-nav-item-height, 50px);
+    margin-bottom: var(--creator-nav-item-gap, 8px);
+    border-radius: var(--creator-nav-item-radius, 10px);
+    color: var(--creator-nav-item-color, var(--text-color-regular));
+    transition: var(--transition-base);
+}
+
+.c-creator-nav__item:hover {
+    background-color: var(--creator-nav-item-hover-bg, rgba(255, 255, 255, 0.5));
+    color: var(--creator-nav-item-hover-color, var(--color-primary));
+}
+
+.c-creator-nav__item.is-active {
+    background-color: var(--creator-nav-item-active-bg, var(--bg-color-white));
+    box-shadow: var(--creator-nav-item-active-shadow, 0 4px 12px rgba(0, 0, 0, 0.05));
+    color: var(--creator-nav-item-active-color, var(--color-primary));
+    font-weight: 600;
+}
+
+.c-creator-nav__icon {
+    margin-right: var(--creator-nav-icon-gap, 12px);
+    font-size: var(--creator-nav-icon-size, 18px);
+}
+
+.c-editor-panel {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    background: var(--creator-panel-bg, var(--bg-color-white));
+}
+
+.c-editor-panel--ai {
+    --creator-panel-bg:
+        radial-gradient(circle at top right, rgba(59, 130, 246, 0.12), transparent 38%),
+        linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+    --creator-panel-divider: rgba(15, 23, 42, 0.08);
+}
+
+.c-editor-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--creator-panel-header-padding, 16px 20px);
+    border-bottom: 1px solid var(--creator-panel-divider, var(--border-color-base));
+    flex-shrink: 0;
+}
+
+.c-editor-panel__title {
+    color: var(--text-color-primary);
+    font-weight: var(--creator-panel-title-weight, 600);
+}
+
+.c-editor-panel__close {
+    cursor: pointer;
+    color: var(--creator-panel-close-color, var(--text-color-regular));
+    font-size: var(--creator-panel-close-size, 18px);
+    transition: color 0.2s ease;
+}
+
+.c-editor-panel__close:hover {
+    color: var(--creator-panel-close-hover-color, var(--text-color-primary));
+}
+
+.c-editor-panel__body {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    padding: var(--creator-panel-body-padding, 20px);
+}
+
+.c-editor-panel__body--center {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: var(--creator-panel-body-center-padding, 24px);
+}
+
+.c-editor-panel__placeholder {
+    width: 100%;
+    max-width: var(--creator-panel-placeholder-max-width, 280px);
+    padding: var(--creator-panel-placeholder-padding, 24px 20px);
+    border: var(--creator-panel-placeholder-border, 1px dashed rgba(59, 130, 246, 0.28));
+    border-radius: var(--creator-panel-placeholder-radius, 20px);
+    background: var(--creator-panel-placeholder-bg, rgba(255, 255, 255, 0.86));
+    box-shadow: var(--creator-panel-placeholder-shadow, 0 18px 40px rgba(148, 163, 184, 0.18));
+}
+
+.c-editor-panel__placeholder-title {
+    margin: 0 0 8px;
+    color: var(--text-color-primary);
+    font-size: var(--creator-panel-placeholder-title-size, 16px);
+    font-weight: var(--creator-panel-placeholder-title-weight, 600);
+}
+
+.c-editor-panel__placeholder-text {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: var(--creator-panel-placeholder-text-size, 13px);
+    line-height: var(--creator-panel-placeholder-line-height, 1.7);
+}

@@ -66,5 +66,8 @@ public interface ArticleService {
 
     /** 批量删除 */
     void batchDelete(List<Integer> articleIds);
+
+    /** 查询文章总数 */
+    Long count();
 }
 

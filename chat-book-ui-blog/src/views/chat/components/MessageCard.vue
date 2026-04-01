@@ -1,23 +1,23 @@
 <template>
-    <div class="message-card">
-        <div class="avatar-wrapper">
+    <div class="notification-message-card">
+        <div class="notification-avatar-wrap">
             <!-- NotificationVO 暂未包含头像，使用默认图片 -->
             <el-avatar class="user-avatar" :size="40" :src="null" />
         </div>
-        <div class="message-content">
-            <div class="message-header">
-                <div class="user-action">
-                    <span class="username">用户&nbsp;{{ message.senderId }}</span>
-                    <span class="action-text">{{ actionText }}</span>
-                    <span class="article-link" @click.stop>
+        <div class="notification-content">
+            <div class="notification-header">
+                <div class="notification-user-action">
+                    <span class="notification-username">用户&nbsp;{{ message.senderId }}</span>
+                    <span class="notification-action-text">{{ actionText }}</span>
+                    <span class="notification-article-link" @click.stop>
                         《{{ message.articleTitle || '未知文章' }}》
                     </span>
                 </div>
-                <span class="time">{{ message.createTime }}</span>
+                <span class="notification-time">{{ message.createTime }}</span>
             </div>
         </div>
-        <div class="action-icon">
-            <el-tag :type="tagType" size="small" effect="light" class="type-tag">
+        <div class="notification-action-icon">
+            <el-tag :type="tagType" size="small" effect="light" class="notification-type-tag">
                 {{ tagText }}
             </el-tag>
         </div>
@@ -77,85 +77,3 @@ const tagText = computed(() => {
     return map[messageType.value];
 });
 </script>
-
-<style scoped>
-.message-card {
-    display: flex;
-    gap: 16px;
-    padding: 16px;
-    background: var(--bg-color-white);
-    transition: background-color 0.2s;
-}
-
-.message-card:hover {
-    background-color: var(--bg-color-base);
-}
-
-.avatar-wrapper {
-    flex-shrink: 0;
-}
-
-.message-content {
-    flex: 1;
-    min-width: 0;
-}
-
-.message-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 8px;
-}
-
-.user-action {
-    font-size: 14px;
-    line-height: 1.5;
-}
-
-.username {
-    font-weight: 600;
-    color: var(--text-color-primary);
-    margin-right: 6px;
-}
-
-.action-text {
-    color: var(--text-color-regular);
-    margin-right: 6px;
-}
-
-.article-link {
-    color: var(--color-primary);
-    cursor: pointer;
-    font-weight: 500;
-}
-
-.article-link:hover {
-    text-decoration: underline;
-}
-
-.time {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-    white-space: nowrap;
-    margin-left: 12px;
-}
-
-.quote-box {
-    background-color: var(--bg-color-base);
-    padding: 10px 12px;
-    border-radius: 4px;
-    font-size: 14px;
-    color: var(--text-color-regular);
-    line-height: 1.6;
-    margin-top: 4px;
-}
-
-.action-icon {
-    flex-shrink: 0;
-    align-self: flex-start;
-}
-
-.type-tag {
-    font-weight: 500;
-}
-</style>

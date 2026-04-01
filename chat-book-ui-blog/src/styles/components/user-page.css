@@ -1,0 +1,211 @@
+.c-user-page {
+    width: 100%;
+    min-height: 100%;
+}
+
+.c-user-page--centered {
+    display: flex;
+    justify-content: center;
+}
+
+.c-user-page__container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.c-user-page__container--medium {
+    max-width: 900px;
+    padding: 32px 24px;
+}
+
+.c-user-page__container--narrow {
+    max-width: 720px;
+}
+
+.c-user-page__panel {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    margin: 0 auto;
+    --surface-padding: 40px;
+    --surface-border: rgba(255, 255, 255, 0.6);
+    --surface-bg: var(--bg-color-glass);
+    --surface-shadow: var(--box-shadow-glass);
+    --surface-blur: 20px;
+}
+
+.c-user-page__panel--float-in {
+    animation: c-user-page-fade-in 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+    opacity: 0;
+    transform: translateY(20px);
+}
+
+.c-user-page__header-note {
+    --page-header-subtitle-size: 14px;
+    --page-header-subtitle-weight: 400;
+}
+
+.c-user-page__back-link {
+    color: var(--text-color-secondary);
+    font-weight: 500;
+    transition: var(--transition-fast);
+}
+
+.c-user-page__back-link:hover {
+    color: var(--color-primary);
+}
+
+.c-user-page__decoration {
+    position: absolute;
+    z-index: 0;
+    pointer-events: none;
+    opacity: 0.6;
+}
+
+.c-user-page__decoration--orb {
+    top: -100px;
+    right: -100px;
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, var(--color-primary-light) 0%, rgba(255, 255, 255, 0) 70%);
+}
+
+.c-user-history-list {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.c-user-history-list__item {
+    animation: c-user-history-fade-up 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) backwards;
+    animation-delay: var(--delay);
+}
+
+.c-user-history-list__card {
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.c-user-history-list__card:hover {
+    transform: translateY(-4px);
+}
+
+.c-user-history-list__trigger {
+    width: 100%;
+    height: 1px;
+    opacity: 0;
+}
+
+.c-user-edit-avatar {
+    display: flex;
+    align-items: center;
+    gap: 24px;
+}
+
+.c-user-edit-avatar__frame {
+    position: relative;
+    width: 100px;
+    height: 100px;
+}
+
+.c-user-edit-avatar__upload .el-upload {
+    position: relative;
+    overflow: hidden;
+    width: 100px;
+    height: 100px;
+    border: 2px solid var(--bg-color-white);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: var(--box-shadow-base);
+    transition: var(--transition-base);
+}
+
+.c-user-edit-avatar__upload .el-upload:hover {
+    transform: scale(1.05);
+    box-shadow: var(--box-shadow-hover);
+}
+
+.c-user-edit-avatar__upload .el-upload:hover .c-user-edit-avatar__overlay {
+    opacity: 1;
+}
+
+.c-user-edit-avatar__image {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.c-user-edit-avatar__placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    font-size: 32px;
+}
+
+.c-user-edit-avatar__overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0;
+    transition: var(--transition-fast);
+}
+
+.c-user-edit-avatar__overlay-text {
+    margin-top: 4px;
+    font-size: 12px;
+}
+
+.c-user-edit-avatar__copy-title {
+    margin: 0 0 4px;
+    color: var(--text-color-primary);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.c-user-edit-avatar__copy-desc {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 13px;
+}
+
+@keyframes c-user-page-fade-in {
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes c-user-history-fade-up {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@media (max-width: 768px) {
+    .c-user-page__panel {
+        --surface-padding: 24px;
+    }
+
+    .c-user-edit-avatar {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+}

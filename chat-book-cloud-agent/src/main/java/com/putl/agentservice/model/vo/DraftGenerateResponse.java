@@ -18,4 +18,13 @@ public class DraftGenerateResponse {
 
     @Schema(description = "版本号")
     private Integer versionNo;
+
+    @Schema(description = "标题")
+    private String title;
+
+    @Schema(description = "摘要")
+    private String summary;
+
+    @Schema(description = "内容")
+    private String content;
 }

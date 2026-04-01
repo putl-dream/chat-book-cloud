@@ -45,15 +45,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     @Override
     @Cacheable(value = "userCache", key = "#id", unless = "#result == null")
     public UserVO selectById(int id) {
-        UserInfoDO userInfo = userInfoService.getByUserId(id);
-        log.debug("userInfo = {}", userInfo);
         UserDO user = this.getById(id);
-        if (userInfo == null) {
-            throw new RuntimeException("用户信息未找到(user_info缺失)，请联系管理员");
-        }
         if (user == null) {
             throw new RuntimeException("用户账号信息未找到(user缺失)，请联系管理员");
         }
+        UserInfoDO userInfo = ensureUserInfoExists(id);
+        log.debug("userInfo = {}", userInfo);
         String role = (userInfo.getRole() == RoleEnum.USER) ? "user" : "admin";
         return UserVO.builder()
                 .id(userInfo.getId())
@@ -229,5 +226,25 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .createTime(LocalDateTime.now())
                 .build();
         adminOperationLogMapper.insert(logDO);
+    }
+
+    private UserInfoDO ensureUserInfoExists(int userId) {
+        UserInfoDO userInfo = userInfoService.getByUserId(userId);
+        if (userInfo != null) {
+            return userInfo;
+        }
+
+        log.warn("user_info missing for userId={}, creating a default profile", userId);
+        userInfoService.save(UserInfoDO.builder()
+                .userId(userId)
+                .username("user_" + userId)
+                .role(RoleEnum.USER)
+                .build());
+
+        userInfo = userInfoService.getByUserId(userId);
+        if (userInfo == null) {
+            throw new RuntimeException("用户信息未找到(user_info创建失败)，请联系管理员");
+        }
+        return userInfo;
     }
 }

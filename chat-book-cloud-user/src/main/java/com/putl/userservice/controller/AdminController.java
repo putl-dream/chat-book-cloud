@@ -13,6 +13,7 @@ import com.putl.userservice.mapper.entity.AdminOperationLogDO;
 import com.putl.userservice.service.UserService;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
+import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import fun.amireux.chat.book.framework.mvc.security.annotation.RequireAdmin;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -53,7 +54,11 @@ public class AdminController {
     public CommonResult<Void> updateUserRole(
             @PathVariable Integer userId,
             @RequestBody @Valid UpdateRoleRequest request) {
-        Integer operatorId = Integer.parseInt(UserContext.getUserId());
+        String userIdStr = UserContext.getUserId();
+        if (userIdStr == null) {
+            return CommonResult.error(ErrorType.ERROR_401);
+        }
+        Integer operatorId = Integer.parseInt(userIdStr);
         userService.updateUserRole(operatorId, userId,
                 RoleEnum.valueOf(request.getRole().toUpperCase()));
         return CommonResult.success();
@@ -62,7 +67,11 @@ public class AdminController {
     @Operation(summary = "禁用用户账号")
     @PutMapping("/{userId}/disable")
     public CommonResult<Void> disableUser(@PathVariable Integer userId) {
-        Integer operatorId = Integer.parseInt(UserContext.getUserId());
+        String userIdStr = UserContext.getUserId();
+        if (userIdStr == null) {
+            return CommonResult.error(ErrorType.ERROR_401);
+        }
+        Integer operatorId = Integer.parseInt(userIdStr);
         userService.disableUser(operatorId, userId);
         return CommonResult.success();
     }
@@ -70,7 +79,11 @@ public class AdminController {
     @Operation(summary = "恢复用户账号")
     @PutMapping("/{userId}/enable")
     public CommonResult<Void> enableUser(@PathVariable Integer userId) {
-        Integer operatorId = Integer.parseInt(UserContext.getUserId());
+        String userIdStr = UserContext.getUserId();
+        if (userIdStr == null) {
+            return CommonResult.error(ErrorType.ERROR_401);
+        }
+        Integer operatorId = Integer.parseInt(userIdStr);
         userService.enableUser(operatorId, userId);
         return CommonResult.success();
     }

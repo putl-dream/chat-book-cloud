@@ -1,10 +1,10 @@
 <template>
-    <div class="panel-content b-comment-panel">
-        <div class="panel-header">
+    <div class="panel-content b-comment-panel c-sidebar-panel">
+        <div class="panel-header c-sidebar-panel__header">
             <span class="title">评论 <span class="count" v-if="totalComments > 0">({{ totalComments }})</span></span>
         </div>
 
-        <div class="input-section">
+        <div class="input-section c-sidebar-panel__section">
             <el-input v-model="mainCommentContent" type="textarea" :rows="3"
                 placeholder="请输入您的评论... (Enter 发送，Shift+Enter 换行)" class="b-textarea" resize="none"
                 @keydown="handleKeydown($event, true)" />
@@ -14,7 +14,7 @@
             </div>
         </div>
 
-        <div class="comments-container">
+        <div class="comments-container c-sidebar-panel__body">
             <div class="comments-list" v-if="comments.length > 0">
                 <div v-for="(comment, index) in comments" :key="comment.id || index" class="comment-item">
                     <div class="comment-main">
@@ -86,7 +86,7 @@
                 </div>
             </div>
 
-            <div v-else class="empty-state">
+            <div v-else class="empty-state c-empty-panel c-empty-panel--plain">
                 <span class="empty-text">暂无评论</span>
             </div>
         </div>
@@ -148,201 +148,3 @@ onMounted(() => {
     queryCommentRequest();
 });
 </script>
-
-<style scoped>
-.b-comment-panel {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background-color: #fff;
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
-}
-
-.panel-header {
-    padding: 12px 16px;
-    border-bottom: 1px solid #ebeef5;
-    flex-shrink: 0;
-}
-
-.title {
-    font-size: 14px;
-    font-weight: 600;
-    color: #303133;
-}
-
-.count {
-    color: #909399;
-    font-weight: normal;
-    margin-left: 4px;
-}
-
-.input-section {
-    padding: 16px;
-    border-bottom: 1px solid #ebeef5;
-    background-color: #fff;
-    flex-shrink: 0;
-}
-
-.b-textarea :deep(.el-textarea__inner) {
-    border-radius: 4px;
-    padding: 8px;
-    font-size: 13px;
-}
-
-.input-actions {
-    margin-top: 8px;
-    display: flex;
-    justify-content: flex-end;
-}
-
-.comments-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0;
-}
-
-.comments-list {
-    display: flex;
-    flex-direction: column;
-}
-
-.comment-item {
-    padding: 16px;
-    border-bottom: 1px solid #f2f6fc;
-}
-
-.comment-item:last-child {
-    border-bottom: none;
-}
-
-.comment-main {
-    display: flex;
-    gap: 12px;
-}
-
-.avatar-col {
-    flex-shrink: 0;
-}
-
-.content-col {
-    flex: 1;
-    min-width: 0;
-}
-
-.info-row {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    margin-bottom: 4px;
-}
-
-.username {
-    font-size: 13px;
-    font-weight: 600;
-    color: #303133;
-}
-
-.time {
-    font-size: 12px;
-    color: #909399;
-}
-
-.text-row {
-    font-size: 13px;
-    color: #606266;
-    line-height: 1.6;
-    margin-bottom: 8px;
-    word-break: break-all;
-}
-
-.action-row {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-.action-row :deep(.el-link) {
-    font-size: 12px;
-}
-
-.inline-reply-box {
-    margin-top: 8px;
-    margin-bottom: 8px;
-}
-
-/* Sub Comments - Compact Style */
-.sub-comments-wrapper {
-    margin-top: 10px;
-    background-color: #f5f7fa;
-    padding: 12px;
-    border-radius: 4px;
-    font-size: 13px;
-}
-
-.sub-comment-item {
-    margin-bottom: 8px;
-    line-height: 1.5;
-}
-
-.sub-comment-item:last-child {
-    margin-bottom: 0;
-}
-
-.sub-username {
-    color: #303133;
-    font-weight: 600;
-}
-
-.reply-target {
-    color: #909399;
-    margin: 0 4px;
-}
-
-.sub-content {
-    color: #606266;
-}
-
-.sub-meta {
-    display: inline-block;
-    margin-left: 8px;
-}
-
-.sub-time {
-    color: #c0c4cc;
-    font-size: 12px;
-    margin-right: 8px;
-}
-
-.sub-action {
-    font-size: 12px;
-    vertical-align: baseline;
-}
-
-.sub-reply-box {
-    margin-top: 8px;
-}
-
-.empty-state {
-    padding: 32px 0;
-    text-align: center;
-}
-
-.empty-text {
-    font-size: 13px;
-    color: #909399;
-}
-
-/* Scrollbar */
-.comments-container::-webkit-scrollbar {
-    width: 6px;
-}
-
-.comments-container::-webkit-scrollbar-thumb {
-    background: #e4e7ed;
-    border-radius: 3px;
-}
-
-.comments-container::-webkit-scrollbar-track {
-    background: transparent;
-}
-</style>

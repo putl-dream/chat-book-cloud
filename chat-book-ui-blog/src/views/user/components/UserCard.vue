@@ -1,32 +1,32 @@
 <template>
-    <div class="user-card-widget">
-        <div class="avatar-area">
-            <el-avatar :size="70" :src="user.photo" class="avatar"></el-avatar>
+    <div class="c-user-card c-user-card--compact">
+        <div class="c-user-card__avatar-row">
+            <el-avatar :size="70" :src="user.photo"></el-avatar>
         </div>
-        <div class="user-details">
-            <div class="name-row">
-                <span class="username">{{ user.username }}</span>
-                <el-tag size="small" type="info" effect="plain" class="join-tag">已加入0年</el-tag>
+        <div class="c-user-card__identity c-user-card__identity--compact">
+            <div class="c-user-card__name-row">
+                <span class="c-user-card__name c-user-card__name--compact">{{ user.username }}</span>
+                <el-tag size="small" type="info" effect="plain">已加入0年</el-tag>
             </div>
-            <p class="bio">{{ user.profile || '暂无介绍' }}</p>
+            <p class="c-user-card__bio c-user-card__bio--compact">{{ user.profile || '暂无介绍' }}</p>
         </div>
         
-        <div class="stats-grid">
-            <div class="stat-item">
-                <span class="label">文章</span>
-                <span class="value">28</span>
+        <div class="c-profile-stats c-profile-stats--grid c-user-card__stats c-user-card__stats--compact">
+            <div class="c-profile-stats__item">
+                <span class="c-profile-stats__label">文章</span>
+                <span class="c-profile-stats__value">28</span>
             </div>
-            <div class="stat-item">
-                <span class="label">点赞</span>
-                <span class="value">28</span>
+            <div class="c-profile-stats__item">
+                <span class="c-profile-stats__label">点赞</span>
+                <span class="c-profile-stats__value">28</span>
             </div>
-            <div class="stat-item">
-                <span class="label">收藏</span>
-                <span class="value">28</span>
+            <div class="c-profile-stats__item">
+                <span class="c-profile-stats__label">收藏</span>
+                <span class="c-profile-stats__value">28</span>
             </div>
-            <div class="stat-item">
-                <span class="label">粉丝</span>
-                <span class="value">28</span>
+            <div class="c-profile-stats__item">
+                <span class="c-profile-stats__label">粉丝</span>
+                <span class="c-profile-stats__value">28</span>
             </div>
         </div>
     </div>
@@ -40,67 +40,3 @@ defineProps({
     }
 })
 </script>
-
-<style scoped>
-.user-card-widget {
-    padding: 16px;
-    background: var(--bg-color-white);
-}
-
-.avatar-area {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 12px;
-}
-
-.user-details {
-    text-align: center;
-    margin-bottom: 16px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border-color-lighter);
-}
-
-.name-row {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    margin-bottom: 8px;
-}
-
-.username {
-    font-size: 16px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-}
-
-.bio {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-    margin: 0;
-}
-
-.stats-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 8px;
-}
-
-.stat-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 4px;
-}
-
-.label {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-}
-
-.value {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-color-primary);
-}
-</style>

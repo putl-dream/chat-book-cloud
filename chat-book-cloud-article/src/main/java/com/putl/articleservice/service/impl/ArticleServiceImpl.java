@@ -521,4 +521,9 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             log.error("记录管理员操作日志失败: action={}, targetId={}", action, targetId, e);
         }
     }
+
+    @Override
+    public Long count() {
+        return articleMapper.selectCount(null);
+    }
 }

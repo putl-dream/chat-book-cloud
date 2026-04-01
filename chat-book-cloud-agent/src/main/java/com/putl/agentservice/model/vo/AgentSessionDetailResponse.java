@@ -2,6 +2,7 @@ package com.putl.agentservice.model.vo;
 
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.mapper.entity.AgentSessionDO;
+import com.putl.articleservice.api.dto.DraftDetailDTO;
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -22,4 +23,7 @@ public class AgentSessionDetailResponse {
 
     @Schema(description = "消息列表")
     private List<AgentMessageDO> messages;
+
+    @Schema(description = "当前草稿")
+    private DraftDetailDTO draft;
 }

@@ -1,0 +1,60 @@
+.c-article-card-shell {
+    padding: var(--article-shell-padding);
+    border: 1px solid var(--article-shell-border);
+    border-radius: var(--article-shell-radius);
+    background: var(--article-shell-bg);
+    box-shadow: var(--article-shell-shadow);
+    backdrop-filter: blur(var(--article-shell-blur));
+    -webkit-backdrop-filter: blur(var(--article-shell-blur));
+    transition: var(--article-shell-transition);
+    overflow: hidden;
+}
+
+.c-article-card-shell:hover {
+    transform: var(--article-shell-hover-transform);
+    box-shadow: var(--article-shell-hover-shadow);
+    background: var(--article-shell-hover-bg);
+    border-color: var(--article-shell-hover-border);
+}
+
+.c-article-card-shell--plain {
+    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+}
+
+.c-article-card-actions {
+    display: flex;
+    gap: var(--article-action-gap);
+}
+
+.c-article-card-action {
+    background: var(--article-action-bg);
+    padding: var(--article-action-padding);
+    border-radius: var(--article-action-radius);
+    font-size: var(--article-action-size);
+    color: var(--article-action-color);
+    border: var(--article-action-border);
+    cursor: pointer;
+    transition: all 0.2s;
+    font-weight: var(--article-action-weight);
+}
+
+.c-article-card-action:hover {
+    background: var(--article-action-hover-bg);
+    color: var(--article-action-hover-color);
+    box-shadow: var(--article-action-hover-shadow);
+}
+
+.c-article-card-action--danger {
+    background: var(--article-action-danger-bg);
+    color: var(--article-action-danger-color);
+}
+
+.c-article-card-action--danger:hover {
+    background: var(--article-action-danger-hover-bg);
+    color: var(--article-action-danger-hover-color);
+    box-shadow: var(--article-action-danger-hover-shadow);
+}

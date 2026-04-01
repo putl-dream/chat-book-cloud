@@ -27,6 +27,10 @@ export function useCreativeLogic() {
         fetchArticles();
     };
 
+    const handleOpenAgent = () => {
+        router.push('/creative/agent');
+    };
+
     const handleEdit = (article) => {
         router.push(`/text/${article.id}`);
     };
@@ -34,7 +38,7 @@ export function useCreativeLogic() {
     const handleDelete = async (article) => {
         try {
             await ElMessageBox.confirm(
-                `确定要删除文�?"${article.title}" 吗？`,
+                `确定要删除文章“${article.title}”吗？`,
                 '删除确认',
                 {
                     confirmButtonText: '确定删除',
@@ -61,6 +65,7 @@ export function useCreativeLogic() {
         pageSize,
         currentPage,
         handlePageChange,
+        handleOpenAgent,
         handleEdit,
         handleDelete
     };

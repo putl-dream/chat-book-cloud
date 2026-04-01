@@ -1,9 +1,5 @@
 import {createApp} from 'vue'
-import '@/styles/variables.css'
-import '@/styles/content-theme.css'
-import '@/styles/themes/site/light.css'
-import '@/styles/themes/site/reading.css'
-import '@/assets/style.css'
+import '@/styles/index.css'
 import 'element-plus/dist/index.css'
 // import store from './store'; // 引入 Vuex store
 import ElementPlus from 'element-plus'
@@ -33,6 +29,7 @@ const ROUTE_TITLES = {
     CreativeHome: '创作中心',
     Content: '内容管理',
     Drafts: '草稿箱',
+    AgentStudio: 'AI 创作',
     Write: '写文章',
     Edit: '编辑文章',
     Login: '登录'

@@ -7,10 +7,10 @@ export function useRelatedCard(articleIdRef) {
     const router = useRouter();
 
     const getRankClass = (index) => {
-        if (index === 0) return 'rank-1';
-        if (index === 1) return 'rank-2';
-        if (index === 2) return 'rank-3';
-        return 'rank-other';
+        if (index === 0) return 'c-article-rank-list__badge--top-1';
+        if (index === 1) return 'c-article-rank-list__badge--top-2';
+        if (index === 2) return 'c-article-rank-list__badge--top-3';
+        return 'c-article-rank-list__badge--other';
     };
 
     const queryRelatedRequest = async () => {

@@ -1,0 +1,60 @@
+.c-search-shell {
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    width: 100%;
+    height: var(--search-shell-height, 40px);
+    border: 1px solid var(--search-shell-border, var(--border-color-light));
+    border-radius: var(--search-shell-radius, var(--border-radius-large));
+    background: var(--search-shell-bg, var(--app-search-bg, var(--bg-color-glass)));
+    box-shadow: var(--search-shell-shadow, none);
+    backdrop-filter: var(--search-shell-blur, none);
+    -webkit-backdrop-filter: var(--search-shell-blur, none);
+    transition: var(--search-shell-transition, var(--transition-base));
+}
+
+.c-search-shell:hover {
+    border-color: var(--search-shell-hover-border, var(--border-color-base));
+}
+
+.c-search-shell:focus-within {
+    border-color: var(--search-shell-focus-border, var(--color-primary));
+    background: var(--search-shell-focus-bg, var(--search-shell-bg, var(--app-search-bg-focus, var(--bg-color-white))));
+    box-shadow: var(--search-shell-focus-ring, 0 0 0 4px var(--app-search-ring, rgba(var(--color-primary-rgb), 0.14)));
+}
+
+.c-search-shell__input {
+    flex: 1;
+    border: none;
+    outline: none;
+    background: transparent;
+    color: var(--text-color-primary);
+    padding: var(--search-shell-input-padding, 0 16px);
+    font-size: var(--search-shell-input-size, 14px);
+    font-weight: var(--search-shell-input-weight, 400);
+}
+
+.c-search-shell__input::placeholder {
+    color: var(--text-color-placeholder);
+}
+
+.c-search-shell__button {
+    width: var(--search-shell-button-width, 60px);
+    height: 100%;
+    border: none;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: var(--search-shell-button-color, var(--color-primary));
+    font-size: var(--search-shell-button-size, 14px);
+    font-weight: var(--search-shell-button-weight, 500);
+    transition: var(--transition-fast);
+}
+
+.c-search-shell__button:hover {
+    color: var(--search-shell-button-hover-color, var(--color-primary-hover));
+    background: var(--search-shell-button-hover-bg, var(--color-primary-light));
+    transform: var(--search-shell-button-hover-transform, none);
+}

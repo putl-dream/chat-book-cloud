@@ -1,4 +1,4 @@
-services:
+ services:
   gateway:
     image: chat-book-cloud-gateway:dev
     container_name: gateway
@@ -15,6 +15,7 @@ services:
       ARTICLE_SERVICE_URI: http://article:8082
       USER_SERVICE_URI: http://user:8083
       CHAT_SERVICE_URI: http://chat:8085
+      AGENT_SERVICE_URI: http://agent:8087
       INTERACTION_SERVICE_URI: http://interaction:8084
       SOCIAL_SERVICE_URI: http://social:8086
     networks:

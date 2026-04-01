@@ -1,0 +1,308 @@
+.c-user-card {
+    padding: 24px;
+    background: var(--bg-color-white);
+}
+
+.c-user-card--compact {
+    padding: 16px;
+}
+
+.c-user-card__title {
+    --panel-title-margin: 0 0 24px;
+}
+
+.c-user-card__identity {
+    text-align: center;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border-color-lighter);
+}
+
+.c-user-card__identity--compact {
+    margin-bottom: 16px;
+    padding-bottom: 16px;
+}
+
+.c-user-card__avatar-row {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 12px;
+}
+
+.c-user-card__avatar-ring {
+    display: inline-block;
+    margin-bottom: 16px;
+    padding: 4px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--color-primary-light), #e0e7ff);
+}
+
+.c-user-card__name-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 8px;
+}
+
+.c-user-card__name {
+    margin: 0 0 8px;
+    color: var(--text-color-primary);
+    font-size: 1.125rem;
+    font-weight: 700;
+}
+
+.c-user-card__name--compact {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.c-user-card__name--hero {
+    font-size: 28px;
+    font-weight: 800;
+    letter-spacing: -0.5px;
+}
+
+.c-user-card__meta {
+    margin: 0 0 20px;
+    color: var(--text-color-secondary);
+    font-size: 0.8125rem;
+}
+
+.c-user-card__bio {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.c-user-card__bio--compact {
+    font-size: 12px;
+}
+
+.c-user-card__bio--hero {
+    margin: 0 0 20px;
+}
+
+.c-user-card__actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+}
+
+.c-user-card__actions .el-button {
+    border-radius: var(--border-radius-large);
+    padding: 10px 20px;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    transition: var(--transition-base);
+}
+
+.c-user-card__action--primary {
+    border: none;
+    box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.c-user-card__action--secondary {
+    color: var(--color-primary);
+    border-color: var(--color-primary-light);
+    background: var(--color-primary-light);
+}
+
+.c-user-card__action--secondary:hover {
+    background: var(--color-primary);
+    color: #fff;
+}
+
+.c-user-card__stats {
+    --profile-stats-item-gap: 4px;
+    --profile-stats-label-size: 0.75rem;
+    --profile-stats-label-margin: 0;
+}
+
+.c-user-card__stats--section {
+    padding-top: 24px;
+    --profile-stats-grid-gap: 12px;
+    --profile-stats-value-size: 0.9375rem;
+    --profile-stats-value-weight: 700;
+}
+
+.c-user-card__stats--compact {
+    --profile-stats-grid-gap: 8px;
+    --profile-stats-value-size: 14px;
+    --profile-stats-value-weight: 600;
+}
+
+.c-user-side-card {
+    --surface-padding: 24px;
+}
+
+.c-user-side-card--theme {
+    --surface-padding: 24px 24px 18px;
+}
+
+.c-user-achievement-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.c-user-achievement {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 12px;
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.45);
+    transition: all 0.3s;
+}
+
+.c-user-achievement:hover {
+    transform: translateX(4px);
+    background: rgba(255, 255, 255, 0.72);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.c-user-achievement__icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    font-size: 20px;
+}
+
+.c-user-achievement__icon--star {
+    color: #f97316;
+    background: #fff7ed;
+}
+
+.c-user-achievement__icon--view {
+    color: #3b82f6;
+    background: #eff6ff;
+}
+
+.c-user-achievement__content {
+    display: flex;
+    flex-direction: column;
+}
+
+.c-user-achievement__value {
+    color: var(--text-color-primary);
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.c-user-achievement__desc {
+    color: var(--text-color-secondary);
+    font-size: 12px;
+}
+
+.c-user-theme-list {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.c-user-theme-option {
+    width: 100%;
+    padding: 12px;
+    border: 1px solid transparent;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.35);
+    color: inherit;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.c-user-theme-option:hover {
+    transform: translateY(-2px);
+    border-color: rgba(var(--color-primary-rgb), 0.18);
+    background: rgba(255, 255, 255, 0.58);
+    box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+}
+
+.c-user-theme-option.is-active {
+    border-color: rgba(var(--color-primary-rgb), 0.28);
+    background: rgba(var(--color-primary-rgb), 0.06);
+    box-shadow: 0 16px 28px rgba(var(--color-primary-rgb), 0.12);
+}
+
+.c-user-theme-option__preview {
+    position: relative;
+    height: 76px;
+    overflow: hidden;
+    border-radius: 14px;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+}
+
+.c-user-theme-option__preview-layer {
+    position: absolute;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.88);
+}
+
+.c-user-theme-option__preview-layer--nav {
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    height: 12px;
+    opacity: 0.9;
+}
+
+.c-user-theme-option__preview-layer--hero {
+    left: 14px;
+    bottom: 14px;
+    width: 28%;
+    height: 22px;
+    opacity: 0.74;
+}
+
+.c-user-theme-option__preview-layer--paper {
+    top: 28px;
+    right: 14px;
+    width: 46%;
+    height: 34px;
+    border-radius: 18px;
+    opacity: 0.92;
+}
+
+.c-user-theme-option__copy {
+    margin-top: 12px;
+}
+
+.c-user-theme-option__name-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+}
+
+.c-user-theme-option__name {
+    color: var(--text-color-primary);
+    font-size: 15px;
+    font-weight: 700;
+}
+
+.c-user-theme-option__badge {
+    padding: 2px 8px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.16);
+    color: var(--text-color-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.c-user-theme-option__badge--current {
+    background: rgba(var(--color-primary-rgb), 0.12);
+    color: var(--color-primary);
+}
+
+.c-user-theme-option__description {
+    margin: 0;
+    color: var(--text-color-secondary);
+    font-size: 13px;
+    line-height: 1.55;
+}

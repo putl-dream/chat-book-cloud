@@ -1,12 +1,12 @@
 <template>
-    <div class="right-sidebar">
-        <div class="right-sidebar-header">
-            <span class="right-sidebar-title">属性设置</span>
-            <el-icon class="close-icon" @click="$emit('close')">
+    <div class="right-sidebar c-editor-panel">
+        <div class="right-sidebar-header c-editor-panel__header">
+            <span class="right-sidebar-title c-editor-panel__title">属性设置</span>
+            <el-icon class="close-icon c-editor-panel__close" @click="$emit('close')">
                 <Close />
             </el-icon>
         </div>
-        <div class="right-sidebar-body">
+        <div class="right-sidebar-body c-editor-panel__body">
             <el-form label-width="80px" size="small">
                 <el-form-item label="内容类型">
                     <el-select v-model="contentType" placeholder="请选择内容类型">
@@ -82,59 +82,3 @@ const handlePathTagChange = (value) => {
     emit('change-path-tag', value);
 };
 </script>
-
-<style scoped>
-.right-sidebar {
-    width: 100%;
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-}
-
-.right-sidebar-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 16px 20px;
-    border-bottom: 1px solid var(--border-color-base);
-}
-
-.right-sidebar-title {
-    font-weight: 600;
-    color: var(--text-color-primary);
-}
-
-.close-icon {
-    cursor: pointer;
-    font-size: 18px;
-    color: var(--text-color-regular);
-    transition: color 0.2s ease;
-}
-
-.close-icon:hover {
-    color: var(--text-color-primary);
-}
-
-.right-sidebar-body {
-    flex: 1;
-    overflow-y: auto;
-    padding: 20px;
-}
-
-.tag-selection {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.tag-group {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-}
-
-.tag-group-label {
-    font-size: 12px;
-    color: var(--text-color-secondary);
-}
-</style>

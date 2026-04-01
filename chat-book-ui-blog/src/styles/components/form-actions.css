@@ -1,0 +1,33 @@
+.c-form-actions {
+    display: flex;
+    gap: var(--form-actions-gap);
+    margin: var(--form-actions-margin);
+}
+
+.c-form-submit {
+    padding: var(--form-submit-padding);
+    font-weight: var(--form-submit-weight);
+    border-radius: var(--form-submit-radius);
+    box-shadow: var(--form-submit-shadow);
+    transition: var(--transition-base);
+}
+
+.c-form-submit:hover {
+    transform: var(--form-submit-hover-transform);
+    box-shadow: var(--form-submit-hover-shadow);
+}
+
+.c-form-secondary {
+    padding: var(--form-secondary-padding);
+    border-radius: var(--form-secondary-radius);
+    background: var(--form-secondary-bg);
+    border: var(--form-secondary-border);
+    color: var(--form-secondary-color);
+    transition: var(--transition-base);
+}
+
+.c-form-secondary:hover {
+    background: var(--form-secondary-hover-bg);
+    border: var(--form-secondary-hover-border);
+    color: var(--form-secondary-hover-color);
+}

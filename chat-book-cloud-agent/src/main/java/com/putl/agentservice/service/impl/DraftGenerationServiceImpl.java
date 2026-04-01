@@ -68,6 +68,9 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         return DraftGenerateResponse.builder()
                 .draftId(response.getDraftId())
                 .versionNo(response.getVersionNo())
+                .title(result.getData().getTitle())
+                .summary(result.getData().getSummary())
+                .content(result.getData().getContent())
                 .build();
     }
 }

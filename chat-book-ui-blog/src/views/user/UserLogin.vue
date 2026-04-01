@@ -1,26 +1,24 @@
 <template>
-    <div class="body">
-        <div class="background-shapes">
-            <div class="shape shape-1"></div>
-            <div class="shape shape-2"></div>
-            <div class="shape shape-3"></div>
+    <div class="c-auth-page">
+        <div class="c-auth-page__background">
+            <div class="c-auth-page__shape c-auth-page__shape--violet"></div>
+            <div class="c-auth-page__shape c-auth-page__shape--cyan"></div>
+            <div class="c-auth-page__shape c-auth-page__shape--pink"></div>
         </div>
-        <div class="container glass-effect"
-            :class="{ 'right-panel-active': isSignUpPanelActive, 'email-sign-in-active': isEmailSignIn }"
-            id="login-box">
-            <div class="form-container sign-up-container">
-                <form @submit.prevent="handleSignUp().then(success => success && togglePanel(false))">
-                    <h1>创建账户</h1>
-                    <div class="social-container">
+        <div class="c-auth-layout" :class="{ 'right-panel-active': isSignUpPanelActive }">
+            <div class="c-auth-layout__form c-auth-layout__form--sign-up">
+                <form class="c-auth-layout__form-inner" @submit.prevent="handleSignUp().then(success => success && togglePanel(false))">
+                    <h1 class="c-auth-layout__title">创建账户</h1>
+                    <div class="c-auth-socials">
                         <el-tooltip content="GitHub 登录" placement="top">
-                            <a href="#" class="social" @click.prevent="handleGithubLogin">
+                            <a href="#" class="c-auth-social" @click.prevent="handleGithubLogin">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                                 </svg>
                             </a>
                         </el-tooltip>
                         <el-tooltip content="Google 登录" placement="top">
-                            <a href="#" class="social" @click.prevent="handleGoogleLogin">
+                            <a href="#" class="c-auth-social" @click.prevent="handleGoogleLogin">
                                 <svg width="20" height="20" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -30,55 +28,55 @@
                             </a>
                         </el-tooltip>
                         <el-tooltip content="微信登录" placement="top">
-                            <a href="#" class="social">
+                            <a href="#" class="c-auth-social">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 01-.023-.156.49.49 0 01.201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.269-.03-.406-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.969-.982z"/>
                                 </svg>
                             </a>
                         </el-tooltip>
                     </div>
-                    <span>或使用邮箱注册</span>
-                    <div class="input-group">
-                        <input v-model="signupForm.username" type="text" placeholder="昵称" required />
-                        <el-icon class="input-icon">
+                    <span class="c-auth-caption">或使用邮箱注册</span>
+                    <div class="c-auth-field">
+                        <el-icon class="c-auth-field__icon">
                             <User />
                         </el-icon>
+                        <input v-model="signupForm.username" class="c-auth-field__input" type="text" placeholder="昵称" required />
                     </div>
-                    <div class="input-group">
-                        <input v-model="signupForm.email" type="email" placeholder="邮箱" required />
-                        <el-icon class="input-icon">
+                    <div class="c-auth-field">
+                        <el-icon class="c-auth-field__icon">
                             <Message />
                         </el-icon>
+                        <input v-model="signupForm.email" class="c-auth-field__input" type="email" placeholder="邮箱" required />
                     </div>
-                    <div class="input-group">
-                        <input v-model="signupForm.password" type="password" placeholder="密码" required />
-                        <el-icon class="input-icon">
+                    <div class="c-auth-field">
+                        <el-icon class="c-auth-field__icon">
                             <Lock />
                         </el-icon>
+                        <input v-model="signupForm.password" class="c-auth-field__input" type="password" placeholder="密码" required />
                     </div>
-                    <div class="input-group captcha-group">
-                        <input v-model="signupForm.captcha" type="text" placeholder="验证码" required />
-                        <el-button class="code-btn" type="primary" link @click="getCode" :disabled="isCounting">
+                    <div class="c-auth-field c-auth-field--inline">
+                        <input v-model="signupForm.captcha" class="c-auth-field__input" type="text" placeholder="验证码" required />
+                        <el-button class="c-auth-code-button" type="primary" link @click="getCode" :disabled="isCounting">
                             {{ isCounting ? `${countdown}s` : '获取验证码' }}
                         </el-button>
                     </div>
-                    <button class="submit-btn">立即注册</button>
+                    <button class="c-auth-submit c-auth-submit--spaced">立即注册</button>
                 </form>
             </div>
 
-            <div class="form-container sign-in-container" v-if="!isEmailSignIn">
-                <form @submit.prevent="handleSignIn">
-                    <h1>欢迎回来</h1>
-                    <div class="social-container">
+            <div class="c-auth-layout__form c-auth-layout__form--sign-in" v-if="!isEmailSignIn">
+                <form class="c-auth-layout__form-inner" @submit.prevent="handleSignIn">
+                    <h1 class="c-auth-layout__title">欢迎回来</h1>
+                    <div class="c-auth-socials">
                         <el-tooltip content="GitHub 登录" placement="top">
-                            <a href="#" class="social" @click.prevent="handleGithubLogin">
+                            <a href="#" class="c-auth-social" @click.prevent="handleGithubLogin">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                                 </svg>
                             </a>
                         </el-tooltip>
                         <el-tooltip content="Google 登录" placement="top">
-                            <a href="#" class="social" @click.prevent="handleGoogleLogin">
+                            <a href="#" class="c-auth-social" @click.prevent="handleGoogleLogin">
                                 <svg width="20" height="20" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -88,47 +86,47 @@
                             </a>
                         </el-tooltip>
                         <el-tooltip content="微信登录" placement="top">
-                            <a href="#" class="social">
+                            <a href="#" class="c-auth-social">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 01-.023-.156.49.49 0 01.201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.269-.03-.406-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.969-.982z"/>
                                 </svg>
                             </a>
                         </el-tooltip>
                     </div>
-                    <span>使用您的账户登录</span>
-                    <div class="input-group">
-                        <input v-model="signInForm.email" type="email" placeholder="邮箱" required />
-                        <el-icon class="input-icon">
+                    <span class="c-auth-caption">使用您的账户登录</span>
+                    <div class="c-auth-field">
+                        <el-icon class="c-auth-field__icon">
                             <Message />
                         </el-icon>
+                        <input v-model="signInForm.email" class="c-auth-field__input" type="email" placeholder="邮箱" required />
                     </div>
-                    <div class="input-group">
-                        <input v-model="signInForm.password" type="password" placeholder="密码" required />
-                        <el-icon class="input-icon">
+                    <div class="c-auth-field">
+                        <el-icon class="c-auth-field__icon">
                             <Lock />
                         </el-icon>
+                        <input v-model="signInForm.password" class="c-auth-field__input" type="password" placeholder="密码" required />
                     </div>
-                    <div class="actions">
-                        <span class="action-link" @click.prevent="toggleEmailSignIn(true)">验证码登录</span>
-                        <span class="action-link">忘记密码？</span>
+                    <div class="c-auth-actions">
+                        <span class="c-auth-action-link" @click.prevent="toggleEmailSignIn(true)">验证码登录</span>
+                        <span class="c-auth-action-link">忘记密码？</span>
                     </div>
-                    <button class="submit-btn">登录</button>
+                    <button class="c-auth-submit c-auth-submit--spaced">登录</button>
                 </form>
             </div>
 
-            <div class="form-container sign-in-container" v-if="isEmailSignIn">
-                <form @submit.prevent="handleEmailSignIn">
-                    <h1>验证码登录</h1>
-                    <div class="social-container">
+            <div class="c-auth-layout__form c-auth-layout__form--sign-in" v-if="isEmailSignIn">
+                <form class="c-auth-layout__form-inner" @submit.prevent="handleEmailSignIn">
+                    <h1 class="c-auth-layout__title">验证码登录</h1>
+                    <div class="c-auth-socials">
                         <el-tooltip content="GitHub 登录" placement="top">
-                            <a href="#" class="social" @click.prevent="handleGithubLogin">
+                            <a href="#" class="c-auth-social" @click.prevent="handleGithubLogin">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/>
                                 </svg>
                             </a>
                         </el-tooltip>
                         <el-tooltip content="Google 登录" placement="top">
-                            <a href="#" class="social" @click.prevent="handleGoogleLogin">
+                            <a href="#" class="c-auth-social" @click.prevent="handleGoogleLogin">
                                 <svg width="20" height="20" viewBox="0 0 24 24">
                                     <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
                                     <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
@@ -138,45 +136,45 @@
                             </a>
                         </el-tooltip>
                         <el-tooltip content="微信登录" placement="top">
-                            <a href="#" class="social">
+                            <a href="#" class="c-auth-social">
                                 <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
                                     <path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.178 1.17 1.17 0 01-1.162-1.178c0-.651.52-1.18 1.162-1.18zm5.34 2.867c-1.797-.052-3.746.512-5.28 1.786-1.72 1.428-2.687 3.72-1.78 6.22.942 2.453 3.666 4.229 6.884 4.229.826 0 1.622-.12 2.361-.336a.722.722 0 01.598.082l1.584.926a.272.272 0 00.14.047c.134 0 .24-.111.24-.247 0-.06-.023-.12-.038-.177l-.327-1.233a.582.582 0 01-.023-.156.49.49 0 01.201-.398C23.024 18.48 24 16.82 24 14.98c0-3.21-2.931-5.837-6.656-6.088V8.89c-.135-.01-.269-.03-.406-.03zm-2.53 3.274c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.97-.982zm4.844 0c.535 0 .969.44.969.982a.976.976 0 01-.969.983.976.976 0 01-.969-.983c0-.542.434-.982.969-.982z"/>
                                 </svg>
                             </a>
                         </el-tooltip>
                     </div>
-                    <span>使用邮箱验证码登录</span>
-                    <div class="input-group">
-                        <input v-model="signInForm.email" type="email" placeholder="邮箱" required />
-                        <el-icon class="input-icon">
+                    <span class="c-auth-caption">使用邮箱验证码登录</span>
+                    <div class="c-auth-field">
+                        <el-icon class="c-auth-field__icon">
                             <Message />
                         </el-icon>
+                        <input v-model="signInForm.email" class="c-auth-field__input" type="email" placeholder="邮箱" required />
                     </div>
-                    <div class="input-group captcha-group">
-                        <input v-model="signInForm.captcha" type="text" placeholder="验证码" required />
-                        <el-button class="code-btn" type="primary" link @click="getEmailCode" :disabled="isCounting">
+                    <div class="c-auth-field c-auth-field--inline">
+                        <input v-model="signInForm.captcha" class="c-auth-field__input" type="text" placeholder="验证码" required />
+                        <el-button class="c-auth-code-button" type="primary" link @click="getEmailCode" :disabled="isCounting">
                             {{ isCounting ? `${countdown}s` : '获取验证码' }}
                         </el-button>
                     </div>
-                    <div class="actions">
-                        <span class="action-link" @click.prevent="toggleEmailSignIn(false)">密码登录</span>
-                        <span class="action-link">忘记密码？</span>
+                    <div class="c-auth-actions">
+                        <span class="c-auth-action-link" @click.prevent="toggleEmailSignIn(false)">密码登录</span>
+                        <span class="c-auth-action-link">忘记密码？</span>
                     </div>
-                    <button class="submit-btn">登录</button>
+                    <button class="c-auth-submit c-auth-submit--spaced">登录</button>
                 </form>
             </div>
 
-            <div class="overlay-container">
-                <div class="overlay">
-                    <div class="overlay-panel overlay-left">
-                        <h1>已有账号？</h1>
-                        <p>请使用您的账号进行登录，畅享更多功能</p>
-                        <button class="ghost" @click="togglePanel(false)">去登录</button>
+            <div class="c-auth-layout__overlay-shell">
+                <div class="c-auth-layout__overlay">
+                    <div class="c-auth-layout__overlay-panel c-auth-layout__overlay-panel--left">
+                        <h1 class="c-auth-layout__overlay-title">已有账号？</h1>
+                        <p class="c-auth-layout__overlay-copy">请使用您的账号进行登录，畅享更多功能</p>
+                        <button class="c-auth-ghost" @click="togglePanel(false)">去登录</button>
                     </div>
-                    <div class="overlay-panel overlay-right">
-                        <h1>没有账号?</h1>
-                        <p>立即注册加入我们，开启您的创作之旅</p>
-                        <button class="ghost" @click="togglePanel(true)">去注册</button>
+                    <div class="c-auth-layout__overlay-panel c-auth-layout__overlay-panel--right">
+                        <h1 class="c-auth-layout__overlay-title">没有账号?</h1>
+                        <p class="c-auth-layout__overlay-copy">立即注册加入我们，开启您的创作之旅</p>
+                        <button class="c-auth-ghost" @click="togglePanel(true)">去注册</button>
                     </div>
                 </div>
             </div>
@@ -186,7 +184,6 @@
 
 <script setup>
 import { ref, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
 import { User, Lock, Message } from '@element-plus/icons-vue';
 import { ElMessage } from 'element-plus';
 import { useLoginLogic } from "./Login/_hooks/useLoginLogic.js";
@@ -218,6 +215,7 @@ const handleGithubLogin = () => oauthLogin('github');
 
 // Handle OAuth callback - check for token in URL
 import { setTokens } from '@/utils/token.js';
+import {useRouter} from "vue-router";
 onMounted(() => {
     const urlParams = new URLSearchParams(window.location.search);
     const accessToken = urlParams.get('accessToken');
@@ -233,426 +231,3 @@ onMounted(() => {
     }
 });
 </script>
-
-<style scoped>
-/* =========================================
-   全局与背景基础样式
-   ========================================= */
-.body {
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
-  height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: #f0f4f8;
-  position: relative;
-  overflow: hidden;
-}
-
-.background-shapes .shape {
-  position: absolute;
-  filter: blur(80px);
-  z-index: 0;
-  opacity: 0.6;
-  animation: float 20s infinite;
-  will-change: transform; /* 开启 GPU 加速，优化性能 */
-}
-
-.shape-1 {
-  top: -10%; left: -10%;
-  width: 500px; height: 500px;
-  background: #c4b5fd;
-  animation-delay: 0s;
-}
-
-.shape-2 {
-  bottom: -10%; right: -10%;
-  width: 600px; height: 600px;
-  background: #a5f3fc;
-  animation-delay: -5s;
-}
-
-.shape-3 {
-  top: 40%; left: 40%;
-  width: 300px; height: 300px;
-  background: #fbcfe8;
-  animation-delay: -10s;
-}
-
-@keyframes float {
-  0%, 100% { transform: translate(0, 0) rotate(0deg); }
-  33% { transform: translate(30px, -50px) rotate(10deg); }
-  66% { transform: translate(-20px, 20px) rotate(-5deg); }
-}
-
-/* =========================================
-   PC 端经典左右布局样式 (保留你原本的逻辑)
-   ========================================= */
-.container {
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.8);
-  border-radius: 24px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.05);
-  position: relative;
-  overflow: hidden;
-  width: 900px;
-  max-width: 95%;
-  min-height: 600px;
-  display: flex;
-  z-index: 1;
-}
-
-.form-container {
-  position: absolute;
-  top: 0;
-  height: 100%;
-  transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  width: 50%;
-  background: rgba(255, 255, 255, 0.4);
-  backdrop-filter: blur(10px);
-}
-
-.form-container form {
-  display: flex;
-  flex-direction: column;
-  padding: 0 50px;
-  height: 100%;
-  justify-content: center;
-  align-items: center;
-  text-align: center;
-}
-
-h1 {
-  font-weight: 800;
-  margin: 0 0 20px;
-  color: #1f2937;
-  font-size: 28px;
-}
-
-.social-container {
-  margin: 10px 0 20px;
-  display: flex;
-  gap: 16px;
-}
-
-.social {
-  border: 1px solid #ddd;
-  border-radius: 50%;
-  display: inline-flex;
-  justify-content: center;
-  align-items: center;
-  width: 40px; height: 40px;
-  color: #6b7280;
-  transition: all 0.3s;
-  background: white;
-}
-
-.social:hover {
-  color: #6366f1;
-  border-color: #6366f1;
-  transform: translateY(-2px);
-}
-
-span {
-  font-size: 12px;
-  color: #6b7280;
-  margin-bottom: 20px;
-}
-
-.input-group {
-  position: relative;
-  width: 100%;
-  margin: 8px 0;
-}
-
-.input-group input {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid transparent;
-  padding: 12px 15px 12px 45px;
-  width: 100%;
-  border-radius: 12px;
-  font-size: 14px;
-  outline: none;
-  transition: all 0.3s;
-  color: #1f2937;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
-}
-
-.input-group input:focus {
-  background: #fff;
-  border-color: #6366f1;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.1);
-}
-
-.input-icon {
-  position: absolute;
-  left: 15px;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-  transition: color 0.3s;
-}
-
-.input-group input:focus+.input-icon {
-  color: #6366f1;
-}
-
-.captcha-group {
-  display: flex;
-  gap: 10px;
-}
-
-.captcha-group input {
-  padding-left: 15px;
-  flex: 1;
-}
-
-.code-btn {
-  white-space: nowrap;
-  padding: 0 15px;
-}
-
-.actions {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  margin: 15px 0 25px;
-  font-size: 13px;
-}
-
-.action-link {
-  color: #6b7280;
-  cursor: pointer;
-  transition: color 0.3s;
-}
-
-.action-link:hover {
-  color: #6366f1;
-  text-decoration: underline;
-}
-
-.submit-btn {
-  border-radius: 30px;
-  border: none;
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  color: #fff;
-  font-size: 14px;
-  font-weight: 700;
-  padding: 12px 45px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  transition: transform 80ms ease-in, box-shadow 0.3s;
-  cursor: pointer;
-  box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
-  margin-top: 10px;
-}
-
-.submit-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
-}
-
-.submit-btn:active {
-  transform: scale(0.95);
-}
-
-/* 覆盖层样式 */
-.overlay-container {
-  position: absolute;
-  top: 0; left: 50%;
-  width: 50%; height: 100%;
-  overflow: hidden;
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-  z-index: 100;
-}
-
-.overlay {
-  background: linear-gradient(135deg, #8b5cf6, #6366f1);
-  color: #fff;
-  position: relative;
-  left: -100%;
-  height: 100%; width: 200%;
-  transform: translateX(0);
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.overlay-panel {
-  position: absolute;
-  top: 0;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
-  padding: 0 40px;
-  height: 100%; width: 50%;
-  text-align: center;
-  transform: translateX(0);
-  transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-}
-
-.overlay-panel h1 {
-  color: white;
-  margin-bottom: 10px;
-}
-
-.overlay-panel p {
-  font-size: 14px;
-  font-weight: 300;
-  line-height: 1.6;
-  margin: 10px 0 30px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.ghost {
-  background: transparent;
-  border: 1px solid #fff;
-  border-radius: 30px;
-  color: #fff;
-  font-size: 13px;
-  font-weight: 700;
-  padding: 10px 40px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-  transition: all 0.3s;
-  cursor: pointer;
-}
-
-.ghost:hover {
-  background: rgba(255, 255, 255, 0.2);
-  transform: scale(1.05);
-}
-
-.overlay-right { right: 0; transform: translateX(0); }
-.overlay-left { transform: translateX(-20%); }
-
-/* PC端状态切换动画 */
-.container.right-panel-active .sign-in-container { transform: translateX(100%); opacity: 0; }
-.container.right-panel-active .overlay-container { transform: translateX(-100%); }
-.container.right-panel-active .sign-up-container { transform: translateX(100%); opacity: 1; z-index: 5; }
-.container.right-panel-active .overlay { transform: translateX(50%); }
-.container.right-panel-active .overlay-left { transform: translateX(0); }
-.container.right-panel-active .overlay-right { transform: translateX(20%); }
-
-
-/* =========================================
-   移动端专属样式优化 (上下卡片切换)
-   ========================================= */
-@media (max-width: 768px) {
-  /* 容器改为全屏，允许滚动防键盘遮挡 */
-  .container {
-    flex-direction: column;
-    width: 100%;
-    height: 100vh;
-    max-height: 100vh;
-    border-radius: 0;
-    min-height: auto;
-  }
-
-  /* 1. 顶部紫色背景区域（原 overlay） */
-  .overlay-container {
-    position: relative;
-    left: 0 !important;
-    width: 100% !important;
-    height: 220px !important; /* 固定顶部高度 */
-    transform: none !important;
-    z-index: 1;
-  }
-
-  .overlay {
-    left: 0 !important;
-    width: 100% !important;
-    transform: none !important;
-  }
-
-  .overlay-panel {
-    width: 100% !important;
-    padding: 0 20px !important;
-    transform: none !important;
-    transition: opacity 0.4s ease; /* 切换时使用透明度过渡 */
-  }
-
-  /* 移动端隐藏大段描述文字，节省空间 */
-  .overlay-panel p {
-    display: none;
-  }
-
-  .overlay-panel h1 {
-    font-size: 22px;
-  }
-
-  /* 移动端顶部文案切换逻辑 */
-  .overlay-left { opacity: 0; pointer-events: none; }
-  .overlay-right { opacity: 1; pointer-events: auto; }
-  .container.right-panel-active .overlay-left { opacity: 1; pointer-events: auto; }
-  .container.right-panel-active .overlay-right { opacity: 0; pointer-events: none; }
-
-  /* 2. 表单卡片区域 */
-  .form-container {
-    position: absolute; /* 关键：保留绝对定位，让两个表单重叠 */
-    top: 180px; /* 往上提，盖住一部分紫色背景，形成卡片感 */
-    left: 0 !important;
-    width: 100% !important;
-    height: calc(100vh - 180px) !important;
-    background: rgba(255, 255, 255, 0.95); /* 提高不透明度 */
-    border-radius: 30px 30px 0 0; /* 顶部大圆角 */
-    box-shadow: 0 -10px 20px rgba(0,0,0,0.05);
-    transition: opacity 0.4s ease, transform 0.4s ease, z-index 0.4s;
-  }
-
-  .form-container form {
-    padding: 30px 25px !important;
-    justify-content: flex-start; /* 表单靠上对齐，防止键盘遮挡 */
-    height: 100%;
-    overflow-y: auto; /* 允许内部滚动 */
-  }
-
-  .form-container h1 {
-    font-size: 24px;
-    margin-bottom: 10px;
-  }
-
-  /* 3. 移动端表单切换动画逻辑 (摒弃左右位移，改用淡入淡出+轻微上浮) */
-
-  /* 默认状态：显示登录 */
-  .sign-in-container {
-    opacity: 1;
-    z-index: 5;
-    transform: translateY(0) !important;
-    pointer-events: auto;
-  }
-  .sign-up-container {
-    opacity: 0;
-    z-index: 1;
-    transform: translateY(20px) !important; /* 隐藏时轻微下沉 */
-    pointer-events: none; /* 防止点击到隐藏的表单 */
-  }
-
-  /* 触发态：显示注册 */
-  .container.right-panel-active .sign-in-container {
-    opacity: 0;
-    z-index: 1;
-    transform: translateY(20px) !important;
-    pointer-events: none;
-  }
-  .container.right-panel-active .sign-up-container {
-    opacity: 1;
-    z-index: 5;
-    transform: translateY(0) !important;
-    pointer-events: auto;
-  }
-
-  /* 4. 优化移动端背景动画性能 */
-  .background-shapes .shape {
-    filter: blur(40px); /* 降低模糊半径，大幅减少发热 */
-    opacity: 0.3;
-    animation: mobileFloat 10s infinite alternate ease-in-out;
-  }
-
-  @keyframes mobileFloat {
-    0% { transform: translate(0, 0); }
-    100% { transform: translate(15px, 15px); }
-  }
-}
-</style>

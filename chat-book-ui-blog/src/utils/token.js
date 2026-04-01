@@ -1,8 +1,15 @@
+import { API_CONFIG } from '@/config/index.js';
+
 const ACCESS_TOKEN_KEY = 'token';
 const REFRESH_TOKEN_KEY = 'refreshToken';
 
 let isRefreshing = false;
 let refreshingPromise = null;
+
+function getApiBaseURL() {
+    const baseURL = API_CONFIG.baseURL || '';
+    return baseURL.endsWith('/') ? baseURL.slice(0, -1) : baseURL;
+}
 
 function normalizeLoginTokens(loginVO) {
     if (!loginVO || typeof loginVO !== 'object') {
@@ -77,7 +84,7 @@ export async function refreshAccessToken() {
 
     refreshingPromise = (async () => {
         try {
-            const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+            const baseURL = getApiBaseURL();
             const response = await fetch(`${baseURL}/api/auth/account/refresh`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -119,7 +126,7 @@ export async function logoutAndRevoke() {
     const refreshToken = getRefreshToken();
     if (refreshToken) {
         try {
-            const baseURL = import.meta.env.VITE_API_BASE_URL || '';
+            const baseURL = getApiBaseURL();
             await fetch(`${baseURL}/api/auth/account/logout`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },

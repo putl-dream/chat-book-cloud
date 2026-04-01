@@ -46,6 +46,9 @@ public class DraftOptimizationServiceImpl implements DraftOptimizationService {
         return DraftOptimizeResponse.builder()
                 .draftId(response.getDraftId())
                 .candidateVersionNo(response.getVersionNo())
+                .title(optimized.getData().getTitle())
+                .summary(optimized.getData().getSummary())
+                .content(optimized.getData().getContent())
                 .build();
     }
 
