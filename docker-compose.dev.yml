@@ -1,4 +1,4 @@
- services:
+services:
   gateway:
     image: chat-book-cloud-gateway:dev
     container_name: gateway
