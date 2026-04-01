@@ -28,5 +28,15 @@ agent:
     provider: anthropic
     anthropic:
       api-key: ${ANTHROPIC_API_KEY:}
-      base-url: https://api.anthropic.com
-      timeout-ms: 30000
+      base-url: ${ANTHROPIC_BASE_URL:https://api.minimaxi.com/anthropic}
+      timeout-ms: ${ANTHROPIC_TIMEOUT_MS:30000}
+      model:
+        chat: ${ANTHROPIC_CHAT_MODEL:MiniMax-M2.7}
+        generate: ${ANTHROPIC_GENERATE_MODEL:MiniMax-M2.7}
+        optimize: ${ANTHROPIC_OPTIMIZE_MODEL:MiniMax-M2.7}
+        notebook: ${ANTHROPIC_NOTEBOOK_MODEL:MiniMax-M2.7}
+      max-tokens:
+        chat: ${ANTHROPIC_CHAT_MAX_TOKENS:2048}
+        generate: ${ANTHROPIC_GENERATE_MAX_TOKENS:4096}
+        optimize: ${ANTHROPIC_OPTIMIZE_MAX_TOKENS:4096}
+        notebook: ${ANTHROPIC_NOTEBOOK_MAX_TOKENS:2048}
