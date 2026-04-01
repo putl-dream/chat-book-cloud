@@ -11,6 +11,8 @@ import com.putl.agentservice.model.vo.AgentChatResponse;
 import com.putl.agentservice.service.AgentConversationService;
 import com.putl.agentservice.service.AgentConversationWindowService;
 import com.putl.agentservice.service.AgentNotebookCacheService;
+import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
+import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
@@ -24,24 +26,31 @@ import java.util.concurrent.Executor;
 @Service
 public class AgentConversationServiceImpl implements AgentConversationService {
 
+    private static final String AGENT_CHAT_DELTA = "AGENT_CHAT_DELTA";
+    private static final String AGENT_CHAT_DONE = "AGENT_CHAT_DONE";
+    private static final String AGENT_CHAT_ERROR = "AGENT_CHAT_ERROR";
+
     private final AgentMessageMapper agentMessageMapper;
     private final ArticleAiGateway articleAiGateway;
     private final AgentConversationWindowService agentConversationWindowService;
     private final AgentNotebookCacheService agentNotebookCacheService;
     private final AgentChatProperties agentChatProperties;
     private final Executor agentChatStreamExecutor;
+    private final MessagePublisher messagePublisher;
 
     public AgentConversationServiceImpl(AgentMessageMapper agentMessageMapper,
                                         ArticleAiGateway articleAiGateway,
                                         AgentConversationWindowService agentConversationWindowService,
                                         AgentNotebookCacheService agentNotebookCacheService,
                                         AgentChatProperties agentChatProperties,
+                                        MessagePublisher messagePublisher,
                                         @Qualifier("agentChatStreamExecutor") Executor agentChatStreamExecutor) {
         this.agentMessageMapper = agentMessageMapper;
         this.articleAiGateway = articleAiGateway;
         this.agentConversationWindowService = agentConversationWindowService;
         this.agentNotebookCacheService = agentNotebookCacheService;
         this.agentChatProperties = agentChatProperties;
+        this.messagePublisher = messagePublisher;
         this.agentChatStreamExecutor = agentChatStreamExecutor;
     }
 
@@ -72,6 +81,11 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         return emitter;
     }
 
+    @Override
+    public void chatByWebSocket(String userId, AgentChatRequest request) {
+        agentChatStreamExecutor.execute(() -> doChatWebSocket(userId, request));
+    }
+
     private AgentMessageDO saveMessage(Integer sessionId, AgentMessageRole role, String content) {
         return saveMessage(sessionId, role, content, 0, 0, 0);
     }
@@ -97,22 +111,8 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     private void doChatStream(AgentChatRequest request, SseEmitter emitter) {
         try {
             sendEvent(emitter, "start", Map.of("sessionId", request.getSessionId()));
-            List<AgentMessageDO> recentMessages = agentConversationWindowService.getRecentMessages(request.getSessionId());
-            AgentMessageDO userMessage = saveMessage(request.getSessionId(), AgentMessageRole.USER, request.getContent());
-            List<AgentMessageDO> messages = agentConversationWindowService.appendMessage(request.getSessionId(), recentMessages, userMessage);
-            AiInvocationResult<String> reply = articleAiGateway.chatStream(
-                    messages,
-                    agentNotebookCacheService.getNotebook(request.getSessionId()),
-                    chunk -> sendChunk(emitter, chunk));
-            AgentMessageDO assistantMessage = saveMessage(
-                    request.getSessionId(),
-                    AgentMessageRole.ASSISTANT,
-                    reply.getData(),
-                    reply.getTokenInput(),
-                    reply.getTokenOutput(),
-                    reply.getLatencyMs());
-            agentConversationWindowService.appendMessage(request.getSessionId(), messages, assistantMessage);
-            sendEvent(emitter, "done", donePayload(reply));
+            AiInvocationResult<String> reply = executeStreamingChat(request, chunk -> sendChunk(emitter, chunk));
+            sendEvent(emitter, "done", donePayload(request, reply));
             emitter.complete();
         } catch (Exception ex) {
             try {
@@ -124,17 +124,64 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         }
     }
 
+    private void doChatWebSocket(String userId, AgentChatRequest request) {
+        try {
+            AiInvocationResult<String> reply = executeStreamingChat(
+                    request,
+                    chunk -> messagePublisher.sendToUser(
+                            userId,
+                            WebSocketResult.of(AGENT_CHAT_DELTA, deltaPayload(request, chunk))));
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AGENT_CHAT_DONE, donePayload(request, reply)));
+        } catch (Exception ex) {
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AGENT_CHAT_ERROR, errorPayload(request, ex)));
+        }
+    }
+
+    private AiInvocationResult<String> executeStreamingChat(AgentChatRequest request, java.util.function.Consumer<String> chunkConsumer) {
+        List<AgentMessageDO> recentMessages = agentConversationWindowService.getRecentMessages(request.getSessionId());
+        AgentMessageDO userMessage = saveMessage(request.getSessionId(), AgentMessageRole.USER, request.getContent());
+        List<AgentMessageDO> messages = agentConversationWindowService.appendMessage(request.getSessionId(), recentMessages, userMessage);
+        AiInvocationResult<String> reply = articleAiGateway.chatStream(
+                messages,
+                agentNotebookCacheService.getNotebook(request.getSessionId()),
+                chunkConsumer);
+        AgentMessageDO assistantMessage = saveMessage(
+                request.getSessionId(),
+                AgentMessageRole.ASSISTANT,
+                reply.getData(),
+                reply.getTokenInput(),
+                reply.getTokenOutput(),
+                reply.getLatencyMs());
+        agentConversationWindowService.appendMessage(request.getSessionId(), messages, assistantMessage);
+        return reply;
+    }
+
     private void sendChunk(SseEmitter emitter, String chunk) {
         sendEvent(emitter, "delta", Map.of("content", chunk));
     }
 
-    private Map<String, Object> donePayload(AiInvocationResult<String> reply) {
+    private Map<String, Object> deltaPayload(AgentChatRequest request, String chunk) {
         Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", request.getSessionId());
+        payload.put("content", chunk);
+        return payload;
+    }
+
+    private Map<String, Object> donePayload(AgentChatRequest request, AiInvocationResult<String> reply) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", request.getSessionId());
         payload.put("reply", reply.getData());
         payload.put("tokenInput", reply.getTokenInput());
         payload.put("tokenOutput", reply.getTokenOutput());
         payload.put("latencyMs", reply.getLatencyMs());
         payload.put("model", reply.getModel());
+        return payload;
+    }
+
+    private Map<String, Object> errorPayload(AgentChatRequest request, Exception ex) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", request.getSessionId());
+        payload.put("message", defaultText(ex.getMessage()));
         return payload;
     }
 

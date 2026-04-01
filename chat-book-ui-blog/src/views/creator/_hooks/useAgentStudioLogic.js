@@ -1,11 +1,13 @@
-import { computed, ref, watch } from 'vue';
+import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
 import { useRoute, useRouter } from 'vue-router';
 import { ElMessage } from 'element-plus';
 
+import { API_CONFIG } from '@/config/index.js';
+import { getAccessToken } from '@/utils/token.js';
+import SocketService, { formatWsUrl } from '@/utils/websocket.js';
 import {
     AGENT_SCENE_TYPE,
     adoptAgentDraftVersion,
-    chatWithAgent,
     createAgentSession,
     generateAgentDraft,
     getAgentSessionDetail,
@@ -16,6 +18,10 @@ import {
 
 const DEFAULT_SESSION_TITLE = '新的 AI 创作会话';
 const DEFAULT_OPTIMIZE_INSTRUCTION = '请强化结构层次、表达节奏和可读性，保留原有事实与结论。';
+const AGENT_CHAT_TYPE = 'AGENT_CHAT';
+const AGENT_CHAT_DELTA = 'AGENT_CHAT_DELTA';
+const AGENT_CHAT_DONE = 'AGENT_CHAT_DONE';
+const AGENT_CHAT_ERROR = 'AGENT_CHAT_ERROR';
 
 function normalizeMessageRole(role) {
     const roleMap = {
@@ -31,7 +37,8 @@ function normalizeMessage(message = {}) {
         id: message.id ?? `${Date.now()}-${Math.random()}`,
         role: normalizeMessageRole(message.role),
         content: message.content ?? '',
-        createTime: message.createTime ?? ''
+        createTime: message.createTime ?? '',
+        streaming: Boolean(message.streaming)
     };
 }
 
@@ -54,6 +61,11 @@ export function useAgentStudioLogic() {
     const messages = ref([]);
     const draft = ref(null);
     const candidateDraft = ref(null);
+
+    let socketService = null;
+    let socketReadyPromise = null;
+    let streamingAssistantMessageId = null;
+    let closingSocket = false;
 
     const hasMessages = computed(() => messages.value.length > 0);
     const hasDraft = computed(() => Boolean(draft.value?.draftId));
@@ -103,12 +115,149 @@ export function useAgentStudioLogic() {
         return '未创建会话';
     });
 
+    const findMessageIndex = (messageId) => messages.value.findIndex((item) => item.id === messageId);
+
+    const clearStreamingState = () => {
+        streamingAssistantMessageId = null;
+        chatting.value = false;
+    };
+
+    const finishStreamingMessage = (reply = '') => {
+        if (!streamingAssistantMessageId) {
+            chatting.value = false;
+            return;
+        }
+
+        const messageIndex = findMessageIndex(streamingAssistantMessageId);
+        if (messageIndex >= 0) {
+            const current = messages.value[messageIndex];
+            messages.value[messageIndex] = {
+                ...current,
+                content: typeof reply === 'string' && reply.length > 0 ? reply : current.content,
+                streaming: false
+            };
+        }
+        clearStreamingState();
+    };
+
+    const discardStreamingMessage = () => {
+        if (!streamingAssistantMessageId) {
+            chatting.value = false;
+            return;
+        }
+
+        const messageIndex = findMessageIndex(streamingAssistantMessageId);
+        if (messageIndex >= 0) {
+            const current = messages.value[messageIndex];
+            if (!current.content) {
+                messages.value.splice(messageIndex, 1);
+            } else {
+                messages.value[messageIndex] = {
+                    ...current,
+                    streaming: false
+                };
+            }
+        }
+        clearStreamingState();
+    };
+
+    const resolveAgentSocketUrl = () => {
+        const wsUrl = formatWsUrl(API_CONFIG.baseURL);
+        return `${wsUrl}/api/agent/ws`;
+    };
+
+    const connectWebSocket = () => {
+        if (socketService) {
+            return socketService;
+        }
+
+        closingSocket = false;
+        socketService = new SocketService(resolveAgentSocketUrl(), getAccessToken());
+
+        socketService.on(AGENT_CHAT_DELTA, (payload = {}) => {
+            if (!streamingAssistantMessageId || typeof payload.content !== 'string') {
+                return;
+            }
+
+            const messageIndex = findMessageIndex(streamingAssistantMessageId);
+            if (messageIndex < 0) {
+                return;
+            }
+
+            const current = messages.value[messageIndex];
+            messages.value[messageIndex] = {
+                ...current,
+                content: `${current.content || ''}${payload.content}`,
+                streaming: true
+            };
+        });
+
+        socketService.on(AGENT_CHAT_DONE, (payload = {}) => {
+            finishStreamingMessage(payload.reply ?? '');
+        });
+
+        socketService.on(AGENT_CHAT_ERROR, (payload = {}) => {
+            discardStreamingMessage();
+            ElMessage.error(payload.message || '发送失败，请稍后重试');
+        });
+
+        socketService.onClose(() => {
+            if (closingSocket) {
+                return;
+            }
+
+            if (chatting.value) {
+                discardStreamingMessage();
+                ElMessage.error('Agent 连接已断开，请重试');
+            }
+        });
+
+        socketService.onError((error) => {
+            console.error('Agent WebSocket error:', error);
+        });
+
+        socketService.connect();
+        return socketService;
+    };
+
+    const ensureSocketReady = async (timeoutMs = 5000) => {
+        const service = connectWebSocket();
+        if (service.isConnected()) {
+            return service;
+        }
+
+        if (socketReadyPromise) {
+            return socketReadyPromise;
+        }
+
+        socketReadyPromise = new Promise((resolve, reject) => {
+            const startedAt = Date.now();
+            const timer = setInterval(() => {
+                if (service.isConnected()) {
+                    clearInterval(timer);
+                    socketReadyPromise = null;
+                    resolve(service);
+                    return;
+                }
+
+                if (Date.now() - startedAt >= timeoutMs) {
+                    clearInterval(timer);
+                    socketReadyPromise = null;
+                    reject(new Error('Agent WebSocket connect timeout'));
+                }
+            }, 100);
+        });
+
+        return socketReadyPromise;
+    };
+
     const resetStudioState = () => {
         session.value = null;
         sessionId.value = null;
         messages.value = [];
         draft.value = null;
         candidateDraft.value = null;
+        streamingAssistantMessageId = null;
     };
 
     const hydrateSession = async (id) => {
@@ -128,6 +277,7 @@ export function useAgentStudioLogic() {
                 : [];
             draft.value = detail.draft ? normalizeAgentDraft(detail.draft) : null;
             candidateDraft.value = null;
+            streamingAssistantMessageId = null;
         } catch (error) {
             console.error('Failed to hydrate agent session:', error);
             ElMessage.error('恢复会话失败，请稍后重试');
@@ -158,6 +308,20 @@ export function useAgentStudioLogic() {
         },
         { immediate: true }
     );
+
+    onMounted(() => {
+        connectWebSocket();
+    });
+
+    onBeforeUnmount(() => {
+        closingSocket = true;
+        socketReadyPromise = null;
+        streamingAssistantMessageId = null;
+        if (socketService) {
+            socketService.close();
+            socketService = null;
+        }
+    });
 
     const ensureSession = async (seedMessage = '') => {
         if (sessionId.value) {
@@ -191,6 +355,11 @@ export function useAgentStudioLogic() {
     };
 
     const openFreshSession = async () => {
+        if (chatting.value) {
+            ElMessage.warning('当前对话尚未完成，请稍后再新建会话');
+            return;
+        }
+
         resetStudioState();
         sessionTitle.value = DEFAULT_SESSION_TITLE;
         chatInput.value = '';
@@ -207,34 +376,47 @@ export function useAgentStudioLogic() {
         chatting.value = true;
         try {
             const currentSessionId = await ensureSession(content);
+            const service = await ensureSocketReady();
+
             messages.value.push(normalizeMessage({
                 id: `user-${Date.now()}`,
                 role: 'USER',
                 content
             }));
 
+            const assistantMessageId = `assistant-${Date.now()}`;
+            streamingAssistantMessageId = assistantMessageId;
+            messages.value.push(normalizeMessage({
+                id: assistantMessageId,
+                role: 'ASSISTANT',
+                content: '',
+                streaming: true
+            }));
+
             chatInput.value = '';
-            const response = await chatWithAgent({
+
+            const sent = service.send(AGENT_CHAT_TYPE, {
                 sessionId: currentSessionId,
                 content
             });
-
-            messages.value.push(normalizeMessage({
-                id: `assistant-${Date.now()}`,
-                role: 'ASSISTANT',
-                content: response.reply
-            }));
+            if (!sent) {
+                throw new Error('Agent WebSocket 未连接');
+            }
         } catch (error) {
             console.error('Failed to send agent message:', error);
+            discardStreamingMessage();
             ElMessage.error('发送失败，请稍后重试');
-        } finally {
-            chatting.value = false;
         }
     };
 
     const createDraftFromSession = async () => {
         if (!sessionId.value) {
             ElMessage.warning('请先开始一段创作对话');
+            return;
+        }
+
+        if (chatting.value) {
+            ElMessage.warning('当前回复尚未完成，请稍后再生成首稿');
             return;
         }
 

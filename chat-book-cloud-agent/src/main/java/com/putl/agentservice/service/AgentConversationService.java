@@ -9,4 +9,6 @@ public interface AgentConversationService {
     AgentChatResponse chat(AgentChatRequest request);
 
     SseEmitter chatStream(AgentChatRequest request);
+
+    void chatByWebSocket(String userId, AgentChatRequest request);
 }
