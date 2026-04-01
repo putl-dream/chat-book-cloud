@@ -15,6 +15,9 @@ knife4j:
   setting:
     language: zh_cn
 
+websocket:
+  path: /agent/ws
+
 agent:
   chat:
     recent-window-size: ${AGENT_CHAT_RECENT_WINDOW_SIZE:12}

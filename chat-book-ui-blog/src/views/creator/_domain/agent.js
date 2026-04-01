@@ -19,15 +19,21 @@ export function getAgentSessionDetail(sessionId) {
 }
 
 export function chatWithAgent(params) {
-    return request.post('/agent/session/chat', params);
+    return request.post('/agent/session/chat', params, {
+        timeout: 60000
+    });
 }
 
 export function generateAgentDraft(params) {
-    return request.post('/agent/draft/generate', params);
+    return request.post('/agent/draft/generate', params, {
+        timeout: 60000
+    });
 }
 
 export function optimizeAgentDraft(params) {
-    return request.post('/agent/draft/optimize', params);
+    return request.post('/agent/draft/optimize', params, {
+        timeout: 60000
+    });
 }
 
 export function adoptAgentDraftVersion(params) {

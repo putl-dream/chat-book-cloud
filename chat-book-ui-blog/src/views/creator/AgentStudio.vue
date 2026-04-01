@@ -33,7 +33,7 @@
                 <div class="agent-studio__hero-actions">
                     <el-button
                         class="agent-studio__ghost-btn"
-                        :disabled="creatingSession"
+                        :disabled="creatingSession || chatting"
                         @click="openFreshSession">
                         新建会话
                     </el-button>
@@ -41,7 +41,7 @@
                         class="agent-studio__primary-btn"
                         type="primary"
                         :loading="generatingDraft"
-                        :disabled="!hasMessages"
+                        :disabled="!hasMessages || chatting"
                         @click="createDraftFromSession">
                         生成首稿
                     </el-button>
@@ -81,7 +81,11 @@
                                 {{ message.role === 'user' ? '你' : message.role === 'assistant' ? 'AI' : '系统' }}
                             </div>
                             <div class="agent-chat-item__card">
+                                <p v-if="message.streaming && !message.content" class="agent-chat-item__streaming">
+                                    正在思考...
+                                </p>
                                 <RichTextViewer
+                                    v-else
                                     :html="renderMessageHtml(message.content)"
                                     variant="chat" />
                             </div>
@@ -585,6 +589,13 @@ const renderDraftHtml = (content) => buildRichTextHtml(content || '', 'markdown'
 
 .agent-chat-item--assistant .agent-chat-item__card {
     background: linear-gradient(180deg, rgba(255, 249, 244, 0.98), rgba(255, 255, 255, 0.88));
+}
+
+.agent-chat-item__streaming {
+    margin: 0;
+    color: rgba(19, 39, 63, 0.62);
+    font-size: 14px;
+    line-height: 1.8;
 }
 
 .agent-panel__footer {

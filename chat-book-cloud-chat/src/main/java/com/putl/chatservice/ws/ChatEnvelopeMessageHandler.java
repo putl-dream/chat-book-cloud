@@ -8,10 +8,11 @@ import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 @Slf4j
 @Component
-public class ChatMessageHandler implements MessageHandler<ChatMessage> {
+public class ChatEnvelopeMessageHandler implements MessageHandler<ChatEnvelopeMessage> {
 
     @Resource
     private MessageService messageService;
@@ -21,48 +22,59 @@ public class ChatMessageHandler implements MessageHandler<ChatMessage> {
 
     @Override
     public String getType() {
-        return "chat";
+        return "CHAT";
     }
 
     @Override
-    public Class<ChatMessage> getMessageClass() {
-        return ChatMessage.class;
+    public Class<ChatEnvelopeMessage> getMessageClass() {
+        return ChatEnvelopeMessage.class;
     }
 
     @Override
-    public void handleMessage(String userId, ChatMessage message) {
+    public void handleMessage(String userId, ChatEnvelopeMessage message) {
         log.info("[websocket] 用户={} 发送聊天消息", userId);
 
         try {
-            Integer senderId = Integer.parseInt(userId);
-            Integer receiverId = Integer.parseInt(message.getTo());
-            String content = message.getContent();
-            String msgType = message.getMsgType() != null ? message.getMsgType() : "TEXT";
+            ChatEnvelopeData data = message.getData();
+            if (data == null || !StringUtils.hasText(data.getContent())) {
+                messagePublisher.sendToUser(userId, WebSocketResult.error("消息发送失败：消息内容不能为空"));
+                return;
+            }
 
-            // 1. 持久化消息到数据库
+            Integer senderId = Integer.parseInt(userId);
+            Integer receiverId = resolveReceiverId(data);
+            String content = data.getContent().trim();
+            String msgType = StringUtils.hasText(data.getMsgType()) ? data.getMsgType() : "TEXT";
+
             messageService.sendMessage(senderId, receiverId, content, msgType);
 
-            // 2. 构建响应消息
             ChatMessage response = new ChatMessage();
             response.setFrom(userId);
-            response.setTo(message.getTo());
+            response.setTo(String.valueOf(receiverId));
             response.setContent(content);
             response.setMsgType(msgType);
 
-            // 3. 推送给接收者（如果在线）
-            messagePublisher.sendToUser(message.getTo(), WebSocketResult.of("CHAT", response));
-
-            // 4. 发送确认给发送者
+            messagePublisher.sendToUser(String.valueOf(receiverId), WebSocketResult.of("CHAT", response));
             messagePublisher.sendToUser(userId, WebSocketResult.system("消息发送成功！"));
 
-            log.info("Message sent from user {} to user {}: {}", senderId, receiverId, content);
-
         } catch (NumberFormatException e) {
-            log.error("用户ID格式错误: {}", userId);
+            log.error("用户ID格式错误: {}", userId, e);
             messagePublisher.sendToUser(userId, WebSocketResult.error("消息发送失败：用户ID格式错误"));
+        } catch (IllegalArgumentException e) {
+            messagePublisher.sendToUser(userId, WebSocketResult.error("消息发送失败：" + e.getMessage()));
         } catch (Exception e) {
             log.error("处理聊天消息失败: {}", e.getMessage(), e);
             messagePublisher.sendToUser(userId, WebSocketResult.error("消息发送失败：" + e.getMessage()));
         }
+    }
+
+    private Integer resolveReceiverId(ChatEnvelopeData data) {
+        if (data.getReceiverId() != null) {
+            return data.getReceiverId();
+        }
+        if (StringUtils.hasText(data.getTo())) {
+            return Integer.parseInt(data.getTo());
+        }
+        throw new IllegalArgumentException("接收方不能为空");
     }
 }

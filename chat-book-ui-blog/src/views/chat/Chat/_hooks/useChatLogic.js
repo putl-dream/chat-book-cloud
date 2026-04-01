@@ -64,21 +64,23 @@ export function useChatLogic() {
 
     socketService.onOpen(() => {
       console.log('已连接到服务器');
-      sendSystemMessage();
     });
 
     socketService.on('SYSTEM', (data) => {
       ElMessage.success(data);
     });
 
-    socketService.on('USER', (data) => {
+    const handleIncomingChat = (data) => {
       messages.value.push({
         sender: 'other',
         content: data.content,
         avatar: selectedFriend.value?.photo,
       });
       scrollToBottom();
-    });
+    };
+
+    socketService.on('CHAT', handleIncomingChat);
+    socketService.on('chat', handleIncomingChat);
 
     socketService.onClose(() => {
       console.log('已断开与服务器的连接');
@@ -119,7 +121,11 @@ export function useChatLogic() {
 
   const sendUserMessage = () => {
     if (socketService && socketService.isConnected()) {
-      socketService.send("USER", { receiverId: selectedFriend.value.userId, content: newMessage.value });
+      socketService.send("CHAT", {
+        to: String(selectedFriend.value.userId),
+        content: newMessage.value,
+        msgType: 'TEXT'
+      });
       newMessage.value = '';
     } else {
       ElMessage.error('消息发送失败，连接已断开');
