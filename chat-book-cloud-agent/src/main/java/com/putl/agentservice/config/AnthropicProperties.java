@@ -14,7 +14,7 @@ public class AnthropicProperties {
     @Data
     public static class Anthropic {
         private String apiKey;
-        private String baseUrl = "https://api.anthropic.com";
+        private String baseUrl = "https://https://api.minimaxi.com/anthropic";
         private Model model = new Model();
         private MaxTokens maxTokens = new MaxTokens();
         private Integer timeoutMs = 30000;
