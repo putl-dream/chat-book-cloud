@@ -30,9 +30,9 @@ public class AnthropicProperties {
 
     @Data
     public static class MaxTokens {
-        private Integer chat = 2048;
-        private Integer generate = 4096;
-        private Integer optimize = 4096;
-        private Integer notebook = 2048;
+        private Integer chat = 30000;
+        private Integer generate = 30000;
+        private Integer optimize = 30000;
+        private Integer notebook = 30000;
     }
 }

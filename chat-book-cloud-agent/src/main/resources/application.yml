@@ -39,7 +39,7 @@ agent:
         optimize: ${ANTHROPIC_OPTIMIZE_MODEL:MiniMax-M2.7}
         notebook: ${ANTHROPIC_NOTEBOOK_MODEL:MiniMax-M2.7}
       max-tokens:
-        chat: ${ANTHROPIC_CHAT_MAX_TOKENS:2048}
-        generate: ${ANTHROPIC_GENERATE_MAX_TOKENS:4096}
-        optimize: ${ANTHROPIC_OPTIMIZE_MAX_TOKENS:4096}
-        notebook: ${ANTHROPIC_NOTEBOOK_MAX_TOKENS:2048}
+        chat: ${ANTHROPIC_CHAT_MAX_TOKENS:30000}
+        generate: ${ANTHROPIC_GENERATE_MAX_TOKENS:30000}
+        optimize: ${ANTHROPIC_OPTIMIZE_MAX_TOKENS:30000}
+        notebook: ${ANTHROPIC_NOTEBOOK_MAX_TOKENS:30000}
