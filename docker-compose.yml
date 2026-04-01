@@ -134,7 +134,8 @@ services:
       MYSQL_HOST: mysql
       REDIS_HOST: redis
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
-      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.anthropic.com}
+      ANTHROPIC_BASE_URL: ${ANTHROPIC_BASE_URL:-https://api.minimaxi.com/anthropic}
+
     depends_on:
       - mysql
       - redis
