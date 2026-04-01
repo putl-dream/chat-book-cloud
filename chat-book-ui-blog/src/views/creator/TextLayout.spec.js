@@ -7,7 +7,16 @@ vi.mock('vue-router', () => ({
     useRoute: () => ({ params: { id: null } }),
     useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
     onBeforeRouteLeave: vi.fn(),
-    onBeforeRouteUpdate: vi.fn()
+    onBeforeRouteUpdate: vi.fn(),
+    createRouter: () => ({
+        push: vi.fn(),
+        replace: vi.fn(),
+        beforeEach: vi.fn(),
+        afterEach: vi.fn(),
+        currentRoute: { value: { name: 'Write' } },
+        isReady: () => Promise.resolve()
+    }),
+    createWebHistory: vi.fn()
 }));
 
 vi.mock('@/utils/websocket.js', () => ({
@@ -23,9 +32,20 @@ vi.mock('@/views/article/_domain/article.js', () => ({
     uploadFile: vi.fn()
 }));
 
+vi.mock('@/views/creator/_domain/agent.js', () => ({
+    loadAgentDraftImport: vi.fn(() => null),
+    clearAgentDraftImport: vi.fn()
+}));
+
 // Mock Element Plus and Tiptap dependencies to prevent mount errors
-vi.mock('element-plus', () => ({
-    ElMessage: { success: vi.fn(), warning: vi.fn(), error: vi.fn() },
+vi.mock('element-plus', () => {
+    const ElMessage = vi.fn();
+    ElMessage.success = vi.fn();
+    ElMessage.warning = vi.fn();
+    ElMessage.error = vi.fn();
+
+    return {
+    ElMessage,
     ElMessageBox: { confirm: vi.fn() },
     ElDialog: { template: '<div><slot></slot><slot name="footer"></slot></div>' },
     ElForm: { template: '<div><slot></slot></div>' },
@@ -42,12 +62,16 @@ vi.mock('element-plus', () => ({
     ElButton: { template: '<button><slot></slot></button>' },
     ElIcon: { template: '<i><slot></slot></i>' },
     ElText: { template: '<span><slot></slot></span>' }
-}));
+    };
+});
 
 vi.mock('@element-plus/icons-vue', () => ({
     Plus: { template: '<svg></svg>' },
     Close: { template: '<svg></svg>' },
-    Setting: { template: '<svg></svg>' }
+    Setting: { template: '<svg></svg>' },
+    DocumentChecked: { template: '<svg></svg>' },
+    Promotion: { template: '<svg></svg>' },
+    MagicStick: { template: '<svg></svg>' }
 }));
 
 vi.mock('@tiptap/vue-3', () => ({
@@ -63,7 +87,13 @@ vi.mock('@tiptap/vue-3', () => ({
 // Mock custom components
 vi.mock('@/views/creator/components/CreativeHeader.vue', () => ({ default: { template: '<header></header>' } }));
 vi.mock('@/views/creator/components/TiptapToolbar.vue', () => ({ default: { template: '<div></div>' } }));
+vi.mock('@/views/creator/components/EditorAiPanel.vue', () => ({ default: { template: '<div class="editor-ai-panel"></div>' } }));
+vi.mock('@/views/creator/components/PublishDialog.vue', () => ({ default: { template: '<div class="publish-dialog"></div>' } }));
 vi.mock('@/views/article/components/ArticleToc.vue', () => ({ default: { template: '<div></div>' } }));
+vi.mock('@/components/common/rich-text/RichTextEditor.vue', () => ({ default: { template: '<div class="rich-text-editor"></div>' } }));
+vi.mock('@/views/article/_domain/tag.js', () => ({
+    getTagsByType: vi.fn(() => Promise.resolve([]))
+}));
 
 describe('Text.vue Editor Layout Adjustments', () => {
     let wrapper;

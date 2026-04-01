@@ -9,6 +9,7 @@ import {TAG_TYPE_ENUM} from '@/constants';
 import SocketService, {formatWsUrl} from '@/utils/websocket.js';
 import {API_CONFIG} from '@/config/index.js';
 import {clearDraft, isDraftNewer, loadDraft, saveDraft} from '@/utils/draftStorage.js';
+import {clearAgentDraftImport, loadAgentDraftImport} from '@/views/creator/_domain/agent.js';
 import {applyRichTextEditorAttributes, createRichTextEditorAttributes, createRichTextExtensions} from '@/components/common/rich-text/editor-config.js';
 
 import {EDITOR_CONFIG, SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP} from '../_utils/constants.js';
@@ -256,6 +257,30 @@ export function useEditorLogic() {
         submitPublish();
     };
 
+    const applyImportedDraft = (payload) => {
+        if (!payload) {
+            return;
+        }
+
+        articleId.value = null;
+        lastSavedAt.value = null;
+        title.value = payload.title || '';
+        html.value = payload.content || '';
+        publishForm.value.category = payload.category ?? null;
+        publishForm.value.contentType = payload.contentType ?? 0;
+        publishForm.value.abstractText = payload.abstractText || '';
+        publishForm.value.cover = payload.cover || '';
+        publishForm.value.tagIds = payload.tagIds || [];
+
+        if (editor.value) {
+            editor.value.commands.setContent(payload.content || '', false);
+            wordCount.value = editor.value.storage.characterCount.characters();
+        }
+
+        hasUnsavedChanges.value = true;
+        saveState.value = SAVE_STATE_ENUM.LOCAL_CACHED;
+    };
+
     // =============== WebSocket Setup ===============
     const connectWebSocket = () => {
         const token = localStorage.getItem('token');
@@ -374,6 +399,14 @@ export function useEditorLogic() {
         loadTags();
 
         if (!articleId.value && userId.value) {
+            const importedDraft = loadAgentDraftImport();
+            if (importedDraft && hasMeaningfulContent(articleId.value, importedDraft.title, importedDraft.content)) {
+                applyImportedDraft(importedDraft);
+                clearAgentDraftImport();
+                ElMessage.success('已导入 Agent 草稿，请继续润色并保存');
+                return;
+            }
+
             const draft = loadDraft(userId.value, 'new');
             if (draft && hasMeaningfulContent(articleId.value, draft.title, draft.content)) {
                 try {

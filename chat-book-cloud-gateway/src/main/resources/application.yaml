@@ -138,6 +138,8 @@ authentication:
       pattern: /api/chat/unread/count
     - name: chat-read-api
       pattern: /api/chat/messages/read
+    - name: agent-api
+      pattern: /api/agent/**
     - name: interaction-praise-api
       pattern: /api/interaction/foot/praise
     - name: interaction-collection-api

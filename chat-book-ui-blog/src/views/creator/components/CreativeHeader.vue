@@ -133,6 +133,11 @@ const breadcrumbMap = {
         { key: 'creative', label: '创作中心', to: '/creative' },
         { key: 'drafts', label: '草稿箱' }
     ],
+    AgentStudio: [
+        { key: 'home', label: '首页', to: '/' },
+        { key: 'creative', label: '创作中心', to: '/creative' },
+        { key: 'agent', label: 'AI 创作' }
+    ],
     Write: [
         { key: 'home', label: '首页', to: '/' },
         { key: 'creative', label: '创作中心', to: '/creative' },

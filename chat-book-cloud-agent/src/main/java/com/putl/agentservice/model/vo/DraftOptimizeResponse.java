@@ -18,4 +18,13 @@ public class DraftOptimizeResponse {
 
     @Schema(description = "候选版本号")
     private Integer candidateVersionNo;
+
+    @Schema(description = "候选标题")
+    private String title;
+
+    @Schema(description = "候选摘要")
+    private String summary;
+
+    @Schema(description = "候选内容")
+    private String content;
 }

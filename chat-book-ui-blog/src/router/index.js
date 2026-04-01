@@ -123,6 +123,12 @@ const routes = [
                 component: () => import('@/views/creator/DraftBox.vue'),
                 meta: { requiresAuth: true, headerType: 'creative', sidebar: 'creative', showFooter: true }
             },
+            {
+                path: 'creative/agent/:sessionId?',
+                name: 'AgentStudio',
+                component: () => import('@/views/creator/AgentStudio.vue'),
+                meta: { requiresAuth: true, headerType: 'creative', sidebar: 'creative', showFooter: true }
+            },
             // ----- Less Layout Routes -----
             {
                 path: 'text',

@@ -1,5 +1,22 @@
 <template>
     <div class="dashboard c-creator-page u-animate-fade-in">
+        <section class="creator-agent-entry">
+            <div class="creator-agent-entry__content">
+                <span class="creator-agent-entry__eyebrow">MVP 已就绪</span>
+                <h2 class="creator-agent-entry__title">先和 Agent 把文章聊出来，再带着草稿进入正式编辑器</h2>
+                <p class="creator-agent-entry__text">
+                    Agent Studio 负责会话、首稿生成、候选优化和版本对比；正式编辑器负责继续润色、排版和发布。现在已经可以走完整的 MVP 闭环。
+                </p>
+            </div>
+
+            <div class="creator-agent-entry__actions">
+                <el-button class="creator-agent-entry__button" type="primary" @click="handleOpenAgent">
+                    开始 AI 创作
+                </el-button>
+                <span class="creator-agent-entry__hint">适合先讨论主题、结构和读者定位，再落成稿</span>
+            </div>
+        </section>
+
         <!-- 数据展示卡片 (Reserved) -->
         <!-- <div class="data-cards">
             <UserDataCard/>
@@ -81,6 +98,7 @@ const {
     pageSize,
     currentPage,
     handlePageChange,
+    handleOpenAgent,
     handleEdit,
     handleDelete
 } = useCreativeLogic();
@@ -90,3 +108,77 @@ const {
     formatDate
 } = useCreativeFormatter();
 </script>
+
+<style scoped>
+.creator-agent-entry {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) auto;
+    gap: 24px;
+    align-items: center;
+    margin-bottom: 24px;
+    padding: 28px 30px;
+    border: 1px solid rgba(255, 255, 255, 0.72);
+    border-radius: 26px;
+    background:
+        radial-gradient(circle at top right, rgba(209, 96, 61, 0.14), transparent 32%),
+        linear-gradient(135deg, rgba(255, 255, 255, 0.82), rgba(248, 250, 252, 0.86));
+    box-shadow: 0 24px 42px rgba(15, 23, 42, 0.06);
+}
+
+.creator-agent-entry__eyebrow {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 12px;
+    border-radius: 999px;
+    background: rgba(22, 50, 79, 0.08);
+    color: #16324f;
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.creator-agent-entry__title {
+    margin: 14px 0 10px;
+    color: #13273f;
+    font-size: 28px;
+    line-height: 1.15;
+    letter-spacing: -0.04em;
+}
+
+.creator-agent-entry__text,
+.creator-agent-entry__hint {
+    margin: 0;
+    color: rgba(19, 39, 63, 0.7);
+    font-size: 14px;
+    line-height: 1.8;
+}
+
+.creator-agent-entry__actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 12px;
+}
+
+.creator-agent-entry__button {
+    min-width: 156px;
+    border: none;
+    border-radius: 999px;
+    background: linear-gradient(135deg, #d1603d, #c04e2b);
+    box-shadow: 0 14px 28px rgba(209, 96, 61, 0.22);
+    font-weight: 600;
+}
+
+@media (max-width: 900px) {
+    .creator-agent-entry {
+        grid-template-columns: 1fr;
+        padding: 24px;
+    }
+
+    .creator-agent-entry__actions {
+        align-items: stretch;
+    }
+}
+</style>

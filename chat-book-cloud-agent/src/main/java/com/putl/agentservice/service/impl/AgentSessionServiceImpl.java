@@ -14,6 +14,8 @@ import com.putl.agentservice.model.vo.NotebookSummary;
 import com.putl.agentservice.service.AgentNotebookCacheService;
 import com.putl.agentservice.service.AgentNotebookService;
 import com.putl.agentservice.service.AgentSessionService;
+import com.putl.articleservice.api.ArticleClient;
+import com.putl.articleservice.api.dto.DraftDetailDTO;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import org.springframework.stereotype.Service;
@@ -28,17 +30,20 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     private final AgentNotebookService agentNotebookService;
     private final AgentNotebookCacheService agentNotebookCacheService;
     private final AnthropicProperties anthropicProperties;
+    private final ArticleClient articleClient;
 
     public AgentSessionServiceImpl(AgentSessionMapper agentSessionMapper,
                                    AgentMessageMapper agentMessageMapper,
                                    AgentNotebookService agentNotebookService,
                                    AgentNotebookCacheService agentNotebookCacheService,
-                                   AnthropicProperties anthropicProperties) {
+                                   AnthropicProperties anthropicProperties,
+                                   ArticleClient articleClient) {
         this.agentSessionMapper = agentSessionMapper;
         this.agentMessageMapper = agentMessageMapper;
         this.agentNotebookService = agentNotebookService;
         this.agentNotebookCacheService = agentNotebookCacheService;
         this.anthropicProperties = anthropicProperties;
+        this.articleClient = articleClient;
     }
 
     @Override
@@ -68,9 +73,14 @@ public class AgentSessionServiceImpl implements AgentSessionService {
         List<AgentMessageDO> messages = agentMessageMapper.selectList(Wrappers.<AgentMessageDO>lambdaQuery()
                 .eq(AgentMessageDO::getSessionId, sessionId)
                 .orderByAsc(AgentMessageDO::getId));
+        DraftDetailDTO draft = null;
+        if (session != null && session.getTargetDraftId() != null) {
+            draft = articleClient.getDraftDetail(session.getTargetDraftId()).getData();
+        }
         return AgentSessionDetailResponse.builder()
                 .session(session)
                 .messages(messages)
+                .draft(draft)
                 .build();
     }
 
