@@ -398,7 +398,7 @@ export function useEditorLogic() {
         connectWebSocket();
         loadTags();
 
-        if (!articleId.value && userId.value) {
+        if (!articleId.value) {
             const importedDraft = loadAgentDraftImport();
             if (importedDraft && hasMeaningfulContent(articleId.value, importedDraft.title, importedDraft.content)) {
                 applyImportedDraft(importedDraft);
@@ -406,7 +406,9 @@ export function useEditorLogic() {
                 ElMessage.success('已导入 Agent 草稿，请继续润色并保存');
                 return;
             }
+        }
 
+        if (!articleId.value && userId.value) {
             const draft = loadDraft(userId.value, 'new');
             if (draft && hasMeaningfulContent(articleId.value, draft.title, draft.content)) {
                 try {
