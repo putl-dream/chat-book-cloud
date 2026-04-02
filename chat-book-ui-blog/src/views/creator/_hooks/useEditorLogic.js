@@ -5,15 +5,15 @@ import {useEditor} from '@tiptap/vue-3';
 
 import {publishArticle, saveDraftArticle} from '@/views/article/_domain/article.js';
 import {getTagsByType} from '@/views/article/_domain/tag.js';
-import {TAG_TYPE_ENUM} from '@/constants';
+import {ARTICLE_TYPE_ENUM, TAG_TYPE_ENUM} from '@/constants';
 import SocketService, {formatWsUrl} from '@/utils/websocket.js';
 import {API_CONFIG} from '@/config/index.js';
 import {clearDraft, isDraftNewer, loadDraft, saveDraft} from '@/utils/draftStorage.js';
-import {clearAgentDraftImport, loadAgentDraftImport} from '@/views/creator/_domain/agent.js';
+import {clearAgentDraftImport, extractArticleSummary, loadAgentDraftImport} from '@/views/creator/_domain/agent.js';
 import {applyRichTextEditorAttributes, createRichTextEditorAttributes, createRichTextExtensions} from '@/components/common/rich-text/editor-config.js';
 
 import {EDITOR_CONFIG, SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP} from '../_utils/constants.js';
-import {buildArticlePayload, hasMeaningfulContent} from '../_domain/editor.js';
+import {buildArticlePayload, extractTextSummarySource, hasMeaningfulContent} from '../_domain/editor.js';
 
 import {useEditorLayout} from './useEditorLayout.js';
 import {useEditorForm} from './useEditorForm.js';
@@ -37,8 +37,10 @@ export function useEditorLogic() {
     const {
         publishDialogVisible,
         publishForm,
+        topicTags,
         techTags,
         pathTags,
+        selectedTopicTags,
         selectedTechTags,
         selectedPathTag,
         updateTagIds,
@@ -55,6 +57,7 @@ export function useEditorLogic() {
     const articleId = ref(route.params.id ? Number(route.params.id) : null);
     const lastSavedAt = ref(null);
     const isSaving = ref(false);
+    const summaryGenerating = ref(false);
     const saveState = ref(SAVE_STATE_ENUM.SAVED);
     const hasUnsavedChanges = ref(false);
     const isHydrating = ref(false);
@@ -112,15 +115,39 @@ export function useEditorLogic() {
     // =============== Actions / Domain Integration ===============
     const loadTags = async () => {
         try {
-            const [techRes, pathRes] = await Promise.all([
+            const [topicRes, techRes, pathRes] = await Promise.all([
+                getTagsByType(TAG_TYPE_ENUM.TOPIC),
                 getTagsByType(TAG_TYPE_ENUM.TECH),
                 getTagsByType(TAG_TYPE_ENUM.PATH)
             ]);
+            topicTags.value = topicRes || [];
             techTags.value = techRes || [];
             pathTags.value = pathRes || [];
         } catch (error) {
             console.error('加载标签失败:', error);
         }
+    };
+
+    const syncSelectedTags = (tagIds = []) => {
+        const nextTagIds = Array.isArray(tagIds) ? tagIds : [];
+        const topicIds = topicTags.value.map(tag => tag.id);
+        const techIds = techTags.value.map(tag => tag.id);
+        const pathIds = pathTags.value.map(tag => tag.id);
+
+        selectedTopicTags.value = nextTagIds.filter(id => topicIds.includes(id));
+        selectedTechTags.value = nextTagIds.filter(id => techIds.includes(id));
+        selectedPathTag.value = nextTagIds.find(id => pathIds.includes(id)) || null;
+    };
+
+    const applyPublishFormState = (sourceData = {}) => {
+        publishForm.value.category = sourceData.category ?? null;
+        publishForm.value.contentType = sourceData.contentType ?? 0;
+        publishForm.value.abstractText = sourceData.abstractText || '';
+        publishForm.value.articleType = sourceData.articleType || ARTICLE_TYPE_ENUM.ORIGINAL;
+        publishForm.value.creationStatements = Array.isArray(sourceData.creationStatements) ? sourceData.creationStatements : [];
+        publishForm.value.cover = sourceData.cover || '';
+        publishForm.value.tagIds = sourceData.tagIds || [];
+        syncSelectedTags(publishForm.value.tagIds);
     };
 
     const applyCommandResult = (result, message) => {
@@ -250,11 +277,41 @@ export function useEditorLogic() {
 
     const confirmPublish = () => {
         if (!title.value) return ElMessage.warning('请输入标题');
-        if (publishForm.value.category === null || publishForm.value.category === undefined) {
-            return ElMessage.warning('请选择分类');
+        if (!publishForm.value.tagIds || publishForm.value.tagIds.length === 0) {
+            return ElMessage.warning('请至少选择一个文章标签');
+        }
+        if (!publishForm.value.articleType) {
+            return ElMessage.warning('请选择文章类型');
         }
         publishDialogVisible.value = false;
         submitPublish();
+    };
+
+    const handleExtractSummary = async () => {
+        const contentSource = extractTextSummarySource(html.value);
+        if (!contentSource) {
+            ElMessage.warning('请先输入正文内容');
+            return;
+        }
+
+        summaryGenerating.value = true;
+        try {
+            const result = await extractArticleSummary({
+                title: title.value,
+                content: contentSource
+            });
+            publishForm.value.abstractText = result?.summary || '';
+            if (publishForm.value.abstractText) {
+                ElMessage.success('AI 摘要已提取');
+            } else {
+                ElMessage.warning('未提取到可用摘要，请手动补充');
+            }
+        } catch (error) {
+            console.error('提取摘要失败:', error);
+            ElMessage.error('AI 摘要提取失败，请稍后重试');
+        } finally {
+            summaryGenerating.value = false;
+        }
     };
 
     const applyImportedDraft = (payload) => {
@@ -266,11 +323,7 @@ export function useEditorLogic() {
         lastSavedAt.value = null;
         title.value = payload.title || '';
         html.value = payload.content || '';
-        publishForm.value.category = payload.category ?? null;
-        publishForm.value.contentType = payload.contentType ?? 0;
-        publishForm.value.abstractText = payload.abstractText || '';
-        publishForm.value.cover = payload.cover || '';
-        publishForm.value.tagIds = payload.tagIds || [];
+        applyPublishFormState(payload);
 
         if (editor.value) {
             editor.value.commands.setContent(payload.content || '', false);
@@ -330,22 +383,11 @@ export function useEditorLogic() {
             articleId.value = sourceData.id || articleId.value;
             title.value = sourceData.title || '';
             html.value = sourceData.content || '';
-            publishForm.value.category = sourceData.category ?? null;
-            publishForm.value.contentType = sourceData.contentType ?? 0;
-            publishForm.value.abstractText = sourceData.abstractText || '';
-            publishForm.value.cover = sourceData.cover || '';
-            publishForm.value.tagIds = sourceData.tagIds || [];
+            applyPublishFormState(sourceData);
 
             if (!restoreLocalDraft) lastSavedAt.value = sourceData.updatedAt || null;
             saveState.value = restoreLocalDraft ? SAVE_STATE_ENUM.LOCAL_CACHED : (sourceData.status === 0 ? SAVE_STATE_ENUM.DRAFT : SAVE_STATE_ENUM.PUBLISHED);
             hasUnsavedChanges.value = restoreLocalDraft;
-
-            if (sourceData.tagIds && sourceData.tagIds.length > 0) {
-                const techIds = techTags.value.filter(t => t.type === TAG_TYPE_ENUM.TECH).map(t => t.id);
-                const pathIds = pathTags.value.filter(t => t.type === TAG_TYPE_ENUM.PATH).map(t => t.id);
-                selectedTechTags.value = sourceData.tagIds.filter(id => techIds.includes(id));
-                selectedPathTag.value = sourceData.tagIds.find(id => pathIds.includes(id)) || null;
-            }
 
             if (editor.value) {
                 editor.value.commands.setContent(sourceData.content || '', false);
@@ -395,8 +437,8 @@ export function useEditorLogic() {
 
     onMounted(async () => {
         window.addEventListener('beforeunload', handleBeforeUnload);
+        await loadTags();
         connectWebSocket();
-        loadTags();
 
         if (!articleId.value) {
             const importedDraft = loadAgentDraftImport();
@@ -419,11 +461,7 @@ export function useEditorLogic() {
                     });
                     title.value = draft.title || '';
                     html.value = draft.content || '';
-                    publishForm.value.category = draft.category ?? null;
-                    publishForm.value.contentType = draft.contentType ?? 0;
-                    publishForm.value.abstractText = draft.abstractText || '';
-                    publishForm.value.cover = draft.cover || '';
-                    publishForm.value.tagIds = draft.tagIds || [];
+                    applyPublishFormState(draft);
 
                     if (editor.value) {
                         editor.value.commands.setContent(draft.content || '', false);
@@ -456,13 +494,16 @@ export function useEditorLogic() {
         wordCount,
         publishDialogVisible,
         publishForm,
+        topicTags,
         layoutState,
         dragging,
         techTags,
         pathTags,
+        selectedTopicTags,
         selectedTechTags,
         selectedPathTag,
         isSaving,
+        summaryGenerating,
         saveState,
         statusText,
         contentWidth,
@@ -476,6 +517,7 @@ export function useEditorLogic() {
         updateTagIds,
         handleCoverUpload,
         beforeCoverUpload,
+        handleExtractSummary,
         toggleLeft,
         toggleRight,
         startDrag,

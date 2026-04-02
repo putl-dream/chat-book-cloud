@@ -23,13 +23,18 @@ export function useArticleTagCard(tagIdsRef) {
         return articleTags.value.filter(tag => tag.type === TAG_TYPE_ENUM.PATH);
     });
 
+    const topicTags = computed(() => {
+        return articleTags.value.filter(tag => tag.type === TAG_TYPE_ENUM.TOPIC);
+    });
+
     const loadAllTags = async () => {
         try {
-            const [techRes, pathRes] = await Promise.all([
+            const [topicRes, techRes, pathRes] = await Promise.all([
+                getTagsByType(TAG_TYPE_ENUM.TOPIC),
                 getTagsByType(TAG_TYPE_ENUM.TECH),
                 getTagsByType(TAG_TYPE_ENUM.PATH)
             ]);
-            allTags.value = [...(techRes || []), ...(pathRes || [])];
+            allTags.value = [...(topicRes || []), ...(techRes || []), ...(pathRes || [])];
         } catch (error) {
             console.error('加载标签失败:', error);
         }
@@ -41,6 +46,7 @@ export function useArticleTagCard(tagIdsRef) {
 
     return {
         articleTags,
+        topicTags,
         techTags,
         pathTags,
         loadAllTags,

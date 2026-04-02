@@ -32,7 +32,7 @@ export const adminNavigation: NavGroup[] = [
       {
         href: "/tags",
         label: "标签管理",
-        description: "维护技术栈与学习路径两类标签体系。",
+        description: "维护主题、技术栈与学习路径三类标签体系。",
       },
       {
         href: "/interactions",
@@ -79,6 +79,7 @@ export const contentTypeMap: Record<number, string> = {
 };
 
 export const tagTypeMap: Record<number, string> = {
+  3: "主题标签",
   1: "技术栈",
   2: "学习路径",
 };

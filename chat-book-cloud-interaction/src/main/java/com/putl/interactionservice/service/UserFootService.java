@@ -3,9 +3,9 @@ package com.putl.interactionservice.service;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.putl.articleservice.api.dto.ArticleListVO;
 import com.putl.interactionservice.entity.UserFootDO;
-import com.putl.interactionservice.vo.NotificationVO;
-import com.putl.interactionservice.vo.UserFootListVO;
-import com.putl.interactionservice.vo.UserFootVO;
+import com.putl.interactionservice.controller.vo.NotificationVO;
+import com.putl.interactionservice.controller.vo.UserFootListVO;
+import com.putl.interactionservice.controller.vo.UserFootVO;
 
 import java.util.List;
 

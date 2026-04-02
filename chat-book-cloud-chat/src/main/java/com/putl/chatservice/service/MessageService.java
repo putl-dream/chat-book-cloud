@@ -1,6 +1,6 @@
 package com.putl.chatservice.service;
 
-import com.putl.chatservice.vo.MessageVO;
+import com.putl.chatservice.controller.vo.MessageVO;
 
 import java.util.List;
 

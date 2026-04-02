@@ -1,4 +1,4 @@
-package com.putl.interactionservice.vo;
+package com.putl.interactionservice.controller.vo;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;

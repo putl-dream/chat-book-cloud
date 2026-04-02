@@ -1,4 +1,4 @@
-package com.putl.chatservice.vo;
+package com.putl.chatservice.controller.vo;
 
 import lombok.Data;
 

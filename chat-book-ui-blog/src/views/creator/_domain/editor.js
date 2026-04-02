@@ -37,7 +37,23 @@ export function buildArticlePayload(rawData) {
         contentType: rawData.publishForm.contentType,
         tagIds: rawData.publishForm.tagIds,
         abstractText: rawData.publishForm.abstractText,
+        articleType: rawData.publishForm.articleType,
+        creationStatements: rawData.publishForm.creationStatements,
         cover: rawData.publishForm.cover,
         updatedAt: rawData.lastSavedAt
     };
+}
+
+export function extractTextSummarySource(html) {
+    if (!html) {
+        return '';
+    }
+    return html
+        .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+        .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+        .replace(/<[^>]+>/g, ' ')
+        .replace(/&nbsp;/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim()
+        .slice(0, 12000);
 }

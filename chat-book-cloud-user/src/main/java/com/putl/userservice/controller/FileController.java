@@ -1,5 +1,6 @@
 package com.putl.userservice.controller;
 
+import com.fasterxml.jackson.databind.annotation.JsonSerialize;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.minio.jackson.FileUrlSerializer;
 import fun.amireux.chat.book.minio.utils.MinioUpdateUtil;
@@ -14,9 +15,6 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-
-import com.fasterxml.jackson.databind.annotation.JsonSerialize;
-import com.putl.userservice.common.ReqInfoContext;
 
 import java.util.UUID;
 

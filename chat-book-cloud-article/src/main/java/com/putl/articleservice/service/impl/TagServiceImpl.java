@@ -116,14 +116,18 @@ public class TagServiceImpl implements TagService {
             throw new com.putl.articleservice.exception.BusinessException(400, "部分标签不存在");
         }
 
-        // 技术栈标签(type=1)最多3个，学习路径标签(type=2)最多1个
+        // 技术栈标签(type=1)最多3个，学习路径标签(type=2)最多1个，主题标签(type=3)最多5个
         long techCount = existingTags.stream().filter(t -> t.getType() == 1).count();
         long pathCount = existingTags.stream().filter(t -> t.getType() == 2).count();
+        long topicCount = existingTags.stream().filter(t -> t.getType() == 3).count();
         if (techCount > 3) {
             throw new com.putl.articleservice.exception.BusinessException(400, "技术栈标签最多选择3个");
         }
         if (pathCount > 1) {
             throw new com.putl.articleservice.exception.BusinessException(400, "学习路径标签最多选择1个");
+        }
+        if (topicCount > 5) {
+            throw new com.putl.articleservice.exception.BusinessException(400, "主题标签最多选择5个");
         }
 
         // 批量新增关联，避免 N+1 插入

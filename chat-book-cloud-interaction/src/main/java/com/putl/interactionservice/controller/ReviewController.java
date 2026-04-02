@@ -1,8 +1,8 @@
 package com.putl.interactionservice.controller;
 
 import com.putl.interactionservice.service.ReviewService;
-import com.putl.interactionservice.vo.ReviewListVO;
-import com.putl.interactionservice.vo.ReviewVO;
+import com.putl.interactionservice.controller.vo.ReviewListVO;
+import com.putl.interactionservice.controller.vo.ReviewVO;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;

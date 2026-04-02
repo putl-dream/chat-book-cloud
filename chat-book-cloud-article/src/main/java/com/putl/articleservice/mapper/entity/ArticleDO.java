@@ -49,6 +49,12 @@ public class ArticleDO implements Serializable {
     //摘要
     private String abstractText;
 
+    // 文章类型：ORIGINAL/REPRINT/TRANSLATION
+    private String articleType;
+
+    // 创作声明：逗号分隔 PERSONAL_VIEW/NETWORK_SOURCE/AI_ASSISTED
+    private String creationStatement;
+
     //文章状态 0-待审核 1-审核通过 -1审核失败
     private ArticleStatus status;
 

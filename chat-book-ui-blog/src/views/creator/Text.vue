@@ -118,8 +118,11 @@
         </div>
 
         <PublishDialog v-model="publishDialogVisible" :publish-form="publishForm" :category-options="categoryOptions"
-            :tech-tags="techTags" :path-tags="pathTags" :selected-tech-tags="selectedTechTags"
-            :selected-path-tag="selectedPathTag" @change-tech-tags="handleTechTagsChange"
+            :topic-tags="topicTags" :tech-tags="techTags" :path-tags="pathTags" :selected-topic-tags="selectedTopicTags"
+            :selected-tech-tags="selectedTechTags" :selected-path-tag="selectedPathTag" @change-topic-tags="handleTopicTagsChange"
+            @extract-summary="handleExtractSummary"
+            :summary-generating="summaryGenerating"
+            @change-tech-tags="handleTechTagsChange"
             @change-path-tag="handlePathTagChange"
             :handle-cover-upload="handleCoverUpload" :before-cover-upload="beforeCoverUpload"
             @confirm="confirmPublish" />
@@ -148,13 +151,16 @@ const {
     wordCount,
     publishDialogVisible,
     publishForm,
+    topicTags,
     layoutState,
     dragging,
     techTags,
     pathTags,
+    selectedTopicTags,
     selectedTechTags,
     selectedPathTag,
     isSaving,
+    summaryGenerating,
     saveState,
     statusText,
     contentWidth,
@@ -163,6 +169,7 @@ const {
     updateTagIds,
     handleCoverUpload,
     beforeCoverUpload,
+    handleExtractSummary,
     toggleLeft,
     toggleRight,
     startDrag,
@@ -187,6 +194,11 @@ const { articleTheme } = useSiteTheme();
 
 const onInput = () => {
     queueSaveFlow();
+};
+
+const handleTopicTagsChange = (value) => {
+    selectedTopicTags.value = value;
+    updateTagIds();
 };
 
 const handleTechTagsChange = (value) => {

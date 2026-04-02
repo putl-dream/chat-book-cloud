@@ -3,8 +3,8 @@ package com.putl.interactionservice.service;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
 import com.putl.interactionservice.entity.ReviewDO;
-import com.putl.interactionservice.vo.ReviewListVO;
-import com.putl.interactionservice.vo.ReviewVO;
+import com.putl.interactionservice.controller.vo.ReviewListVO;
+import com.putl.interactionservice.controller.vo.ReviewVO;
 
 import java.time.LocalDateTime;
 import java.util.List;

@@ -26,7 +26,7 @@ public class TagDO implements Serializable {
     private String name;
 
     /**
-     * 标签类型：1-技术栈 2-学习路径
+     * 标签类型：1-技术栈 2-学习路径 3-主题标签
      */
     private Integer type;
 

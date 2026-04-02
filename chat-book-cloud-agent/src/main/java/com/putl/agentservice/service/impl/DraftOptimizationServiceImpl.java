@@ -2,9 +2,11 @@ package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.model.dto.AdoptDraftVersionRequest;
+import com.putl.agentservice.model.dto.ExtractSummaryRequest;
 import com.putl.agentservice.model.dto.OptimizeDraftRequest;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
+import com.putl.agentservice.model.vo.ArticleSummaryResponse;
 import com.putl.agentservice.model.vo.DraftOptimizeResponse;
 import com.putl.agentservice.service.DraftOptimizationService;
 import com.putl.articleservice.api.ArticleClient;
@@ -50,6 +52,17 @@ public class DraftOptimizationServiceImpl implements DraftOptimizationService {
                 .summary(optimized.getData().getSummary())
                 .content(optimized.getData().getContent())
                 .build();
+    }
+
+    @Override
+    public ArticleSummaryResponse extractSummary(ExtractSummaryRequest request) {
+        AiInvocationResult<ArticleSummaryResponse> summarized = articleAiGateway.extractSummary(
+                request == null ? null : request.getTitle(),
+                request == null ? null : request.getContent());
+        if (summarized == null || summarized.getData() == null) {
+            return ArticleSummaryResponse.builder().summary("").build();
+        }
+        return summarized.getData();
     }
 
     @Override

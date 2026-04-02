@@ -21,7 +21,7 @@ public class TagVO {
     @Schema(description = "标签名称")
     private String name;
 
-    @Schema(description = "标签类型：1-技术栈 2-学习路径")
+    @Schema(description = "标签类型：1-技术栈 2-学习路径 3-主题标签")
     private Integer type;
 
     @Schema(description = "标签颜色")

@@ -4,12 +4,17 @@
       <p class="eyebrow">Tag Taxonomy</p>
       <h1>标签体系与内容组织</h1>
       <p class="hero-copy">
-        当前项目将标签分为技术栈和学习路径两类。新版 Vue 管理端保留了列表、筛选、创建、编辑和删除流程，
+        当前项目将标签分为主题标签、技术栈和学习路径三类。新版 Vue 管理端保留了列表、筛选、创建、编辑和删除流程，
         并直接复用原有后台接口契约。
       </p>
     </div>
 
     <div class="metric-grid compact-grid">
+      <article class="metric-card">
+        <p class="metric-label">主题标签</p>
+        <h2>{{ topicCount }}</h2>
+        <p class="metric-detail">用于承担文章主分类职责</p>
+      </article>
       <article class="metric-card">
         <p class="metric-label">技术栈标签</p>
         <h2>{{ techCount }}</h2>
@@ -44,6 +49,7 @@
           <span>标签类型</span>
           <select :value="currentType ? String(currentType) : 'all'" @change="handleTypeChange">
             <option value="all">全部类型</option>
+            <option value="3">主题标签</option>
             <option value="1">技术栈</option>
             <option value="2">学习路径</option>
           </select>
@@ -161,6 +167,7 @@
           <label class="field">
             <span>标签类型</span>
             <select v-model.number="formValues.type">
+              <option :value="3">主题标签</option>
               <option :value="1">技术栈</option>
               <option :value="2">学习路径</option>
             </select>
@@ -214,7 +221,7 @@ const router = useRouter();
 
 const initialFormState: AdminTagFormValues = {
   name: "",
-  type: 1,
+  type: 3,
   color: "#0f766e",
   sort: 100,
 };
@@ -237,8 +244,9 @@ const page = computed(() => parsePositiveInt(route.query.page, 1));
 const size = computed(() => parsePositiveInt(route.query.size, 12));
 const currentType = computed(() => {
   const type = parsePositiveInt(route.query.type, 0);
-  return type === 1 || type === 2 ? type : undefined;
+  return type === 1 || type === 2 || type === 3 ? type : undefined;
 });
+const topicCount = computed(() => allTags.value.filter((tag) => tag.type === 3).length);
 const techCount = computed(() => allTags.value.filter((tag) => tag.type === 1).length);
 const pathCount = computed(() => allTags.value.filter((tag) => tag.type === 2).length);
 
@@ -278,7 +286,7 @@ function openEditDialog(tag: AdminTag) {
   formValues.value = {
     id: tag.id,
     name: tag.name,
-    type: tag.type === 2 ? 2 : 1,
+    type: tag.type === 2 ? 2 : tag.type === 1 ? 1 : 3,
     color: tag.color,
     sort: tag.sort,
   };
