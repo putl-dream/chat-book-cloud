@@ -4,6 +4,7 @@ import 'element-plus/dist/index.css'
 // import store from './store'; // 引入 Vuex store
 import ElementPlus from 'element-plus'
 import Router from "@/router/index.js";
+import pinia from '@/store/index.js';
 import App from './App.vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { initSiteTheme } from '@/composables/useSiteTheme.js'
@@ -52,6 +53,7 @@ for (const [key, component] of Object.entries(ElementPlusIconsVue)) {
 }
 
 // app.use(store)
+app.use(pinia)
 app.use(ElementPlus)
 app.use(Router)
 Router.isReady().then(() => {
