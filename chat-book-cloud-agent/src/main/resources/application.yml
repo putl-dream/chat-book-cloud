@@ -32,7 +32,7 @@ agent:
     anthropic:
       api-key: ${ANTHROPIC_API_KEY:}
       base-url: ${ANTHROPIC_BASE_URL:https://api.minimaxi.com/anthropic}
-      timeout-ms: ${ANTHROPIC_TIMEOUT_MS:30000}
+      timeout-ms: ${ANTHROPIC_TIMEOUT_MS:300000}
       model:
         chat: ${ANTHROPIC_CHAT_MODEL:MiniMax-M2.7}
         generate: ${ANTHROPIC_GENERATE_MODEL:MiniMax-M2.7}
