@@ -42,6 +42,7 @@ export const CONTENT_TYPE_NAMES = {
 export const TAG_TYPE_ENUM = {
     TECH: 1,    // 技术栈
     PATH: 2,    // 学习路径
+    TOPIC: 3,   // 主题标签
 };
 
 /**
@@ -50,6 +51,37 @@ export const TAG_TYPE_ENUM = {
 export const TAG_TYPE_NAMES = {
     [TAG_TYPE_ENUM.TECH]: '技术栈',
     [TAG_TYPE_ENUM.PATH]: '学习路径',
+    [TAG_TYPE_ENUM.TOPIC]: '主题标签',
+};
+
+/**
+ * 文章类型
+ */
+export const ARTICLE_TYPE_ENUM = {
+    ORIGINAL: 'ORIGINAL',
+    REPRINT: 'REPRINT',
+    TRANSLATION: 'TRANSLATION',
+};
+
+export const ARTICLE_TYPE_NAMES = {
+    [ARTICLE_TYPE_ENUM.ORIGINAL]: '原创',
+    [ARTICLE_TYPE_ENUM.REPRINT]: '转载',
+    [ARTICLE_TYPE_ENUM.TRANSLATION]: '翻译',
+};
+
+/**
+ * 创作声明
+ */
+export const CREATION_STATEMENT_ENUM = {
+    PERSONAL_VIEW: 'PERSONAL_VIEW',
+    NETWORK_SOURCE: 'NETWORK_SOURCE',
+    AI_ASSISTED: 'AI_ASSISTED',
+};
+
+export const CREATION_STATEMENT_NAMES = {
+    [CREATION_STATEMENT_ENUM.PERSONAL_VIEW]: '个人观点',
+    [CREATION_STATEMENT_ENUM.NETWORK_SOURCE]: '网络来源',
+    [CREATION_STATEMENT_ENUM.AI_ASSISTED]: 'AI辅助创作',
 };
 
 /**

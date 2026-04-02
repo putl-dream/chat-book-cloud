@@ -126,7 +126,7 @@ export type ReviewArticle = {
 export type AdminTag = {
   id: number;
   name: string;
-  type: 1 | 2 | number;
+  type: 1 | 2 | 3 | number;
   color: string;
   sort: number;
   relatedArticles?: number;
@@ -135,7 +135,7 @@ export type AdminTag = {
 export type AdminTagFormValues = {
   id?: number;
   name: string;
-  type: 1 | 2;
+  type: 1 | 2 | 3;
   color: string;
   sort: number;
 };

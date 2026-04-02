@@ -1,5 +1,6 @@
 import request from '@/utils/http.js';
 import { buildRichTextEditorHtml } from '@/components/common/rich-text/content-pipeline.js';
+import { ARTICLE_TYPE_ENUM, CREATION_STATEMENT_ENUM } from '@/constants';
 
 export const AGENT_SCENE_TYPE = Object.freeze({
     CREATE: 'CREATE',
@@ -40,6 +41,12 @@ export function adoptAgentDraftVersion(params) {
     return request.post('/agent/draft/version/adopt', params);
 }
 
+export function extractArticleSummary(params) {
+    return request.post('/agent/draft/summary', params, {
+        timeout: 60000
+    });
+}
+
 export function normalizeAgentDraft(source = {}) {
     return {
         draftId: source.draftId ?? null,
@@ -63,6 +70,8 @@ export function saveAgentDraftImport(draft) {
         category: null,
         contentType: 0,
         tagIds: [],
+        articleType: ARTICLE_TYPE_ENUM.ORIGINAL,
+        creationStatements: [CREATION_STATEMENT_ENUM.AI_ASSISTED],
         cover: '',
         savedAt: new Date().toISOString()
     };

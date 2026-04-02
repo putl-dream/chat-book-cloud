@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+
 import { mount } from '@vue/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Text from './Text.vue';
@@ -34,7 +36,8 @@ vi.mock('@/views/article/_domain/article.js', () => ({
 
 vi.mock('@/views/creator/_domain/agent.js', () => ({
     loadAgentDraftImport: vi.fn(() => null),
-    clearAgentDraftImport: vi.fn()
+    clearAgentDraftImport: vi.fn(),
+    extractArticleSummary: vi.fn(() => Promise.resolve({ summary: 'AI 摘要' }))
 }));
 
 // Mock Element Plus and Tiptap dependencies to prevent mount errors

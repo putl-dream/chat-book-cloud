@@ -63,7 +63,8 @@ vi.mock('@/views/article/_domain/article.js', () => ({
 
 vi.mock('@/views/creator/_domain/agent.js', () => ({
     loadAgentDraftImport: mockLoadAgentDraftImport,
-    clearAgentDraftImport: mockClearAgentDraftImport
+    clearAgentDraftImport: mockClearAgentDraftImport,
+    extractArticleSummary: vi.fn(() => Promise.resolve({ summary: 'AI 摘要' }))
 }));
 
 // Mock Element Plus and Tiptap dependencies to prevent mount errors

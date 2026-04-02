@@ -31,4 +31,10 @@ public final class PromptTemplateConstants {
      * 要求模型输出 JSON NotebookSummary 格式
      */
     public static final String NOTEBOOK_SUMMARIZE = "notebook_summarize_v1.txt";
+
+    /**
+     * 正文摘要提取模板，用于 extractSummary() 方法。
+     * 要求模型输出 JSON {summary}
+     */
+    public static final String ARTICLE_SUMMARY = "article_summary_v1.txt";
 }

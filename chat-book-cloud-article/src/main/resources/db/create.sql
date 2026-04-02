@@ -9,6 +9,8 @@ create table article
     category      tinyint      default 4                 not null comment '分类 0-后端 1-前端 2-MySQL 3-算法 4-other',
     content_type  tinyint      default 2                 not null comment '内容类型 0-学习/教程 1-实战/项目 2-未分类',
     abstract_text varchar(255) default ''                not null comment '摘要',
+    article_type  varchar(16)  default ''                not null comment '文章类型 ORIGINAL/REPRINT/TRANSLATION',
+    creation_statement varchar(128) default ''           not null comment '创作声明，逗号分隔 PERSONAL_VIEW/NETWORK_SOURCE/AI_ASSISTED',
     status        tinyint      default 0                 not null comment '文章状态 0-草稿、1待审核、2已发布、-1删除',
     create_time   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
     update_time   datetime     default CURRENT_TIMESTAMP not null comment '最后更新时间'
@@ -19,7 +21,7 @@ create table tag
 (
     id          int auto_increment primary key,
     name        varchar(32)  not null comment '标签名称',
-    type        tinyint      not null default 1 comment '标签类型 1-技术栈 2-学习路径',
+    type        tinyint      not null default 1 comment '标签类型 1-技术栈 2-学习路径 3-主题标签',
     color       varchar(16)  default '#409EFF' comment '标签颜色',
     sort        int          default 0 comment '排序权重',
     create_time datetime     default CURRENT_TIMESTAMP,
@@ -41,21 +43,28 @@ create table article_tag
 
 -- 初始化预置标签数据
 insert into tag (name, type, color, sort) values
+-- 主题标签 (type=3)
+('AI / 大模型', 3, '#7C3AED', 1),
+('技术选型', 3, '#0F766E', 2),
+('架构设计', 3, '#EA580C', 3),
+('工程实践', 3, '#2563EB', 4),
+('产品思考', 3, '#BE185D', 5),
+('行业观察', 3, '#475569', 6),
 -- 技术栈标签 (type=1)
-('Java', 1, '#B07219', 1),
-('Python', 1, '#3572A5', 2),
-('Go', 1, '#00ADD8', 3),
-('Vue', 1, '#41B883', 4),
-('React', 1, '#61DAFB', 5),
-('MySQL', 1, '#4479A1', 6),
-('Spring Boot', 1, '#6DB33F', 7),
-('Docker', 1, '#2496ED', 8),
+('Java', 1, '#B07219', 101),
+('Python', 1, '#3572A5', 102),
+('Go', 1, '#00ADD8', 103),
+('Vue', 1, '#41B883', 104),
+('React', 1, '#61DAFB', 105),
+('MySQL', 1, '#4479A1', 106),
+('Spring Boot', 1, '#6DB33F', 107),
+('Docker', 1, '#2496ED', 108),
 -- 学习路径标签 (type=2)
-('入门', 2, '#67C23A', 100),
-('进阶', 2, '#E6A23C', 101),
-('实战', 2, '#F56C6C', 102),
-('源码', 2, '#909399', 103),
-('面试', 2, '#C71585', 104);
+('入门', 2, '#67C23A', 201),
+('进阶', 2, '#E6A23C', 202),
+('实战', 2, '#F56C6C', 203),
+('源码', 2, '#909399', 204),
+('面试', 2, '#C71585', 205);
 
 create table article_info
 (

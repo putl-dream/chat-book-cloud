@@ -57,6 +57,12 @@ public class ArticleVO {
     @Schema(description = "文章摘要")
     private String abstractText;
 
+    @Schema(description = "文章类型：ORIGINAL/REPRINT/TRANSLATION")
+    private String articleType;
+
+    @Schema(description = "创作声明：PERSONAL_VIEW/NETWORK_SOURCE/AI_ASSISTED")
+    private List<String> creationStatements;
+
     @Schema(description = "文章状态")
     private ArticleStatus status;
 

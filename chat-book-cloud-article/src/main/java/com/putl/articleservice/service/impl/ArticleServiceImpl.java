@@ -35,20 +35,25 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleService {
     private static final boolean REVIEW_REQUIRED = true;
+    private static final Set<String> VALID_ARTICLE_TYPES = Set.of("ORIGINAL", "REPRINT", "TRANSLATION");
+    private static final Set<String> VALID_CREATION_STATEMENTS = Set.of("PERSONAL_VIEW", "NETWORK_SOURCE", "AI_ASSISTED");
 
     private final ArticleMapper articleMapper;
     private final ArticleInfoMapper articleInfoMapper;
@@ -71,6 +76,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
 
         ArticleVO articleVO = BeanUtil.toBean(articleDO, ArticleVO.class);
         articleVO.setUpdatedAt(articleDO.getUpdateTime());
+        articleVO.setCreationStatements(parseCreationStatements(articleDO.getCreationStatement()));
 
         ArticleInfoDO articleInfoDO = articleInfoMapper.selectOne(Wrappers.<ArticleInfoDO>lambdaQuery()
                 .eq(ArticleInfoDO::getArticleId, articleId));
@@ -120,6 +126,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
         List<ArticleVO> articleVOS = BeanUtil.toBean(articleDOPage.getRecords(), ArticleVO.class);
         for (int i = 0; i < articleVOS.size(); i++) {
             articleVOS.get(i).setUpdatedAt(articleDOPage.getRecords().get(i).getUpdateTime());
+            articleVOS.get(i).setCreationStatements(parseCreationStatements(articleDOPage.getRecords().get(i).getCreationStatement()));
         }
         return new PageResult<>(articleVOS, articleDOPage.getTotal());
     }
@@ -207,6 +214,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
         Integer currentUserId = currentUserId();
         UserResult currentUser = queryCurrentUser(currentUserId);
         String usernameSnapshot = currentUser != null ? currentUser.getUsername() : command.getUserName();
+        validateArticleCommand(command, targetStatus);
 
         ArticleDO savedArticle;
         if (command.getId() == null) {
@@ -228,9 +236,11 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .userName(usernameSnapshot)
                 .title(command.getTitle())
                 .cover(command.getCover())
-                .category(command.getCategory())
+                .category(normalizeCategory(command.getCategory()))
                 .contentType(command.getContentType())
                 .abstractText(command.getAbstractText())
+                .articleType(normalizeArticleType(command.getArticleType()))
+                .creationStatement(joinCreationStatements(command.getCreationStatements()))
                 .status(targetStatus)
                 .build();
         articleMapper.insert(articleDO);
@@ -256,9 +266,11 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .userName(usernameSnapshot != null ? usernameSnapshot : existing.getUserName())
                 .title(command.getTitle())
                 .cover(command.getCover())
-                .category(command.getCategory())
+                .category(normalizeCategory(command.getCategory()))
                 .contentType(command.getContentType())
                 .abstractText(command.getAbstractText())
+                .articleType(normalizeArticleType(command.getArticleType()))
+                .creationStatement(joinCreationStatements(command.getCreationStatements()))
                 .status(targetStatus)
                 .build();
         articleMapper.updateById(articleDO);
@@ -319,6 +331,70 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             articleVO.setCollectStat(0);
             log.error("获取互动信息失败: articleId={}", articleId, e);
         }
+    }
+
+    private void validateArticleCommand(ArticleVO command, ArticleStatus targetStatus) {
+        if (targetStatus == ArticleStatus.DRAFT) {
+            return;
+        }
+        if (command == null) {
+            throw new BusinessException(400, "文章内容不能为空");
+        }
+        if (command.getTagIds() == null || command.getTagIds().isEmpty()) {
+            throw new BusinessException(400, "文章标签不能为空");
+        }
+
+        String articleType = normalizeArticleType(command.getArticleType());
+        if (!StringUtils.hasText(articleType)) {
+            throw new BusinessException(400, "文章类型不能为空");
+        }
+        if (!VALID_ARTICLE_TYPES.contains(articleType)) {
+            throw new BusinessException(400, "文章类型不合法");
+        }
+
+        List<String> creationStatements = parseCreationStatements(joinCreationStatements(command.getCreationStatements()));
+        if (creationStatements.contains("NETWORK_SOURCE")
+                && "ORIGINAL".equals(articleType)
+                && creationStatements.size() == 1) {
+            throw new BusinessException(400, "原创文章不能仅声明网络来源");
+        }
+        if (!"ORIGINAL".equals(articleType) && !creationStatements.contains("NETWORK_SOURCE")) {
+            throw new BusinessException(400, "转载或翻译文章必须声明网络来源");
+        }
+    }
+
+    private Integer normalizeCategory(Integer category) {
+        return category == null ? 4 : category;
+    }
+
+    private String normalizeArticleType(String articleType) {
+        return articleType == null ? "" : articleType.trim().toUpperCase();
+    }
+
+    private String joinCreationStatements(List<String> creationStatements) {
+        if (creationStatements == null || creationStatements.isEmpty()) {
+            return "";
+        }
+        return creationStatements.stream()
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .filter(VALID_CREATION_STATEMENTS::contains)
+                .distinct()
+                .collect(Collectors.joining(","));
+    }
+
+    private List<String> parseCreationStatements(String creationStatement) {
+        if (!StringUtils.hasText(creationStatement)) {
+            return new ArrayList<>();
+        }
+        return Arrays.stream(creationStatement.split(","))
+                .filter(StringUtils::hasText)
+                .map(String::trim)
+                .map(String::toUpperCase)
+                .filter(VALID_CREATION_STATEMENTS::contains)
+                .distinct()
+                .toList();
     }
 
     private UserResult queryUser(Integer userId, String failLogMessage) {

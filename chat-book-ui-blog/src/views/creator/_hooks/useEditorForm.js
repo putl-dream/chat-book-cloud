@@ -2,6 +2,7 @@ import { ref } from 'vue';
 import { ElMessage } from 'element-plus';
 import { uploadFile } from '@/views/article/_domain/article.js';
 import { isValidCoverFile } from '../_domain/editor.js';
+import { ARTICLE_TYPE_ENUM } from '@/constants';
 
 export function useEditorForm() {
     const publishDialogVisible = ref(false);
@@ -11,18 +12,23 @@ export function useEditorForm() {
         contentType: 0,
         tagIds: [],
         abstractText: '',
+        articleType: ARTICLE_TYPE_ENUM.ORIGINAL,
+        creationStatements: [],
         cover: ''
     });
 
+    const topicTags = ref([]);
     const techTags = ref([]);
     const pathTags = ref([]);
+    const selectedTopicTags = ref([]);
     const selectedTechTags = ref([]);
     const selectedPathTag = ref(null);
 
     const updateTagIds = () => {
+        const topicIds = selectedTopicTags.value || [];
         const techIds = selectedTechTags.value || [];
         const pathId = selectedPathTag.value ? [selectedPathTag.value] : [];
-        publishForm.value.tagIds = [...techIds, ...pathId];
+        publishForm.value.tagIds = [...topicIds, ...techIds, ...pathId];
     };
 
     const handleCoverUpload = async (option) => {
@@ -51,8 +57,10 @@ export function useEditorForm() {
     return {
         publishDialogVisible,
         publishForm,
+        topicTags,
         techTags,
         pathTags,
+        selectedTopicTags,
         selectedTechTags,
         selectedPathTag,
         updateTagIds,

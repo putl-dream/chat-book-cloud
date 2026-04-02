@@ -1,8 +1,10 @@
 package com.putl.agentservice.controller;
 
 import com.putl.agentservice.model.dto.AdoptDraftVersionRequest;
+import com.putl.agentservice.model.dto.ExtractSummaryRequest;
 import com.putl.agentservice.model.dto.GenerateDraftRequest;
 import com.putl.agentservice.model.dto.OptimizeDraftRequest;
+import com.putl.agentservice.model.vo.ArticleSummaryResponse;
 import com.putl.agentservice.model.vo.DraftGenerateResponse;
 import com.putl.agentservice.model.vo.DraftOptimizeResponse;
 import com.putl.agentservice.service.DraftGenerationService;
@@ -39,6 +41,12 @@ public class AgentDraftController {
     @PostMapping("/optimize")
     public CommonResult<DraftOptimizeResponse> optimize(@RequestBody OptimizeDraftRequest request) {
         return CommonResult.success(draftOptimizationService.optimizeDraft(request));
+    }
+
+    @Operation(summary = "提取文章摘要")
+    @PostMapping("/summary")
+    public CommonResult<ArticleSummaryResponse> extractSummary(@RequestBody ExtractSummaryRequest request) {
+        return CommonResult.success(draftOptimizationService.extractSummary(request));
     }
 
     @Operation(summary = "采用某个草稿版本")
