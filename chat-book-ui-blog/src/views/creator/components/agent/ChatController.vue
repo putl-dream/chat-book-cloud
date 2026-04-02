@@ -286,7 +286,7 @@ watch(() => store.messages[store.messages.length - 1]?.content, async () => {
 }
 
 .msg-bubble {
-    padding: 10px 14px;
+    padding: 2px 8px;
     border-radius: 14px;
     background: #F9FAFB;
     border: 1px solid rgba(22, 50, 79, 0.04);
@@ -310,7 +310,7 @@ watch(() => store.messages[store.messages.length - 1]?.content, async () => {
 
 .msg-assistant .msg-bubble {
     border-top-left-radius: 4px;
-    background: #fff;
+    background: #fffbf5;
     box-shadow: 0 2px 8px rgba(21, 37, 64, 0.04);
     border-color: rgba(22, 50, 79, 0.08);
 }
