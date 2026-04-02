@@ -15,6 +15,15 @@ import {
     optimizeAgentDraft,
     saveAgentDraftImport
 } from '@/views/creator/_domain/agent.js';
+import {
+    AGENT_MESSAGE_TYPE,
+    buildInteractionResponsePayload,
+    buildInteractionResponseSummary,
+    extractInteractionResponse,
+    isInteractionResponseMessage,
+    normalizeAgentMessageType,
+    normalizeMessagePayload
+} from '@/views/creator/_domain/agent-interaction.js';
 import router from '@/router/index.js';
 
 const DEFAULT_SESSION_TITLE = '新的 AI 创作会话';
@@ -36,7 +45,9 @@ function normalizeMessage(message = {}) {
     return {
         id: message.id ?? `${Date.now()}-${Math.random()}`,
         role: normalizeMessageRole(message.role),
+        messageType: normalizeAgentMessageType(message.messageType),
         content: message.content ?? '',
+        payload: normalizeMessagePayload(message.messageType, message.payload),
         createTime: message.createTime ?? '',
         streaming: Boolean(message.streaming)
     };
@@ -68,9 +79,38 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     let closingSocket = false;
 
     // Computed
-    const hasMessages = computed(() => messages.value.length > 0);
+    const interactionResponseMap = computed(() => {
+        const map = new Map();
+        messages.value.forEach((message) => {
+            const interactionResponse = extractInteractionResponse(message);
+            if (interactionResponse?.formId) {
+                map.set(interactionResponse.formId, interactionResponse);
+            }
+        });
+        return map;
+    });
+
+    const visibleMessages = computed(() => messages.value
+        .filter((message) => !isInteractionResponseMessage(message))
+        .map((message) => {
+            if (message.role === 'assistant' && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM) {
+                const formId = message.payload?.formId;
+                return {
+                    ...message,
+                    interactionResponse: formId ? (interactionResponseMap.value.get(formId) ?? null) : null
+                };
+            }
+            return message;
+        }));
+
+    const hasMessages = computed(() => visibleMessages.value.length > 0);
     const hasDraft = computed(() => Boolean(draft.value?.draftId));
     const hasCandidateDraft = computed(() => Boolean(candidateDraft.value?.versionNo));
+    const hasPendingInteractiveForm = computed(() => visibleMessages.value.some((message) =>
+        message.role === 'assistant'
+        && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM
+        && !message.interactionResponse
+    ));
     
     // Core Status Enum computed for the Middle Canvas UI (DraftCanvas)
     // Values: 'empty' | 'generating' | 'completed' | 'optimizing'
@@ -115,9 +155,21 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
+            const normalized = typeof reply === 'object' && reply !== null
+                ? normalizeMessage({
+                    ...reply,
+                    id: reply.id ?? current.id,
+                    role: reply.role ?? 'ASSISTANT'
+                })
+                : normalizeMessage({
+                    id: current.id,
+                    role: 'ASSISTANT',
+                    messageType: AGENT_MESSAGE_TYPE.TEXT,
+                    content: typeof reply === 'string' && reply.length > 0 ? reply : current.content
+                });
             messages.value[messageIndex] = {
                 ...current,
-                content: typeof reply === 'string' && reply.length > 0 ? reply : current.content,
+                ...normalized,
                 streaming: false
             };
         }
@@ -171,7 +223,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         });
 
         socketService.on(AGENT_CHAT_DONE, (payload = {}) => {
-            finishStreamingMessage(payload.reply ?? '');
+            finishStreamingMessage(payload.message ?? payload.reply ?? '');
         });
 
         socketService.on(AGENT_CHAT_ERROR, (payload = {}) => {
@@ -306,6 +358,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const sendMessage = async (content) => {
         if (!content) return;
+        if (hasPendingInteractiveForm.value) {
+            ElMessage.warning('请先完成当前问题卡片');
+            return;
+        }
 
         chatting.value = true;
         try {
@@ -315,6 +371,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             messages.value.push(normalizeMessage({
                 id: `user-${Date.now()}`,
                 role: 'USER',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content
             }));
 
@@ -323,6 +380,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             messages.value.push(normalizeMessage({
                 id: assistantMessageId,
                 role: 'ASSISTANT',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: '',
                 streaming: true
             }));
@@ -344,6 +402,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const createDraftFromSession = async () => {
         if (!sessionId.value) {
             ElMessage.warning('请先开始一段创作对话');
+            return;
+        }
+        if (hasPendingInteractiveForm.value) {
+            ElMessage.warning('请先完成当前问题卡片，再生成首稿');
             return;
         }
         if (chatting.value) {
@@ -373,6 +435,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             messages.value.push(normalizeMessage({
                 id: `system-${Date.now()}`,
                 role: 'SYSTEM',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: '✅ 首稿生成完毕。你可以继续在对话框中圈出需要修改的段落或者补充新要求。'
             }));
 
@@ -410,12 +473,14 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             messages.value.push(normalizeMessage({
                 id: `user-opt-${Date.now()}`,
                 role: 'USER',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: `(局部优化指令): ${instruction.trim()}`
             }));
             // Log as system acknowledgement
             messages.value.push(normalizeMessage({
                 id: `system-opt-${Date.now()}`,
                 role: 'SYSTEM',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: '✅ 候选版本已生成，正显示在画布中。您可以点击画布顶部的确认或撤销按钮。'
             }));
             
@@ -465,6 +530,63 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         await router.push('/text');
     };
 
+    const submitInteractiveForm = async (message, answersMap = {}) => {
+        if (!message?.payload?.formId) {
+            ElMessage.error('当前问题卡片数据无效');
+            return;
+        }
+        if (chatting.value) {
+            ElMessage.warning('当前回复尚未完成，请稍后重试');
+            return;
+        }
+
+        const interactionResponse = buildInteractionResponsePayload(message.payload, answersMap);
+        if (!interactionResponse?.answers?.length) {
+            ElMessage.warning('请至少完成一个问题');
+            return;
+        }
+
+        chatting.value = true;
+        const optimisticMessageId = `user-form-${Date.now()}`;
+        try {
+            const service = await ensureSocketReady();
+
+            messages.value.push(normalizeMessage({
+                id: optimisticMessageId,
+                role: 'USER',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: buildInteractionResponseSummary(message.payload, answersMap),
+                payload: { interactionResponse }
+            }));
+
+            const assistantMessageId = `assistant-${Date.now()}`;
+            streamingAssistantMessageId = assistantMessageId;
+            messages.value.push(normalizeMessage({
+                id: assistantMessageId,
+                role: 'ASSISTANT',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: '',
+                streaming: true
+            }));
+
+            const sent = service.send(AGENT_CHAT_TYPE, {
+                sessionId: sessionId.value,
+                interactionResponse
+            });
+            if (!sent) {
+                throw new Error('Agent WebSocket 未连接');
+            }
+        } catch (error) {
+            console.error('Failed to submit interactive form:', error);
+            const optimisticIndex = findMessageIndex(optimisticMessageId);
+            if (optimisticIndex >= 0) {
+                messages.value.splice(optimisticIndex, 1);
+            }
+            discardStreamingMessage();
+            ElMessage.error('提交失败，请稍后重试');
+        }
+    };
+
     return {
         // State
         loadingSession,
@@ -477,6 +599,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         sessionId,
         sessionTitle,
         messages,
+        visibleMessages,
         draft,
         candidateDraft,
         
@@ -484,6 +607,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         hasMessages,
         hasDraft,
         hasCandidateDraft,
+        hasPendingInteractiveForm,
         draftStatus,
         displayDraft,
         activeDraftVersion,
@@ -498,6 +622,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         ensureSession,
         openFreshSession,
         sendMessage,
+        submitInteractiveForm,
         createDraftFromSession,
         optimizeCurrentDraft,
         adoptCandidateVersion,

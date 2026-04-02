@@ -42,7 +42,10 @@ public class AgentChatMessageHandler implements MessageHandler<AgentChatWsMessag
         }
 
         String content = request.getContent() == null ? "" : request.getContent().trim();
-        if (!StringUtils.hasText(content)) {
+        boolean hasInteractionResponse = request.getInteractionResponse() != null
+                && request.getInteractionResponse().getAnswers() != null
+                && !request.getInteractionResponse().getAnswers().isEmpty();
+        if (!StringUtils.hasText(content) && !hasInteractionResponse) {
             sendError(userId, "消息内容不能为空");
             return;
         }

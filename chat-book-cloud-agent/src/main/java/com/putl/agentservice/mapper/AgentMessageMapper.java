@@ -13,9 +13,9 @@ public interface AgentMessageMapper extends BaseMapper<AgentMessageDO> {
 
     @Select("""
             <script>
-            SELECT id, session_id, role, content, token_input, token_output, latency_ms, create_time
+            SELECT id, session_id, role, message_type, content, payload, token_input, token_output, latency_ms, create_time
             FROM (
-                SELECT id, session_id, role, content, token_input, token_output, latency_ms, create_time
+                SELECT id, session_id, role, message_type, content, payload, token_input, token_output, latency_ms, create_time
                 FROM agent_message
                 WHERE session_id = #{sessionId}
                 ORDER BY id DESC

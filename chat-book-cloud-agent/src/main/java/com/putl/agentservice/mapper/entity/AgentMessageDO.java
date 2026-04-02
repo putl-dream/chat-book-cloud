@@ -25,7 +25,11 @@ public class AgentMessageDO {
 
     private AgentMessageRole role;
 
+    private String messageType;
+
     private String content;
+
+    private String payload;
 
     private Integer tokenInput;
 

@@ -44,20 +44,26 @@
 
             <div v-else class="chat-list custom-scrollbar-thin container-snap">
                 <article 
-                    v-for="msg in store.messages" 
+                    v-for="msg in store.visibleMessages" 
                     :key="msg.id"
                     class="chat-msg"
                     :class="`msg-${msg.role}`"
                 >
-                    <div class="msg-bubble">
+                    <InteractiveFormCard
+                        v-if="msg.role === 'assistant' && msg.messageType === 'interactive_form'"
+                        class="msg-interactive-card"
+                        :message="msg"
+                        :disabled="store.chatting || store.generatingDraft"
+                        @submit="handleInteractiveSubmit(msg, $event)"
+                    />
+                    <div v-else class="msg-bubble">
                         <p v-if="msg.streaming && !msg.content" class="streaming-hint">
                             <span class="typing-dot"></span> 正在思考...
                         </p>
                         <RichTextViewer
                             v-else
                             :html="renderHtml(msg.content)"
-                            variant="chat" 
-                            @click="handleMessageClick(msg, $event)"
+                            variant="chat"
                         />
                     </div>
                 </article>
@@ -72,9 +78,9 @@
                     resize="none"
                     :autosize="{ minRows: 1, maxRows: 6 }"
                     maxlength="1200"
-                    placeholder="按 Ctrl+Enter 发送"
+                    :placeholder="inputPlaceholder"
                     @keydown.ctrl.enter.prevent="handleSend"
-                    :disabled="store.chatting || store.creatingSession || store.generatingDraft"
+                    :disabled="store.chatting || store.creatingSession || store.generatingDraft || store.hasPendingInteractiveForm"
                 />
                 <div class="input-actions">
                     <el-button 
@@ -82,12 +88,15 @@
                         type="primary" 
                         circle 
                         :loading="store.chatting || store.creatingSession"
-                        :disabled="!inputValue.trim()"
+                        :disabled="!inputValue.trim() || store.hasPendingInteractiveForm"
                         @click="handleSend"
                     >
                         <el-icon><Position /></el-icon>
                     </el-button>
                 </div>
+            </div>
+            <div class="footer-hint" v-if="store.hasPendingInteractiveForm">
+                请先完成上方问题卡片，Agent 会在收到完整答案后继续生成建议
             </div>
             <div class="footer-hint" v-if="store.hasDraft">
                 💡 输入文本即向 Agent 下达<strong>局部优化重写</strong>指令
@@ -97,15 +106,21 @@
 </template>
 
 <script setup>
-import { ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick } from 'vue';
 import { useAgentStudioStore } from '@/store/agentStudio.js';
 import { buildRichTextHtml } from '@/components/common/rich-text/content-pipeline.js';
 import RichTextViewer from '@/components/common/rich-text/RichTextViewer.vue';
+import InteractiveFormCard from '@/views/creator/components/agent/InteractiveFormCard.vue';
 import { Position } from '@element-plus/icons-vue';
 
 const store = useAgentStudioStore();
 const inputValue = ref('');
 const chatBodyRef = ref(null);
+const inputPlaceholder = computed(() => (
+    store.hasPendingInteractiveForm
+        ? '请先完成上方问题卡片'
+        : '按 Ctrl+Enter 发送'
+));
 
 const handleSend = () => {
     if (!inputValue.value.trim() || store.chatting || store.loadingSession) return;
@@ -122,29 +137,17 @@ const handleSend = () => {
 };
 
 const renderHtml = (content) => buildRichTextHtml(content || '', 'markdown');
-
-const handleMessageClick = (msg, e) => {
-    // Intercept clicks on bullet points/lists to act as quick-reply chips
-    if (msg.role !== 'assistant') return;
-    
-    const li = e.target.closest('li');
-    if (li && !store.chatting && !store.generatingDraft) {
-        // Find raw text without HTML
-        const textToSend = li.innerText.trim();
-        if (textToSend) {
-            store.sendMessage(textToSend);
-        }
-    }
-};
+const handleInteractiveSubmit = (message, answers) => store.submitInteractiveForm(message, answers);
 
 // Auto scroll down when new message comes
-watch(() => store.messages.length, async () => {
+watch(() => store.visibleMessages.length, async () => {
     await nextTick();
     if (chatBodyRef.value) {
         chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
     }
 });
-watch(() => store.messages[store.messages.length - 1]?.content, async () => {
+watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, async () => {
+    await nextTick();
     if (chatBodyRef.value) {
         chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
     }
@@ -310,7 +313,7 @@ watch(() => store.messages[store.messages.length - 1]?.content, async () => {
 
 .msg-assistant .msg-bubble {
     border-top-left-radius: 4px;
-    background: #fffbf5;
+    background: rgb(240, 244, 249);
     box-shadow: 0 2px 8px rgba(21, 37, 64, 0.04);
     border-color: rgba(22, 50, 79, 0.08);
 }
@@ -326,35 +329,8 @@ watch(() => store.messages[store.messages.length - 1]?.content, async () => {
     max-width: 100%;
 }
 
-/* Agent Option Chips from Markdown Lists */
-.msg-assistant .msg-bubble :deep(ul),
-.msg-assistant .msg-bubble :deep(ol) {
-    margin: 8px 0;
-    padding-left: 0;
-    list-style: none;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-}
-
-.msg-assistant .msg-bubble :deep(li) {
-    background: #fff;
-    border: 1px solid rgba(209, 96, 61, 0.15);
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 13px;
-    color: #d1603d;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    display: inline-block;
-    width: fit-content;
-}
-
-.msg-assistant .msg-bubble :deep(li:hover) {
-    background: rgba(209, 96, 61, 0.08);
-    border-color: rgba(209, 96, 61, 0.4);
-    transform: translateY(-1px);
-    box-shadow: 0 4px 8px rgba(209, 96, 61, 0.08);
+.msg-interactive-card {
+    width: 100%;
 }
 
 .streaming-hint {

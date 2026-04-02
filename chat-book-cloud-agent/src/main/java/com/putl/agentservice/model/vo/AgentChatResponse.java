@@ -15,4 +15,7 @@ public class AgentChatResponse {
 
     @Schema(description = "AI 回复")
     private String reply;
+
+    @Schema(description = "AI 消息")
+    private AgentChatMessageVO message;
 }

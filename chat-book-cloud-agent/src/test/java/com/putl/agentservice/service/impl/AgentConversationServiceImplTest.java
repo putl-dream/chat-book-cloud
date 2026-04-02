@@ -1,0 +1,164 @@
+package com.putl.agentservice.service.impl;
+
+import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.config.AgentChatProperties;
+import com.putl.agentservice.constants.AgentMessageTypeConstants;
+import com.putl.agentservice.enums.AgentMessageRole;
+import com.putl.agentservice.mapper.AgentMessageMapper;
+import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.model.dto.AgentChatRequest;
+import com.putl.agentservice.model.dto.InteractionAnswerRequest;
+import com.putl.agentservice.model.dto.InteractionResponseRequest;
+import com.putl.agentservice.model.vo.AgentAssistantMessage;
+import com.putl.agentservice.model.vo.AiInvocationResult;
+import com.putl.agentservice.model.vo.AgentChatResponse;
+import com.putl.agentservice.model.vo.InteractiveFormPayload;
+import com.putl.agentservice.model.vo.InteractiveOption;
+import com.putl.agentservice.model.vo.InteractiveQuestion;
+import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.service.AgentConversationWindowService;
+import com.putl.agentservice.service.AgentNotebookCacheService;
+import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Executor;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+@ExtendWith(MockitoExtension.class)
+class AgentConversationServiceImplTest {
+
+    @Mock
+    private AgentMessageMapper agentMessageMapper;
+
+    @Mock
+    private ArticleAiGateway articleAiGateway;
+
+    @Mock
+    private AgentConversationWindowService agentConversationWindowService;
+
+    @Mock
+    private AgentNotebookCacheService agentNotebookCacheService;
+
+    @Mock
+    private AgentChatProperties agentChatProperties;
+
+    @Mock
+    private MessagePublisher messagePublisher;
+
+    private AgentConversationServiceImpl service;
+
+    @BeforeEach
+    void setUp() {
+        Executor directExecutor = Runnable::run;
+        service = new AgentConversationServiceImpl(
+                agentMessageMapper,
+                articleAiGateway,
+                agentConversationWindowService,
+                agentNotebookCacheService,
+                agentChatProperties,
+                messagePublisher,
+                directExecutor);
+
+        when(agentConversationWindowService.getRecentMessages(anyInt())).thenReturn(new ArrayList<AgentMessageDO>());
+        when(agentConversationWindowService.appendMessage(anyInt(), anyList(), any(AgentMessageDO.class))).thenAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            List<AgentMessageDO> existingWindow = (List<AgentMessageDO>) invocation.getArgument(1);
+            List<AgentMessageDO> current = new ArrayList<>(existingWindow);
+            current.add(invocation.getArgument(2, AgentMessageDO.class));
+            return current;
+        });
+        when(agentNotebookCacheService.getNotebook(anyInt())).thenReturn(NotebookSummary.builder().build());
+    }
+
+    @Test
+    void chatShouldPersistStructuredInteractionResponseAndInteractiveFormReply() {
+        AgentChatRequest request = new AgentChatRequest();
+        request.setSessionId(101);
+        request.setInteractionResponse(buildInteractionResponse());
+
+        AiInvocationResult<AgentAssistantMessage> aiReply = new AiInvocationResult<>(
+                AgentAssistantMessage.builder()
+                        .messageType(AgentMessageTypeConstants.INTERACTIVE_FORM)
+                        .content("我还需要确认最后一个重点")
+                        .payload(InteractiveFormPayload.builder()
+                                .formId("followup_form")
+                                .title("补充一个细节")
+                                .description("再确认最后一题")
+                                .submitMode("batch")
+                                .questions(List.of(
+                                        InteractiveQuestion.builder()
+                                                .id("depth")
+                                                .label("希望解读深度到什么程度？")
+                                                .type("single_choice")
+                                                .required(true)
+                                                .options(List.of(
+                                                        InteractiveOption.builder().label("全面解读").value("全面解读").build()
+                                                ))
+                                                .build()
+                                ))
+                                .build())
+                        .build(),
+                12,
+                34,
+                56,
+                "claude-test");
+        when(articleAiGateway.chat(anyList(), any(NotebookSummary.class))).thenReturn(aiReply);
+
+        AgentChatResponse response = service.chat(request);
+
+        ArgumentCaptor<AgentMessageDO> captor = ArgumentCaptor.forClass(AgentMessageDO.class);
+        verify(agentMessageMapper, times(2)).insert(captor.capture());
+        List<AgentMessageDO> savedMessages = captor.getAllValues();
+
+        AgentMessageDO userMessage = savedMessages.get(0);
+        assertEquals(AgentMessageRole.USER, userMessage.getRole());
+        assertEquals(AgentMessageTypeConstants.TEXT, userMessage.getMessageType());
+        assertTrue(userMessage.getContent().contains("[STRUCTURED_FORM_RESPONSE]"));
+        assertTrue(userMessage.getContent().contains("目标读者"));
+        assertTrue(userMessage.getPayload().contains("\"formId\":\"brief_form\""));
+
+        AgentMessageDO assistantMessage = savedMessages.get(1);
+        assertEquals(AgentMessageRole.ASSISTANT, assistantMessage.getRole());
+        assertEquals(AgentMessageTypeConstants.INTERACTIVE_FORM, assistantMessage.getMessageType());
+        assertTrue(assistantMessage.getPayload().contains("\"formId\":\"followup_form\""));
+
+        assertEquals(AgentMessageTypeConstants.INTERACTIVE_FORM, response.getMessage().getMessageType());
+        assertTrue(response.getMessage().getPayload().toString().contains("\"formId\":\"followup_form\""));
+    }
+
+    private InteractionResponseRequest buildInteractionResponse() {
+        InteractionAnswerRequest audience = new InteractionAnswerRequest();
+        audience.setQuestionId("audience");
+        audience.setQuestionLabel("目标读者");
+        audience.setQuestionType("single_choice");
+        audience.setValue("Java 开发者");
+
+        InteractionAnswerRequest format = new InteractionAnswerRequest();
+        format.setQuestionId("format");
+        format.setQuestionLabel("内容形式");
+        format.setQuestionType("single_choice");
+        format.setValue("技术博客文章");
+
+        InteractionResponseRequest response = new InteractionResponseRequest();
+        response.setFormId("brief_form");
+        response.setTitle("补充基础信息");
+        response.setDescription("回答后我会继续完善文章建议");
+        response.setAnswers(List.of(audience, format));
+        return response;
+    }
+}
