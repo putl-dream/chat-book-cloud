@@ -2,9 +2,9 @@ package com.putl.interactionservice.controller;
 
 import com.putl.articleservice.api.dto.ArticleListVO;
 import com.putl.interactionservice.service.UserFootService;
-import com.putl.interactionservice.vo.NotificationVO;
-import com.putl.interactionservice.vo.UserFootListVO;
-import com.putl.interactionservice.vo.UserFootVO;
+import com.putl.interactionservice.controller.vo.NotificationVO;
+import com.putl.interactionservice.controller.vo.UserFootListVO;
+import com.putl.interactionservice.controller.vo.UserFootVO;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.pojo.ErrorType;

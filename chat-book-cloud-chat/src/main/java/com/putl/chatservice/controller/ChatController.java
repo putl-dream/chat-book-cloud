@@ -1,7 +1,7 @@
 package com.putl.chatservice.controller;
 
 import com.putl.chatservice.service.MessageService;
-import com.putl.chatservice.vo.MessageVO;
+import com.putl.chatservice.controller.vo.MessageVO;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import io.swagger.v3.oas.annotations.Operation;

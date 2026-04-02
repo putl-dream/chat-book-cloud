@@ -1,10 +1,9 @@
 package com.putl.chatservice.service.impl;
 
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.putl.chatservice.entity.MessageDO;
 import com.putl.chatservice.mapper.MessageMapper;
 import com.putl.chatservice.service.MessageService;
-import com.putl.chatservice.vo.MessageVO;
+import com.putl.chatservice.controller.vo.MessageVO;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

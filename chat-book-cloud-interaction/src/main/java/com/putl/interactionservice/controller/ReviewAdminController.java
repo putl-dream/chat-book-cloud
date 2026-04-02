@@ -2,7 +2,7 @@ package com.putl.interactionservice.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.putl.interactionservice.service.ReviewService;
-import com.putl.interactionservice.vo.ReviewVO;
+import com.putl.interactionservice.controller.vo.ReviewVO;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.mvc.security.annotation.RequireAdmin;
 import io.swagger.v3.oas.annotations.Operation;
