@@ -9,7 +9,6 @@ import {
     AGENT_SCENE_TYPE,
     adoptAgentDraftVersion,
     createAgentSession,
-    generateAgentDraft,
     getAgentSessionDetail,
     normalizeAgentDraft,
     optimizeAgentDraft,
@@ -31,6 +30,12 @@ const AGENT_CHAT_TYPE = 'AGENT_CHAT';
 const AGENT_CHAT_DELTA = 'AGENT_CHAT_DELTA';
 const AGENT_CHAT_DONE = 'AGENT_CHAT_DONE';
 const AGENT_CHAT_ERROR = 'AGENT_CHAT_ERROR';
+const AGENT_DRAFT_GENERATE = 'AGENT_DRAFT_GENERATE';
+const AGENT_DRAFT_GENERATE_START = 'AGENT_DRAFT_GENERATE_START';
+const AGENT_DRAFT_GENERATE_STATUS = 'AGENT_DRAFT_GENERATE_STATUS';
+const AGENT_DRAFT_GENERATE_DELTA = 'AGENT_DRAFT_GENERATE_DELTA';
+const AGENT_DRAFT_GENERATE_DONE = 'AGENT_DRAFT_GENERATE_DONE';
+const AGENT_DRAFT_GENERATE_ERROR = 'AGENT_DRAFT_GENERATE_ERROR';
 
 function normalizeMessageRole(role) {
     const roleMap = {
@@ -53,6 +58,48 @@ function normalizeMessage(message = {}) {
     };
 }
 
+function decodeJsonStringFragment(value = '') {
+    let candidate = value;
+    while (candidate.length > 0) {
+        try {
+            return JSON.parse(`"${candidate}"`);
+        } catch (error) {
+            candidate = candidate.slice(0, -1);
+        }
+    }
+    return '';
+}
+
+function extractDraftField(buffer = '', fieldName) {
+    const matcher = new RegExp(`"${fieldName}"\\s*:\\s*"`, 'm');
+    const match = matcher.exec(buffer);
+    if (!match) {
+        return '';
+    }
+
+    let rawValue = '';
+    let consecutiveBackslashes = 0;
+    for (let cursor = match.index + match[0].length; cursor < buffer.length; cursor += 1) {
+        const char = buffer[cursor];
+        if (char === '"' && consecutiveBackslashes % 2 === 0) {
+            return decodeJsonStringFragment(rawValue);
+        }
+        rawValue += char;
+        consecutiveBackslashes = char === '\\' ? consecutiveBackslashes + 1 : 0;
+    }
+    return decodeJsonStringFragment(rawValue);
+}
+
+function buildStreamingDraftPreview(buffer = '') {
+    const title = extractDraftField(buffer, 'title');
+    const summary = extractDraftField(buffer, 'summary');
+    const content = extractDraftField(buffer, 'content');
+    if (!title && !summary && !content) {
+        return null;
+    }
+    return normalizeAgentDraft({ title, summary, content });
+}
+
 export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Basic States
     const loadingSession = ref(false);
@@ -71,6 +118,9 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Draft states
     const draft = ref(null);
     const candidateDraft = ref(null);
+    const draftStreamingBuffer = ref('');
+    const draftStreamingPreview = ref(null);
+    const draftStreamingStatusText = ref('');
 
     // WebSocket Internals (not reactive)
     let socketService = null;
@@ -125,6 +175,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         // Return candidate if exists to do "seamless overlay" display
         return candidateDraft.value || draft.value || null;
     });
+    const streamingDraftPreview = computed(() => {
+        if (!generatingDraft.value) {
+            return null;
+        }
+        return draftStreamingPreview.value;
+    });
 
     const activeDraftVersion = computed(() => draft.value?.versionNo ?? null);
     const pendingDraftVersion = computed(() => candidateDraft.value?.versionNo ?? null);
@@ -144,6 +200,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const clearStreamingState = () => {
         streamingAssistantMessageId = null;
         chatting.value = false;
+    };
+
+    const resetDraftStreamingState = () => {
+        draftStreamingBuffer.value = '';
+        draftStreamingPreview.value = null;
+        draftStreamingStatusText.value = '';
     };
 
     const finishStreamingMessage = (reply = '') => {
@@ -231,11 +293,71 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             ElMessage.error(payload.message || '发送失败，请稍后重试');
         });
 
+        socketService.on(AGENT_DRAFT_GENERATE_START, (payload = {}) => {
+            generatingDraft.value = true;
+            draftStreamingBuffer.value = '';
+            draftStreamingPreview.value = null;
+            draftStreamingStatusText.value = payload.message || '正在整理会话上下文...';
+        });
+
+        socketService.on(AGENT_DRAFT_GENERATE_STATUS, (payload = {}) => {
+            if (!generatingDraft.value) {
+                generatingDraft.value = true;
+            }
+            draftStreamingStatusText.value = payload.message || draftStreamingStatusText.value || '正在生成首稿内容...';
+        });
+
+        socketService.on(AGENT_DRAFT_GENERATE_DELTA, (payload = {}) => {
+            if (typeof payload.chunk !== 'string' || !payload.chunk) {
+                return;
+            }
+            draftStreamingBuffer.value = `${draftStreamingBuffer.value}${payload.chunk}`;
+            draftStreamingStatusText.value = draftStreamingStatusText.value || '正在生成首稿内容...';
+            draftStreamingPreview.value = buildStreamingDraftPreview(draftStreamingBuffer.value);
+        });
+
+        socketService.on(AGENT_DRAFT_GENERATE_DONE, (payload = {}) => {
+            draft.value = normalizeAgentDraft({
+                draftId: payload.draftId,
+                versionNo: payload.versionNo,
+                title: payload.title,
+                summary: payload.summary,
+                content: payload.content
+            });
+            candidateDraft.value = null;
+            generatingDraft.value = false;
+            resetDraftStreamingState();
+
+            if (session.value) {
+                session.value.targetDraftId = payload.draftId;
+            }
+
+            messages.value.push(normalizeMessage({
+                id: `system-${Date.now()}`,
+                role: 'SYSTEM',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: '✅ 首稿生成完毕。你可以继续在对话框中圈出需要修改的段落或者补充新要求。'
+            }));
+
+            ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
+        });
+
+        socketService.on(AGENT_DRAFT_GENERATE_ERROR, (payload = {}) => {
+            generatingDraft.value = false;
+            resetDraftStreamingState();
+            ElMessage.error(payload.message || '生成草稿失败，请稍后重试');
+        });
+
         socketService.onClose(() => {
             if (closingSocket) return;
             if (chatting.value) {
                 discardStreamingMessage();
                 ElMessage.error('Agent 连接已断开，请重试');
+            }
+            if (generatingDraft.value) {
+                generatingDraft.value = false;
+                resetDraftStreamingState();
+                ElMessage.error('Agent 连接已断开，首稿生成已中断');
             }
         });
 
@@ -279,6 +401,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             socketService.close();
             socketService = null;
         }
+        resetDraftStreamingState();
     };
 
     // Actions
@@ -289,6 +412,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         draft.value = null;
         candidateDraft.value = null;
         streamingAssistantMessageId = null;
+        resetDraftStreamingState();
     };
 
     const hydrateSession = async (id) => {
@@ -309,6 +433,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             draft.value = detail.draft ? normalizeAgentDraft(detail.draft) : null;
             candidateDraft.value = null;
             streamingAssistantMessageId = null;
+            resetDraftStreamingState();
         } catch (error) {
             console.error('Failed to hydrate agent session:', error);
             ElMessage.error('恢复会话失败，请稍后重试');
@@ -347,8 +472,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     };
 
     const openFreshSession = async () => {
-        if (chatting.value) {
-            ElMessage.warning('当前对话尚未完成，请稍后再新建会话');
+        if (chatting.value || generatingDraft.value) {
+            ElMessage.warning('当前生成流程尚未完成，请稍后再新建会话');
             return;
         }
         resetStudioState();
@@ -415,36 +540,20 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
         generatingDraft.value = true;
         try {
-            const response = await generateAgentDraft({
+            resetDraftStreamingState();
+            draftStreamingStatusText.value = '正在连接生成通道...';
+            const service = await ensureSocketReady();
+            const sent = service.send(AGENT_DRAFT_GENERATE, {
                 sessionId: sessionId.value
             });
-            draft.value = normalizeAgentDraft({
-                draftId: response.draftId,
-                versionNo: response.versionNo,
-                title: response.title,
-                summary: response.summary,
-                content: response.content
-            });
-            candidateDraft.value = null;
-
-            if (session.value) {
-                session.value.targetDraftId = response.draftId;
+            if (!sent) {
+                throw new Error('Agent WebSocket 未连接');
             }
-
-            // Also post a silent status message in chat acting as System
-            messages.value.push(normalizeMessage({
-                id: `system-${Date.now()}`,
-                role: 'SYSTEM',
-                messageType: AGENT_MESSAGE_TYPE.TEXT,
-                content: '✅ 首稿生成完毕。你可以继续在对话框中圈出需要修改的段落或者补充新要求。'
-            }));
-
-            ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
         } catch (error) {
             console.error('Failed to generate agent draft:', error);
-            ElMessage.error('生成草稿失败，请稍后重试');
-        } finally {
             generatingDraft.value = false;
+            resetDraftStreamingState();
+            ElMessage.error('生成草稿失败，请稍后重试');
         }
     };
 
@@ -602,6 +711,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         visibleMessages,
         draft,
         candidateDraft,
+        streamingDraftPreview,
+        draftStreamingStatusText,
         
         // Computed
         hasMessages,

@@ -63,6 +63,13 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
 
     @Override
     public AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages, NotebookSummary notebookSummary) {
+        return generateDraft(messages, notebookSummary, null);
+    }
+
+    @Override
+    public AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages,
+                                                                NotebookSummary notebookSummary,
+                                                                Consumer<String> chunkConsumer) {
         MessageCreateParams params = baseRequest(
                 properties.getAnthropic().getModel().getGenerate(),
                 properties.getAnthropic().getMaxTokens().getGenerate(),
@@ -70,7 +77,7 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
                 promptTemplateLoader.load(PromptTemplateConstants.ARTICLE_GENERATE))
                 .addUserMessage(buildGeneratePrompt(messages, notebookSummary))
                 .build();
-        return invokeForJson(params, ArticleDraftResult.class);
+        return invokeForJson(params, ArticleDraftResult.class, chunkConsumer);
     }
 
     @Override
@@ -191,7 +198,15 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
     }
 
     private <T> AiInvocationResult<T> invokeForJson(MessageCreateParams params, Class<T> targetType) {
-        AiInvocationResult<String> raw = invokeForText(params);
+        return invokeForJson(params, targetType, null);
+    }
+
+    private <T> AiInvocationResult<T> invokeForJson(MessageCreateParams params,
+                                                    Class<T> targetType,
+                                                    Consumer<String> chunkConsumer) {
+        AiInvocationResult<String> raw = chunkConsumer == null
+                ? invokeForText(params)
+                : invokeForTextStream(params, chunkConsumer);
         String payload = extractJsonPayload(raw.getData());
         T parsed = JsonUtil.parseObject(payload, targetType);
         if (parsed == null) {
