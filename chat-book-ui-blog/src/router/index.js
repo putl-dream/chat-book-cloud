@@ -127,7 +127,7 @@ const routes = [
                 path: 'creative/agent/:sessionId?',
                 name: 'AgentStudio',
                 component: () => import('@/views/creator/AgentStudio.vue'),
-                meta: { requiresAuth: true, headerType: 'creative', sidebar: 'creative', showFooter: true }
+                meta: { requiresAuth: true, headerType: 'none', showFooter: false }
             },
             // ----- Less Layout Routes -----
             {

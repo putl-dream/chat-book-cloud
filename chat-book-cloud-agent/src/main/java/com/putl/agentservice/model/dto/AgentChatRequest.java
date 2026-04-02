@@ -12,4 +12,7 @@ public class AgentChatRequest {
 
     @Schema(description = "消息内容")
     private String content;
+
+    @Schema(description = "交互式表单回答")
+    private InteractionResponseRequest interactionResponse;
 }

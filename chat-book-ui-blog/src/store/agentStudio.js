@@ -1,5 +1,5 @@
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue';
-import { useRoute, useRouter } from 'vue-router';
+import { defineStore } from 'pinia';
+import { computed, ref } from 'vue';
 import { ElMessage } from 'element-plus';
 
 import { API_CONFIG } from '@/config/index.js';
@@ -14,10 +14,19 @@ import {
     normalizeAgentDraft,
     optimizeAgentDraft,
     saveAgentDraftImport
-} from '../_domain/agent.js';
+} from '@/views/creator/_domain/agent.js';
+import {
+    AGENT_MESSAGE_TYPE,
+    buildInteractionResponsePayload,
+    buildInteractionResponseSummary,
+    extractInteractionResponse,
+    isInteractionResponseMessage,
+    normalizeAgentMessageType,
+    normalizeMessagePayload
+} from '@/views/creator/_domain/agent-interaction.js';
+import router from '@/router/index.js';
 
 const DEFAULT_SESSION_TITLE = '新的 AI 创作会话';
-const DEFAULT_OPTIMIZE_INSTRUCTION = '请强化结构层次、表达节奏和可读性，保留原有事实与结论。';
 const AGENT_CHAT_TYPE = 'AGENT_CHAT';
 const AGENT_CHAT_DELTA = 'AGENT_CHAT_DELTA';
 const AGENT_CHAT_DONE = 'AGENT_CHAT_DONE';
@@ -36,16 +45,16 @@ function normalizeMessage(message = {}) {
     return {
         id: message.id ?? `${Date.now()}-${Math.random()}`,
         role: normalizeMessageRole(message.role),
+        messageType: normalizeAgentMessageType(message.messageType),
         content: message.content ?? '',
+        payload: normalizeMessagePayload(message.messageType, message.payload),
         createTime: message.createTime ?? '',
         streaming: Boolean(message.streaming)
     };
 }
 
-export function useAgentStudioLogic() {
-    const route = useRoute();
-    const router = useRouter();
-
+export const useAgentStudioStore = defineStore('agentStudio', () => {
+    // Basic States
     const loadingSession = ref(false);
     const creatingSession = ref(false);
     const chatting = ref(false);
@@ -53,68 +62,83 @@ export function useAgentStudioLogic() {
     const optimizingDraft = ref(false);
     const adoptingCandidate = ref(false);
 
+    // Context
     const session = ref(null);
     const sessionId = ref(null);
     const sessionTitle = ref(DEFAULT_SESSION_TITLE);
-    const chatInput = ref('');
-    const optimizeInstruction = ref(DEFAULT_OPTIMIZE_INSTRUCTION);
     const messages = ref([]);
+    
+    // Draft states
     const draft = ref(null);
     const candidateDraft = ref(null);
 
+    // WebSocket Internals (not reactive)
     let socketService = null;
     let socketReadyPromise = null;
     let streamingAssistantMessageId = null;
     let closingSocket = false;
 
-    const hasMessages = computed(() => messages.value.length > 0);
-    const hasDraft = computed(() => Boolean(draft.value?.draftId));
-    const hasCandidateDraft = computed(() => Boolean(candidateDraft.value?.versionNo));
-    const activeDraftVersion = computed(() => draft.value?.versionNo ?? null);
-    const pendingDraftVersion = computed(() => candidateDraft.value?.versionNo ?? null);
-    const draftCompareChips = computed(() => {
-        if (!draft.value || !candidateDraft.value) {
-            return [];
-        }
-
-        return [
-            {
-                key: 'title',
-                label: '标题',
-                changed: draft.value.title !== candidateDraft.value.title
-            },
-            {
-                key: 'summary',
-                label: '摘要',
-                changed: draft.value.summary !== candidateDraft.value.summary
-            },
-            {
-                key: 'content',
-                label: '正文',
-                changed: draft.value.content !== candidateDraft.value.content
+    // Computed
+    const interactionResponseMap = computed(() => {
+        const map = new Map();
+        messages.value.forEach((message) => {
+            const interactionResponse = extractInteractionResponse(message);
+            if (interactionResponse?.formId) {
+                map.set(interactionResponse.formId, interactionResponse);
             }
-        ];
+        });
+        return map;
     });
 
+    const visibleMessages = computed(() => messages.value
+        .filter((message) => !isInteractionResponseMessage(message))
+        .map((message) => {
+            if (message.role === 'assistant' && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM) {
+                const formId = message.payload?.formId;
+                return {
+                    ...message,
+                    interactionResponse: formId ? (interactionResponseMap.value.get(formId) ?? null) : null
+                };
+            }
+            return message;
+        }));
+
+    const hasMessages = computed(() => visibleMessages.value.length > 0);
+    const hasDraft = computed(() => Boolean(draft.value?.draftId));
+    const hasCandidateDraft = computed(() => Boolean(candidateDraft.value?.versionNo));
+    const hasPendingInteractiveForm = computed(() => visibleMessages.value.some((message) =>
+        message.role === 'assistant'
+        && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM
+        && !message.interactionResponse
+    ));
+    
+    // Core Status Enum computed for the Middle Canvas UI (DraftCanvas)
+    // Values: 'empty' | 'generating' | 'completed' | 'optimizing'
+    const draftStatus = computed(() => {
+        if (generatingDraft.value) return 'generating';
+        if (optimizingDraft.value) return 'optimizing';
+        if (hasCandidateDraft.value || hasDraft.value) return 'completed';
+        return 'empty';
+    });
+    
+    const displayDraft = computed(() => {
+        // Return candidate if exists to do "seamless overlay" display
+        return candidateDraft.value || draft.value || null;
+    });
+
+    const activeDraftVersion = computed(() => draft.value?.versionNo ?? null);
+    const pendingDraftVersion = computed(() => candidateDraft.value?.versionNo ?? null);
+
     const sessionStatusLabel = computed(() => {
-        if (loadingSession.value) {
-            return '正在恢复';
-        }
-        if (chatting.value) {
-            return '对话进行中';
-        }
-        if (generatingDraft.value) {
-            return '生成草稿中';
-        }
-        if (optimizingDraft.value) {
-            return '优化候选中';
-        }
-        if (sessionId.value) {
-            return '会话已激活';
-        }
+        if (loadingSession.value) return '正在恢复';
+        if (chatting.value) return '对话进行中';
+        if (generatingDraft.value) return '生成首稿中';
+        if (optimizingDraft.value) return '优化重写中';
+        if (sessionId.value) return '会话已激活';
         return '未创建会话';
     });
 
+    // Message Utilities
     const findMessageIndex = (messageId) => messages.value.findIndex((item) => item.id === messageId);
 
     const clearStreamingState = () => {
@@ -131,9 +155,21 @@ export function useAgentStudioLogic() {
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
+            const normalized = typeof reply === 'object' && reply !== null
+                ? normalizeMessage({
+                    ...reply,
+                    id: reply.id ?? current.id,
+                    role: reply.role ?? 'ASSISTANT'
+                })
+                : normalizeMessage({
+                    id: current.id,
+                    role: 'ASSISTANT',
+                    messageType: AGENT_MESSAGE_TYPE.TEXT,
+                    content: typeof reply === 'string' && reply.length > 0 ? reply : current.content
+                });
             messages.value[messageIndex] = {
                 ...current,
-                content: typeof reply === 'string' && reply.length > 0 ? reply : current.content,
+                ...normalized,
                 streaming: false
             };
         }
@@ -161,28 +197,22 @@ export function useAgentStudioLogic() {
         clearStreamingState();
     };
 
+    // WebSocket setup
     const resolveAgentSocketUrl = () => {
         const wsUrl = formatWsUrl(API_CONFIG.baseURL);
         return `${wsUrl}/api/agent/ws`;
     };
 
     const connectWebSocket = () => {
-        if (socketService) {
-            return socketService;
-        }
+        if (socketService) return socketService;
 
         closingSocket = false;
         socketService = new SocketService(resolveAgentSocketUrl(), getAccessToken());
 
         socketService.on(AGENT_CHAT_DELTA, (payload = {}) => {
-            if (!streamingAssistantMessageId || typeof payload.content !== 'string') {
-                return;
-            }
-
+            if (!streamingAssistantMessageId || typeof payload.content !== 'string') return;
             const messageIndex = findMessageIndex(streamingAssistantMessageId);
-            if (messageIndex < 0) {
-                return;
-            }
+            if (messageIndex < 0) return;
 
             const current = messages.value[messageIndex];
             messages.value[messageIndex] = {
@@ -193,7 +223,7 @@ export function useAgentStudioLogic() {
         });
 
         socketService.on(AGENT_CHAT_DONE, (payload = {}) => {
-            finishStreamingMessage(payload.reply ?? '');
+            finishStreamingMessage(payload.message ?? payload.reply ?? '');
         });
 
         socketService.on(AGENT_CHAT_ERROR, (payload = {}) => {
@@ -202,10 +232,7 @@ export function useAgentStudioLogic() {
         });
 
         socketService.onClose(() => {
-            if (closingSocket) {
-                return;
-            }
-
+            if (closingSocket) return;
             if (chatting.value) {
                 discardStreamingMessage();
                 ElMessage.error('Agent 连接已断开，请重试');
@@ -222,13 +249,8 @@ export function useAgentStudioLogic() {
 
     const ensureSocketReady = async (timeoutMs = 5000) => {
         const service = connectWebSocket();
-        if (service.isConnected()) {
-            return service;
-        }
-
-        if (socketReadyPromise) {
-            return socketReadyPromise;
-        }
+        if (service.isConnected()) return service;
+        if (socketReadyPromise) return socketReadyPromise;
 
         socketReadyPromise = new Promise((resolve, reject) => {
             const startedAt = Date.now();
@@ -239,7 +261,6 @@ export function useAgentStudioLogic() {
                     resolve(service);
                     return;
                 }
-
                 if (Date.now() - startedAt >= timeoutMs) {
                     clearInterval(timer);
                     socketReadyPromise = null;
@@ -247,10 +268,20 @@ export function useAgentStudioLogic() {
                 }
             }, 100);
         });
-
         return socketReadyPromise;
     };
 
+    const disconnectWebSocket = () => {
+        closingSocket = true;
+        socketReadyPromise = null;
+        streamingAssistantMessageId = null;
+        if (socketService) {
+            socketService.close();
+            socketService = null;
+        }
+    };
+
+    // Actions
     const resetStudioState = () => {
         session.value = null;
         sessionId.value = null;
@@ -286,47 +317,8 @@ export function useAgentStudioLogic() {
         }
     };
 
-    const syncRouteSession = async (nextSessionId) => {
-        const parsedId = nextSessionId ? Number(nextSessionId) : null;
-        if (!parsedId) {
-            resetStudioState();
-            sessionTitle.value = DEFAULT_SESSION_TITLE;
-            return;
-        }
-
-        if (sessionId.value === parsedId && session.value) {
-            return;
-        }
-
-        await hydrateSession(parsedId);
-    };
-
-    watch(
-        () => route.params.sessionId,
-        (nextSessionId) => {
-            syncRouteSession(nextSessionId);
-        },
-        { immediate: true }
-    );
-
-    onMounted(() => {
-        connectWebSocket();
-    });
-
-    onBeforeUnmount(() => {
-        closingSocket = true;
-        socketReadyPromise = null;
-        streamingAssistantMessageId = null;
-        if (socketService) {
-            socketService.close();
-            socketService = null;
-        }
-    });
-
     const ensureSession = async (seedMessage = '') => {
-        if (sessionId.value) {
-            return sessionId.value;
-        }
+        if (sessionId.value) return sessionId.value;
 
         creatingSession.value = true;
         try {
@@ -359,17 +351,15 @@ export function useAgentStudioLogic() {
             ElMessage.warning('当前对话尚未完成，请稍后再新建会话');
             return;
         }
-
         resetStudioState();
         sessionTitle.value = DEFAULT_SESSION_TITLE;
-        chatInput.value = '';
-        optimizeInstruction.value = DEFAULT_OPTIMIZE_INSTRUCTION;
         await router.push({ name: 'AgentStudio' });
     };
 
-    const sendMessage = async () => {
-        const content = chatInput.value.trim();
-        if (!content) {
+    const sendMessage = async (content) => {
+        if (!content) return;
+        if (hasPendingInteractiveForm.value) {
+            ElMessage.warning('请先完成当前问题卡片');
             return;
         }
 
@@ -381,6 +371,7 @@ export function useAgentStudioLogic() {
             messages.value.push(normalizeMessage({
                 id: `user-${Date.now()}`,
                 role: 'USER',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content
             }));
 
@@ -389,11 +380,10 @@ export function useAgentStudioLogic() {
             messages.value.push(normalizeMessage({
                 id: assistantMessageId,
                 role: 'ASSISTANT',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: '',
                 streaming: true
             }));
-
-            chatInput.value = '';
 
             const sent = service.send(AGENT_CHAT_TYPE, {
                 sessionId: currentSessionId,
@@ -414,7 +404,10 @@ export function useAgentStudioLogic() {
             ElMessage.warning('请先开始一段创作对话');
             return;
         }
-
+        if (hasPendingInteractiveForm.value) {
+            ElMessage.warning('请先完成当前问题卡片，再生成首稿');
+            return;
+        }
         if (chatting.value) {
             ElMessage.warning('当前回复尚未完成，请稍后再生成首稿');
             return;
@@ -438,6 +431,14 @@ export function useAgentStudioLogic() {
                 session.value.targetDraftId = response.draftId;
             }
 
+            // Also post a silent status message in chat acting as System
+            messages.value.push(normalizeMessage({
+                id: `system-${Date.now()}`,
+                role: 'SYSTEM',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: '✅ 首稿生成完毕。你可以继续在对话框中圈出需要修改的段落或者补充新要求。'
+            }));
+
             ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
         } catch (error) {
             console.error('Failed to generate agent draft:', error);
@@ -447,23 +448,18 @@ export function useAgentStudioLogic() {
         }
     };
 
-    const optimizeCurrentDraft = async () => {
+    const optimizeCurrentDraft = async (instruction) => {
         if (!draft.value?.draftId) {
             ElMessage.warning('请先生成首稿');
             return;
         }
-
-        const instruction = optimizeInstruction.value.trim();
-        if (!instruction) {
-            ElMessage.warning('请输入优化指令');
-            return;
-        }
+        if (!instruction || !instruction.trim()) return;
 
         optimizingDraft.value = true;
         try {
             const response = await optimizeAgentDraft({
                 draftId: draft.value.draftId,
-                instruction
+                instruction: instruction.trim()
             });
             candidateDraft.value = normalizeAgentDraft({
                 draftId: response.draftId,
@@ -472,7 +468,23 @@ export function useAgentStudioLogic() {
                 summary: response.summary,
                 content: response.content
             });
-            ElMessage.success('候选版本已生成，请先对比再决定是否采用');
+            
+            // Log as user instruction
+            messages.value.push(normalizeMessage({
+                id: `user-opt-${Date.now()}`,
+                role: 'USER',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: `(局部优化指令): ${instruction.trim()}`
+            }));
+            // Log as system acknowledgement
+            messages.value.push(normalizeMessage({
+                id: `system-opt-${Date.now()}`,
+                role: 'SYSTEM',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: '✅ 候选版本已生成，正显示在画布中。您可以点击画布顶部的确认或撤销按钮。'
+            }));
+            
+            ElMessage.success('候选版本已生成');
         } catch (error) {
             console.error('Failed to optimize agent draft:', error);
             ElMessage.error('生成候选版本失败，请稍后重试');
@@ -483,40 +495,100 @@ export function useAgentStudioLogic() {
 
     const adoptCandidateVersion = async () => {
         if (!draft.value?.draftId || !candidateDraft.value?.versionNo) {
-            ElMessage.warning('当前没有可采用的候选版本');
+            ElMessage.warning('当前没有候选草稿可应用');
             return;
         }
-
         adoptingCandidate.value = true;
         try {
             await adoptAgentDraftVersion({
                 draftId: draft.value.draftId,
                 versionNo: candidateDraft.value.versionNo
             });
-            draft.value = {
-                ...candidateDraft.value
-            };
+            draft.value = { ...candidateDraft.value };
             candidateDraft.value = null;
-            ElMessage.success('候选版本已采用');
+            ElMessage.success('已应用新版本');
         } catch (error) {
             console.error('Failed to adopt candidate version:', error);
-            ElMessage.error('采用候选版本失败，请稍后重试');
+            ElMessage.error('应用候选版本失败，请稍后重试');
         } finally {
             adoptingCandidate.value = false;
         }
     };
+    
+    const rejectCandidateVersion = () => {
+        candidateDraft.value = null; // Reverts UI to active draft
+        ElMessage.info('已撤销候选版本');
+    };
 
     const importDraftToEditor = async () => {
-        if (!draft.value?.content) {
-            ElMessage.warning('请先生成或采用一个草稿版本');
+        const finalDraft = candidateDraft.value || draft.value;
+        if (!finalDraft?.content) {
+            ElMessage.warning('请先生成一个草稿版本');
             return;
         }
-
-        saveAgentDraftImport(draft.value);
+        saveAgentDraftImport(finalDraft);
         await router.push('/text');
     };
 
+    const submitInteractiveForm = async (message, answersMap = {}) => {
+        if (!message?.payload?.formId) {
+            ElMessage.error('当前问题卡片数据无效');
+            return;
+        }
+        if (chatting.value) {
+            ElMessage.warning('当前回复尚未完成，请稍后重试');
+            return;
+        }
+
+        const interactionResponse = buildInteractionResponsePayload(message.payload, answersMap);
+        if (!interactionResponse?.answers?.length) {
+            ElMessage.warning('请至少完成一个问题');
+            return;
+        }
+
+        chatting.value = true;
+        const optimisticMessageId = `user-form-${Date.now()}`;
+        try {
+            const service = await ensureSocketReady();
+
+            messages.value.push(normalizeMessage({
+                id: optimisticMessageId,
+                role: 'USER',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: buildInteractionResponseSummary(message.payload, answersMap),
+                payload: { interactionResponse }
+            }));
+
+            const assistantMessageId = `assistant-${Date.now()}`;
+            streamingAssistantMessageId = assistantMessageId;
+            messages.value.push(normalizeMessage({
+                id: assistantMessageId,
+                role: 'ASSISTANT',
+                messageType: AGENT_MESSAGE_TYPE.TEXT,
+                content: '',
+                streaming: true
+            }));
+
+            const sent = service.send(AGENT_CHAT_TYPE, {
+                sessionId: sessionId.value,
+                interactionResponse
+            });
+            if (!sent) {
+                throw new Error('Agent WebSocket 未连接');
+            }
+        } catch (error) {
+            console.error('Failed to submit interactive form:', error);
+            const optimisticIndex = findMessageIndex(optimisticMessageId);
+            if (optimisticIndex >= 0) {
+                messages.value.splice(optimisticIndex, 1);
+            }
+            discardStreamingMessage();
+            ElMessage.error('提交失败，请稍后重试');
+        }
+    };
+
     return {
+        // State
         loadingSession,
         creatingSession,
         chatting,
@@ -526,23 +598,35 @@ export function useAgentStudioLogic() {
         session,
         sessionId,
         sessionTitle,
-        chatInput,
-        optimizeInstruction,
         messages,
+        visibleMessages,
         draft,
         candidateDraft,
+        
+        // Computed
         hasMessages,
         hasDraft,
         hasCandidateDraft,
+        hasPendingInteractiveForm,
+        draftStatus,
+        displayDraft,
         activeDraftVersion,
         pendingDraftVersion,
-        draftCompareChips,
         sessionStatusLabel,
+        
+        // Methods
+        connectWebSocket,
+        disconnectWebSocket,
+        resetStudioState,
+        hydrateSession,
+        ensureSession,
         openFreshSession,
         sendMessage,
+        submitInteractiveForm,
         createDraftFromSession,
         optimizeCurrentDraft,
         adoptCandidateVersion,
+        rejectCandidateVersion,
         importDraftToEditor
     };
-}
+});

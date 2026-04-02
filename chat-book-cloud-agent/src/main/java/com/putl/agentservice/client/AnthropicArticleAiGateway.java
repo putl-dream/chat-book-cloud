@@ -10,11 +10,16 @@ import com.anthropic.models.messages.MessageParam;
 import com.anthropic.models.messages.RawContentBlockDelta;
 import com.anthropic.models.messages.RawMessageStreamEvent;
 import com.putl.agentservice.config.AnthropicProperties;
+import com.putl.agentservice.constants.AgentMessageTypeConstants;
 import com.putl.agentservice.constants.PromptTemplateConstants;
 import com.putl.agentservice.enums.AgentMessageRole;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.model.vo.AgentAssistantMessage;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
+import com.putl.agentservice.model.vo.InteractiveFormPayload;
+import com.putl.agentservice.model.vo.InteractiveOption;
+import com.putl.agentservice.model.vo.InteractiveQuestion;
 import com.putl.agentservice.model.vo.NotebookSummary;
 import com.putl.agentservice.prompt.PromptTemplateLoader;
 import fun.amireux.chat.book.framework.common.utils.JsonUtil;
@@ -24,9 +29,12 @@ import org.springframework.util.StringUtils;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Consumer;
@@ -49,15 +57,8 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
     }
 
     @Override
-    public AiInvocationResult<String> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary) {
-        return invokeForText(buildChatParams(messages, notebookSummary));
-    }
-
-    @Override
-    public AiInvocationResult<String> chatStream(List<AgentMessageDO> messages,
-                                                 NotebookSummary notebookSummary,
-                                                 Consumer<String> chunkConsumer) {
-        return invokeForTextStream(buildChatParams(messages, notebookSummary), chunkConsumer);
+    public AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary) {
+        return invokeForStructuredChat(buildChatParams(messages, notebookSummary));
     }
 
     @Override
@@ -112,12 +113,23 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
         MessageCreateParams.Builder builder = baseRequest(
                 properties.getAnthropic().getModel().getChat(),
                 properties.getAnthropic().getMaxTokens().getChat(),
-                0.7,
+                0.2,
                 renderTemplate(PromptTemplateConstants.ARTICLE_CHAT, Map.of(
                         "notebook_json", prettyJson(normalizeNotebook(notebookSummary))
                 )));
         toAnthropicMessages(messages).forEach(builder::addMessage);
         return builder.build();
+    }
+
+    private AiInvocationResult<AgentAssistantMessage> invokeForStructuredChat(MessageCreateParams params) {
+        AiInvocationResult<String> raw = invokeForText(params);
+        AgentAssistantMessage structured = parseStructuredChat(raw.getData());
+        return new AiInvocationResult<>(
+                structured,
+                raw.getTokenInput(),
+                raw.getTokenOutput(),
+                raw.getLatencyMs(),
+                raw.getModel());
     }
 
     private AiInvocationResult<String> invokeForText(MessageCreateParams params) {
@@ -187,6 +199,137 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
             throw new IllegalStateException("Anthropic 返回的 JSON 无法解析为 " + targetType.getSimpleName());
         }
         return new AiInvocationResult<>(parsed, raw.getTokenInput(), raw.getTokenOutput(), raw.getLatencyMs(), raw.getModel());
+    }
+
+    private AgentAssistantMessage parseStructuredChat(String rawText) {
+        String payload = extractJsonPayload(rawText);
+        AgentAssistantMessage parsed = JsonUtil.parseObject(payload, AgentAssistantMessage.class);
+        if (parsed == null) {
+            return AgentAssistantMessage.builder()
+                    .messageType(AgentMessageTypeConstants.TEXT)
+                    .content(defaultText(rawText).trim())
+                    .payload(null)
+                    .build();
+        }
+        return normalizeStructuredChat(parsed, rawText);
+    }
+
+    private AgentAssistantMessage normalizeStructuredChat(AgentAssistantMessage raw, String fallbackText) {
+        String messageType = defaultText(raw.getMessageType()).trim().toLowerCase(Locale.ROOT);
+        if (!StringUtils.hasText(messageType)) {
+            messageType = AgentMessageTypeConstants.TEXT;
+        }
+
+        if (!AgentMessageTypeConstants.INTERACTIVE_FORM.equals(messageType)) {
+            return AgentAssistantMessage.builder()
+                    .messageType(AgentMessageTypeConstants.TEXT)
+                    .content(resolveTextContent(raw.getContent(), fallbackText))
+                    .payload(null)
+                    .build();
+        }
+
+        InteractiveFormPayload normalizedPayload = normalizeInteractiveForm(raw.getPayload());
+        if (normalizedPayload == null || normalizedPayload.getQuestions().isEmpty()) {
+            return AgentAssistantMessage.builder()
+                    .messageType(AgentMessageTypeConstants.TEXT)
+                    .content(resolveTextContent(raw.getContent(), fallbackText))
+                    .payload(null)
+                    .build();
+        }
+
+        return AgentAssistantMessage.builder()
+                .messageType(AgentMessageTypeConstants.INTERACTIVE_FORM)
+                .content(defaultText(raw.getContent()).trim())
+                .payload(normalizedPayload)
+                .build();
+    }
+
+    private InteractiveFormPayload normalizeInteractiveForm(InteractiveFormPayload payload) {
+        if (payload == null) {
+            return null;
+        }
+
+        List<InteractiveQuestion> normalizedQuestions = new ArrayList<>();
+        List<InteractiveQuestion> questions = payload.getQuestions();
+        if (questions != null) {
+            for (int i = 0; i < questions.size(); i++) {
+                InteractiveQuestion normalized = normalizeQuestion(questions.get(i), i);
+                if (normalized != null) {
+                    normalizedQuestions.add(normalized);
+                }
+            }
+        }
+
+        if (normalizedQuestions.isEmpty()) {
+            return null;
+        }
+
+        return InteractiveFormPayload.builder()
+                .formId(StringUtils.hasText(payload.getFormId()) ? payload.getFormId().trim() : "form_" + UUID.randomUUID())
+                .title(defaultText(payload.getTitle()).trim())
+                .description(defaultText(payload.getDescription()).trim())
+                .submitMode("batch")
+                .questions(normalizedQuestions)
+                .build();
+    }
+
+    private InteractiveQuestion normalizeQuestion(InteractiveQuestion question, int index) {
+        if (question == null || !StringUtils.hasText(question.getLabel())) {
+            return null;
+        }
+
+        String type = defaultText(question.getType()).trim().toLowerCase(Locale.ROOT);
+        if (!StringUtils.hasText(type)) {
+            type = "single_choice";
+        }
+
+        List<InteractiveOption> normalizedOptions = normalizeOptions(question.getOptions());
+        if (("single_choice".equals(type) || "multi_choice".equals(type)) && normalizedOptions.isEmpty()) {
+            return null;
+        }
+
+        return InteractiveQuestion.builder()
+                .id(StringUtils.hasText(question.getId()) ? question.getId().trim() : "question_" + (index + 1))
+                .label(question.getLabel().trim())
+                .type(type)
+                .required(question.getRequired() == null || question.getRequired())
+                .allowCustomInput(Boolean.TRUE.equals(question.getAllowCustomInput()))
+                .placeholder(defaultText(question.getPlaceholder()).trim())
+                .options("text_input".equals(type) ? List.of() : normalizedOptions)
+                .build();
+    }
+
+    private List<InteractiveOption> normalizeOptions(List<InteractiveOption> options) {
+        if (options == null || options.isEmpty()) {
+            return List.of();
+        }
+        return options.stream()
+                .filter(Objects::nonNull)
+                .filter(option -> StringUtils.hasText(option.getLabel()) || StringUtils.hasText(option.getValue()))
+                .map(option -> InteractiveOption.builder()
+                        .label(resolveOptionValue(option.getLabel(), option.getValue()))
+                        .value(resolveOptionValue(option.getValue(), option.getLabel()))
+                        .description(defaultText(option.getDescription()).trim())
+                        .build())
+                .toList();
+    }
+
+    private String resolveOptionValue(String primary, String fallback) {
+        if (StringUtils.hasText(primary)) {
+            return primary.trim();
+        }
+        return defaultText(fallback).trim();
+    }
+
+    private String resolveTextContent(String content, String fallbackText) {
+        if (StringUtils.hasText(content)) {
+            return content.trim();
+        }
+        String stripped = extractJsonPayload(defaultText(fallbackText)).trim();
+        if (stripped.startsWith("{") && stripped.endsWith("}")) {
+            return "好的，我继续为你整理写作方向。";
+        }
+        return defaultText(fallbackText).trim();
     }
 
     private List<MessageParam> toAnthropicMessages(List<AgentMessageDO> messages) {
