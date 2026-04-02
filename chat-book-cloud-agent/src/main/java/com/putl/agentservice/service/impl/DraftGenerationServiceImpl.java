@@ -16,17 +16,22 @@ import com.putl.agentservice.service.DraftGenerationService;
 import com.putl.articleservice.api.ArticleClient;
 import com.putl.articleservice.api.dto.CreateDraftRequest;
 import com.putl.articleservice.api.dto.CreateDraftResponse;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.concurrent.Executor;
 import java.util.function.Consumer;
 
+@Slf4j
 @Service
 public class DraftGenerationServiceImpl implements DraftGenerationService {
 
@@ -71,38 +76,28 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
     }
 
     private void doGenerateDraftByWebSocket(String userId, GenerateDraftRequest request) {
+        Integer sessionId = request == null ? null : request.getSessionId();
         try {
-            send(userId, AGENT_DRAFT_GENERATE_START, Map.of(
-                    "sessionId", request.getSessionId(),
-                    "message", "正在整理会话上下文..."
-            ));
-            send(userId, AGENT_DRAFT_GENERATE_STATUS, Map.of(
-                    "sessionId", request.getSessionId(),
-                    "message", "正在生成首稿内容..."
-            ));
+            log.info("Starting agent draft generation. sessionId={}, userId={}", sessionId, userId);
+            send(userId, AGENT_DRAFT_GENERATE_START, payload(sessionId, "message", "正在整理会话上下文..."));
+            send(userId, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在生成首稿内容..."));
             DraftGenerateResponse response = doGenerateDraft(
                     request,
-                    chunk -> send(userId, AGENT_DRAFT_GENERATE_DELTA, Map.of(
-                    "sessionId", request.getSessionId(),
-                    "chunk", chunk
-                    )),
-                    () -> send(userId, AGENT_DRAFT_GENERATE_STATUS, Map.of(
-                            "sessionId", request.getSessionId(),
-                            "message", "正在保存草稿..."
-                    )));
-            send(userId, AGENT_DRAFT_GENERATE_DONE, Map.of(
-                    "sessionId", request.getSessionId(),
+                    chunk -> send(userId, AGENT_DRAFT_GENERATE_DELTA, payload(sessionId, "chunk", chunk)),
+                    () -> send(userId, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在保存草稿...")));
+            send(userId, AGENT_DRAFT_GENERATE_DONE, payload(sessionId,
                     "draftId", response.getDraftId(),
                     "versionNo", response.getVersionNo(),
                     "title", response.getTitle(),
                     "summary", response.getSummary(),
-                    "content", response.getContent()
-            ));
+                    "content", response.getContent()));
+            log.info("Completed agent draft generation. sessionId={}, userId={}, draftId={}, versionNo={}",
+                    sessionId, userId, response.getDraftId(), response.getVersionNo());
         } catch (Exception ex) {
-            send(userId, AGENT_DRAFT_GENERATE_ERROR, Map.of(
-                    "sessionId", request.getSessionId(),
-                    "message", defaultText(ex.getMessage(), "生成草稿失败，请稍后重试")
-            ));
+            log.error("Agent draft generation failed. sessionId={}, userId={}, reason={}",
+                    sessionId, userId, ex.getMessage(), ex);
+            send(userId, AGENT_DRAFT_GENERATE_ERROR, payload(sessionId,
+                    "message", defaultText(ex.getMessage(), "生成草稿失败，请稍后重试")));
         }
     }
 
@@ -115,18 +110,19 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                 .orderByAsc(AgentMessageDO::getId));
         NotebookSummary notebook = agentNotebookCacheService.getNotebook(session.getId());
         AiInvocationResult<ArticleDraftResult> result = articleAiGateway.generateDraft(messages, notebook, chunkConsumer);
+        ArticleDraftResult draftResult = requireDraftResult(result, request.getSessionId());
 
         if (beforePersistHook != null) {
             beforePersistHook.run();
         }
 
-        CreateDraftResponse response = createDraft(session, result.getData());
+        CreateDraftResponse response = createDraft(session, draftResult);
         return DraftGenerateResponse.builder()
                 .draftId(response.getDraftId())
                 .versionNo(response.getVersionNo())
-                .title(result.getData().getTitle())
-                .summary(result.getData().getSummary())
-                .content(result.getData().getContent())
+                .title(draftResult.getTitle())
+                .summary(draftResult.getSummary())
+                .content(draftResult.getContent())
                 .build();
     }
 
@@ -151,7 +147,17 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         createDraftRequest.setSourceType("CREATE");
         createDraftRequest.setInstruction("Generate draft from agent session");
 
-        CreateDraftResponse response = articleClient.createDraft(createDraftRequest).getData();
+        CommonResult<CreateDraftResponse> createDraftResult = articleClient.createDraft(createDraftRequest);
+        if (createDraftResult == null) {
+            throw new IllegalStateException("文章草稿服务未返回结果");
+        }
+        if (!createDraftResult.isSuccess() || createDraftResult.getData() == null) {
+            throw new IllegalStateException(defaultText(createDraftResult.getMsg(), "文章草稿保存失败"));
+        }
+        CreateDraftResponse response = createDraftResult.getData();
+        if (response.getDraftId() == null || response.getVersionNo() == null) {
+            throw new IllegalStateException("文章草稿服务返回了不完整的保存结果");
+        }
         agentSessionMapper.updateById(AgentSessionDO.builder()
                 .id(session.getId())
                 .targetDraftId(response.getDraftId())
@@ -159,11 +165,43 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         return response;
     }
 
+    private ArticleDraftResult requireDraftResult(AiInvocationResult<ArticleDraftResult> result, Integer sessionId) {
+        if (result == null || result.getData() == null) {
+            throw new IllegalStateException("AI 未返回可用的草稿内容");
+        }
+        ArticleDraftResult draftResult = result.getData();
+        if (!StringUtils.hasText(draftResult.getTitle())
+                && !StringUtils.hasText(draftResult.getSummary())
+                && !StringUtils.hasText(draftResult.getContent())) {
+            throw new IllegalStateException("AI 返回的草稿内容为空");
+        }
+        log.info("AI draft generated. sessionId={}, model={}, tokenInput={}, tokenOutput={}, latencyMs={}",
+                sessionId,
+                defaultText(result.getModel(), "unknown"),
+                Objects.requireNonNullElse(result.getTokenInput(), 0),
+                Objects.requireNonNullElse(result.getTokenOutput(), 0),
+                Objects.requireNonNullElse(result.getLatencyMs(), 0));
+        return draftResult;
+    }
+
     private void send(String userId, String type, Map<String, Object> payload) {
         if (!StringUtils.hasText(userId)) {
+            log.warn("Skipping WebSocket send because userId is blank. type={}, payload={}", type, payload);
             return;
         }
         messagePublisher.sendToUser(userId, WebSocketResult.of(type, payload));
+    }
+
+    private Map<String, Object> payload(Integer sessionId, Object... keyValues) {
+        if (keyValues.length % 2 != 0) {
+            throw new IllegalArgumentException("payload keyValues length must be even");
+        }
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", sessionId);
+        for (int i = 0; i < keyValues.length; i += 2) {
+            payload.put(String.valueOf(keyValues[i]), keyValues[i + 1]);
+        }
+        return payload;
     }
 
     private String defaultText(String value, String fallback) {
