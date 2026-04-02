@@ -1,11 +1,40 @@
-import { mount } from '@vue/test-utils';
+// @vitest-environment jsdom
+
+import { flushPromises, mount } from '@vue/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Text from './Text.vue';
+
+const {
+    mockRouter,
+    mockLoadAgentDraftImport,
+    mockClearAgentDraftImport,
+    mockSetContent,
+    mockEditorRef
+} = vi.hoisted(() => ({
+    mockRouter: {
+        push: vi.fn(),
+        replace: vi.fn()
+    },
+    mockLoadAgentDraftImport: vi.fn(() => null),
+    mockClearAgentDraftImport: vi.fn(),
+    mockSetContent: vi.fn(),
+    mockEditorRef: {
+        __v_isRef: true,
+        value: {
+            getHTML: () => '',
+            destroy: vi.fn(),
+            commands: { setContent: vi.fn() },
+            storage: { characterCount: { characters: () => 0 } }
+        }
+    }
+}));
+
+mockEditorRef.value.commands.setContent = mockSetContent;
 
 // Mocks
 vi.mock('vue-router', () => ({
     useRoute: () => ({ params: { id: null } }),
-    useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+    useRouter: () => mockRouter,
     onBeforeRouteLeave: vi.fn(),
     onBeforeRouteUpdate: vi.fn(),
     createRouter: () => ({
@@ -33,8 +62,8 @@ vi.mock('@/views/article/_domain/article.js', () => ({
 }));
 
 vi.mock('@/views/creator/_domain/agent.js', () => ({
-    loadAgentDraftImport: vi.fn(() => null),
-    clearAgentDraftImport: vi.fn()
+    loadAgentDraftImport: mockLoadAgentDraftImport,
+    clearAgentDraftImport: mockClearAgentDraftImport
 }));
 
 // Mock Element Plus and Tiptap dependencies to prevent mount errors
@@ -75,12 +104,7 @@ vi.mock('@element-plus/icons-vue', () => ({
 }));
 
 vi.mock('@tiptap/vue-3', () => ({
-    useEditor: () => ({
-        getHTML: () => '',
-        destroy: vi.fn(),
-        commands: { setContent: vi.fn() },
-        storage: { characterCount: { characters: () => 0 } }
-    }),
+    useEditor: () => mockEditorRef,
     EditorContent: { template: '<div></div>' }
 }));
 
@@ -99,6 +123,9 @@ describe('Text.vue Three-Column Layout', () => {
     let wrapper;
 
     beforeEach(() => {
+        vi.clearAllMocks();
+        window.localStorage.clear();
+        window.sessionStorage.clear();
         // Reset window innerWidth
         Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: 1200 });
         wrapper = mount(Text);
@@ -173,5 +200,21 @@ describe('Text.vue Three-Column Layout', () => {
         // Trying to open right should do nothing
         await wrapper.vm.toggleRight();
         expect(wrapper.vm.layoutState.rightOpen).toBe(false);
+    });
+
+    it('imports agent draft without requiring local userInfo', async () => {
+        wrapper.unmount();
+        mockLoadAgentDraftImport.mockReturnValue({
+            title: 'Agent 首稿',
+            content: '<p>导入内容</p>',
+            abstractText: '摘要'
+        });
+
+        wrapper = mount(Text);
+        await flushPromises();
+
+        expect(mockLoadAgentDraftImport).toHaveBeenCalled();
+        expect(mockClearAgentDraftImport).toHaveBeenCalledTimes(1);
+        expect(mockSetContent).toHaveBeenCalledWith('<p>导入内容</p>', false);
     });
 });
