@@ -21,13 +21,38 @@
             </div>
         </div>
 
+        <!-- Status: Generating Preview -->
+        <div class="canvas-state completed-state custom-scrollbar u-animate-fade-in" v-else-if="store.generatingDraft && store.streamingDraftPreview">
+            <div class="a4-paper">
+                <div class="floating-toolbar floating-toolbar--progress">
+                    <div class="floating-toolbar-info">
+                        <span class="breath-dot"></span>
+                        <span>{{ store.draftStreamingStatusText || '正在构建文章框架...' }}</span>
+                    </div>
+                </div>
+
+                <div class="draft-content">
+                    <h1 class="draft-title">{{ store.streamingDraftPreview.title || '正在生成标题...' }}</h1>
+                    <div class="draft-summary" v-if="store.streamingDraftPreview.summary">
+                        {{ store.streamingDraftPreview.summary }}
+                    </div>
+                    <RichTextViewer
+                        v-if="store.streamingDraftPreview.content"
+                        class="draft-viewer"
+                        :html="renderHtml(store.streamingDraftPreview.content)"
+                        variant="article"
+                    />
+                </div>
+            </div>
+        </div>
+
         <!-- Status: Generating or Optimizing -->
         <div class="canvas-state generating-state u-animate-fade-in" v-else-if="store.draftStatus === 'generating' || store.draftStatus === 'optimizing'">
             <div class="skeleton-paper">
                 <div class="skeleton-header">
                     <div class="breath-indicator">
                         <span class="breath-dot"></span>
-                        <span class="breath-text">{{ store.draftStatus === 'generating' ? '正在构建文章框架...' : '正在进行局部优化重写...' }}</span>
+                        <span class="breath-text">{{ store.draftStatus === 'generating' ? (store.draftStreamingStatusText || '正在构建文章框架...') : '正在进行局部优化重写...' }}</span>
                     </div>
                 </div>
                 <div class="skeleton-body">
@@ -248,6 +273,11 @@ const renderHtml = (content) => buildRichTextHtml(content || '', 'markdown');
     box-shadow: 0 8px 24px rgba(22, 50, 79, 0.2);
     z-index: 100;
     color: #fff;
+}
+
+.floating-toolbar--progress {
+    gap: 12px;
+    padding-right: 20px;
 }
 
 .floating-toolbar-info {

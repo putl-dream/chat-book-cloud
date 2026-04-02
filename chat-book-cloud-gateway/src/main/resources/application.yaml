@@ -116,6 +116,14 @@ spring:
           filters:
             - StripPrefix=1
 
+        # Agent 服务 WebSocket
+        - id: agent-service-websocket
+          uri: ${AGENT_SERVICE_URI:lb://chat-book-cloud-agent}
+          predicates:
+            - Path=/api/agent/ws
+          filters:
+            - StripPrefix=1
+
 authentication:
   rules:
     - name: user-self-api
