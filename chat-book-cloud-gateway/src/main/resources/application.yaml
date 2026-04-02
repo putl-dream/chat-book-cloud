@@ -102,7 +102,8 @@ spring:
         # ==================== WebSocket 路由配置 ====================
         # Article 服务 WebSocket
         - id: article-service-websocket
-          uri: ${ARTICLE_SERVICE_URI:lb://chat-book-cloud-article}
+          order: -10
+          uri: ${ARTICLE_SERVICE_WS_URI:lb:ws://chat-book-cloud-article}
           predicates:
             - Path=/api/article/ws
           filters:
@@ -110,7 +111,8 @@ spring:
 
         # Chat 服务 WebSocket
         - id: chat-service-websocket
-          uri: ${CHAT_SERVICE_URI:lb://chat-book-cloud-chat}
+          order: -10
+          uri: ${CHAT_SERVICE_WS_URI:lb:ws://chat-book-cloud-chat}
           predicates:
             - Path=/api/chat/ws
           filters:
@@ -118,7 +120,8 @@ spring:
 
         # Agent 服务 WebSocket
         - id: agent-service-websocket
-          uri: ${AGENT_SERVICE_URI:lb://chat-book-cloud-agent}
+          order: -10
+          uri: ${AGENT_SERVICE_WS_URI:lb:ws://chat-book-cloud-agent}
           predicates:
             - Path=/api/agent/ws
           filters:

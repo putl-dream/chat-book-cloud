@@ -383,6 +383,15 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                     resolve(service);
                     return;
                 }
+
+                const readyState = service?.socket?.readyState;
+                if (readyState === WebSocket.CLOSING || readyState === WebSocket.CLOSED) {
+                    clearInterval(timer);
+                    socketReadyPromise = null;
+                    reject(new Error('Agent WebSocket handshake failed'));
+                    return;
+                }
+
                 if (Date.now() - startedAt >= timeoutMs) {
                     clearInterval(timer);
                     socketReadyPromise = null;
