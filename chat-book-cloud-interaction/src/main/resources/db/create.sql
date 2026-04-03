@@ -23,6 +23,7 @@ create table review
     user_id     int                                not null comment '评论者ID',
     parent_id   int      default 0                 null comment '父评论ID，0-评论文章，other-评论用户评论',
     content     text                               not null comment '评论内容',
+    status      tinyint  default 0                 not null comment '评论状态 0-正常 1-已删除 2-已屏蔽',
     create_time datetime default CURRENT_TIMESTAMP null comment '评论创建时间',
     update_time datetime default CURRENT_TIMESTAMP null on update CURRENT_TIMESTAMP comment '更新时间'
 )
@@ -36,6 +37,9 @@ create index idx_text_id
 
 create index idx_user_id
     on review (user_id);
+
+create index idx_review_status
+    on review (status);
 
 create table user_foot
 (
