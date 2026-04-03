@@ -178,6 +178,7 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PaginationControls from "@/components/shared/PaginationControls.vue";
+import { confirmAction } from "@/composables/useConfirmDialog";
 import { tagTypeMap } from "@/data/admin-config";
 import {
   BrowserApiError,
@@ -315,7 +316,16 @@ async function handleSubmit() {
 }
 
 async function handleDelete(tag: AdminTag) {
-  if (!window.confirm(`确认删除标签「${tag.name}」吗？`)) {
+  const confirmed = await confirmAction({
+    title: `删除标签「${tag.name}」`,
+    description: "删除后依赖该标签的内容筛选和运营标记会受到影响。",
+    note: "建议先确认没有正在使用该标签的专题运营或人工推荐配置。",
+    confirmText: "确认删除",
+    badge: "Tag Taxonomy",
+    tone: "danger",
+  });
+
+  if (!confirmed) {
     return;
   }
 

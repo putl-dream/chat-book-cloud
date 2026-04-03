@@ -204,6 +204,7 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PaginationControls from "@/components/shared/PaginationControls.vue";
+import { confirmAction } from "@/composables/useConfirmDialog";
 import RequestStatePanel from "@/components/shared/RequestStatePanel.vue";
 import { getRoleLabel, getRoleTone } from "@/data/admin-config";
 import { BrowserApiError, disableUser, enableUser, getUsersPage, updateUserRole } from "@/services/admin-api";
@@ -325,12 +326,28 @@ async function runUserAction(fn: (userId: number) => Promise<void>, user: AdminU
 }
 
 async function handleDisable(user: AdminUser) {
-  if (!window.confirm(`确认禁用用户 ${user.username}（UID ${user.userId}）吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `禁用用户 ${user.username}`,
+    description: `账号 UID ${user.userId} 将被限制登录与访问后台外的业务能力。`,
+    note: "请确认该账号已经完成人工核查，避免误伤正常用户。",
+    confirmText: "确认禁用",
+    badge: "Account Governance",
+    tone: "danger",
+  });
+
+  if (!confirmed) return;
   await runUserAction(disableUser, user, "禁用");
 }
 
 async function handleEnable(user: AdminUser) {
-  if (!window.confirm(`确认恢复用户 ${user.username}（UID ${user.userId}）吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `恢复用户 ${user.username}`,
+    description: `账号 UID ${user.userId} 会重新获得正常登录与访问权限。`,
+    confirmText: "确认恢复",
+    badge: "Account Governance",
+  });
+
+  if (!confirmed) return;
   await runUserAction(enableUser, user, "恢复");
 }
 
@@ -350,7 +367,6 @@ async function handleRoleSubmit() {
   if (!roleDialog.value) return;
 
   const { user, targetRole } = roleDialog.value;
-  if (!window.confirm(`确认将用户 ${user.username} 的角色变更为 ${targetRole === "ADMIN" ? "管理员" : "普通用户"} 吗？`)) return;
 
   try {
     submitting.value = true;

@@ -167,8 +167,26 @@
     background: var(--cb-primary-hover);
   }
 
+  .panel-action-button.danger,
   .table-action-button.danger {
-    color: #b91c1c;
+    border-color: color-mix(in srgb, var(--cb-error) 24%, var(--cb-border-subtle));
+    background: color-mix(in srgb, var(--cb-tag-error-bg) 78%, var(--cb-control-surface));
+    color: var(--cb-tag-error-text);
+  }
+
+  .panel-action-button.danger:hover,
+  .table-action-button.danger:hover {
+    background: color-mix(in srgb, var(--cb-tag-error-bg) 92%, var(--cb-control-hover-surface));
+  }
+
+  .panel-action-button.danger.is-solid {
+    border-color: transparent;
+    background: var(--cb-error);
+    color: white;
+  }
+
+  .panel-action-button.danger.is-solid:hover {
+    background: color-mix(in srgb, var(--cb-error) 88%, black);
   }
 
   .inline-actions {
@@ -538,6 +556,67 @@
 
   .dialog-actions {
     @apply mt-2 flex justify-end gap-3;
+  }
+
+  .confirm-dialog-backdrop {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+  }
+
+  .confirm-dialog-panel {
+    @apply max-w-xl;
+  }
+
+  .confirm-dialog-head {
+    @apply flex items-start gap-4;
+  }
+
+  .confirm-dialog-icon {
+    @apply flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl text-lg font-semibold;
+    background: color-mix(in srgb, var(--cb-primary) 14%, var(--cb-bg-main));
+    color: var(--cb-primary);
+  }
+
+  .confirm-dialog-icon[data-tone="warning"] {
+    background: color-mix(in srgb, var(--cb-warning) 18%, var(--cb-bg-main));
+    color: var(--cb-warning);
+  }
+
+  .confirm-dialog-icon[data-tone="danger"] {
+    background: color-mix(in srgb, var(--cb-error) 18%, var(--cb-bg-main));
+    color: var(--cb-error);
+  }
+
+  .confirm-dialog-copy {
+    @apply flex min-w-0 flex-1 flex-col gap-2;
+  }
+
+  .confirm-dialog-description {
+    @apply text-sm leading-6;
+    color: var(--cb-text-secondary);
+  }
+
+  .confirm-dialog-note {
+    @apply mt-5 rounded-[20px] border px-4 py-3 text-sm leading-6;
+    border-color: color-mix(in srgb, var(--cb-border-subtle) 84%, transparent);
+    background: color-mix(in srgb, var(--cb-section-surface) 92%, transparent);
+    color: var(--cb-text-secondary);
+  }
+
+  .confirm-dialog-note[data-tone="warning"] {
+    border-color: color-mix(in srgb, var(--cb-warning) 20%, var(--cb-border-subtle));
+    background: color-mix(in srgb, var(--cb-tag-warning-bg) 68%, var(--cb-section-surface));
+    color: var(--cb-tag-warning-text);
+  }
+
+  .confirm-dialog-note[data-tone="danger"] {
+    border-color: color-mix(in srgb, var(--cb-error) 20%, var(--cb-border-subtle));
+    background: color-mix(in srgb, var(--cb-tag-error-bg) 72%, var(--cb-section-surface));
+    color: var(--cb-tag-error-text);
+  }
+
+  .confirm-dialog-actions {
+    @apply mt-6;
   }
 
   .skeleton-block {
