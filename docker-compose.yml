@@ -90,8 +90,12 @@ services:
     environment:
       SPRING_PROFILES_ACTIVE: local
       NACOS_SERVER_ADDR: nacos:8848
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
     depends_on:
       - nacos
+      - redis
     networks:
       - chat-book-net
 
