@@ -27,8 +27,8 @@ public interface ArticleClient {
     @PostMapping("page/ids")
     CommonResult<List<ArticleListVO>> selectIds(@RequestBody List<Integer> ids);
 
-    @PostMapping(USER_SERVICE_URL + "queryCount")
-    Long queryCount();
+    @GetMapping(USER_SERVICE_URL + "queryCount")
+    CommonResult<Long> queryCount();
 
     @PostMapping("/draft/internal/create")
     CommonResult<CreateDraftResponse> createDraft(@RequestBody CreateDraftRequest request);

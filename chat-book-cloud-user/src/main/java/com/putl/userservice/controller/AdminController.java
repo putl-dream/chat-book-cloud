@@ -39,7 +39,10 @@ public class AdminController {
     public CommonResult<DataCount> getDataCount() {
         DataCount dataCount = new DataCount();
         dataCount.setUserCount(userService.count());
-        dataCount.setArticleCount(articleClient.queryCount());
+        CommonResult<Long> articleCountResult = articleClient.queryCount();
+        dataCount.setArticleCount(articleCountResult != null && articleCountResult.getData() != null
+                ? articleCountResult.getData()
+                : 0L);
         dataCount.setReviewCount(0L);
         return CommonResult.success(dataCount);
     }
