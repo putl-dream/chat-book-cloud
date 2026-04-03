@@ -221,7 +221,7 @@
                       class="table-action-button"
                       :disabled="submitting"
                       type="button"
-                      @click="handleUnpublish(article.id)"
+                      @click="handleUnpublish(article)"
                     >
                       下架
                     </button>
@@ -230,7 +230,7 @@
                       class="table-action-button"
                       :disabled="submitting"
                       type="button"
-                      @click="handleRestore(article.id)"
+                      @click="handleRestore(article)"
                     >
                       恢复
                     </button>
@@ -239,7 +239,7 @@
                       class="table-action-button danger"
                       :disabled="submitting"
                       type="button"
-                      @click="handleDelete(article.id)"
+                      @click="handleDelete(article)"
                     >
                       删除
                     </button>
@@ -415,6 +415,7 @@ async function runBatchAction(fn: (ids: number[]) => Promise<void>, ids: number[
 }
 
 async function handlePublish(article: ContentArticle) {
+  console.log(article);
   const confirmed = await confirmAction({
     title: `发布文章 ${article.title}`,
     description: "发布后文章会进入线上可见状态，并参与前台分发与运营曝光。",
@@ -426,9 +427,9 @@ async function handlePublish(article: ContentArticle) {
   await runAction(publishArticle, article.id, "发布");
 }
 
-async function handleUnpublish(id: number) {
+async function handleUnpublish(article: ContentArticle) {
   const confirmed = await confirmAction({
-    title: `下架文章 #${id}`,
+    title: `下架文章 ${article.title}`,
     description: "下架后文章将停止对外展示，但仍保留后台治理与恢复能力。",
     confirmText: "确认下架",
     badge: "Content Operations",
@@ -436,12 +437,12 @@ async function handleUnpublish(id: number) {
   });
 
   if (!confirmed) return;
-  await runAction(unpublishArticle, id, "下架");
+  await runAction(unpublishArticle, article.id, "下架");
 }
 
-async function handleDelete(id: number) {
+async function handleDelete(article: ContentArticle) {
   const confirmed = await confirmAction({
-    title: `删除文章 #${id}`,
+    title: `删除文章 ${article.title}`,
     description: "删除后该文章会从内容资产视图移除。",
     note: "此操作不可恢复，请确认该文章不再需要保留。",
     confirmText: "确认删除",
@@ -450,19 +451,19 @@ async function handleDelete(id: number) {
   });
 
   if (!confirmed) return;
-  await runAction(deleteArticle, id, "删除");
+  await runAction(deleteArticle, article.id, "删除");
 }
 
-async function handleRestore(id: number) {
+async function handleRestore(article: ContentArticle) {
   const confirmed = await confirmAction({
-    title: `恢复文章 #${id}`,
+    title: `恢复文章 #${article.title}`,
     description: "恢复后文章会回到可运营状态，并重新出现在内容管理列表中。",
     confirmText: "确认恢复",
     badge: "Content Operations",
   });
 
   if (!confirmed) return;
-  await runAction(restoreArticle, id, "恢复");
+  await runAction(restoreArticle, article.id, "恢复");
 }
 
 async function handleBatchPublish() {
