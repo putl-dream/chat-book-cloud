@@ -16,6 +16,7 @@ import com.putl.agentservice.service.AgentNotebookService;
 import com.putl.agentservice.service.AgentSessionService;
 import com.putl.articleservice.api.ArticleClient;
 import com.putl.articleservice.api.dto.DraftDetailDTO;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import org.springframework.stereotype.Service;
@@ -75,7 +76,10 @@ public class AgentSessionServiceImpl implements AgentSessionService {
                 .orderByAsc(AgentMessageDO::getId));
         DraftDetailDTO draft = null;
         if (session != null && session.getTargetDraftId() != null) {
-            draft = articleClient.getDraftDetail(session.getTargetDraftId()).getData();
+            CommonResult<DraftDetailDTO> draftResult = articleClient.getDraftDetail(session.getTargetDraftId());
+            if (draftResult != null && draftResult.isSuccess()) {
+                draft = draftResult.getData();
+            }
         }
         return AgentSessionDetailResponse.builder()
                 .session(session)

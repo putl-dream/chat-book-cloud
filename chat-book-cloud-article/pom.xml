@@ -81,13 +81,16 @@
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-circuitbreaker-resilience4j</artifactId>
         </dependency>
+        <dependency>
+            <groupId>io.github.resilience4j</groupId>
+            <artifactId>resilience4j-bulkhead</artifactId>
+        </dependency>
 
         <!--负载均衡器-->
         <dependency>
             <groupId>org.springframework.cloud</groupId>
             <artifactId>spring-cloud-starter-loadbalancer</artifactId>
         </dependency>
-
 
         <dependency>
             <groupId>com.mysql</groupId>
@@ -120,7 +123,7 @@
             <scope>test</scope>
         </dependency>
 
-<!-- FastJSON removed -->
+        <!-- FastJSON removed -->
 
     </dependencies>
 

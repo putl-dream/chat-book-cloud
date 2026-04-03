@@ -14,6 +14,7 @@ import com.putl.articleservice.api.dto.CreateDraftResponse;
 import com.putl.articleservice.api.dto.CreateDraftVersionRequest;
 import com.putl.articleservice.api.dto.DraftDetailDTO;
 import com.putl.articleservice.api.dto.DraftVersionAdoptRequest;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -29,7 +30,11 @@ public class DraftOptimizationServiceImpl implements DraftOptimizationService {
 
     @Override
     public DraftOptimizeResponse optimizeDraft(OptimizeDraftRequest request) {
-        DraftDetailDTO draft = articleClient.getDraftDetail(request.getDraftId()).getData();
+        CommonResult<DraftDetailDTO> draftResult = articleClient.getDraftDetail(request.getDraftId());
+        if (draftResult == null || !draftResult.isSuccess() || draftResult.getData() == null) {
+            throw new IllegalStateException("Failed to load draft detail from article service");
+        }
+        DraftDetailDTO draft = draftResult.getData();
         AiInvocationResult<ArticleDraftResult> optimized = articleAiGateway.optimizeDraft(
                 request.getInstruction(),
                 draft.getTitle(),
@@ -44,7 +49,11 @@ public class DraftOptimizationServiceImpl implements DraftOptimizationService {
         versionRequest.setSourceType("OPTIMIZE");
         versionRequest.setInstruction(request.getInstruction());
 
-        CreateDraftResponse response = articleClient.createDraftVersion(versionRequest).getData();
+        CommonResult<CreateDraftResponse> versionResult = articleClient.createDraftVersion(versionRequest);
+        if (versionResult == null || !versionResult.isSuccess() || versionResult.getData() == null) {
+            throw new IllegalStateException("Failed to create draft version via article service");
+        }
+        CreateDraftResponse response = versionResult.getData();
         return DraftOptimizeResponse.builder()
                 .draftId(response.getDraftId())
                 .candidateVersionNo(response.getVersionNo())
