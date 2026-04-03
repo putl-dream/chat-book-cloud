@@ -16,7 +16,9 @@ import com.putl.interactionservice.service.UserFootService;
 import com.putl.interactionservice.controller.vo.NotificationVO;
 import com.putl.interactionservice.controller.vo.UserFootListVO;
 import com.putl.interactionservice.controller.vo.UserFootVO;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -25,6 +27,7 @@ import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO> implements UserFootService {
@@ -47,7 +50,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
             .eq(UserFootDO::getUserId, userId));
 
         if (foot == null) {
-            ArticleVO article = articleClient.queryArticle(articleId).getData();
+            ArticleVO article = getArticleDetail(articleId);
             Integer documentUserId = article != null ? article.getUserId() : null;
             UserFootDO build = UserFootDO.builder()
                 .userId(userId)
@@ -195,7 +198,12 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
             .orderByDesc(UserFootDO::getUpdateTime, UserFootDO::getCreateTime));
         if (pages == null || pages.getRecords().isEmpty()) return null;
         List<Integer> ids = pages.getRecords().stream().map(UserFootDO::getDocumentId).toList();
-        return articleClient.selectIds(ids).getData();
+        CommonResult<List<ArticleListVO>> result = articleClient.selectIds(ids);
+        if (result == null || !result.isSuccess() || result.getData() == null) {
+            log.warn("Failed to fetch history articles from article service, userId: {}, articleIds: {}", userId, ids);
+            return Collections.emptyList();
+        }
+        return result.getData();
     }
 
     @Override
@@ -214,7 +222,11 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         if (allFeet.isEmpty()) return new ArrayList<>();
 
         List<Integer> articleIds = allFeet.stream().map(UserFootDO::getDocumentId).distinct().collect(Collectors.toList());
-        List<ArticleListVO> articles = articleClient.selectIds(articleIds).getData();
+        CommonResult<List<ArticleListVO>> result = articleClient.selectIds(articleIds);
+        List<ArticleListVO> articles = (result != null && result.isSuccess()) ? result.getData() : Collections.emptyList();
+        if (result == null || !result.isSuccess() || result.getData() == null) {
+            log.warn("Failed to fetch notification articles from article service, userId: {}, articleIds: {}", userId, articleIds);
+        }
         Map<Integer, String> articleTitleMap = articles == null ? Map.of() : articles.stream().collect(Collectors.toMap(ArticleListVO::getId, ArticleListVO::getTitle, (a, b) -> a));
 
         List<NotificationVO> notifications = new ArrayList<>();
@@ -250,7 +262,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         if (foot != null) {
             return foot;
         }
-        ArticleVO article = articleClient.queryArticle(articleId).getData();
+        ArticleVO article = getArticleDetail(articleId);
         Integer documentUserId = article != null ? article.getUserId() : null;
         UserFootDO build = UserFootDO.builder()
             .userId(userId)
@@ -268,6 +280,15 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     private ArticleStatDO getArticleStat(Integer articleId) {
         if (articleId == null) return null;
         return articleStatMapper.selectOne(Wrappers.<ArticleStatDO>lambdaQuery().eq(ArticleStatDO::getArticleId, articleId));
+    }
+
+    private ArticleVO getArticleDetail(Integer articleId) {
+        CommonResult<ArticleVO> result = articleClient.queryArticle(articleId);
+        if (result == null || !result.isSuccess() || result.getData() == null) {
+            log.warn("Failed to fetch article detail from article service, articleId: {}", articleId);
+            return null;
+        }
+        return result.getData();
     }
 
     private ArticleStatDO ensureArticleStat(Integer articleId) {
