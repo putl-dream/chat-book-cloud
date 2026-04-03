@@ -3,7 +3,6 @@ package fun.amireux.chat.book.gateway.config;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
-import org.springframework.cloud.gateway.filter.ratelimit.RateLimiter;
 import org.springframework.cloud.gateway.route.RouteDefinitionRouteLocator;
 import org.springframework.cloud.gateway.support.ConfigurationService;
 import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
