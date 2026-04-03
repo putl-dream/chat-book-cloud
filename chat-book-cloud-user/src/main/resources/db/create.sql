@@ -31,3 +31,22 @@ create unique index uk_user_info_user_id
 
 create unique index uk_user_info_username
     on user_info (username);
+
+create table admin_operation_log
+(
+    id            bigint auto_increment comment '主键ID'
+        primary key,
+    operator_id   int                                    null comment '操作人ID',
+    operator_name varchar(64)  default ''                not null comment '操作人名称',
+    action        varchar(64)  default ''                not null comment '操作类型',
+    target_type   varchar(32)  default ''                not null comment '对象类型',
+    target_id     int                                    null comment '对象ID',
+    detail        text                                   null comment '操作详情JSON',
+    ip            varchar(64)  default ''                not null comment '操作人IP',
+    create_time   datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    key idx_admin_operation_log_operator_id (operator_id),
+    key idx_admin_operation_log_target (target_type, target_id),
+    key idx_admin_operation_log_action (action),
+    key idx_admin_operation_log_create_time (create_time)
+)
+    comment '管理员操作日志表' row_format = DYNAMIC;
