@@ -1,16 +1,31 @@
 package fun.amireux.chat.book.gateway.config;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.cloud.gateway.filter.ratelimit.KeyResolver;
+import org.springframework.cloud.gateway.filter.ratelimit.RedisRateLimiter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Primary;
 import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.cloud.gateway.support.ConfigurationService;
+import org.springframework.data.redis.core.ReactiveStringRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.util.StringUtils;
 import reactor.core.publisher.Mono;
 
 import java.net.InetSocketAddress;
+import java.util.List;
 
 @Configuration
 public class GatewayRateLimitConfig {
+
+    @Bean
+    @Primary
+    public RedisRateLimiter redisRateLimiter(ReactiveStringRedisTemplate redisTemplate,
+                                             @Qualifier(RedisRateLimiter.REDIS_SCRIPT_NAME) RedisScript<List<Long>> redisScript,
+                                             ConfigurationService configurationService) {
+        return new LoggingRedisRateLimiter(redisTemplate, redisScript, configurationService);
+    }
 
     @Bean
     public KeyResolver userOrIpKeyResolver() {
