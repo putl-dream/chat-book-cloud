@@ -1,5 +1,11 @@
 spring:
   cloud:
+    circuitbreaker:
+      bulkhead:
+        resilience4j:
+          enabled: true
+      resilience4j:
+        enableSemaphoreDefaultBulkhead: true
     openfeign:
       circuitbreaker:
         enabled: true
@@ -37,6 +43,11 @@ spring:
         personal: ICE
 
 resilience4j:
+  bulkhead:
+    configs:
+      default:
+        maxConcurrentCalls: ${RESILIENCE4J_BULKHEAD_MAX_CONCURRENT_CALLS:32}
+        maxWaitDuration: 0
   circuitbreaker:
     configs:
       default:
