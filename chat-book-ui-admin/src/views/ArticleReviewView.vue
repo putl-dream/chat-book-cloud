@@ -5,8 +5,7 @@
         <p class="eyebrow">Editorial Review</p>
         <h1>文章审核工作台</h1>
         <p class="hero-copy">
-          Vite + Vue 版本保留了待审核列表、通过、驳回和批量处理流程，并把原先依赖 Next.js
-          App Router 的交互全部迁到了浏览器端。
+          待审核列表、单条审核、批量审核和详情侧栏已经统一到浏览器端，当前可直接查看摘要、分类、内容类型与标签信息。
         </p>
       </div>
 
@@ -31,8 +30,8 @@
       <section v-if="focusedArticle" class="panel">
         <div class="panel-header">
           <div>
-            <p class="section-kicker">Detail Placeholder</p>
-            <h3>文章详情入口预留</h3>
+            <p class="section-kicker">Detail Overview</p>
+            <h3>文章详情概览</h3>
           </div>
           <span class="pill pill-neutral">Article #{{ focusedArticle.id }}</span>
         </div>
@@ -40,156 +39,143 @@
           <article class="stack-item">
             <div class="stack-title-row">
               <h4>{{ focusedArticle.title }}</h4>
-              <span class="pill pill-warn">待补详情接口</span>
+              <span class="pill pill-neutral">{{ contentTypeMap[focusedArticle.contentType ?? -1] || "未标记类型" }}</span>
             </div>
-            <p>当前列表与审核动作已经可用，后续建议继续补齐标签、正文详情和审核记录字段。</p>
+            <p>{{ focusedArticle.summary }}</p>
+            <p class="meta-line">
+              作者 {{ focusedArticle.userName }} / 分类 {{ articleCategoryMap[focusedArticle.category] || "未分类" }} /
+              创建于 {{ focusedArticle.createdAt }}
+            </p>
+            <div class="chip-row">
+              <span v-for="tagName in getTagNames(focusedArticle.tagIds)" :key="`${focusedArticle.id}-${tagName}`" class="chip">
+                {{ tagName }}
+              </span>
+              <span v-if="getTagNames(focusedArticle.tagIds).length === 0" class="chip">未关联标签</span>
+            </div>
+          </article>
+          <article class="stack-item">
+            <div class="stack-title-row">
+              <h4>互动数据</h4>
+              <span class="pill pill-safe">已接通</span>
+            </div>
+            <p class="mono">
+              浏览 {{ focusedArticle.viewCount }} / 评论 {{ focusedArticle.commentCount }} / 点赞 {{ focusedArticle.praiseCount }} / 收藏 {{ focusedArticle.collectCount }}
+            </p>
           </article>
         </div>
       </section>
 
-      <div class="content-grid two-column">
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="section-kicker">Pending Queue</p>
-              <h3>待审核内容队列</h3>
+      <section class="panel">
+        <div class="panel-header">
+          <div>
+            <p class="section-kicker">Pending Queue</p>
+            <h3>待审核内容队列</h3>
+          </div>
+        </div>
+
+        <RequestStatePanel
+          v-if="reviewPage.list.length === 0"
+          title="当前没有待审核文章"
+          description="审核队列为空，后续可继续增强正文详情与审核历史。"
+        />
+
+        <div v-else class="stack-list">
+          <div class="review-bulk-bar">
+            <label class="review-select-toggle">
+              <input
+                :checked="allSelected"
+                :disabled="submitting || reviewPage.list.length === 0"
+                type="checkbox"
+                @change="toggleAllSelection"
+              />
+              <span>当前页全选</span>
+            </label>
+
+            <div class="inline-actions">
+              <span class="pill pill-neutral">已选 {{ selectedIds.length }} 篇</span>
+              <button class="panel-action-button" :disabled="submitting || selectedIds.length === 0" type="button" @click="selectedIds = []">
+                清空选择
+              </button>
+              <button
+                class="panel-action-button primary"
+                :disabled="submitting || selectedIds.length === 0"
+                type="button"
+                @click="handleBatchApprove"
+              >
+                {{ submitting ? "处理中..." : "批量通过" }}
+              </button>
+              <button
+                class="panel-action-button"
+                :disabled="submitting || selectedIds.length === 0"
+                type="button"
+                @click="openBatchReject"
+              >
+                批量驳回
+              </button>
             </div>
           </div>
 
-          <RequestStatePanel
-            v-if="reviewPage.list.length === 0"
-            title="当前没有待审核文章"
-            description="审核队列为空，后续可继续补齐详情字段与审核记录查询。"
-          />
+          <p v-if="message" class="form-message success">{{ message }}</p>
+          <p v-if="errorMessage" class="form-message error">{{ errorMessage }}</p>
 
-          <div v-else class="stack-list">
-            <div class="review-bulk-bar">
+          <article v-for="article in reviewPage.list" :key="article.id" :id="`review-${article.id}`" class="review-card">
+            <div class="review-card-top">
+              <div>
+                <h4>{{ article.title }}</h4>
+                <p class="meta-line">
+                  作者 {{ article.userName }} / 分类 {{ articleCategoryMap[article.category] || "未分类" }} /
+                  类型 {{ contentTypeMap[article.contentType ?? -1] || "未标记类型" }} /
+                  互动 V {{ article.viewCount }} · C {{ article.commentCount }} · P {{ article.praiseCount }}
+                </p>
+              </div>
+              <span class="pill pill-warn">待审核</span>
+            </div>
+
+            <p class="review-summary">{{ article.summary }}</p>
+
+            <div class="chip-row">
+              <span class="chip">{{ contentTypeMap[article.contentType ?? -1] || "未标记类型" }}</span>
+              <span v-for="tagName in getTagNames(article.tagIds)" :key="`${article.id}-${tagName}`" class="chip">{{ tagName }}</span>
+              <span v-if="getTagNames(article.tagIds).length === 0" class="chip">未关联标签</span>
+              <span v-if="focusId === article.id" class="chip">当前聚焦文章</span>
+            </div>
+
+            <div class="review-card-actions">
               <label class="review-select-toggle">
                 <input
-                  :checked="allSelected"
-                  :disabled="submitting || reviewPage.list.length === 0"
+                  :checked="selectedIds.includes(article.id)"
+                  :disabled="submitting"
                   type="checkbox"
-                  @change="toggleAllSelection"
+                  @change="toggleSelection(article.id)"
                 />
-                <span>当前页全选</span>
+                <span>纳入批量处理</span>
               </label>
 
               <div class="inline-actions">
-                <span class="pill pill-neutral">已选 {{ selectedIds.length }} 篇</span>
-                <button class="panel-action-button" :disabled="submitting || selectedIds.length === 0" type="button" @click="selectedIds = []">
-                  清空选择
+                <button class="table-action-button" :disabled="submitting" type="button" @click="handleApprove(article.id)">
+                  通过
                 </button>
-                <button
-                  class="panel-action-button primary"
-                  :disabled="submitting || selectedIds.length === 0"
-                  type="button"
-                  @click="handleBatchApprove"
-                >
-                  {{ submitting ? "处理中..." : "批量通过" }}
+                <button class="table-action-button danger" :disabled="submitting" type="button" @click="openSingleReject(article)">
+                  驳回
                 </button>
-                <button
-                  class="panel-action-button"
-                  :disabled="submitting || selectedIds.length === 0"
-                  type="button"
-                  @click="openBatchReject"
-                >
-                  批量驳回
-                </button>
+                <button class="table-action-button" type="button" @click="focusArticle(article.id)">查看详情</button>
               </div>
             </div>
 
-            <p v-if="message" class="form-message success">{{ message }}</p>
-            <p v-if="errorMessage" class="form-message error">{{ errorMessage }}</p>
-
-            <article v-for="article in reviewPage.list" :key="article.id" :id="`review-${article.id}`" class="review-card">
-              <div class="review-card-top">
-                <div>
-                  <h4>{{ article.title }}</h4>
-                  <p class="meta-line">
-                    作者 {{ article.userName }} / 分类 {{ articleCategoryMap[article.category] || "未分类" }} /
-                    互动 V {{ article.viewCount }} · C {{ article.commentCount }} · P {{ article.praiseCount }}
-                  </p>
-                </div>
-                <span class="pill pill-warn">待审核</span>
-              </div>
-
-              <p class="review-summary">{{ article.summary }}</p>
-
-              <div class="chip-row">
-                <span class="chip">标签字段待接口补齐</span>
-                <span class="chip">内容类型待接口补齐</span>
-                <span v-if="focusId === article.id" class="chip">当前聚焦文章</span>
-              </div>
-
-              <div class="review-card-actions">
-                <label class="review-select-toggle">
-                  <input
-                    :checked="selectedIds.includes(article.id)"
-                    :disabled="submitting"
-                    type="checkbox"
-                    @change="toggleSelection(article.id)"
-                  />
-                  <span>纳入批量处理</span>
-                </label>
-
-                <div class="inline-actions">
-                  <button class="table-action-button" :disabled="submitting" type="button" @click="handleApprove(article.id)">
-                    通过
-                  </button>
-                  <button class="table-action-button danger" :disabled="submitting" type="button" @click="openSingleReject(article)">
-                    驳回
-                  </button>
-                  <button class="table-action-button" type="button" @click="focusArticle(article.id)">查看详情占位</button>
-                </div>
-              </div>
-
-              <div class="review-footer">
-                <span class="mono">Article #{{ article.id }}</span>
-                <span class="mono">{{ article.createdAt }}</span>
-              </div>
-            </article>
-
-            <PaginationControls
-              :page="reviewPage.pageNo"
-              :total="reviewPage.total"
-              :total-pages="reviewPage.totalPages"
-              @change="handlePageChange"
-            />
-          </div>
-        </section>
-
-        <section class="panel">
-          <div class="panel-header">
-            <div>
-              <p class="section-kicker">Review Policy</p>
-              <h3>后台审核闭环现状</h3>
+            <div class="review-footer">
+              <span class="mono">Article #{{ article.id }}</span>
+              <span class="mono">{{ article.createdAt }}</span>
             </div>
-          </div>
-          <div class="stack-list">
-            <article class="stack-item">
-              <div class="stack-title-row">
-                <h4>内容预审</h4>
-                <span class="pill pill-safe">已接通真实列表</span>
-              </div>
-              <p>当前已展示标题、作者、分类、时间和互动统计。</p>
-            </article>
-            <article class="stack-item">
-              <div class="stack-title-row">
-                <h4>审核结论提交</h4>
-                <span class="pill pill-safe">基础闭环可用</span>
-              </div>
-              <p>管理员可以直接提交通过、驳回和批量处理，并记录驳回原因。</p>
-            </article>
-            <article class="stack-item">
-              <div class="stack-title-row">
-                <h4>详情字段补齐</h4>
-                <span class="pill pill-warn">仍有缺口</span>
-              </div>
-              <p>标签、内容类型和正文详情仍待后端返回，页面已保留占位。</p>
-            </article>
-          </div>
-        </section>
-      </div>
+          </article>
+
+          <PaginationControls
+            :page="reviewPage.pageNo"
+            :total="reviewPage.total"
+            :total-pages="reviewPage.totalPages"
+            @change="handlePageChange"
+          />
+        </div>
+      </section>
     </template>
 
     <RequestStatePanel
@@ -241,15 +227,16 @@ import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PaginationControls from "@/components/shared/PaginationControls.vue";
 import RequestStatePanel from "@/components/shared/RequestStatePanel.vue";
-import { articleCategoryMap } from "@/data/admin-config";
+import { articleCategoryMap, contentTypeMap } from "@/data/admin-config";
 import {
   approveReviewArticle,
   batchReviewArticles,
   BrowserApiError,
   getReviewArticlesPage,
+  getTagList,
   rejectReviewArticle,
 } from "@/services/admin-api";
-import type { PaginatedResult, ReviewAction, ReviewArticle } from "@/types/admin";
+import type { AdminTag, PaginatedResult, ReviewAction, ReviewArticle } from "@/types/admin";
 
 type RejectDialogState =
   | {
@@ -269,6 +256,8 @@ const rejectReason = ref("");
 const submitting = ref(false);
 const message = ref("");
 const errorMessage = ref("");
+const tagList = ref<AdminTag[]>([]);
+const tagListLoaded = ref(false);
 
 function parsePositiveInt(value: unknown, fallback: number) {
   const parsed = Number(value);
@@ -283,6 +272,11 @@ const authorCount = computed(() => new Set(reviewPage.value?.list.map((article) 
 const allSelected = computed(
   () => !!reviewPage.value?.list.length && reviewPage.value.list.every((article) => selectedIds.value.includes(article.id))
 );
+const tagNameMap = computed(() => new Map(tagList.value.map((tag) => [tag.id, tag.name])));
+
+function getTagNames(tagIds?: number[]) {
+  return (tagIds ?? []).map((tagId) => tagNameMap.value.get(tagId) || `#${tagId}`);
+}
 
 function buildQuery(nextPage = page.value, nextFocus = focusId.value || undefined) {
   return {
@@ -292,10 +286,25 @@ function buildQuery(nextPage = page.value, nextFocus = focusId.value || undefine
   };
 }
 
+async function loadTagList() {
+  if (tagListLoaded.value) return;
+
+  try {
+    tagList.value = await getTagList();
+    tagListLoaded.value = true;
+  } catch {
+    tagListLoaded.value = false;
+  }
+}
+
 async function loadReviewPage() {
   try {
     errorMessage.value = "";
-    reviewPage.value = await getReviewArticlesPage({ page: page.value, size: size.value });
+    const [pageResult] = await Promise.all([
+      getReviewArticlesPage({ page: page.value, size: size.value }),
+      loadTagList(),
+    ]);
+    reviewPage.value = pageResult;
     selectedIds.value = [];
 
     if (reviewPage.value.list.length === 0 && reviewPage.value.total > 0 && page.value > 1) {
@@ -324,10 +333,7 @@ function toggleSelection(articleId: number) {
 }
 
 function toggleAllSelection() {
-  if (!reviewPage.value) {
-    return;
-  }
-
+  if (!reviewPage.value) return;
   selectedIds.value = allSelected.value ? [] : reviewPage.value.list.map((article) => article.id);
 }
 
@@ -355,18 +361,14 @@ async function runReviewAction(articleIds: number[], action: ReviewAction, reaso
     closeRejectDialog();
     await loadReviewPage();
   } catch (error) {
-    errorMessage.value =
-      error instanceof BrowserApiError ? error.message : "审核操作失败，请稍后重试。";
+    errorMessage.value = error instanceof BrowserApiError ? error.message : "审核操作失败，请稍后重试。";
   } finally {
     submitting.value = false;
   }
 }
 
 async function handleApprove(articleId: number) {
-  if (!window.confirm(`确认通过文章 #${articleId} 吗？`)) {
-    return;
-  }
-
+  if (!window.confirm(`确认通过文章 #${articleId} 吗？`)) return;
   await runReviewAction([articleId], "APPROVE");
 }
 
@@ -376,10 +378,7 @@ async function handleBatchApprove() {
     return;
   }
 
-  if (!window.confirm(`确认批量通过选中的 ${selectedIds.value.length} 篇文章吗？`)) {
-    return;
-  }
-
+  if (!window.confirm(`确认批量通过选中的 ${selectedIds.value.length} 篇文章吗？`)) return;
   await runReviewAction(selectedIds.value, "APPROVE");
 }
 
@@ -414,9 +413,7 @@ function closeRejectDialog() {
 }
 
 async function handleRejectSubmit() {
-  if (!rejectDialog.value) {
-    return;
-  }
+  if (!rejectDialog.value) return;
 
   if (!rejectReason.value.trim()) {
     errorMessage.value = "请输入驳回原因，便于后续追溯与作者修改。";
@@ -428,12 +425,15 @@ async function handleRejectSubmit() {
       ? `确认驳回文章 #${rejectDialog.value.articleIds[0]} 吗？`
       : `确认批量驳回选中的 ${rejectDialog.value.articleIds.length} 篇文章吗？`;
 
-  if (!window.confirm(confirmMessage)) {
-    return;
-  }
-
+  if (!window.confirm(confirmMessage)) return;
   await runReviewAction(rejectDialog.value.articleIds, "REJECT", rejectReason.value.trim());
 }
 
-watch([page, size], loadReviewPage, { immediate: true });
+watch(
+  () => route.fullPath,
+  () => {
+    void loadReviewPage();
+  },
+  { immediate: true }
+);
 </script>

@@ -11,6 +11,7 @@ import com.putl.interactionservice.enums.ReviewStatus;
 import com.putl.interactionservice.mapper.ReviewMapper;
 import com.putl.interactionservice.service.ReviewService;
 import com.putl.interactionservice.service.UserFootService;
+import com.putl.interactionservice.controller.vo.ReviewAdminStatsVO;
 import com.putl.interactionservice.controller.vo.ReviewListVO;
 import com.putl.interactionservice.controller.vo.ReviewVO;
 import com.putl.userservice.api.UserClient;
@@ -44,17 +45,7 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
             return Collections.emptyList();
         }
 
-        // 批量获取用户信息，避免 N+1 查询
-        List<Integer> userIds = dos.stream().map(ReviewDO::getUserId).distinct().toList();
-        Map<Integer, UserResult> userMap = new HashMap<>();
-        if (!userIds.isEmpty()) {
-            CommonResult<List<UserResult>> batchResult = userClient.getUsersByIds(userIds);
-            if (batchResult != null && batchResult.getData() != null) {
-                for (UserResult userResult : batchResult.getData()) {
-                    userMap.put(userResult.getId(), userResult);
-                }
-            }
-        }
+        Map<Integer, UserResult> userMap = getUserMap(dos.stream().map(ReviewDO::getUserId).distinct().toList());
 
         Map<Integer, ReviewListVO> map = new HashMap<>();
         List<ReviewListVO> header = new ArrayList<>();
@@ -129,9 +120,29 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
         w.le(endTime != null, ReviewDO::getCreateTime, endTime);
         w.orderByDesc(ReviewDO::getCreateTime);
         IPage<ReviewDO> result = reviewMapper.selectPage(new Page<>(page, size), w);
+        Map<Integer, UserResult> userMap = getUserMap(result.getRecords().stream()
+                .map(ReviewDO::getUserId)
+                .filter(Objects::nonNull)
+                .distinct()
+                .toList());
         Page<ReviewVO> pageResult = new Page<>(result.getCurrent(), result.getSize(), result.getTotal());
-        pageResult.setRecords(result.getRecords().stream().map(this::toReviewVO).toList());
+        pageResult.setRecords(result.getRecords().stream().map(item -> toReviewVO(item, userMap)).toList());
         return pageResult;
+    }
+
+    @Override
+    public ReviewAdminStatsVO getAdminStats() {
+        long normalCount = countByStatus(ReviewStatus.NORMAL);
+        long hiddenCount = countByStatus(ReviewStatus.HIDDEN);
+        long deletedCount = countByStatus(ReviewStatus.DELETED);
+        long totalCount = reviewMapper.selectCount(null);
+        return ReviewAdminStatsVO.builder()
+                .totalCount(totalCount)
+                .normalCount(normalCount)
+                .hiddenCount(hiddenCount)
+                .deletedCount(deletedCount)
+                .abnormalCount(hiddenCount + deletedCount)
+                .build();
     }
 
     @Override
@@ -170,7 +181,30 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
         reviewMapper.updateById(review);
     }
 
-    private ReviewVO toReviewVO(ReviewDO item) {
+    private Map<Integer, UserResult> getUserMap(List<Integer> userIds) {
+        if (userIds == null || userIds.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        Map<Integer, UserResult> userMap = new HashMap<>();
+        try {
+            CommonResult<List<UserResult>> batchResult = userClient.getUsersByIds(userIds);
+            if (batchResult != null && batchResult.getData() != null) {
+                for (UserResult userResult : batchResult.getData()) {
+                    userMap.put(userResult.getId(), userResult);
+                }
+            }
+        } catch (Exception ignored) {
+            return Collections.emptyMap();
+        }
+        return userMap;
+    }
+
+    private long countByStatus(ReviewStatus status) {
+        return reviewMapper.selectCount(Wrappers.<ReviewDO>lambdaQuery()
+                .eq(ReviewDO::getStatus, status.getCode()));
+    }
+
+    private ReviewVO toReviewVO(ReviewDO item, Map<Integer, UserResult> userMap) {
         ReviewVO vo = new ReviewVO();
         vo.setId(item.getId());
         vo.setArticleId(item.getTextId());
@@ -179,6 +213,11 @@ public class ReviewServiceImpl extends ServiceImpl<ReviewMapper, ReviewDO> imple
         vo.setContent(item.getContent());
         vo.setStatus(item.getStatus());
         vo.setCreateTime(item.getCreateTime());
+        UserResult user = userMap.get(item.getUserId());
+        if (user != null) {
+            vo.setUsername(user.getUsername());
+            vo.setHeaderImg(user.getPhoto());
+        }
         return vo;
     }
 }

@@ -69,5 +69,8 @@ public interface ArticleService {
 
     /** 查询文章总数 */
     Long count();
+
+    /** 查询待审核文章总数 */
+    Long countPendingReview();
 }
 

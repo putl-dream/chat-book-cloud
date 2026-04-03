@@ -25,7 +25,7 @@ public interface UserService extends IService<UserDO> {
     //查询好友列表
 
     //分页查询用户
-    IPage<UserVO> selectPage(Integer page, Integer size);
+    IPage<UserVO> selectPage(Integer page, Integer size, String keyword, String role, Integer status);
 
     /**
      * 更新用户信息

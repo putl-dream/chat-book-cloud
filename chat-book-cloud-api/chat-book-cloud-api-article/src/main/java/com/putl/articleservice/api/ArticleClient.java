@@ -30,6 +30,9 @@ public interface ArticleClient {
     @GetMapping(USER_SERVICE_URL + "queryCount")
     CommonResult<Long> queryCount();
 
+    @GetMapping(USER_SERVICE_URL + "queryPendingReviewCount")
+    CommonResult<Long> queryPendingReviewCount();
+
     @PostMapping("/draft/internal/create")
     CommonResult<CreateDraftResponse> createDraft(@RequestBody CreateDraftRequest request);
 

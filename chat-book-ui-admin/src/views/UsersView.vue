@@ -5,16 +5,15 @@
         <p class="eyebrow">User Management</p>
         <h1>用户与账号治理</h1>
         <p class="hero-copy">
-          后端已提供管理员分页查询、角色调整和账号禁用/恢复能力。
-          在此基础上补齐筛选栏和操作列，实现完整的用户治理流程。
+          管理员可以按关键词、角色和账号状态筛选用户，并直接执行角色调整、禁用、恢复和审计追踪。
         </p>
       </div>
 
       <div class="metric-grid compact-grid">
         <article class="metric-card">
-          <p class="metric-label">用户总数</p>
+          <p class="metric-label">筛选结果</p>
           <h2>{{ userPage.total }}</h2>
-          <p class="metric-detail">来自 /user/admin/user 的真实用户统计</p>
+          <p class="metric-detail">来自 /user/admin/user 的真实分页结果</p>
         </article>
         <article class="metric-card">
           <p class="metric-label">当前页管理员</p>
@@ -22,9 +21,9 @@
           <p class="metric-detail">角色映射来源于 user-service 的 role 字段</p>
         </article>
         <article class="metric-card">
-          <p class="metric-label">分页状态</p>
-          <h2>{{ userPage.pageNo }}/{{ userPage.totalPages }}</h2>
-          <p class="metric-detail">单页 {{ userPage.pageSize }} 条，支持后台分页切换</p>
+          <p class="metric-label">当前页禁用账号</p>
+          <h2>{{ disabledCount }}</h2>
+          <p class="metric-detail">账号状态来自 user-service 的 status 字段</p>
         </article>
       </div>
 
@@ -34,16 +33,18 @@
             <p class="section-kicker">Filters</p>
             <h3>搜索与筛选</h3>
           </div>
-          <span class="pill pill-warn">后端仅支持分页，筛选参数待补齐</span>
+          <div class="inline-actions">
+            <button class="panel-action-button" type="button" @click="goToAuditView">查看操作审计</button>
+          </div>
         </div>
         <div class="toolbar-grid">
           <label class="field">
             <span>关键词</span>
-            <input v-model="_filter.keyword" disabled placeholder="后端 /user/admin/user 尚未支持关键词筛选" />
+            <input v-model="filter.keyword" placeholder="搜索用户名或邮箱" @keydown.enter="applyFilters" />
           </label>
           <label class="field">
             <span>角色</span>
-            <select v-model="_filter.role" disabled>
+            <select v-model="filter.role">
               <option :value="null">全部角色</option>
               <option value="USER">普通用户</option>
               <option value="ADMIN">管理员</option>
@@ -51,12 +52,16 @@
           </label>
           <label class="field">
             <span>账号状态</span>
-            <select v-model="_filter.status" disabled>
+            <select v-model="filter.status">
               <option :value="null">全部状态</option>
-              <option value="active">正常</option>
-              <option value="disabled">已禁用</option>
+              <option :value="0">正常</option>
+              <option :value="1">已禁用</option>
             </select>
           </label>
+        </div>
+        <div class="inline-actions" style="margin-top: 1rem;">
+          <button class="panel-action-button primary" type="button" @click="applyFilters">搜索</button>
+          <button class="panel-action-button" type="button" @click="resetFilters">重置</button>
         </div>
       </section>
 
@@ -104,8 +109,8 @@
                     <span :class="`pill pill-${getRoleTone(user.role)}`">{{ getRoleLabel(user.role) }}</span>
                   </td>
                   <td>
-                    <span :class="`pill ${user.status === 'disabled' ? 'pill-danger' : 'pill-safe'}`">
-                      {{ user.status === "disabled" ? "已禁用" : "正常" }}
+                    <span :class="`pill ${user.status === 1 ? 'pill-danger' : 'pill-safe'}`">
+                      {{ user.status === 1 ? "已禁用" : "正常" }}
                     </span>
                   </td>
                   <td>{{ user.profile || "暂无简介" }}</td>
@@ -113,14 +118,14 @@
                   <td>
                     <div class="inline-actions">
                       <button
-                        v-if="user.status !== 'disabled'"
+                        v-if="user.status !== 1"
                         class="table-action-button danger"
                         :disabled="submitting"
                         type="button"
                         @click="handleDisable(user)"
                       >禁用</button>
                       <button
-                        v-if="user.status === 'disabled'"
+                        v-if="user.status === 1"
                         class="table-action-button primary"
                         :disabled="submitting"
                         type="button"
@@ -156,7 +161,6 @@
       tone="warning"
     />
 
-    <!-- Role adjustment dialog -->
     <div v-if="roleDialog" class="dialog-backdrop" role="presentation">
       <section class="dialog-panel" role="dialog" aria-modal="true">
         <div class="panel-header">
@@ -181,7 +185,12 @@
           </label>
           <div class="dialog-actions">
             <button class="panel-action-button" :disabled="submitting" type="button" @click="closeRoleDialog">取消</button>
-            <button class="panel-action-button primary" :disabled="submitting || roleDialog.targetRole === (roleDialog.user.role === 'admin' ? 'ADMIN' : 'USER')" type="button" @click="handleRoleSubmit">
+            <button
+              class="panel-action-button primary"
+              :disabled="submitting || roleDialog.targetRole === (roleDialog.user.role === 'admin' ? 'ADMIN' : 'USER')"
+              type="button"
+              @click="handleRoleSubmit"
+            >
               {{ submitting ? "提交中..." : "确认调整" }}
             </button>
           </div>
@@ -200,6 +209,14 @@ import { getRoleLabel, getRoleTone } from "@/data/admin-config";
 import { BrowserApiError, disableUser, enableUser, getUsersPage, updateUserRole } from "@/services/admin-api";
 import type { AdminUser, PaginatedResult } from "@/types/admin";
 
+type UserRoleFilter = "USER" | "ADMIN" | null;
+type UserStatusFilter = 0 | 1 | null;
+
+type RoleDialogState = {
+  user: AdminUser;
+  targetRole: "USER" | "ADMIN";
+} | null;
+
 const route = useRoute();
 const router = useRouter();
 
@@ -207,19 +224,11 @@ const userPage = ref<PaginatedResult<AdminUser> | null>(null);
 const submitting = ref(false);
 const message = ref("");
 const errorMessage = ref("");
-
-type RoleDialogState = {
-  user: AdminUser;
-  targetRole: "USER" | "ADMIN";
-} | null;
-
 const roleDialog = ref<RoleDialogState>(null);
-
-// 筛选状态已预留，后端支持筛选参数后可启用
-const _filter = ref({
+const filter = ref({
   keyword: "",
-  role: null as string | null,
-  status: null as string | null,
+  role: null as UserRoleFilter,
+  status: null as UserStatusFilter,
 });
 
 function parsePositiveInt(value: unknown, fallback: number) {
@@ -227,17 +236,52 @@ function parsePositiveInt(value: unknown, fallback: number) {
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-const page = computed(() => parsePositiveInt(route.query.page, 1));
-const adminCount = computed(() => userPage.value?.list.filter((u) => u.role === "admin").length ?? 0);
+function parseRole(value: unknown): UserRoleFilter {
+  return value === "USER" || value === "ADMIN" ? value : null;
+}
 
-function buildQuery(nextPage: number) {
-  return nextPage > 1 ? { page: String(nextPage) } : {};
+function parseStatus(value: unknown): UserStatusFilter {
+  const parsed = Number(value);
+  return parsed === 0 || parsed === 1 ? parsed : null;
+}
+
+function syncFilterFromRoute() {
+  filter.value = {
+    keyword: typeof route.query.keyword === "string" ? route.query.keyword : "",
+    role: parseRole(route.query.role),
+    status: parseStatus(route.query.status),
+  };
+}
+
+const page = computed(() => parsePositiveInt(route.query.page, 1));
+const adminCount = computed(() => userPage.value?.list.filter((user) => user.role === "admin").length ?? 0);
+const disabledCount = computed(() => userPage.value?.list.filter((user) => user.status === 1).length ?? 0);
+
+function buildQuery(nextPage = page.value) {
+  const keyword = filter.value.keyword.trim();
+
+  return {
+    ...(nextPage > 1 ? { page: String(nextPage) } : {}),
+    ...(keyword ? { keyword } : {}),
+    ...(filter.value.role ? { role: filter.value.role } : {}),
+    ...(filter.value.status != null ? { status: String(filter.value.status) } : {}),
+  };
 }
 
 async function loadUsers() {
   try {
     errorMessage.value = "";
-    userPage.value = await getUsersPage({ page: page.value, size: 20 });
+    userPage.value = await getUsersPage({
+      page: page.value,
+      size: 20,
+      keyword: filter.value.keyword.trim() || undefined,
+      role: filter.value.role,
+      status: filter.value.status,
+    });
+
+    if (userPage.value.list.length === 0 && userPage.value.total > 0 && page.value > 1) {
+      router.replace({ path: "/users", query: buildQuery(page.value - 1) });
+    }
   } catch (error) {
     errorMessage.value =
       error instanceof BrowserApiError
@@ -246,17 +290,21 @@ async function loadUsers() {
   }
 }
 
+function applyFilters() {
+  router.push({ path: "/users", query: buildQuery(1) });
+}
+
+function resetFilters() {
+  filter.value = { keyword: "", role: null, status: null };
+  router.push({ path: "/users", query: {} });
+}
+
 function handlePageChange(nextPage: number) {
   router.push({ path: "/users", query: buildQuery(nextPage) });
 }
 
-// 后端支持筛选后启用以下函数
-function applyFilters() {
-  // router.push({ path: "/users", query: { ...buildQuery(1), ..._filter.value } });
-}
-function resetFilters() {
-  // _filter.value = { keyword: "", role: null, status: null };
-  // router.push({ path: "/users", query: buildQuery(1) });
+function goToAuditView() {
+  router.push("/users/audit");
 }
 
 async function runUserAction(fn: (userId: number) => Promise<void>, user: AdminUser, label: string) {
@@ -267,10 +315,12 @@ async function runUserAction(fn: (userId: number) => Promise<void>, user: AdminU
     message.value = `用户 ${user.username}（UID ${user.userId}）${label}成功。`;
     await loadUsers();
   } catch (error) {
-    errorMessage.value = error instanceof BrowserApiError ? error.message : `操作失败，请稍后重试。`;
+    errorMessage.value = error instanceof BrowserApiError ? error.message : "操作失败，请稍后重试。";
   } finally {
     submitting.value = false;
-    setTimeout(() => { message.value = ""; }, 3000);
+    setTimeout(() => {
+      message.value = "";
+    }, 3000);
   }
 }
 
@@ -298,8 +348,10 @@ function closeRoleDialog() {
 
 async function handleRoleSubmit() {
   if (!roleDialog.value) return;
+
   const { user, targetRole } = roleDialog.value;
   if (!window.confirm(`确认将用户 ${user.username} 的角色变更为 ${targetRole === "ADMIN" ? "管理员" : "普通用户"} 吗？`)) return;
+
   try {
     submitting.value = true;
     errorMessage.value = "";
@@ -308,12 +360,21 @@ async function handleRoleSubmit() {
     roleDialog.value = null;
     await loadUsers();
   } catch (error) {
-    errorMessage.value = error instanceof BrowserApiError ? error.message : `角色调整失败，请稍后重试。`;
+    errorMessage.value = error instanceof BrowserApiError ? error.message : "角色调整失败，请稍后重试。";
   } finally {
     submitting.value = false;
-    setTimeout(() => { message.value = ""; }, 3000);
+    setTimeout(() => {
+      message.value = "";
+    }, 3000);
   }
 }
 
-watch([page], loadUsers, { immediate: true });
+watch(
+  () => route.fullPath,
+  () => {
+    syncFilterFromRoute();
+    void loadUsers();
+  },
+  { immediate: true }
+);
 </script>

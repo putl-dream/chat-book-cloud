@@ -1,29 +1,28 @@
 <template>
   <section class="page-shell">
     <div class="page-hero compact">
-      <p class="eyebrow">Interaction Governance</p>
-      <h1>评论、通知与互动巡检</h1>
+      <p class="eyebrow">Comment Governance</p>
+      <h1>评论治理中心</h1>
       <p class="hero-copy">
-        全站评论统一治理入口，支持分页检索、屏蔽、删除与恢复操作。
-        管理员可在此巡检异常评论、维护社区秩序。
+        全站评论统一治理入口，支持分页检索、异常评论统计、屏蔽、删除与恢复操作。
       </p>
     </div>
 
     <div class="metric-grid compact-grid">
       <article class="metric-card">
-        <p class="metric-label">待处理</p>
-        <h2>{{ normalCount }}</h2>
-        <p class="metric-detail">状态为正常的评论数量</p>
+        <p class="metric-label">正常评论</p>
+        <h2>{{ stats?.normalCount ?? 0 }}</h2>
+        <p class="metric-detail">状态为正常的评论总量</p>
       </article>
       <article class="metric-card">
         <p class="metric-label">已屏蔽</p>
-        <h2>{{ hiddenCount }}</h2>
-        <p class="metric-detail">被管理员屏蔽的评论数量</p>
+        <h2>{{ stats?.hiddenCount ?? 0 }}</h2>
+        <p class="metric-detail">被管理员屏蔽的评论总量</p>
       </article>
       <article class="metric-card">
         <p class="metric-label">已删除</p>
-        <h2>{{ deletedCount }}</h2>
-        <p class="metric-detail">已删除的评论数量</p>
+        <h2>{{ stats?.deletedCount ?? 0 }}</h2>
+        <p class="metric-detail">已删除的评论总量</p>
       </article>
     </div>
 
@@ -105,7 +104,7 @@
                 </td>
                 <td>
                   <div class="user-cell">
-                    <strong>{{ review.username }}</strong>
+                    <strong>{{ review.username || "未知用户" }}</strong>
                     <span class="mono">UID {{ review.userId }}</span>
                   </div>
                 </td>
@@ -170,7 +169,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref, watch } from "vue";
+import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PaginationControls from "@/components/shared/PaginationControls.vue";
 import RequestStatePanel from "@/components/shared/RequestStatePanel.vue";
@@ -178,10 +177,11 @@ import {
   BrowserApiError,
   deleteReview,
   getInteractionReviewsPage,
+  getInteractionReviewStats,
   hideReview,
   restoreReview,
 } from "@/services/admin-api";
-import type { InteractionReview, PaginatedResult } from "@/types/admin";
+import type { InteractionReview, InteractionReviewStats, PaginatedResult } from "@/types/admin";
 
 const reviewStatusMap: Record<number, string> = {
   0: "正常",
@@ -193,49 +193,77 @@ const route = useRoute();
 const router = useRouter();
 
 const reviewPage = ref<PaginatedResult<InteractionReview> | null>(null);
+const stats = ref<InteractionReviewStats | null>(null);
 const submitting = ref(false);
 const message = ref("");
 const errorMessage = ref("");
-
 const filter = ref({
-  keyword: (route.query.keyword as string) || "",
-  status: route.query.status != null ? Number(route.query.status) : null,
-  articleIdInput: (route.query.articleId as string) || "",
-  userIdInput: (route.query.userId as string) || "",
+  keyword: "",
+  status: null as number | null,
+  articleIdInput: "",
+  userIdInput: "",
 });
-
-const normalCount = computed(() => reviewPage.value?.list.filter((r) => r.status === 0).length ?? 0);
-const hiddenCount = computed(() => reviewPage.value?.list.filter((r) => r.status === 2).length ?? 0);
-const deletedCount = computed(() => reviewPage.value?.list.filter((r) => r.status === 1).length ?? 0);
 
 function parsePositiveInt(value: unknown, fallback: number) {
   const parsed = Number(value);
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
 }
 
-const page = computed(() => parsePositiveInt(route.query.page, 1));
+function parseStatus(value: unknown) {
+  const parsed = Number(value);
+  return parsed === 0 || parsed === 1 || parsed === 2 ? parsed : null;
+}
 
-function buildQuery(nextPage: number) {
-  const q: Record<string, string> = {};
-  if (nextPage > 1) q.page = String(nextPage);
-  if (filter.value.keyword) q.keyword = filter.value.keyword;
-  if (filter.value.status != null) q.status = String(filter.value.status);
-  if (filter.value.articleIdInput) q.articleId = filter.value.articleIdInput;
-  if (filter.value.userIdInput) q.userId = filter.value.userIdInput;
-  return q;
+function syncFilterFromRoute() {
+  filter.value = {
+    keyword: typeof route.query.keyword === "string" ? route.query.keyword : "",
+    status: parseStatus(route.query.status),
+    articleIdInput: typeof route.query.articleId === "string" ? route.query.articleId : "",
+    userIdInput: typeof route.query.userId === "string" ? route.query.userId : "",
+  };
+}
+
+const page = ref(1);
+
+watch(
+  () => route.query.page,
+  (value) => {
+    page.value = parsePositiveInt(value, 1);
+  },
+  { immediate: true }
+);
+
+function buildQuery(nextPage = page.value) {
+  return {
+    ...(nextPage > 1 ? { page: String(nextPage) } : {}),
+    ...(filter.value.keyword ? { keyword: filter.value.keyword } : {}),
+    ...(filter.value.status != null ? { status: String(filter.value.status) } : {}),
+    ...(filter.value.articleIdInput ? { articleId: filter.value.articleIdInput } : {}),
+    ...(filter.value.userIdInput ? { userId: filter.value.userIdInput } : {}),
+  };
 }
 
 async function loadReviews() {
   try {
     errorMessage.value = "";
-    reviewPage.value = await getInteractionReviewsPage({
-      page: page.value,
-      size: 10,
-      keyword: filter.value.keyword || undefined,
-      status: filter.value.status,
-      articleId: filter.value.articleIdInput ? Number(filter.value.articleIdInput) : undefined,
-      userId: filter.value.userIdInput ? Number(filter.value.userIdInput) : undefined,
-    });
+    const [pageResult, statsResult] = await Promise.all([
+      getInteractionReviewsPage({
+        page: page.value,
+        size: 10,
+        keyword: filter.value.keyword || undefined,
+        status: filter.value.status,
+        articleId: filter.value.articleIdInput ? Number(filter.value.articleIdInput) : undefined,
+        userId: filter.value.userIdInput ? Number(filter.value.userIdInput) : undefined,
+      }),
+      getInteractionReviewStats(),
+    ]);
+
+    reviewPage.value = pageResult;
+    stats.value = statsResult;
+
+    if (reviewPage.value.list.length === 0 && reviewPage.value.total > 0 && page.value > 1) {
+      router.replace({ path: "/interactions", query: buildQuery(page.value - 1) });
+    }
   } catch (error) {
     errorMessage.value =
       error instanceof BrowserApiError
@@ -262,13 +290,15 @@ async function runAction(fn: (id: number) => Promise<void>, id: number, label: s
     submitting.value = true;
     errorMessage.value = "";
     await fn(id);
-    message.value = `评论 #${id} ${label}成功。`;
+    message.value = `评论 #${id}${label}成功。`;
     await loadReviews();
   } catch (error) {
-    errorMessage.value = error instanceof BrowserApiError ? error.message : `操作失败，请稍后重试。`;
+    errorMessage.value = error instanceof BrowserApiError ? error.message : "评论治理操作失败，请稍后重试。";
   } finally {
     submitting.value = false;
-    setTimeout(() => { message.value = ""; }, 3000);
+    setTimeout(() => {
+      message.value = "";
+    }, 3000);
   }
 }
 
@@ -277,15 +307,22 @@ async function handleHide(id: number) {
   await runAction(hideReview, id, "屏蔽");
 }
 
-async function handleDelete(id: number) {
-  if (!window.confirm(`确认删除评论 #${id} 吗？此操作不可恢复。`)) return;
-  await runAction(deleteReview, id, "删除");
-}
-
 async function handleRestore(id: number) {
   if (!window.confirm(`确认恢复评论 #${id} 吗？`)) return;
   await runAction(restoreReview, id, "恢复");
 }
 
-watch(page, loadReviews, { immediate: true });
+async function handleDelete(id: number) {
+  if (!window.confirm(`确认删除评论 #${id} 吗？`)) return;
+  await runAction(deleteReview, id, "删除");
+}
+
+watch(
+  () => route.fullPath,
+  () => {
+    syncFilterFromRoute();
+    void loadReviews();
+  },
+  { immediate: true }
+);
 </script>

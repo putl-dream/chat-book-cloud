@@ -20,6 +20,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDateTime;
@@ -40,16 +41,24 @@ public class AdminController {
         DataCount dataCount = new DataCount();
         dataCount.setUserCount(userService.count());
         CommonResult<Long> articleCountResult = articleClient.queryCount();
+        CommonResult<Long> reviewCountResult = articleClient.queryPendingReviewCount();
         dataCount.setArticleCount(articleCountResult != null && articleCountResult.getData() != null
                 ? articleCountResult.getData()
                 : 0L);
-        dataCount.setReviewCount(0L);
+        dataCount.setReviewCount(reviewCountResult != null && reviewCountResult.getData() != null
+                ? reviewCountResult.getData()
+                : 0L);
         return CommonResult.success(dataCount);
     }
 
     @GetMapping("/user")
-    public CommonResult<IPage<UserVO>> getUserPage(Integer page, Integer size) {
-        return CommonResult.success(userService.selectPage(page, size));
+    public CommonResult<IPage<UserVO>> getUserPage(
+            @RequestParam(defaultValue = "1") Integer page,
+            @RequestParam(defaultValue = "20") Integer size,
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String role,
+            @RequestParam(required = false) Integer status) {
+        return CommonResult.success(userService.selectPage(page, size, keyword, role, status));
     }
 
     @Operation(summary = "调整用户角色")

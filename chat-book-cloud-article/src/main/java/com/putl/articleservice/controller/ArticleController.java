@@ -75,4 +75,10 @@ public class ArticleController {
     public CommonResult<Long> queryCount() {
         return CommonResult.success(articleService.count());
     }
+
+    @Operation(summary = "查询待审核文章总数")
+    @GetMapping("/queryPendingReviewCount")
+    public CommonResult<Long> queryPendingReviewCount() {
+        return CommonResult.success(articleService.countPendingReview());
+    }
 }
