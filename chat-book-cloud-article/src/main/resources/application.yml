@@ -1,6 +1,10 @@
 spring:
   config:
     import: optional:nacos:article-service-${spring.profiles.active}.yml
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 file:
   storage:

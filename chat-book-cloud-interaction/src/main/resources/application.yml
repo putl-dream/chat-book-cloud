@@ -1,3 +1,9 @@
+spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+
 mybatis-plus:
   configuration:
     map-underscore-to-camel-case: true

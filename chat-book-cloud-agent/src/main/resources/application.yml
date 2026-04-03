@@ -1,6 +1,10 @@
 spring:
   config:
     import: optional:nacos:agent-service-${spring.profiles.active}.yml
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
 
 mybatis-plus:
   configuration:
