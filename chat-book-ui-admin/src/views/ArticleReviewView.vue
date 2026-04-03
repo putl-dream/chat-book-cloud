@@ -226,6 +226,7 @@
 import { computed, ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PaginationControls from "@/components/shared/PaginationControls.vue";
+import { confirmAction } from "@/composables/useConfirmDialog";
 import RequestStatePanel from "@/components/shared/RequestStatePanel.vue";
 import { articleCategoryMap, contentTypeMap } from "@/data/admin-config";
 import {
@@ -368,7 +369,14 @@ async function runReviewAction(articleIds: number[], action: ReviewAction, reaso
 }
 
 async function handleApprove(articleId: number) {
-  if (!window.confirm(`确认通过文章 #${articleId} 吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `通过文章 #${articleId}`,
+    description: "通过后文章会结束审核流程，并进入后续内容运营阶段。",
+    confirmText: "确认通过",
+    badge: "Editorial Review",
+  });
+
+  if (!confirmed) return;
   await runReviewAction([articleId], "APPROVE");
 }
 
@@ -378,7 +386,14 @@ async function handleBatchApprove() {
     return;
   }
 
-  if (!window.confirm(`确认批量通过选中的 ${selectedIds.value.length} 篇文章吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `批量通过 ${selectedIds.value.length} 篇文章`,
+    description: "这些文章会同时完成审核，请确认抽检已经完成。",
+    confirmText: "确认批量通过",
+    badge: "Editorial Review",
+  });
+
+  if (!confirmed) return;
   await runReviewAction(selectedIds.value, "APPROVE");
 }
 
@@ -420,12 +435,6 @@ async function handleRejectSubmit() {
     return;
   }
 
-  const confirmMessage =
-    rejectDialog.value.mode === "single"
-      ? `确认驳回文章 #${rejectDialog.value.articleIds[0]} 吗？`
-      : `确认批量驳回选中的 ${rejectDialog.value.articleIds.length} 篇文章吗？`;
-
-  if (!window.confirm(confirmMessage)) return;
   await runReviewAction(rejectDialog.value.articleIds, "REJECT", rejectReason.value.trim());
 }
 

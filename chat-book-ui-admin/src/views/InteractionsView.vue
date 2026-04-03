@@ -172,6 +172,7 @@
 import { ref, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import PaginationControls from "@/components/shared/PaginationControls.vue";
+import { confirmAction } from "@/composables/useConfirmDialog";
 import RequestStatePanel from "@/components/shared/RequestStatePanel.vue";
 import {
   BrowserApiError,
@@ -303,17 +304,41 @@ async function runAction(fn: (id: number) => Promise<void>, id: number, label: s
 }
 
 async function handleHide(id: number) {
-  if (!window.confirm(`确认屏蔽评论 #${id} 吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `屏蔽评论 #${id}`,
+    description: "屏蔽后该评论将不再对普通用户展示，但仍会保留治理记录。",
+    confirmText: "确认屏蔽",
+    badge: "Comment Governance",
+    tone: "warning",
+  });
+
+  if (!confirmed) return;
   await runAction(hideReview, id, "屏蔽");
 }
 
 async function handleRestore(id: number) {
-  if (!window.confirm(`确认恢复评论 #${id} 吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `恢复评论 #${id}`,
+    description: "恢复后该评论会重新回到正常可见状态。",
+    confirmText: "确认恢复",
+    badge: "Comment Governance",
+  });
+
+  if (!confirmed) return;
   await runAction(restoreReview, id, "恢复");
 }
 
 async function handleDelete(id: number) {
-  if (!window.confirm(`确认删除评论 #${id} 吗？`)) return;
+  const confirmed = await confirmAction({
+    title: `删除评论 #${id}`,
+    description: "删除后该评论将从内容视图中移除，且不建议作为常规治理手段频繁使用。",
+    note: "高风险操作。请确认已经完成违规留痕或替代处置。",
+    confirmText: "确认删除",
+    badge: "Comment Governance",
+    tone: "danger",
+  });
+
+  if (!confirmed) return;
   await runAction(deleteReview, id, "删除");
 }
 
