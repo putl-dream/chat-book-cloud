@@ -1,5 +1,6 @@
 package com.putl.chatservice.api;
 
+import com.putl.chatservice.api.fallback.ChatClientFallback;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -12,7 +13,7 @@ import java.util.Map;
 /**
  * Chat Service Feign Client
  */
-@FeignClient(name = "chat-book-cloud-chat", path = "/chat")
+@FeignClient(name = "chat-book-cloud-chat", path = "/chat", fallbackFactory = ChatClientFallback.class)
 public interface ChatClient {
 
     /**

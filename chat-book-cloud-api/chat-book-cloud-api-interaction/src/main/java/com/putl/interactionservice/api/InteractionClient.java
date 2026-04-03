@@ -6,6 +6,7 @@ import com.putl.interactionservice.api.dto.ReviewListVO;
 import com.putl.interactionservice.api.dto.ReviewVO;
 import com.putl.interactionservice.api.dto.UserFootListVO;
 import com.putl.interactionservice.api.dto.UserFootVO;
+import com.putl.interactionservice.api.fallback.InteractionClientFallback;
 import com.putl.articleservice.api.dto.ArticleListVO;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.cloud.openfeign.FeignClient;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient(name = "chat-book-cloud-interaction", configuration = InteractionFeignConfig.class)
+@FeignClient(name = "chat-book-cloud-interaction", configuration = InteractionFeignConfig.class, fallbackFactory = InteractionClientFallback.class)
 public interface InteractionClient {
 
     @PostMapping("/interaction/foot/browse")

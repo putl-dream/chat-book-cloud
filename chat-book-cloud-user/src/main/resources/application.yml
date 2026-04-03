@@ -1,4 +1,13 @@
 spring:
+  cloud:
+    openfeign:
+      circuitbreaker:
+        enabled: true
+      client:
+        config:
+          default:
+            connectTimeout: 1000
+            readTimeout: 3000
   mail:
     #配置smtp服务主机地址
     # qq邮箱为smtp.qq.com          端口号465或587
@@ -26,6 +35,18 @@ spring:
           #开启debug模式，这样邮件发送过程的日志会在控制台打印出来，方便排查错误
         debug: false
         personal: ICE
+
+resilience4j:
+  circuitbreaker:
+    configs:
+      default:
+        slidingWindowType: COUNT_BASED
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
+        failureRateThreshold: 50
+        waitDurationInOpenState: 10s
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
 
 mybatis-plus:
   configuration:
