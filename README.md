@@ -3,141 +3,170 @@
 [![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.4-green)](https://spring.io/projects/spring-boot)
 [![Spring Cloud](https://img.shields.io/badge/Spring%20Cloud-2023.0.1-blue)](https://spring.io/projects/spring-cloud)
 [![Spring Cloud Alibaba](https://img.shields.io/badge/Spring%20Cloud%20Alibaba-2023.0.1.0-orange)](https://github.com/alibaba/spring-cloud-alibaba)
+[![Vue](https://img.shields.io/badge/Vue-3.x-brightgreen)](https://vuejs.org/)
 
-`Chat Book Cloud` 是一个基于 Spring Cloud 的内容社区与 AI 能力平台，包含网关、认证、文章、用户、互动、社交、聊天、Agent 服务，以及博客前台和后台管理端两个前端应用。
+`Chat Book Cloud` 是一个面向技术内容社区与 AI 辅助创作场景的微服务系统。本项目不仅仅是一个基础的博客站点，而是将 **“内容阅读、内容创作、AI 生文、内容治理”** 串联成一条完整链路的综合性内容平台。
 
-当前仓库采用 Maven 多模块管理，后端服务通过 Nacos 做服务发现与配置管理，统一由 Gateway 对外暴露 API；前端通过 Vite 构建，开发和部署方式都已在仓库中落地。
+系统包含面向读者的博客前台、面向作者的创作中心、面向内容生产的 AI 创作助手，以及面向运营与治理的后台管理端。
 
-## 项目概览
+---
 
-### 技术栈
+## 🌟 项目亮点（核心竞争力）
 
-- 后端：Java 17、Spring Boot 3.2.4、Spring Cloud 2023.0.1、Spring Cloud Alibaba
-- 持久层：MyBatis-Plus、MySQL 8
-- 基础设施：Redis、RabbitMQ、MinIO、Nacos
-- AI 能力：Anthropic 兼容接口、LangChain4j、文档解析组件
-- 前端：Vue 3、Vite
-- 部署：Docker Compose、GitHub Actions
+- **完整的业务链路闭环**：打通了“前台阅读 -> 用户互动 -> 作者创作 -> AI 辅助生成 -> 内容发布 -> 后台审核与治理”的全业务流程，具备极高的产品完成度。
+- **AI 深度融入创作工作流**：AI 能力并非简单的“外挂聊天框”，而是深度嵌入创作链路中。支持交互式表单约束、首稿生成、草稿局部重写与多版本对比，基于流式输出（SSE）和 WebSocket 实现实时状态同步，让 AI 真正赋能内容生产。
+- **清晰的微服务架构边界**：后端基于 Spring Cloud Alibaba 架构，将核心业务拆分为网关、认证、用户、文章、互动、社交、聊天、Agent 独立服务，并抽象了高度可复用的基础组件模块（Common、MyBatis、Redis、WebSocket、MinIO 等），工程化架构与可维护性极强。
+- **强大的实时通信与治理体系**：兼顾传统 CRUD 场景与高并发实时协作场景（集成 WebSocket 与心跳重连）。后台管理端提供真实的内容审核链路、标签体系、用户角色管理、操作审计以及平台全量数据监控，内置基于 Vue+Pinia 构建的动态主题切换系统。
 
-### 核心能力
+---
 
-- 统一网关入口，按 `/api/{service}` 方式路由到各业务服务
-- JWT 鉴权与 OAuth2 Google 登录
-- 文章发布、分页、标签、静态文件访问
-- 用户信息、个人中心、消息与资料能力
-- 点赞、收藏、评论、通知等互动能力
-- 关注、粉丝、社交关系能力
-- 聊天服务与 WebSocket 通道
-- Agent 服务与大模型配置接入
+## 📸 核心功能与界面展示
 
-## 仓库结构
+### 1. 博客前台与社区互动
+前台承担内容展示、内容消费和用户侧互动，支持多维度内容分发（最新、热门、推荐）、分类标签聚合、历史记录追踪以及实时私聊功能。
+
+<details>
+<summary><b>点击展开查看前台截图</b></summary>
+
+**首页内容分发与卡片聚合**
+![博客首页](doc/images/博客-首页.png)
+
+**沉浸式文章阅读体验与辅助推荐**
+![文章阅读](doc/images/博客-文章阅读.png)
+
+**用户足迹与浏览历史**
+![浏览历史](doc/images/博客-历史记录.png)
+</details>
+
+### 2. 创作中心与 AI 创作工作流
+创作中心引入独立的富文本编辑器（基于 Tiptap）与草稿版本体系。内置 AI 助手（Agent），涵盖“对话式澄清、一键生成首稿、改写优化”等闭环能力。
+
+<details>
+<summary><b>点击展开查看创作中心截图</b></summary>
+
+**创作者内容资产管理**
+![博客内容管理](doc/images/博客-内容管理.png)
+
+**专业级富文本创作工作台**
+![文章创作](doc/images/博客-文章创作.png)
+
+**AI 会话生成与多版本创作协同**
+![AI 生文](doc/images/博客-AI生文.png)
+
+**结构化内容发布与 AI 摘要提取**
+![文章发布](doc/images/博客-文章发布.png)
+</details>
+
+### 3. 后台管理与系统治理
+承担全站内容监控与管理职能，包含完整的文章上/下架流转、审核审批、标签与用户权限治理，以及独特的动态主题切换视觉系统。
+
+<details>
+<summary><b>点击展开查看后台治理截图</b></summary>
+
+**全站内容全生命周期治理**
+![后台内容管理](doc/images/后台-内容管理.png)
+
+**文章人工审核与自动化标签匹配工作台**
+![后台文章审核](doc/images/后台-文章审核.png)
+
+**后台可视化主题设置与界面定制**
+![后台主题设置](doc/images/后台-主题设置.png)
+</details>
+
+---
+
+## 🛠️ 技术栈与总体架构
+
+系统整体是一个“前后端分离 + 网关统一入口 + 多微服务协作”的架构。
+
+```text
+博客前台（Vue 3）        后台管理端（Vue 3 + TS）
+        |                        |
+        +----------- Gateway 统一入口 -----------+
+                            |
+    +---------+---------+---------+---------+---------+---------+---------+
+    |         |         |         |         |         |         |         |
+   Auth      User     Article  Interaction Social    Chat      Agent
+    |         |         |         |         |         |         |
+    +---------+---- MySQL / Redis / RabbitMQ / MinIO / Nacos ---+
+```
+
+- **统一网关入口**：Gateway 负责统一路由、鉴权前置和 Header 身份透传。
+- **业务微服务化**：按领域模型细化拆分多个业务支撑模块，通过 Nacos 进行配置与服务发现。
+- **前后端分离**：两套独立构建的前端项目（博客前台与后台管理端），针对不同受众提供针对性 UI 设计。
+- **多端安全与实时通信**：基于 JWT + Refresh Token 刷新机制，支持 OAuth2（Google）第三方登录。内部服务依靠签名校验防伪造；集成 WebSocket 和 SSE 构建双通道实时交互机制。
+
+### 后端架构
+- **核心框架**：Java 17、Spring Boot 3.2.4、Spring Cloud 2023.0.1、Spring Cloud Alibaba
+- **持久层**：MyBatis-Plus、MySQL 8
+- **中间件与基础设施**：Redis（缓存与分布式锁）、RabbitMQ（异步消息解耦）、MinIO（对象存储）、Nacos（服务注册与配置中心）
+- **AI 集成框架**：Anthropic 兼容大模型接口、LangChain4j、流式会话引擎
+
+### 前端架构
+- **核心框架**：Vue 3、Vite
+- **UI 组件与样式**：Element Plus、Tailwind CSS 4
+- **状态管理**：Pinia
+- **富文本引擎**：Tiptap
+
+---
+
+## 📂 仓库与模块结构
 
 ```text
 chat-book-cloud
-├─ chat-book-cloud-dependencies        # Maven BOM，统一第三方依赖版本
-├─ chat-book-cloud-framework           # 内部基础组件
-│  ├─ chat-book-cloud-common
-│  ├─ chat-book-cloud-mybatis
-│  ├─ chat-book-cloud-redis
-│  ├─ chat-book-cloud-websocket
-│  ├─ chat-book-cloud-security-mvc
-│  ├─ chat-book-cloud-minio
-│  ├─ chat-book-cloud-parsing
-│  ├─ chat-book-cloud-excel
-│  └─ chat-book-cloud-rabbitmq
-├─ chat-book-cloud-gateway             # 网关服务
-├─ chat-book-cloud-auth                # 认证服务
-├─ chat-book-cloud-agent               # Agent 服务
-├─ chat-book-cloud-article             # 文章服务
-├─ chat-book-cloud-user                # 用户服务
-├─ chat-book-cloud-interaction         # 互动服务
-├─ chat-book-cloud-social              # 社交服务
-├─ chat-book-cloud-chat                # 聊天服务
-├─ chat-book-cloud-api                 # OpenFeign API 模块聚合
-│  ├─ chat-book-cloud-api-user
-│  ├─ chat-book-cloud-api-article
-│  ├─ chat-book-cloud-api-interaction
-│  ├─ chat-book-cloud-api-social
-│  └─ chat-book-cloud-api-chat
-├─ chat-book-ui-blog                   # 博客前台
-├─ chat-book-ui-admin                  # 后台管理端
-├─ docker-compose.yml                  # 本地完整环境
-└─ docker-compose.dev.yml              # 开发/服务器环境
+├─ chat-book-cloud-dependencies        # Maven BOM，统一第三方依赖版本管理
+├─ chat-book-cloud-framework           # 内部公共基础组件聚合模块
+│  ├─ chat-book-cloud-common           # 全局工具类、常量与异常处理
+│  ├─ chat-book-cloud-mybatis          # ORM 层公共配置与分页封装
+│  ├─ chat-book-cloud-redis            # 缓存与锁统一配置
+│  ├─ chat-book-cloud-websocket        # WebSocket 连接池与鉴权封装
+│  ├─ chat-book-cloud-security-mvc     # Web MVC 与权限拦截过滤器
+│  ├─ chat-book-cloud-minio            # 对象存储集成封装
+│  └─ chat-book-cloud-rabbitmq         # 消息队列基础集成
+├─ chat-book-cloud-gateway             # Gateway API 网关服务
+├─ chat-book-cloud-auth                # 统一认证服务 (JWT, OAuth2)
+├─ chat-book-cloud-agent               # Agent 智能创作与会话服务
+├─ chat-book-cloud-article             # 文章、草稿与标签核心服务
+├─ chat-book-cloud-user                # 用户资料与权限体系服务
+├─ chat-book-cloud-interaction         # 点赞、收藏、评论互动系统
+├─ chat-book-cloud-social              # 关注、粉丝等轻社交服务
+├─ chat-book-cloud-chat                # 聊天室与实时消息下发服务
+├─ chat-book-cloud-api                 # OpenFeign API 接口统一聚合模块
+├─ chat-book-ui-blog                   # 博客前台 (面向内容创作者与读者)
+├─ chat-book-ui-admin                  # 后台管理端 (面向平台运营与审核人员)
+├─ docker-compose.yml                  # 本地全量中间件与服务快速编排环境
+└─ docker-compose.dev.yml              # 服务器协同开发与测试环境编排文件
 ```
 
-## 服务与端口
+---
 
-| 模块 | 服务名 | 默认端口 | 说明 |
+## 🚀 服务分布与默认端口映射
+
+| 模块名称 | 服务标识 | 默认端口 | 职责说明 |
 | --- | --- | --- | --- |
-| Gateway | `chat-book-cloud-gateway` | `8080` | 统一入口与路由转发 |
-| Auth | `chat-book-cloud-auth` | `8081` | 登录、鉴权、OAuth2 |
-| Article | `chat-book-cloud-article` | `8082` | 文章与静态资源 |
-| User | `chat-book-cloud-user` | `8083` | 用户资料与用户侧能力 |
-| Interaction | `chat-book-cloud-interaction` | `8084` | 点赞、收藏、评论、通知 |
-| Chat | `chat-book-cloud-chat` | `8085` | 聊天服务 |
-| Social | `chat-book-cloud-social` | `8086` | 关注、粉丝、社交关系 |
-| Agent | `chat-book-cloud-agent` | `8087` | Agent 与模型调用 |
-| Blog UI | `chat-book-ui-blog` | `5173`（开发）/ `80`（容器） | 博客前台 |
-| Admin UI | `chat-book-ui-admin` | `3001`（开发）/ `3000`（容器映射默认） | 管理后台 |
+| **Gateway** | `chat-book-cloud-gateway` | `8080` | 全局统一 API 入口与请求路由转发 |
+| **Auth** | `chat-book-cloud-auth` | `8081` | 用户注册登录、令牌颁发验证、OAuth2 接入 |
+| **Article** | `chat-book-cloud-article` | `8082` | 文章内容检索、标签与静态资源管理 |
+| **User** | `chat-book-cloud-user` | `8083` | 用户基础信息维护、后台用户治理管控 |
+| **Interaction**| `chat-book-cloud-interaction` | `8084` | 互动行为记录 (点赞、收藏、评论) 与系统通知 |
+| **Chat** | `chat-book-cloud-chat` | `8085` | 实时私聊系统与全站消息分发 |
+| **Social** | `chat-book-cloud-social` | `8086` | 用户关系图谱 (关注、取关、好友判定) |
+| **Agent** | `chat-book-cloud-agent` | `8087` | 大模型会话网关与内容生成引擎桥接 |
+| **Blog UI** | `chat-book-ui-blog` | `5173` (开发) / `80` (容器) | 前台业务 Web 客户端 |
+| **Admin UI**| `chat-book-ui-admin` | `3001` (开发) / `3000` (容器) | 后台治理 Web 客户端 |
 
-## 网关路由
+> Gateway 已配置 `/api/{service}/**` 前缀路由及 `/api/article/ws`、`/api/chat/ws` 等 WebSocket 代理。
 
-Gateway 当前已配置以下前缀路由：
+---
 
-- `/api/auth/**` -> `chat-book-cloud-auth`
-- `/api/article/**`、`/api/page/**`、`/api/tag/**` -> `chat-book-cloud-article`
-- `/api/file/**`、`/api/images/**`、`/api/videos/**` -> `chat-book-cloud-article`
-- `/api/user/**` -> `chat-book-cloud-user`
-- `/api/chat/**` -> `chat-book-cloud-chat`
-- `/api/agent/**` -> `chat-book-cloud-agent`
-- `/api/interaction/**` -> `chat-book-cloud-interaction`
-- `/api/social/**` -> `chat-book-cloud-social`
+## 📦 快速启动与部署指南
 
-已配置的 WebSocket 路径：
+### 1. 运行环境依赖
+本地环境至少需准备：`JDK 17+`、`Maven 3.8+`、`Node.js 18+` (CI 环境推荐 Node 24)、`MySQL 8`、`Redis 7`、`Nacos 2.x`。
+按需启用完整功能时还需：`RabbitMQ`、`MinIO`、Google OAuth2 凭证以及 Agent 模型接口 Key。
 
-- `/api/article/ws`
-- `/api/chat/ws`
-
-## 运行依赖
-
-本地开发至少需要准备以下组件：
-
-- JDK 17+
-- Maven 3.8+
-- Node.js 18+，仓库 CI/CD 使用 Node.js 24
-- MySQL 8
-- Redis 7
-- Nacos 2.x
-
-按功能启用时还需要：
-
-- RabbitMQ
-- MinIO
-- Google OAuth2 配置
-- Agent 模型接口 Key
-
-## 数据库
-
-从当前仓库配置文件可以确认的数据库名如下：
-
-| 服务 | 数据库 |
-| --- | --- |
-| `chat-book-cloud-auth` | `chat_book_user` |
-| `chat-book-cloud-user` | `chat_book_user` |
-| `chat-book-cloud-article` | `chat_book_article` |
-| `chat-book-cloud-interaction` | `chat_book_interaction` |
-| `chat-book-cloud-social` | `chat_book_social` |
-| `chat-book-cloud-chat` | `chat_book_chat` |
-| `chat-book-cloud-agent` | `chat_book_agent` |
-
-注意：
-
-- 当前仓库中没有统一维护的 `Flyway` / `Liquibase` 初始化脚本目录。
-- GitHub Actions 的 CI 会显式创建上述数据库，并额外为测试创建部分表。
-- 如果你在本地首次启动，请先手动创建数据库，并根据业务需要准备表结构或导入初始化数据。
-
-示例：
-
+### 2. 数据库初始化
+目前通过服务自动建表（或交由 CI 触发）。若本地直接启动，请先手动创建以下 Schema：
 ```sql
 CREATE DATABASE IF NOT EXISTS chat_book_user;
 CREATE DATABASE IF NOT EXISTS chat_book_article;
@@ -147,173 +176,44 @@ CREATE DATABASE IF NOT EXISTS chat_book_chat;
 CREATE DATABASE IF NOT EXISTS chat_book_agent;
 ```
 
-## 本地开发启动
+### 3. Nacos 环境配置加载
+各微服务通过 `bootstrap.yaml` 声明服务名，依靠 `spring.config.import` 机制自动从 Nacos 拉取对应环境的公共配置（例如 Data ID: `agent-service-local.yml`）。
+> *注：如无需 Nacos，须在本地自行填补各模块的完整 application 配置。*
 
-### 1. 启动基础设施
+### 4. 后端服务启动顺序推荐
+1. 基础中间件 (MySQL, Redis, Nacos, MinIO, RabbitMQ)
+2. `chat-book-cloud-gateway`
+3. `chat-book-cloud-auth` / `chat-book-cloud-user`
+4. 其余业务线微服务及 Agent
+*支持根目录下直接执行 `mvn clean package` 编译全部模块。*
 
-至少先启动：
-
-- MySQL
-- Redis
-- Nacos
-
-如果要完整验证文章上传、通知或 OAuth 登录，再补充启动：
-
-- RabbitMQ
-- MinIO
-
-### 2. 配置 Nacos
-
-各服务都通过 `bootstrap.yaml` 指定了服务名，并通过 `application.yml` 中的 `spring.config.import` 从 Nacos 拉取环境配置。
-
-常见 Data ID：
-
-- `agent-service-local.yml`
-- `article-service-local.yml`
-- 其他服务以相同规则类推
-
-如果你本地不打算使用 Nacos，需要自行补齐对应环境下的本地配置。
-
-### 3. 启动后端
-
-推荐顺序：
-
-1. `chat-book-cloud-gateway`
-2. `chat-book-cloud-auth`
-3. `chat-book-cloud-user`
-4. `chat-book-cloud-article`
-5. `chat-book-cloud-interaction`
-6. `chat-book-cloud-social`
-7. `chat-book-cloud-chat`
-8. `chat-book-cloud-agent`
-
-也可以直接在根目录执行 Maven 构建：
-
-```bash
-mvn clean package
-```
-
-### 4. 启动前端
-
-博客前台：
-
+### 5. 前端应用启动
+**博客前台：**
 ```bash
 cd chat-book-ui-blog
 npm install
 npm run dev
 ```
 
-后台管理端：
-
+**后台管理：**
 ```bash
 cd chat-book-ui-admin
 npm install
 npm run dev
 ```
 
-前端脚本说明：
-
-- `chat-book-ui-blog`：`dev`、`build`、`preview`
-- `chat-book-ui-admin`：`dev`、`build`、`preview`、`typecheck`、`format`、`lint:css`
-
-## Docker Compose
-
-### 本地完整环境
-
-仓库根目录的 `docker-compose.yml` 会启动：
-
-- Nacos
-- MySQL
-- Redis
-- RabbitMQ
-- MinIO
-- Gateway
-- Auth
-- Agent
-- User
-- Article
-- Interaction
-- Social
-- Chat
-- Blog UI
-- Admin UI
-
-启动示例：
-
+### 6. Docker Compose 一键编排部署
+仓库根目录包含开箱即用的容器编排能力，启动涵盖全部微服务与中间件：
 ```bash
 cp .env.example .env
+# 请根据实际情况修改 .env 中的账号、密码、密钥和访问凭据
 docker compose --env-file .env -f docker-compose.yml up -d --build
 ```
 
-### 开发环境部署
+---
 
-`docker-compose.dev.yml` 更偏向服务器或联调环境，依赖外部已有的 MySQL、Redis、MinIO、RabbitMQ、Nacos。
+## 🔄 CI/CD 自动化工作流
 
-启动示例：
-
-```bash
-cp .env.example .env
-docker compose --env-file .env -f docker-compose.dev.yml up -d --build
-```
-
-## 关键环境变量
-
-### Auth 服务
-
-`.env.example` 当前包含以下变量：
-
-```env
-GOOGLE_CLIENT_ID=your-google-client-id
-GOOGLE_CLIENT_SECRET=your-google-client-secret
-OAUTH2_SUCCESS_REDIRECT_URL=http://localhost:5173/login
-```
-
-### Agent 服务
-
-常用变量：
-
-- `ANTHROPIC_API_KEY`
-- `ANTHROPIC_BASE_URL`
-- `ANTHROPIC_CHAT_MODEL`
-- `ANTHROPIC_GENERATE_MODEL`
-- `ANTHROPIC_OPTIMIZE_MODEL`
-- `ANTHROPIC_NOTEBOOK_MODEL`
-
-### 文件存储
-
-常用变量：
-
-- `MINIO_ENDPOINT`
-- `MINIO_ACCESS_KEY`
-- `MINIO_SECRET_KEY`
-- `MINIO_BUCKET`
-- `MINIO_PUBLIC_URL`
-- `FILE_STORAGE_BASE_URL`
-
-## CI/CD
-
-仓库当前包含两套 GitHub Actions：
-
-- `CI`
-  - PR 到 `master` 时触发
-  - 启动 MySQL、Redis、RabbitMQ、MinIO
-  - 创建测试数据库
-  - 执行 `mvn test`
-  - 构建 `chat-book-ui-blog` 和 `chat-book-ui-admin`
-- `Deploy Dev`
-  - `master` 分支 push 或手动触发时执行
-  - 自动识别变更范围
-  - 按需构建后端模块与前端应用
-  - 通过 `docker compose -f docker-compose.dev.yml up -d --build` 完成部署
-
-## 当前文档说明
-
-这版 README 基于当前仓库中的以下实际内容重新整理：
-
-- Maven 模块清单
-- `bootstrap.yaml` / `application.yml`
-- `docker-compose.yml` / `docker-compose.dev.yml`
-- 前端 `package.json`
-- GitHub Actions 工作流
-
-如果后续你补充了数据库初始化脚本、接口文档地址或各服务能力细节，建议继续在本文件基础上增量维护。
+项目内部已构建标准的 GitHub Actions 流水线，保证集成与交付质量：
+1. **持续集成 (CI)**：发起 PR 到 `master` 时触发。脚本自动拉起 MySQL/Redis 等镜像、建立测试库、执行全量 `mvn test` 并预构建双端 Vue 应用。
+2. **测试环境部署 (Deploy Dev)**：针对 `master` 分支 push 或手动触发。自动分析代码变更范围，仅重构受影响模块镜像，最后由 `docker-compose.dev.yml` 执行热更新部署。
