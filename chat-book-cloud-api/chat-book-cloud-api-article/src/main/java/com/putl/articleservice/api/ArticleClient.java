@@ -7,6 +7,7 @@ import com.putl.articleservice.api.dto.CreateDraftResponse;
 import com.putl.articleservice.api.dto.CreateDraftVersionRequest;
 import com.putl.articleservice.api.dto.DraftDetailDTO;
 import com.putl.articleservice.api.dto.DraftVersionAdoptRequest;
+import com.putl.articleservice.api.fallback.ArticleClientFallback;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.springframework.cloud.openfeign.FeignClient;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -16,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestParam;
 
 import java.util.List;
 
-@FeignClient("chat-book-cloud-article")
+@FeignClient(name = "chat-book-cloud-article", fallbackFactory = ArticleClientFallback.class)
 public interface ArticleClient {
 
     String USER_SERVICE_URL = "/article/";
