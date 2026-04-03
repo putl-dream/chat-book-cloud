@@ -44,10 +44,50 @@ const props = defineProps({
 
 const renderedHtml = computed(() => props.html || props.content || '');
 
-const handleCopy = async (event) => {
-    const target = event.target;
+const legacyCopyText = (text) => {
+    if (typeof document === 'undefined' || typeof document.execCommand !== 'function') {
+        return false;
+    }
 
-    if (!(target instanceof HTMLElement) || !target.classList.contains('copy-btn')) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.setAttribute('readonly', 'readonly');
+    textarea.style.position = 'fixed';
+    textarea.style.top = '0';
+    textarea.style.left = '-9999px';
+    textarea.style.opacity = '0';
+    textarea.style.pointerEvents = 'none';
+
+    document.body.appendChild(textarea);
+    textarea.focus({ preventScroll: true });
+    textarea.select();
+    textarea.setSelectionRange(0, textarea.value.length);
+
+    const copied = document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    return copied;
+};
+
+const copyCodeText = async (text) => {
+    if (navigator?.clipboard?.writeText) {
+        try {
+            await navigator.clipboard.writeText(text);
+            return true;
+        } catch {
+            // Non-secure contexts or embedded webviews may reject Clipboard API writes.
+        }
+    }
+
+    return legacyCopyText(text);
+};
+
+const handleCopy = async (event) => {
+    const target = event.target instanceof HTMLElement
+        ? event.target.closest('.copy-btn')
+        : null;
+
+    if (!(target instanceof HTMLElement)) {
         return;
     }
 
@@ -58,13 +98,14 @@ const handleCopy = async (event) => {
         return;
     }
 
-    if (!navigator?.clipboard?.writeText) {
-        ElMessage.error('当前环境不支持复制');
-        return;
-    }
-
     try {
-        await navigator.clipboard.writeText(codeBlock.innerText);
+        const copied = await copyCodeText(codeBlock.textContent || '');
+
+        if (!copied) {
+            ElMessage.error('当前环境不支持复制');
+            return;
+        }
+
         target.textContent = '已复制';
         target.classList.add('copied');
 
