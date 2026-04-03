@@ -2,6 +2,7 @@ package com.putl.interactionservice.service;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.extension.service.IService;
+import com.putl.interactionservice.controller.vo.ReviewAdminStatsVO;
 import com.putl.interactionservice.entity.ReviewDO;
 import com.putl.interactionservice.controller.vo.ReviewListVO;
 import com.putl.interactionservice.controller.vo.ReviewVO;
@@ -17,6 +18,9 @@ public interface ReviewService extends IService<ReviewDO> {
     IPage<ReviewVO> getAdminPage(Integer page, Integer size, Integer articleId,
             Integer userId, String keyword, Integer status,
             LocalDateTime startTime, LocalDateTime endTime);
+
+    /** 评论治理统计 */
+    ReviewAdminStatsVO getAdminStats();
 
     /** 删除评论（软删除） */
     void deleteReview(Integer reviewId);

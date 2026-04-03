@@ -73,7 +73,7 @@ export type AdminUser = {
   photo?: string | null;
   role: "admin" | "user" | string;
   profile?: string | null;
-  status?: "active" | "draft" | "disabled";
+  status: 0 | 1 | number;
   createdAt?: string;
 };
 
@@ -116,11 +116,25 @@ export type ReviewArticle = {
   userName: string;
   authorAvatar?: string | null;
   category: number;
+  contentType?: number | null;
+  tagIds?: number[];
   createdAt: string;
   praiseCount: number;
   commentCount: number;
   viewCount: number;
   collectCount: number;
+};
+
+export type AdminOperationLog = {
+  id: number;
+  operatorId?: number | null;
+  operatorName?: string | null;
+  action: string;
+  targetType: string;
+  targetId?: number | null;
+  detail?: string | null;
+  ip?: string | null;
+  createTime: string;
 };
 
 export type AdminTag = {
@@ -208,4 +222,12 @@ export type InteractionReviewPage = {
   current?: number;
   size?: number;
   pages?: number;
+};
+
+export type InteractionReviewStats = {
+  totalCount: number;
+  normalCount: number;
+  hiddenCount: number;
+  deletedCount: number;
+  abnormalCount: number;
 };

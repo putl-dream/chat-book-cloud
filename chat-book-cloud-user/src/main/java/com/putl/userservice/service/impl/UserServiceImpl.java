@@ -1,6 +1,7 @@
 package com.putl.userservice.service.impl;
 
 
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -24,9 +25,11 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -110,9 +113,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
     }
 
     @Override
-    public IPage<UserVO> selectPage(Integer page, Integer size) {
-        Page<UserDO> userPage = userMapper.selectPage(new Page<>(page, size), Wrappers.<UserDO>lambdaQuery()
-                .orderByDesc(UserDO::getCreateTime));
+    public IPage<UserVO> selectPage(Integer page, Integer size, String keyword, String role, Integer status) {
+        String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+        RoleEnum roleEnum = parseRole(role);
+        List<Integer> roleMatchedIds = roleEnum != null ? queryUserIdsByRole(roleEnum) : Collections.emptyList();
+        if (roleEnum != null && roleMatchedIds.isEmpty()) {
+            return emptyUserPage(page, size);
+        }
+
+        List<Integer> usernameMatchedIds = normalizedKeyword != null
+                ? queryUserIdsByUsername(normalizedKeyword, roleEnum)
+                : Collections.emptyList();
+
+        LambdaQueryWrapper<UserDO> queryWrapper = Wrappers.<UserDO>lambdaQuery()
+                .eq(status != null, UserDO::getStatus, status)
+                .orderByDesc(UserDO::getCreateTime);
+
+        if (roleEnum != null) {
+            queryWrapper.in(UserDO::getId, roleMatchedIds);
+        }
+
+        if (normalizedKeyword != null) {
+            queryWrapper.and(wrapper -> {
+                wrapper.like(UserDO::getEmail, normalizedKeyword);
+                if (!usernameMatchedIds.isEmpty()) {
+                    wrapper.or().in(UserDO::getId, usernameMatchedIds);
+                }
+            });
+        }
+
+        Page<UserDO> userPage = userMapper.selectPage(new Page<>(page, size), queryWrapper);
         List<Integer> ids = userPage.getRecords().stream().map(UserDO::getId).toList();
         List<UserVO> userVOList = selectByIds(ids);
         Map<Integer, UserVO> userVOMap = userVOList.stream()
@@ -226,6 +256,38 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, UserDO> implements 
                 .createTime(LocalDateTime.now())
                 .build();
         adminOperationLogMapper.insert(logDO);
+    }
+
+    private RoleEnum parseRole(String role) {
+        if (!StringUtils.hasText(role)) {
+            return null;
+        }
+        return RoleEnum.valueOf(role.trim().toUpperCase());
+    }
+
+    private List<Integer> queryUserIdsByRole(RoleEnum roleEnum) {
+        return userInfoMapper.selectList(Wrappers.<UserInfoDO>lambdaQuery()
+                        .eq(UserInfoDO::getRole, roleEnum))
+                .stream()
+                .map(UserInfoDO::getUserId)
+                .distinct()
+                .toList();
+    }
+
+    private List<Integer> queryUserIdsByUsername(String keyword, RoleEnum roleEnum) {
+        return userInfoMapper.selectList(Wrappers.<UserInfoDO>lambdaQuery()
+                        .eq(roleEnum != null, UserInfoDO::getRole, roleEnum)
+                        .like(UserInfoDO::getUsername, keyword))
+                .stream()
+                .map(UserInfoDO::getUserId)
+                .distinct()
+                .toList();
+    }
+
+    private IPage<UserVO> emptyUserPage(Integer page, Integer size) {
+        Page<UserVO> emptyPage = new Page<>(page, size, 0);
+        emptyPage.setRecords(Collections.emptyList());
+        return emptyPage;
     }
 
     private UserInfoDO ensureUserInfoExists(int userId) {

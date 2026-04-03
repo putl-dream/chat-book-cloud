@@ -123,31 +123,6 @@
       />
     </section>
 
-    <section class="panel">
-      <div class="panel-header">
-        <div>
-          <p class="section-kicker">API Mapping</p>
-          <h3>标签后台当前能力边界</h3>
-        </div>
-      </div>
-      <div class="stack-list">
-        <article class="stack-item">
-          <div class="stack-title-row">
-            <h4>已接通</h4>
-            <span class="pill pill-safe">查询 + CRUD</span>
-          </div>
-          <p>分页查询、全量列表、新增、编辑和删除已经全部切到真实接口。</p>
-        </article>
-        <article class="stack-item">
-          <div class="stack-title-row">
-            <h4>仍需后端补齐</h4>
-            <span class="pill pill-warn">权限与日志</span>
-          </div>
-          <p>管理员权限收口、操作日志和标签关联文章统计仍需后端补充。</p>
-        </article>
-      </div>
-    </section>
-
     <div v-if="dialogOpen" class="dialog-backdrop" role="presentation" @click="dialogOpen = false">
       <section class="dialog-panel" role="dialog" aria-modal="true" @click.stop>
         <div class="panel-header">

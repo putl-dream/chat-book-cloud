@@ -17,7 +17,12 @@ export const adminNavigation: NavGroup[] = [
       {
         href: "/users",
         label: "用户管理",
-        description: "查看后台用户列表、角色信息和账号资料。",
+        description: "按关键词、角色和状态治理账号，并执行角色调整、禁用与恢复。",
+      },
+      {
+        href: "/users/audit",
+        label: "操作审计",
+        description: "查看管理员治理动作、追溯操作对象和执行时间。",
       },
       {
         href: "/articles/review",
@@ -36,8 +41,8 @@ export const adminNavigation: NavGroup[] = [
       },
       {
         href: "/interactions",
-        label: "互动监控",
-        description: "查看评论、通知和行为事件的治理入口。",
+        label: "评论治理",
+        description: "巡检全站评论，处理屏蔽、删除、恢复和异常评论统计。",
       },
     ],
   },
@@ -93,43 +98,43 @@ export const actionTypeMap: Record<string, string> = {
 
 export const dashboardHighlights: HighlightCard[] = [
   {
-    title: "用户与标签模块已经具备优先接入真实后端的条件",
-    description: "用户统计、分页查询和标签 CRUD 都已有对应接口，适合优先接入。",
+    title: "用户治理主链路已经闭环",
+    description: "首页统计、用户筛选、角色调整、禁用恢复和管理员操作审计都已接入真实接口。",
     status: "stable",
   },
   {
-    title: "文章审核链路已经形成基础闭环",
-    description: "待审列表、通过、驳回和批量处理已经具备，详情字段仍待后端补齐。",
+    title: "文章审核已从流程闭环推进到信息闭环",
+    description: "待审列表、审核动作、内容类型和标签信息已接通，正文详情与审核历史仍可继续增强。",
     status: "partial",
   },
   {
-    title: "互动治理仍停留在监控入口阶段",
-    description: "评论、通知与异常行为缺少管理员视角的聚合接口，当前仅保留治理占位。",
-    status: "gap",
+    title: "互动后台当前聚焦评论治理",
+    description: "评论分页、状态操作与治理统计已经可用，通知中心、异常行为监控和统一告警仍属下一阶段。",
+    status: "partial",
   },
 ];
 
 export const dashboardServices: ServiceReadiness[] = [
   {
     service: "chat-book-cloud-user",
-    responsibility: "用户统计、后台分页和管理员身份识别",
-    currentApi: "/user/admin/count, /user/admin/user, /user/bySelf",
-    backendGap: "缺少角色调整、禁用 / 恢复和操作审计接口",
-    priority: "high",
+    responsibility: "用户统计、后台筛选、账号治理和管理员操作审计",
+    currentApi: "/user/admin/count, /user/admin/user, /user/admin/operation-log/page, /user/admin/{id}/*",
+    backendGap: "主链路已接通；后续增强点是批量治理、风控规则与更细粒度审计检索。",
+    priority: "medium",
   },
   {
     service: "chat-book-cloud-article",
-    responsibility: "待审核文章、标签体系和内容运营入口",
-    currentApi: "/page/adminArticlePage, /article/admin/review/*, /tag/page, /tag/list, /tag/*",
-    backendGap: "缺少全站内容分页、详情字段和审核记录查询接口",
+    responsibility: "待审核文章、内容治理、标签体系和文章统计",
+    currentApi: "/page/adminArticlePage, /article/queryPendingReviewCount, /article/admin/review/*, /article/admin/page, /tag/*",
+    backendGap: "正文详情、审核记录查询和标签运营统计仍待继续增强。",
     priority: "high",
   },
   {
     service: "chat-book-cloud-interaction",
-    responsibility: "评论治理、通知抽查和异常行为聚合",
-    currentApi: "仅面向前台用户视角接口",
-    backendGap: "缺少后台评论分页、屏蔽 / 删除和告警中心接口",
-    priority: "high",
+    responsibility: "评论治理、异常评论统计和状态处置",
+    currentApi: "/interaction/admin/review/page, /interaction/admin/review/stats, /interaction/admin/review/{id}/*",
+    backendGap: "通知中心、异常行为监控和统一告警中心仍未建设。",
+    priority: "medium",
   },
 ];
 

@@ -3,10 +3,9 @@
     <template v-if="snapshot">
       <div class="page-hero compact">
         <p class="eyebrow">System Readiness</p>
-        <h1>后台接入策略与改造清单</h1>
+        <h1>后台接入状态与剩余改造清单</h1>
         <p class="hero-copy">
-          新版管理端已经把路由、会话、主题、数据适配层和页面职责拆开。后续继续接入时，
-          优先补齐接口即可，不需要再依赖 Next.js 的服务端渲染能力。
+          新版管理端已经完成路由、会话、主题、数据适配层和页面职责拆分。当前重点转向剩余能力补齐与信息收口。
         </p>
       </div>
 
@@ -15,7 +14,7 @@
           <div class="panel-header">
             <div>
               <p class="section-kicker">Launch Checklist</p>
-              <h3>正式接入前必须完成</h3>
+              <h3>当前仍待推进的事项</h3>
             </div>
           </div>
           <div class="stack-list">
@@ -110,11 +109,11 @@ import { BrowserApiError, getDashboardSnapshot } from "@/services/admin-api";
 import type { DashboardSnapshot } from "@/types/admin";
 
 const launchChecklist = [
-  "接入管理员身份认证与路由守卫",
-  "把用户、标签、文章审核列表切到真实接口",
-  "补齐审核动作、评论治理和系统日志接口",
-  "增加操作日志与审计追踪",
-  "落地搜索、筛选、分页和空状态规范",
+  "为文章审核补正文详情与审核历史查询能力",
+  "把评论治理扩展到通知中心、异常行为监控和统一告警",
+  "补齐标签名称搜索、关联文章统计和标签审计",
+  "继续细化用户治理的批量能力与更丰富的审计筛选",
+  "统一剩余页面的筛选、分页和空状态体验",
 ];
 
 const snapshot = ref<DashboardSnapshot | null>(null);

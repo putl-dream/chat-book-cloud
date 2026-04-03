@@ -2,6 +2,7 @@ package com.putl.interactionservice.controller;
 
 import com.baomidou.mybatisplus.core.metadata.IPage;
 import com.putl.interactionservice.service.ReviewService;
+import com.putl.interactionservice.controller.vo.ReviewAdminStatsVO;
 import com.putl.interactionservice.controller.vo.ReviewVO;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.mvc.security.annotation.RequireAdmin;
@@ -38,6 +39,12 @@ public class ReviewAdminController {
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss") LocalDateTime endTime) {
         return CommonResult.success(reviewService.getAdminPage(
                 page, size, articleId, userId, keyword, status, startTime, endTime));
+    }
+
+    @Operation(summary = "评论治理统计")
+    @GetMapping("/stats")
+    public CommonResult<ReviewAdminStatsVO> getAdminStats() {
+        return CommonResult.success(reviewService.getAdminStats());
     }
 
     @Operation(summary = "删除评论")

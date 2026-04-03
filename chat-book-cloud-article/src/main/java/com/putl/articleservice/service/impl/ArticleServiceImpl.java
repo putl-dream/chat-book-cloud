@@ -602,4 +602,10 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     public Long count() {
         return articleMapper.selectCount(null);
     }
+
+    @Override
+    public Long countPendingReview() {
+        return articleMapper.selectCount(Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getStatus, ArticleStatus.PENDING_REVIEW));
+    }
 }

@@ -5,6 +5,7 @@ import { BrowserApiError } from "@/services/admin-api";
 import AdminLayout from "@/layouts/AdminLayout.vue";
 import DashboardView from "@/views/DashboardView.vue";
 import UsersView from "@/views/UsersView.vue";
+import UserAuditView from "@/views/UserAuditView.vue";
 import ArticleReviewView from "@/views/ArticleReviewView.vue";
 import ContentView from "@/views/ContentView.vue";
 import TagsView from "@/views/TagsView.vue";
@@ -38,6 +39,7 @@ const router = createRouter({
       children: [
         { path: "dashboard", component: DashboardView },
         { path: "users", component: UsersView },
+        { path: "users/audit", component: UserAuditView },
         { path: "articles/review", component: ArticleReviewView },
         { path: "articles/content", component: ContentView },
         { path: "tags", component: TagsView },

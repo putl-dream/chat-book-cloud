@@ -9,8 +9,8 @@ import {
 } from "@/services/auth";
 import type { LoginVO } from "@/services/auth";
 import type {
-  AdminArticle,
   AdminCount,
+  AdminOperationLog,
   AdminTag,
   AdminTagFormValues,
   AdminUser,
@@ -22,6 +22,7 @@ import type {
   DashboardSnapshot,
   InteractionReview,
   InteractionReviewPage,
+  InteractionReviewStats,
   PaginatedResult,
   ReviewAction,
   ReviewArticle,
@@ -49,6 +50,8 @@ type BackendReviewArticle = {
   userName: string;
   authorAvatar?: string | null;
   category: number;
+  contentType?: number | null;
+  tagIds?: number[] | null;
   praiseCount?: number | null;
   commentCount?: number | null;
   viewCount?: number | null;
@@ -56,9 +59,37 @@ type BackendReviewArticle = {
   createTime?: string | null;
 };
 
-function clone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
-}
+type BackendAdminUser = {
+  id: number;
+  userId: number;
+  username: string;
+  email: string;
+  photo?: string | null;
+  role?: string | null;
+  profile?: string | null;
+  status?: number | string | null;
+  createdAt?: string | null;
+};
+
+type BackendAdminOperationLog = {
+  id: number;
+  operatorId?: number | null;
+  operatorName?: string | null;
+  action: string;
+  targetType: string;
+  targetId?: number | null;
+  detail?: string | null;
+  ip?: string | null;
+  createTime?: string | null;
+};
+
+type BackendInteractionReviewStats = {
+  totalCount?: number | string | null;
+  normalCount?: number | string | null;
+  hiddenCount?: number | string | null;
+  deletedCount?: number | string | null;
+  abnormalCount?: number | string | null;
+};
 
 function formatCount(value: number) {
   return new Intl.NumberFormat("zh-CN").format(value);
@@ -223,14 +254,48 @@ async function requestBrowser<T>(
   return result.data as T;
 }
 
-function mapUserPage(page: BackendUserPage<AdminUser>): PaginatedResult<AdminUser> {
+function mapAdminUser(user: BackendAdminUser): AdminUser {
+  return {
+    ...user,
+    role: user.role || "user",
+    status: toNumber(user.status) === 1 ? 1 : 0,
+    createdAt: user.createdAt || undefined,
+  };
+}
+
+function mapUserPage(page: BackendUserPage<BackendAdminUser>): PaginatedResult<AdminUser> {
   const pageNo = toNumber(page.current) || 1;
   const pageSize = toNumber(page.size) || 20;
   const total = toNumber(page.total);
   const totalPages = toNumber(page.pages) || Math.max(1, Math.ceil(total / pageSize));
 
   return {
-    list: page.records ?? [],
+    list: (page.records ?? []).map(mapAdminUser),
+    total,
+    pageNo,
+    pageSize,
+    totalPages,
+  };
+}
+
+function mapAdminOperationLog(page: BackendUserPage<BackendAdminOperationLog>): PaginatedResult<AdminOperationLog> {
+  const pageNo = toNumber(page.current) || 1;
+  const pageSize = toNumber(page.size) || 20;
+  const total = toNumber(page.total);
+  const totalPages = toNumber(page.pages) || Math.max(1, Math.ceil(total / pageSize));
+
+  return {
+    list: (page.records ?? []).map((item) => ({
+      id: item.id,
+      operatorId: item.operatorId ?? null,
+      operatorName: item.operatorName ?? null,
+      action: item.action,
+      targetType: item.targetType,
+      targetId: item.targetId ?? null,
+      detail: item.detail ?? null,
+      ip: item.ip ?? null,
+      createTime: item.createTime || "时间未返回",
+    })),
     total,
     pageNo,
     pageSize,
@@ -264,11 +329,23 @@ function mapReviewArticle(article: BackendReviewArticle): ReviewArticle {
     userName: article.userName,
     authorAvatar: article.authorAvatar,
     category: article.category,
+    contentType: article.contentType ?? null,
+    tagIds: article.tagIds ?? [],
     createdAt: article.createTime || "时间未返回",
     praiseCount: toNumber(article.praiseCount),
     commentCount: toNumber(article.commentCount),
     viewCount: toNumber(article.viewCount),
     collectCount: toNumber(article.collectCount),
+  };
+}
+
+function mapInteractionReviewStats(stats: BackendInteractionReviewStats): InteractionReviewStats {
+  return {
+    totalCount: toNumber(stats.totalCount),
+    normalCount: toNumber(stats.normalCount),
+    hiddenCount: toNumber(stats.hiddenCount),
+    deletedCount: toNumber(stats.deletedCount),
+    abnormalCount: toNumber(stats.abnormalCount),
   };
 }
 
@@ -299,13 +376,15 @@ export function getCurrentAdminUser(options?: {
   return requestBrowser<CurrentAdminUser>("/user/bySelf", { method: "GET" }, options);
 }
 
+export async function getInteractionReviewStats(): Promise<InteractionReviewStats> {
+  const result = await requestBrowser<BackendInteractionReviewStats>("/interaction/admin/review/stats", { method: "GET" });
+  return mapInteractionReviewStats(result);
+}
+
 export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
-  const [count, reviewPage]: [AdminCount, BackendPageResult<BackendReviewArticle>] = await Promise.all([
+  const [count, interactionStats]: [AdminCount, InteractionReviewStats] = await Promise.all([
     requestBrowser<AdminCount>("/user/admin/count", { method: "GET" }),
-    requestBrowser<BackendPageResult<BackendReviewArticle>>("/page/adminArticlePage", {
-      method: "POST",
-      body: JSON.stringify({ pageNo: 1, pageSize: 8 }),
-    }),
+    getInteractionReviewStats(),
   ]);
 
   return {
@@ -324,15 +403,15 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
       },
       {
         label: "待审核文章",
-        value: formatCount(toNumber(reviewPage.total)),
-        detail: "来自 /page/adminArticlePage 的待审队列",
+        value: formatCount(toNumber(count.reviewCount)),
+        detail: "来自 /user/admin/count 的待审文章统计",
         trend: "实时",
       },
       {
-        label: "互动告警",
-        value: "--",
-        detail: "聚合接口尚未补齐，当前保留占位视图",
-        trend: "待接入",
+        label: "评论治理告警",
+        value: formatCount(interactionStats.abnormalCount),
+        detail: "来自 /interaction/admin/review/stats 的异常评论统计",
+        trend: "评论治理",
       },
     ],
     highlights: dashboardHighlights,
@@ -343,20 +422,55 @@ export async function getDashboardSnapshot(): Promise<DashboardSnapshot> {
 export async function getUsersPage(params?: {
   page?: number;
   size?: number;
+  keyword?: string | null;
+  role?: "USER" | "ADMIN" | null;
+  status?: number | null;
 }): Promise<PaginatedResult<AdminUser>> {
   const page = params?.page ?? 1;
   const size = params?.size ?? 20;
-  const searchParams = new URLSearchParams({
-    page: String(page),
-    size: String(size),
-  });
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(page));
+  searchParams.set("size", String(size));
+  if (params?.keyword) searchParams.set("keyword", params.keyword);
+  if (params?.role) searchParams.set("role", params.role);
+  if (params?.status != null) searchParams.set("status", String(params.status));
 
-  const result = await requestBrowser<BackendUserPage<AdminUser>>(
+  const result = await requestBrowser<BackendUserPage<BackendAdminUser>>(
     `/user/admin/user?${searchParams.toString()}`,
     { method: "GET" }
   );
 
   return mapUserPage(result);
+}
+
+export async function getAdminOperationLogsPage(params?: {
+  page?: number;
+  size?: number;
+  action?: string | null;
+  targetType?: string | null;
+  targetId?: number | null;
+  operatorId?: number | null;
+  startTime?: string | null;
+  endTime?: string | null;
+}): Promise<PaginatedResult<AdminOperationLog>> {
+  const page = params?.page ?? 1;
+  const size = params?.size ?? 20;
+  const searchParams = new URLSearchParams();
+  searchParams.set("page", String(page));
+  searchParams.set("size", String(size));
+  if (params?.action) searchParams.set("action", params.action);
+  if (params?.targetType) searchParams.set("targetType", params.targetType);
+  if (params?.targetId != null) searchParams.set("targetId", String(params.targetId));
+  if (params?.operatorId != null) searchParams.set("operatorId", String(params.operatorId));
+  if (params?.startTime) searchParams.set("startTime", params.startTime);
+  if (params?.endTime) searchParams.set("endTime", params.endTime);
+
+  const result = await requestBrowser<BackendUserPage<BackendAdminOperationLog>>(
+    `/user/admin/operation-log/page?${searchParams.toString()}`,
+    { method: "GET" }
+  );
+
+  return mapAdminOperationLog(result);
 }
 
 export async function getReviewArticlesPage(params?: {
