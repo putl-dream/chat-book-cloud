@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.putl")
 @EnableDiscoveryClient
 @EnableFeignClients(basePackages = {"com.putl.userservice.api", "com.putl.chatservice.api"})
 @MapperScan("com.putl.socialservice.mapper")

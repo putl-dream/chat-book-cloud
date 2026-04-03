@@ -6,7 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.web.servlet.ServletComponentScan;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.putl")
 @ServletComponentScan
 @MapperScan("com.putl.agentservice.mapper")
 @EnableFeignClients(basePackages = {"com.putl.agentservice.client", "com.putl.articleservice.api"})

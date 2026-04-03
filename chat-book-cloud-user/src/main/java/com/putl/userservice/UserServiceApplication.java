@@ -9,7 +9,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
 
 @EnableAsync
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.putl")
 @ServletComponentScan
 @EnableFeignClients(basePackages = {"com.putl.userservice.api", "com.putl.articleservice.api"})
 @Import(SecurityMvcConfig.class)

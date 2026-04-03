@@ -8,7 +8,7 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Import;
 
 @EnableFeignClients(basePackages = {"com.putl.userservice.api", "com.putl.interactionservice.api"})
-@SpringBootApplication
+@SpringBootApplication(scanBasePackages = "com.putl")
 @ServletComponentScan
 @Import(SecurityMvcConfig.class)
 public class ArticleApplication {
