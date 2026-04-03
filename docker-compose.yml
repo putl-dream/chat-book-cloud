@@ -236,6 +236,8 @@ services:
       SPRING_PROFILES_ACTIVE: local
       NACOS_SERVER_ADDR: nacos:8848
       MYSQL_HOST: mysql
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
       MINIO_ENDPOINT: http://minio:9000
       MINIO_ACCESS_KEY: admin
       MINIO_SECRET_KEY: admin@2026
@@ -243,6 +245,7 @@ services:
       MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://localhost:9000}
     depends_on:
       - mysql
+      - redis
       - minio
     networks:
       - chat-book-net
