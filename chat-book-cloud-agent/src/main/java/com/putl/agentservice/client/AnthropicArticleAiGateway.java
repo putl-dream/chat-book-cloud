@@ -2,6 +2,7 @@ package com.putl.agentservice.client;
 
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.client.engine.ArticleAiExecutionEngine;
+import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.client.task.ArticleChatTask;
 import com.putl.agentservice.client.task.ArticleDraftGenerateTask;
 import com.putl.agentservice.client.task.ArticleDraftOptimizeTask;
@@ -99,13 +100,22 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
     public AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages,
                                                                 NotebookSummary notebookSummary,
                                                                 Consumer<String> chunkConsumer) {
+        return generateDraft(messages, notebookSummary, chunkConsumer, StreamingControl.noop());
+    }
+
+    @Override
+    public AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages,
+                                                                NotebookSummary notebookSummary,
+                                                                Consumer<String> chunkConsumer,
+                                                                StreamingControl streamingControl) {
         return executionEngine.execute(
                 articleDraftGenerateTask,
                 ArticleAiContext.builder()
                         .messages(messages)
                         .notebookSummary(notebookSummary)
                         .build(),
-                chunkConsumer);
+                chunkConsumer,
+                streamingControl);
     }
 
     /**

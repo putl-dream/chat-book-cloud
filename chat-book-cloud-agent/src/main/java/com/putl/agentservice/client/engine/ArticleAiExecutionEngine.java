@@ -25,5 +25,14 @@ public interface ArticleAiExecutionEngine {
      * @param <T>            返回结果类型
      * @return AI 调用结果
      */
-    <T> AiInvocationResult<T> execute(ArticleAiTask<T> task, ArticleAiContext context, Consumer<String> chunkConsumer);
+    default <T> AiInvocationResult<T> execute(ArticleAiTask<T> task,
+                                              ArticleAiContext context,
+                                              Consumer<String> chunkConsumer) {
+        return execute(task, context, chunkConsumer, StreamingControl.noop());
+    }
+
+    <T> AiInvocationResult<T> execute(ArticleAiTask<T> task,
+                                      ArticleAiContext context,
+                                      Consumer<String> chunkConsumer,
+                                      StreamingControl streamingControl);
 }

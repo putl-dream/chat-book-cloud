@@ -8,4 +8,6 @@ public interface DraftGenerationService {
     DraftGenerateResponse generateDraft(GenerateDraftRequest request);
 
     void generateDraftByWebSocket(String userId, GenerateDraftRequest request);
+
+    void cancelDraftGenerationByWebSocket(String userId, GenerateDraftRequest request);
 }
