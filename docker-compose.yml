@@ -209,6 +209,7 @@ services:
       - "80:80"
     environment:
       GATEWAY_PROXY_TARGET: http://gateway:8080
+      AUTH_PROXY_TARGET: http://auth:8081
       MINIO_PROXY_TARGET: http://minio:9000
     depends_on:
       - gateway

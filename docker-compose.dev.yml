@@ -46,7 +46,7 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin@2026}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required for auth oauth2 login}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required for auth oauth2 login}
-      OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-http://180.184.30.1/login}
+      OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-http://putl.online/login}
     networks:
       - chat-book-net
 
@@ -194,6 +194,7 @@ services:
       - "80:80"
     environment:
       GATEWAY_PROXY_TARGET: http://gateway:8080
+      AUTH_PROXY_TARGET: http://auth:8081
       MINIO_PROXY_TARGET: ${MINIO_PROXY_TARGET:-http://10.0.0.2:9000}
     depends_on:
       - gateway

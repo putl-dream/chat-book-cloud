@@ -9,5 +9,6 @@ export const API_CONFIG = {
 };
 
 export const AUTH_CONFIG = {
-    baseURL: (import.meta.env.VITE_AUTH_BASE_URL ?? 'http://localhost:8081'),
+    // Empty string means same-origin OAuth entrypoint (recommended for production).
+    baseURL: (import.meta.env.VITE_AUTH_BASE_URL ?? ''),
 };
