@@ -8,6 +8,7 @@ export const AGENT_SCENE_TYPE = Object.freeze({
 });
 
 const EDITOR_IMPORT_KEY = 'chat-book-agent-editor-import';
+const EDITOR_GENERATION_KEY = 'chat-book-agent-editor-generation';
 
 export function createAgentSession(params) {
     return request.post('/agent/session/create', params);
@@ -80,6 +81,45 @@ export function saveAgentDraftImport(draft) {
     return true;
 }
 
+export function saveAgentGenerationIntent(intent) {
+    if (typeof window === 'undefined' || !intent?.sessionId) {
+        return false;
+    }
+
+    const payload = {
+        sessionId: Number(intent.sessionId),
+        source: intent.source || 'agent-studio',
+        createdAt: intent.createdAt || new Date().toISOString()
+    };
+
+    window.sessionStorage.setItem(EDITOR_GENERATION_KEY, JSON.stringify(payload));
+    return true;
+}
+
+export function loadAgentGenerationIntent() {
+    if (typeof window === 'undefined') {
+        return null;
+    }
+
+    const raw = window.sessionStorage.getItem(EDITOR_GENERATION_KEY);
+    if (!raw) {
+        return null;
+    }
+
+    try {
+        const payload = JSON.parse(raw);
+        if (!payload?.sessionId) {
+            clearAgentGenerationIntent();
+            return null;
+        }
+        return payload;
+    } catch (error) {
+        console.error('Failed to parse agent generation payload:', error);
+        clearAgentGenerationIntent();
+        return null;
+    }
+}
+
 export function loadAgentDraftImport() {
     if (typeof window === 'undefined') {
         return null;
@@ -104,4 +144,53 @@ export function clearAgentDraftImport() {
         return;
     }
     window.sessionStorage.removeItem(EDITOR_IMPORT_KEY);
+}
+
+export function clearAgentGenerationIntent() {
+    if (typeof window === 'undefined') {
+        return;
+    }
+    window.sessionStorage.removeItem(EDITOR_GENERATION_KEY);
+}
+
+function decodeJsonStringFragment(value = '') {
+    let candidate = value;
+    while (candidate.length > 0) {
+        try {
+            return JSON.parse(`"${candidate}"`);
+        } catch (error) {
+            candidate = candidate.slice(0, -1);
+        }
+    }
+    return '';
+}
+
+function extractDraftField(buffer = '', fieldName) {
+    const matcher = new RegExp(`"${fieldName}"\\s*:\\s*"`, 'm');
+    const match = matcher.exec(buffer);
+    if (!match) {
+        return '';
+    }
+
+    let rawValue = '';
+    let consecutiveBackslashes = 0;
+    for (let cursor = match.index + match[0].length; cursor < buffer.length; cursor += 1) {
+        const char = buffer[cursor];
+        if (char === '"' && consecutiveBackslashes % 2 === 0) {
+            return decodeJsonStringFragment(rawValue);
+        }
+        rawValue += char;
+        consecutiveBackslashes = char === '\\' ? consecutiveBackslashes + 1 : 0;
+    }
+    return decodeJsonStringFragment(rawValue);
+}
+
+export function buildStreamingDraftPreview(buffer = '') {
+    const title = extractDraftField(buffer, 'title');
+    const summary = extractDraftField(buffer, 'summary');
+    const content = extractDraftField(buffer, 'content');
+    if (!title && !summary && !content) {
+        return null;
+    }
+    return normalizeAgentDraft({ title, summary, content });
 }

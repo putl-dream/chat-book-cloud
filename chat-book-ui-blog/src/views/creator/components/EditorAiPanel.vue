@@ -11,10 +11,10 @@
             <div class="ai-placeholder c-editor-panel__placeholder">
                 <p class="ai-placeholder-title c-editor-panel__placeholder-title">Agent Studio 已接入</p>
                 <p class="ai-placeholder-text c-editor-panel__placeholder-text">
-                    会话建联、首稿生成、候选优化和版本对比已经放到独立的 AI 创作页，适合在正式编辑前先把文章结构聊清楚。
+                    主题讨论、观点碰撞和知识点补全已经放到独立的 AI 创作页。先把问题聊透，再把初稿带回编辑器继续写。
                 </p>
                 <el-button class="ai-placeholder-action" type="primary" @click="router.push('/creative/agent')">
-                    前往 AI 创作页
+                    前往思考共创页
                 </el-button>
             </div>
         </div>

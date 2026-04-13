@@ -23,7 +23,15 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/utils/websocket.js', () => ({
     default: class SocketService {
-        onOpen() {} onClose() {} onError() {} on() {} connect() {} send() {} isConnected() { return true; } close() {}
+        onOpen() {}
+        onClose() {}
+        onError() {}
+        on() {}
+        connect() {}
+        send() { return true; }
+        sendWithAck() { return Promise.resolve({}); }
+        isConnected() { return true; }
+        close() {}
     },
     formatWsUrl: () => 'ws://localhost'
 }));
@@ -35,8 +43,11 @@ vi.mock('@/views/article/_domain/article.js', () => ({
 }));
 
 vi.mock('@/views/creator/_domain/agent.js', () => ({
+    buildStreamingDraftPreview: vi.fn(() => null),
     loadAgentDraftImport: vi.fn(() => null),
     clearAgentDraftImport: vi.fn(),
+    loadAgentGenerationIntent: vi.fn(() => null),
+    clearAgentGenerationIntent: vi.fn(),
     extractArticleSummary: vi.fn(() => Promise.resolve({ summary: 'AI 摘要' }))
 }));
 
@@ -82,7 +93,8 @@ vi.mock('@tiptap/vue-3', () => ({
         getHTML: () => '',
         destroy: vi.fn(),
         commands: { setContent: vi.fn() },
-        storage: { characterCount: { characters: () => 0 } }
+        storage: { characterCount: { characters: () => 0 } },
+        setEditable: vi.fn()
     }),
     EditorContent: { template: '<div></div>' }
 }));

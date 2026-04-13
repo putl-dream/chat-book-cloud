@@ -1,25 +1,20 @@
 <template>
     <div class="chat-controller">
         <div class="chat-header">
-            <h3 class="chat-title">AI 创作助手</h3>
+            <div class="chat-heading">
+                <h3 class="chat-title">思考共创助手</h3>
+                <p class="chat-subtitle">围绕主题、论点和疑问展开讨论，准备好了再生成初稿。</p>
+            </div>
             <div class="chat-actions">
-                <el-button 
-                    class="ghost-action-btn" 
-                    size="small" 
-                    :disabled="!store.hasDraft"
-                    @click="store.importDraftToEditor"
-                >
-                    导入编辑器继续
-                </el-button>
                 <el-button 
                     class="primary-action-btn" 
                     type="primary" 
                     size="small" 
                     :loading="store.generatingDraft"
-                    :disabled="!store.hasMessages || store.chatting || store.hasDraft"
+                    :disabled="!store.hasMessages || store.chatting || store.loadingSession || store.hasPendingInteractiveForm"
                     @click="store.createDraftFromSession"
                 >
-                    一键生成首稿
+                    生成初稿
                 </el-button>
             </div>
         </div>
@@ -36,9 +31,9 @@
                 v-else-if="!store.hasMessages" 
                 class="chat-placeholder u-animate-fade-in"
             >
-                <p class="placeholder-title">告诉 Agent 你的构想</p>
+                <p class="placeholder-title">先把你脑中的问题抛出来</p>
                 <p class="placeholder-text">
-                    可以输入文章主题、目标读者、情绪基调，以及你想要涵盖的几个核心观点。
+                    输入主题、观点、困惑或预设立场。Agent 会帮你扩展知识点、识别盲点、补充反方视角，而不是直接替你写整篇文章。
                 </p>
             </div>
 
@@ -98,8 +93,8 @@
             <div class="footer-hint" v-if="store.hasPendingInteractiveForm">
                 请先完成上方问题卡片，Agent 会在收到完整答案后继续生成建议
             </div>
-            <div class="footer-hint" v-if="store.hasDraft">
-                💡 输入文本即向 Agent 下达<strong>局部优化重写</strong>指令
+            <div class="footer-hint" v-else>
+                当前阶段以讨论为主，确认方向后再手动点击“生成初稿”进入编辑器。
             </div>
         </div>
     </div>
@@ -127,13 +122,8 @@ const handleSend = () => {
     
     const content = inputValue.value;
     inputValue.value = '';
-    
-    // If draft is already generated, we perform optimization instead of just chat
-    if (store.hasDraft) {
-        store.optimizeCurrentDraft(content);
-    } else {
-        store.sendMessage(content);
-    }
+
+    store.sendMessage(content);
 };
 
 const renderHtml = (content) => buildRichTextHtml(content || '', 'markdown');
@@ -156,60 +146,61 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
 
 <style scoped>
 .chat-controller {
-    width: 360px;
+    flex: 1;
     height: 100%;
-    background: #fff;
-    border-left: 1px solid rgba(22, 50, 79, 0.08);
+    min-width: 0;
+    background:
+        radial-gradient(circle at top left, rgba(209, 96, 61, 0.08), transparent 26%),
+        linear-gradient(180deg, rgba(255, 251, 247, 0.86), rgba(255, 255, 255, 0.98));
     display: flex;
     flex-direction: column;
     z-index: 10;
-    flex-shrink: 0;
 }
 
 .chat-header {
-    height: 60px;
-    padding: 0 16px;
+    min-height: 88px;
+    padding: 18px 22px;
     display: flex;
     align-items: center;
     justify-content: space-between;
     border-bottom: 1px solid rgba(22, 50, 79, 0.05);
-    background: rgba(255, 255, 255, 0.9);
-    backdrop-filter: blur(10px);
+    background: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(16px);
+    gap: 16px;
+}
+
+.chat-heading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 0;
 }
 
 .chat-title {
     margin: 0;
-    font-size: 15px;
-    font-weight: 600;
+    font-size: 18px;
+    font-weight: 700;
     color: #13273f;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.02em;
+}
+
+.chat-subtitle {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1.5;
+    color: rgba(19, 39, 63, 0.58);
 }
 
 .chat-actions {
     display: flex;
     gap: 8px;
-}
-
-.primary-action-btn {
-    background: linear-gradient(135deg, #d1603d, #c04e2b);
-    border: none;
-    box-shadow: 0 4px 10px rgba(209, 96, 61, 0.2);
-}
-
-.ghost-action-btn {
-    background: rgba(22, 50, 79, 0.04);
-    border: none;
-    color: #13273f;
-}
-
-.ghost-action-btn:hover {
-    background: rgba(22, 50, 79, 0.08);
+    flex-shrink: 0;
 }
 
 .chat-body {
     flex: 1;
     overflow-y: auto;
-    padding: 8px;
+    padding: 16px 22px 8px;
     display: flex;
     flex-direction: column;
     scroll-behavior: smooth;
@@ -224,6 +215,8 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
     text-align: center;
     color: rgba(19, 39, 63, 0.6);
     padding: 20px;
+    max-width: 540px;
+    margin: 0 auto;
 }
 
 .placeholder-title {
@@ -242,8 +235,11 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
 .chat-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 14px;
     padding-bottom: 10px;
+    max-width: 920px;
+    width: 100%;
+    margin: 0 auto;
 }
 
 .chat-msg {
@@ -355,13 +351,16 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
 }
 
 .chat-footer {
-    padding: 12px;
+    padding: 16px 22px 18px;
     border-top: 1px solid rgba(22, 50, 79, 0.05);
-    background: #fff;
+    background: rgba(255, 255, 255, 0.9);
+    backdrop-filter: blur(16px);
 }
 
 .input-wrapper {
     position: relative;
+    max-width: 920px;
+    margin: 0 auto;
     border: 1px solid rgba(22, 50, 79, 0.15);
     border-radius: 12px;
     transition: all 0.2s ease;
@@ -414,16 +413,31 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
 .footer-hint {
     font-size: 12px;
     color: rgba(19, 39, 63, 0.5);
-    margin-top: 10px;
+    margin: 10px auto 0;
+    max-width: 920px;
     padding: 0 4px;
+    text-align: left;
+}
+
+.primary-action-btn {
+    background: linear-gradient(135deg, #d1603d, #c04e2b);
+    border: none;
+    box-shadow: 0 4px 10px rgba(209, 96, 61, 0.2);
 }
 
 @media (max-width: 900px) {
     .chat-controller {
         width: 100%;
-        height: 50vh;
-        border-left: none;
-        border-top: 1px solid rgba(22, 50, 79, 0.08);
+        min-height: calc(100vh - 220px);
+    }
+
+    .chat-header {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .chat-actions {
+        justify-content: flex-start;
     }
 }
 </style>

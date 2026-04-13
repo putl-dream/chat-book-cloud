@@ -1,22 +1,67 @@
-import {computed, onBeforeUnmount, onMounted, ref, unref, watch} from 'vue';
-import {useRoute, useRouter} from 'vue-router';
-import {ElMessage, ElMessageBox} from 'element-plus';
-import {useEditor} from '@tiptap/vue-3';
+import { computed, onBeforeUnmount, onMounted, ref, unref, watch } from 'vue';
+import { useRoute, useRouter } from 'vue-router';
+import { ElMessage, ElMessageBox } from 'element-plus';
+import { useEditor } from '@tiptap/vue-3';
 
-import {publishArticle, saveDraftArticle} from '@/views/article/_domain/article.js';
-import {getTagsByType} from '@/views/article/_domain/tag.js';
-import {ARTICLE_TYPE_ENUM, TAG_TYPE_ENUM} from '@/constants';
-import SocketService, {formatWsUrl} from '@/utils/websocket.js';
-import {API_CONFIG} from '@/config/index.js';
-import {clearDraft, isDraftNewer, loadDraft, saveDraft} from '@/utils/draftStorage.js';
-import {clearAgentDraftImport, extractArticleSummary, loadAgentDraftImport} from '@/views/creator/_domain/agent.js';
-import {applyRichTextEditorAttributes, createRichTextEditorAttributes, createRichTextExtensions} from '@/components/common/rich-text/editor-config.js';
+import { publishArticle, saveDraftArticle } from '@/views/article/_domain/article.js';
+import { getTagsByType } from '@/views/article/_domain/tag.js';
+import { ARTICLE_TYPE_ENUM, TAG_TYPE_ENUM } from '@/constants';
+import SocketService, { formatWsUrl } from '@/utils/websocket.js';
+import { API_CONFIG } from '@/config/index.js';
+import { clearDraft, isDraftNewer, loadDraft, saveDraft } from '@/utils/draftStorage.js';
+import {
+    buildStreamingDraftPreview,
+    clearAgentDraftImport,
+    clearAgentGenerationIntent,
+    extractArticleSummary,
+    loadAgentDraftImport,
+    loadAgentGenerationIntent
+} from '@/views/creator/_domain/agent.js';
+import {
+    applyRichTextEditorAttributes,
+    createRichTextEditorAttributes,
+    createRichTextExtensions
+} from '@/components/common/rich-text/editor-config.js';
+import { buildRichTextEditorHtml } from '@/components/common/rich-text/content-pipeline.js';
 
-import {EDITOR_CONFIG, SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP} from '../_utils/constants.js';
-import {buildArticlePayload, extractTextSummarySource, hasMeaningfulContent} from '../_domain/editor.js';
+import { EDITOR_CONFIG, SAVE_STATE_ENUM, SAVE_STATE_TEXT_MAP } from '../_utils/constants.js';
+import { buildArticlePayload, extractTextSummarySource, hasMeaningfulContent } from '../_domain/editor.js';
 
-import {useEditorLayout} from './useEditorLayout.js';
-import {useEditorForm} from './useEditorForm.js';
+import { useEditorLayout } from './useEditorLayout.js';
+import { useEditorForm } from './useEditorForm.js';
+
+const AGENT_CHAT_TYPE = 'AGENT_DRAFT_GENERATE';
+const AGENT_DRAFT_GENERATE_START = 'AGENT_DRAFT_GENERATE_START';
+const AGENT_DRAFT_GENERATE_STATUS = 'AGENT_DRAFT_GENERATE_STATUS';
+const AGENT_DRAFT_GENERATE_DELTA = 'AGENT_DRAFT_GENERATE_DELTA';
+const AGENT_DRAFT_GENERATE_DONE = 'AGENT_DRAFT_GENERATE_DONE';
+const AGENT_DRAFT_GENERATE_ERROR = 'AGENT_DRAFT_GENERATE_ERROR';
+
+function findStableMarkdownBoundary(markdown = '') {
+    if (!markdown) {
+        return 0;
+    }
+
+    let boundary = 0;
+    let inFence = false;
+    for (let index = 0; index < markdown.length; index += 1) {
+        if (markdown.startsWith('```', index)) {
+            inFence = !inFence;
+            index += 2;
+            if (!inFence) {
+                boundary = index + 1;
+            }
+            continue;
+        }
+
+        if (!inFence && markdown.startsWith('\n\n', index)) {
+            boundary = index + 2;
+            index += 1;
+        }
+    }
+
+    return boundary;
+}
 
 export function useEditorLogic() {
     const SPELLCHECK_STORAGE_KEY = 'chat-book-editor-spellcheck';
@@ -48,12 +93,10 @@ export function useEditorLogic() {
         beforeCoverUpload
     } = useEditorForm();
 
-    // =============== View State ===============
     const title = ref('');
     const html = ref('');
     const wordCount = ref(0);
 
-    // =============== Hook State ===============
     const articleId = ref(route.params.id ? Number(route.params.id) : null);
     const lastSavedAt = ref(null);
     const isSaving = ref(false);
@@ -67,28 +110,50 @@ export function useEditorLogic() {
             : false
     );
 
+    const aiGenerating = ref(false);
+    const aiGenerationStopped = ref(false);
+    const aiGenerationStatusText = ref('');
+    const aiRenderTick = ref(0);
+    const aiDraftJsonBuffer = ref('');
+    const aiStreamingMarkdown = ref('');
+    const aiCommittedMarkdown = ref('');
+    const userEditedTitle = ref(false);
+    const userEditedSummary = ref(false);
+
     const cacheTimer = ref(null);
     const autosaveTimer = ref(null);
-    let socketService = null;
+    let articleSocketService = null;
+    let agentSocketService = null;
+    let agentSocketReadyPromise = null;
+    let ignoreAgentStream = false;
 
     const userId = computed(() => {
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
         return userInfo.id || null;
     });
 
-    const statusText = computed(() => SAVE_STATE_TEXT_MAP[saveState.value] || '未保存');
+    const statusText = computed(() => {
+        if (aiGenerating.value) {
+            return aiGenerationStatusText.value || '正在根据讨论生成初稿';
+        }
+        if (aiGenerationStopped.value) {
+            return '已停止生成，等待你继续编辑';
+        }
+        return SAVE_STATE_TEXT_MAP[saveState.value] || '未保存';
+    });
 
-    // =============== Editor Setup ===============
+    const editorContentEditable = computed(() => !aiGenerating.value);
+
     const editor = useEditor({
         content: '',
         extensions: createRichTextExtensions({ placeholder: '请输入内容...' }),
-        onUpdate: ({ editor }) => {
-            html.value = editor.getHTML();
-            wordCount.value = editor.storage.characterCount.characters();
+        onUpdate: ({ editor: editorInstance }) => {
+            html.value = editorInstance.getHTML();
+            wordCount.value = editorInstance.storage.characterCount.characters();
         },
         editorProps: {
-            attributes: createRichTextEditorAttributes({ spellcheck: spellcheckEnabled.value }),
-        },
+            attributes: createRichTextEditorAttributes({ spellcheck: spellcheckEnabled.value })
+        }
     });
     const resolvedEditor = computed(() => unref(editor));
 
@@ -112,7 +177,25 @@ export function useEditorLogic() {
         { immediate: true }
     );
 
-    // =============== Actions / Domain Integration ===============
+    const buildCurrentPayload = () => buildArticlePayload({
+        articleId: articleId.value,
+        title: title.value,
+        html: html.value,
+        publishForm: publishForm.value,
+        lastSavedAt: lastSavedAt.value
+    });
+
+    const markContentDirty = ({ cacheLocal = true } = {}) => {
+        hasUnsavedChanges.value = true;
+        saveState.value = SAVE_STATE_ENUM.LOCAL_CACHED;
+
+        if (!cacheLocal || !userId.value || !hasMeaningfulContent(articleId.value, title.value, html.value)) {
+            return;
+        }
+
+        saveDraft(userId.value, articleId.value, buildCurrentPayload());
+    };
+
     const loadTags = async () => {
         try {
             const [topicRes, techRes, pathRes] = await Promise.all([
@@ -144,10 +227,82 @@ export function useEditorLogic() {
         publishForm.value.contentType = sourceData.contentType ?? 0;
         publishForm.value.abstractText = sourceData.abstractText || '';
         publishForm.value.articleType = sourceData.articleType || ARTICLE_TYPE_ENUM.ORIGINAL;
-        publishForm.value.creationStatements = Array.isArray(sourceData.creationStatements) ? sourceData.creationStatements : [];
+        publishForm.value.creationStatements = Array.isArray(sourceData.creationStatements)
+            ? sourceData.creationStatements
+            : [];
         publishForm.value.cover = sourceData.cover || '';
         publishForm.value.tagIds = sourceData.tagIds || [];
         syncSelectedTags(publishForm.value.tagIds);
+    };
+
+    const setHydratingWindow = (active) => {
+        isHydrating.value = active;
+        if (active) {
+            setTimeout(() => {
+                isHydrating.value = false;
+            }, 0);
+        }
+    };
+
+    const applyEditorHtml = (nextHtml = '') => {
+        setHydratingWindow(true);
+        html.value = nextHtml;
+        if (editor.value) {
+            editor.value.commands.setContent(nextHtml, false);
+            wordCount.value = editor.value.storage.characterCount.characters();
+        }
+    };
+
+    const resetForAgentGeneration = () => {
+        articleId.value = null;
+        lastSavedAt.value = null;
+        title.value = '';
+        applyPublishFormState({});
+        applyEditorHtml('');
+        userEditedTitle.value = false;
+        userEditedSummary.value = false;
+        aiDraftJsonBuffer.value = '';
+        aiStreamingMarkdown.value = '';
+        aiCommittedMarkdown.value = '';
+        aiRenderTick.value = 0;
+        hasUnsavedChanges.value = false;
+        saveState.value = SAVE_STATE_ENUM.SAVED;
+    };
+
+    const applyMarkdownToEditor = (markdown = '', { force = false } = {}) => {
+        const nextMarkdown = force
+            ? markdown
+            : markdown.slice(0, findStableMarkdownBoundary(markdown));
+        if (!nextMarkdown || nextMarkdown.length <= aiCommittedMarkdown.value.length) {
+            return;
+        }
+
+        aiCommittedMarkdown.value = nextMarkdown;
+        applyEditorHtml(buildRichTextEditorHtml(nextMarkdown, 'markdown'));
+        aiRenderTick.value += 1;
+        markContentDirty();
+    };
+
+    const flushRemainingMarkdown = ({ force = false } = {}) => {
+        if (!aiStreamingMarkdown.value) {
+            return;
+        }
+        applyMarkdownToEditor(aiStreamingMarkdown.value, { force });
+    };
+
+    const disconnectAgentWebSocket = () => {
+        agentSocketReadyPromise = null;
+        if (agentSocketService) {
+            agentSocketService.close();
+            agentSocketService = null;
+        }
+    };
+
+    const finalizeAgentGeneration = (message) => {
+        aiGenerating.value = false;
+        aiGenerationStatusText.value = message;
+        disconnectAgentWebSocket();
+        clearAgentGenerationIntent();
     };
 
     const applyCommandResult = (result, message) => {
@@ -167,12 +322,9 @@ export function useEditorLogic() {
     };
 
     const sendWsMessage = (type, data) => {
-        if (!data) {
-            data = buildArticlePayload({ articleId: articleId.value, title: title.value, html: html.value, publishForm: publishForm.value, lastSavedAt: lastSavedAt.value });
-        }
-        if (socketService && socketService.isConnected()) {
-            console.log("发送消息->>", type, data);
-            socketService.send(type, data);
+        const payload = data || buildCurrentPayload();
+        if (articleSocketService && articleSocketService.isConnected()) {
+            articleSocketService.send(type, payload);
             return true;
         }
         return false;
@@ -187,18 +339,20 @@ export function useEditorLogic() {
         isSaving.value = true;
         saveState.value = SAVE_STATE_ENUM.SAVING;
 
-        const payload = buildArticlePayload({ articleId: articleId.value, title: title.value, html: html.value, publishForm: publishForm.value, lastSavedAt: lastSavedAt.value });
+        const payload = buildCurrentPayload();
 
-        if (socketService && socketService.isConnected()) {
+        if (articleSocketService && articleSocketService.isConnected()) {
             try {
-                const response = await socketService.sendWithAck('SAVE_DRAFT', payload, { timeoutMs: EDITOR_CONFIG.ACK_TIMEOUT_MS });
+                const response = await articleSocketService.sendWithAck('SAVE_DRAFT', payload, {
+                    timeoutMs: EDITOR_CONFIG.ACK_TIMEOUT_MS
+                });
                 if (userId.value) clearDraft(userId.value, articleId.value);
                 applyCommandResult(response, showMessage ? '草稿已保存' : '');
                 saveState.value = SAVE_STATE_ENUM.SAVED;
                 if (showMessage) router.push('/');
                 return;
-            } catch (e) {
-                console.warn('SAVE_DRAFT ACK 超时或失败，尝试 HTTP 降级:', e.message);
+            } catch (error) {
+                console.warn('SAVE_DRAFT ACK 超时或失败，尝试 HTTP 降级:', error.message);
             }
         }
 
@@ -208,8 +362,8 @@ export function useEditorLogic() {
             applyCommandResult(result, showMessage ? '草稿已保存' : '');
             saveState.value = SAVE_STATE_ENUM.SAVED;
             if (showMessage) router.push('/');
-        } catch (e) {
-            console.error('HTTP 降级保存失败:', e);
+        } catch (error) {
+            console.error('HTTP 降级保存失败:', error);
             saveState.value = SAVE_STATE_ENUM.ERROR;
             ElMessage.error('保存失败，请重试');
         } finally {
@@ -225,18 +379,20 @@ export function useEditorLogic() {
         isSaving.value = true;
         saveState.value = SAVE_STATE_ENUM.SAVING;
 
-        const payload = buildArticlePayload({ articleId: articleId.value, title: title.value, html: html.value, publishForm: publishForm.value, lastSavedAt: lastSavedAt.value });
+        const payload = buildCurrentPayload();
 
-        if (socketService && socketService.isConnected()) {
+        if (articleSocketService && articleSocketService.isConnected()) {
             try {
-                const response = await socketService.sendWithAck('PUBLISH', payload, { timeoutMs: EDITOR_CONFIG.ACK_TIMEOUT_MS });
+                const response = await articleSocketService.sendWithAck('PUBLISH', payload, {
+                    timeoutMs: EDITOR_CONFIG.ACK_TIMEOUT_MS
+                });
                 if (userId.value) clearDraft(userId.value, articleId.value);
                 applyCommandResult(response, '发布成功');
                 saveState.value = SAVE_STATE_ENUM.PUBLISHED;
                 router.push('/');
                 return;
-            } catch (e) {
-                console.warn('PUBLISH ACK 超时或失败，尝试 HTTP 降级:', e.message);
+            } catch (error) {
+                console.warn('PUBLISH ACK 超时或失败，尝试 HTTP 降级:', error.message);
             }
         }
 
@@ -246,8 +402,8 @@ export function useEditorLogic() {
             applyCommandResult(result, '发布成功');
             saveState.value = SAVE_STATE_ENUM.PUBLISHED;
             router.push('/');
-        } catch (e) {
-            console.error('HTTP 发布失败:', e);
+        } catch (error) {
+            console.error('HTTP 发布失败:', error);
             saveState.value = SAVE_STATE_ENUM.ERROR;
             ElMessage.error('发布失败，请重试');
         } finally {
@@ -260,7 +416,7 @@ export function useEditorLogic() {
         clearTimeout(autosaveTimer.value);
         hasUnsavedChanges.value = true;
 
-        const payload = buildArticlePayload({ articleId: articleId.value, title: title.value, html: html.value, publishForm: publishForm.value, lastSavedAt: lastSavedAt.value });
+        const payload = buildCurrentPayload();
         if (userId.value && hasMeaningfulContent(articleId.value, title.value, html.value)) {
             saveDraft(userId.value, articleId.value, payload);
         }
@@ -322,42 +478,34 @@ export function useEditorLogic() {
         articleId.value = null;
         lastSavedAt.value = null;
         title.value = payload.title || '';
-        html.value = payload.content || '';
         applyPublishFormState(payload);
-
-        if (editor.value) {
-            editor.value.commands.setContent(payload.content || '', false);
-            wordCount.value = editor.value.storage.characterCount.characters();
-        }
-
+        applyEditorHtml(payload.content || '');
         hasUnsavedChanges.value = true;
         saveState.value = SAVE_STATE_ENUM.LOCAL_CACHED;
     };
 
-    // =============== WebSocket Setup ===============
-    const connectWebSocket = () => {
+    const connectArticleWebSocket = () => {
         const token = localStorage.getItem('token');
         const wsUrl = formatWsUrl(API_CONFIG.baseURL);
-        socketService = new SocketService(`${wsUrl}/api/article/ws`, token);
+        articleSocketService = new SocketService(`${wsUrl}/api/article/ws`, token);
 
-        socketService.onOpen(() => {
-            console.log('已连接到服务器');
+        articleSocketService.onOpen(() => {
             if (articleId.value) sendWsMessage('SELECT');
         });
 
-        socketService.onClose(() => console.log('已断开与服务器的连接'));
-        socketService.onError((error) => console.log('错误: ' + error.message));
+        articleSocketService.onClose(() => console.log('已断开与文章服务器的连接'));
+        articleSocketService.onError((error) => console.log('错误: ' + error.message));
 
-        socketService.on('CACHE', () => {
+        articleSocketService.on('CACHE', () => {
             isSaving.value = false;
             saveState.value = SAVE_STATE_ENUM.CACHED;
         });
-        socketService.on('SAVE_DRAFT', (data) => applyCommandResult(data, '草稿已保存'));
-        socketService.on('PUBLISH', (data) => {
+        articleSocketService.on('SAVE_DRAFT', (data) => applyCommandResult(data, '草稿已保存'));
+        articleSocketService.on('PUBLISH', (data) => {
             applyCommandResult(data, '发布成功');
             router.push('/');
         });
-        socketService.on('SELECT', async (data) => {
+        articleSocketService.on('SELECT', async (data) => {
             if (!data) return;
 
             let restoreLocalDraft = false;
@@ -371,46 +519,228 @@ export function useEditorLogic() {
                             distinguishCancelAndClose: true
                         });
                         restoreLocalDraft = true;
-                    } catch (e) {
+                    } catch (error) {
                         clearDraft(userId.value, articleId.value);
                     }
                 }
             }
 
             const sourceData = restoreLocalDraft ? loadDraft(userId.value, articleId.value) : data;
-
-            isHydrating.value = !restoreLocalDraft;
+            setHydratingWindow(!restoreLocalDraft);
             articleId.value = sourceData.id || articleId.value;
             title.value = sourceData.title || '';
-            html.value = sourceData.content || '';
             applyPublishFormState(sourceData);
 
             if (!restoreLocalDraft) lastSavedAt.value = sourceData.updatedAt || null;
-            saveState.value = restoreLocalDraft ? SAVE_STATE_ENUM.LOCAL_CACHED : (sourceData.status === 0 ? SAVE_STATE_ENUM.DRAFT : SAVE_STATE_ENUM.PUBLISHED);
+            saveState.value = restoreLocalDraft
+                ? SAVE_STATE_ENUM.LOCAL_CACHED
+                : (sourceData.status === 0 ? SAVE_STATE_ENUM.DRAFT : SAVE_STATE_ENUM.PUBLISHED);
             hasUnsavedChanges.value = restoreLocalDraft;
 
-            if (editor.value) {
-                editor.value.commands.setContent(sourceData.content || '', false);
-                wordCount.value = editor.value.storage.characterCount.characters();
-            }
-            isHydrating.value = false;
+            applyEditorHtml(sourceData.content || '');
         });
 
-        socketService.connect();
+        articleSocketService.connect();
     };
 
-    const handleBeforeUnload = (e) => {
-        if (hasUnsavedChanges.value) {
-            if (userId.value) {
-                const payload = buildArticlePayload({ articleId: articleId.value, title: title.value, html: html.value, publishForm: publishForm.value, lastSavedAt: lastSavedAt.value });
-                saveDraft(userId.value, articleId.value, payload);
+    const connectAgentWebSocket = () => {
+        if (agentSocketService) {
+            return agentSocketService;
+        }
+
+        const token = localStorage.getItem('token');
+        const wsUrl = formatWsUrl(API_CONFIG.baseURL);
+        agentSocketService = new SocketService(`${wsUrl}/api/agent/ws`, token, {
+            maxReconnectAttempts: 0
+        });
+
+        agentSocketService.on(AGENT_DRAFT_GENERATE_START, (payload = {}) => {
+            if (ignoreAgentStream) {
+                return;
             }
-            e.preventDefault();
-            e.returnValue = '';
+            aiGenerating.value = true;
+            aiGenerationStopped.value = false;
+            aiGenerationStatusText.value = payload.message || '正在整理讨论上下文...';
+        });
+
+        agentSocketService.on(AGENT_DRAFT_GENERATE_STATUS, (payload = {}) => {
+            if (ignoreAgentStream) {
+                return;
+            }
+            aiGenerating.value = true;
+            aiGenerationStatusText.value = payload.message || aiGenerationStatusText.value || '正在生成正文...';
+        });
+
+        agentSocketService.on(AGENT_DRAFT_GENERATE_DELTA, (payload = {}) => {
+            if (ignoreAgentStream || typeof payload.chunk !== 'string' || !payload.chunk) {
+                return;
+            }
+
+            aiDraftJsonBuffer.value = `${aiDraftJsonBuffer.value}${payload.chunk}`;
+            const preview = buildStreamingDraftPreview(aiDraftJsonBuffer.value);
+            if (!preview?.content) {
+                return;
+            }
+
+            aiStreamingMarkdown.value = preview.content;
+            applyMarkdownToEditor(preview.content);
+        });
+
+        agentSocketService.on(AGENT_DRAFT_GENERATE_DONE, (payload = {}) => {
+            if (ignoreAgentStream) {
+                return;
+            }
+
+            aiStreamingMarkdown.value = payload.content || aiStreamingMarkdown.value;
+            flushRemainingMarkdown({ force: true });
+
+            if (!userEditedTitle.value && payload.title) {
+                title.value = payload.title;
+            }
+            if (!userEditedSummary.value && payload.summary) {
+                publishForm.value.abstractText = payload.summary;
+            }
+
+            markContentDirty();
+            finalizeAgentGeneration('初稿已生成，可继续编辑');
+            ElMessage.success('初稿已生成，可继续编辑');
+        });
+
+        agentSocketService.on(AGENT_DRAFT_GENERATE_ERROR, (payload = {}) => {
+            if (ignoreAgentStream) {
+                return;
+            }
+            flushRemainingMarkdown({ force: true });
+            aiGenerating.value = false;
+            aiGenerationStatusText.value = payload.message || '初稿生成失败，请稍后重试';
+            disconnectAgentWebSocket();
+            clearAgentGenerationIntent();
+            ElMessage.error(payload.message || '初稿生成失败，请稍后重试');
+        });
+
+        agentSocketService.onClose(() => {
+            if (!aiGenerating.value || aiGenerationStopped.value || ignoreAgentStream) {
+                return;
+            }
+            flushRemainingMarkdown({ force: true });
+            aiGenerating.value = false;
+            aiGenerationStatusText.value = '生成连接已断开，已保留当前内容';
+            clearAgentGenerationIntent();
+            ElMessage.error('生成连接已断开，已保留当前内容');
+        });
+
+        agentSocketService.onError((error) => {
+            console.error('Agent WebSocket error:', error);
+        });
+
+        agentSocketService.connect();
+        return agentSocketService;
+    };
+
+    const ensureAgentSocketReady = async (timeoutMs = 5000) => {
+        const service = connectAgentWebSocket();
+        if (service.isConnected()) {
+            return service;
+        }
+        if (agentSocketReadyPromise) {
+            return agentSocketReadyPromise;
+        }
+
+        agentSocketReadyPromise = new Promise((resolve, reject) => {
+            const startedAt = Date.now();
+            const timer = setInterval(() => {
+                if (service.isConnected()) {
+                    clearInterval(timer);
+                    agentSocketReadyPromise = null;
+                    resolve(service);
+                    return;
+                }
+
+                const readyState = service?.socket?.readyState;
+                if (readyState === WebSocket.CLOSING || readyState === WebSocket.CLOSED) {
+                    clearInterval(timer);
+                    agentSocketReadyPromise = null;
+                    reject(new Error('Agent WebSocket handshake failed'));
+                    return;
+                }
+
+                if (Date.now() - startedAt >= timeoutMs) {
+                    clearInterval(timer);
+                    agentSocketReadyPromise = null;
+                    reject(new Error('Agent WebSocket connect timeout'));
+                }
+            }, 100);
+        });
+
+        return agentSocketReadyPromise;
+    };
+
+    const startAgentDraftGeneration = async (sessionId) => {
+        if (!sessionId || aiGenerating.value) {
+            return;
+        }
+
+        ignoreAgentStream = false;
+        aiGenerating.value = true;
+        aiGenerationStopped.value = false;
+        aiGenerationStatusText.value = '正在连接生成通道...';
+        aiDraftJsonBuffer.value = '';
+        aiStreamingMarkdown.value = '';
+        aiCommittedMarkdown.value = '';
+        aiRenderTick.value = 0;
+
+        try {
+            const service = await ensureAgentSocketReady();
+            const sent = service.send(AGENT_CHAT_TYPE, { sessionId });
+            if (!sent) {
+                throw new Error('Agent WebSocket 未连接');
+            }
+        } catch (error) {
+            console.error('Failed to start agent draft generation:', error);
+            aiGenerating.value = false;
+            aiGenerationStatusText.value = '初稿生成启动失败，请稍后重试';
+            disconnectAgentWebSocket();
+            clearAgentGenerationIntent();
+            ElMessage.error('初稿生成启动失败，请稍后重试');
         }
     };
 
-    const confirmNavigation = async (to) => {
+    const stopAgentDraftGeneration = () => {
+        if (!aiGenerating.value) {
+            return;
+        }
+
+        ignoreAgentStream = true;
+        aiGenerationStopped.value = true;
+        aiGenerating.value = false;
+        flushRemainingMarkdown({ force: true });
+        aiGenerationStatusText.value = '已停止生成，你可以直接接管正文';
+        disconnectAgentWebSocket();
+        clearAgentGenerationIntent();
+        markContentDirty();
+    };
+
+    const handleUserTitleInput = () => {
+        userEditedTitle.value = true;
+        queueSaveFlow();
+    };
+
+    const handleUserSummaryInput = () => {
+        userEditedSummary.value = true;
+        queueSaveFlow();
+    };
+
+    const handleBeforeUnload = (event) => {
+        if (hasUnsavedChanges.value) {
+            if (userId.value) {
+                saveDraft(userId.value, articleId.value, buildCurrentPayload());
+            }
+            event.preventDefault();
+            event.returnValue = '';
+        }
+    };
+
+    const confirmNavigation = async () => {
         if (!hasUnsavedChanges.value) return true;
         const action = await ElMessageBox.confirm('您有未保存的修改，是否保存草稿？', '提示', {
             confirmButtonText: '保存并离开',
@@ -422,13 +752,13 @@ export function useEditorLogic() {
         if (action === 'confirm') {
             await submitSaveDraft(false);
             return true;
-        } else if (action === 'cancel') {
+        }
+        if (action === 'cancel') {
             return true;
         }
         return false;
     };
 
-    // =============== Lifecycle ===============
     watch(html, (newVal, oldVal) => {
         if (!isHydrating.value && newVal !== oldVal) {
             queueSaveFlow();
@@ -438,7 +768,15 @@ export function useEditorLogic() {
     onMounted(async () => {
         window.addEventListener('beforeunload', handleBeforeUnload);
         await loadTags();
-        connectWebSocket();
+        connectArticleWebSocket();
+
+        const generationIntent = !articleId.value ? loadAgentGenerationIntent() : null;
+        if (generationIntent?.sessionId) {
+            clearAgentGenerationIntent();
+            resetForAgentGeneration();
+            startAgentDraftGeneration(generationIntent.sessionId);
+            return;
+        }
 
         if (!articleId.value) {
             const importedDraft = loadAgentDraftImport();
@@ -460,16 +798,11 @@ export function useEditorLogic() {
                         distinguishCancelAndClose: true
                     });
                     title.value = draft.title || '';
-                    html.value = draft.content || '';
                     applyPublishFormState(draft);
-
-                    if (editor.value) {
-                        editor.value.commands.setContent(draft.content || '', false);
-                        wordCount.value = editor.value.storage.characterCount.characters();
-                    }
+                    applyEditorHtml(draft.content || '');
                     hasUnsavedChanges.value = true;
                     saveState.value = SAVE_STATE_ENUM.LOCAL_CACHED;
-                } catch (e) {
+                } catch (error) {
                     clearDraft(userId.value, 'new');
                 }
             }
@@ -480,15 +813,17 @@ export function useEditorLogic() {
         window.removeEventListener('beforeunload', handleBeforeUnload);
         clearTimeout(cacheTimer.value);
         clearTimeout(autosaveTimer.value);
-        if (editor.value) editor.value.destroy();
-        if (socketService) {
-            socketService.close();
-            socketService = null;
+        if (editor.value) {
+            editor.value.destroy();
         }
+        if (articleSocketService) {
+            articleSocketService.close();
+            articleSocketService = null;
+        }
+        disconnectAgentWebSocket();
     });
 
     return {
-        // State
         title,
         html,
         wordCount,
@@ -512,8 +847,12 @@ export function useEditorLogic() {
         hasUnsavedChanges,
         userId,
         articleId,
+        aiGenerating,
+        aiGenerationStopped,
+        aiGenerationStatusText,
+        aiRenderTick,
+        editorContentEditable,
 
-        // Actions
         updateTagIds,
         handleCoverUpload,
         beforeCoverUpload,
@@ -528,6 +867,9 @@ export function useEditorLogic() {
         submitSaveDraft,
         confirmPublish,
         confirmNavigation,
-        clearDraft
+        clearDraft,
+        stopAgentDraftGeneration,
+        handleUserTitleInput,
+        handleUserSummaryInput
     };
 }

@@ -8,6 +8,8 @@ const {
     mockRouter,
     mockLoadAgentDraftImport,
     mockClearAgentDraftImport,
+    mockLoadAgentGenerationIntent,
+    mockClearAgentGenerationIntent,
     mockSetContent,
     mockEditorRef
 } = vi.hoisted(() => ({
@@ -17,6 +19,8 @@ const {
     },
     mockLoadAgentDraftImport: vi.fn(() => null),
     mockClearAgentDraftImport: vi.fn(),
+    mockLoadAgentGenerationIntent: vi.fn(() => null),
+    mockClearAgentGenerationIntent: vi.fn(),
     mockSetContent: vi.fn(),
     mockEditorRef: {
         __v_isRef: true,
@@ -24,7 +28,8 @@ const {
             getHTML: () => '',
             destroy: vi.fn(),
             commands: { setContent: vi.fn() },
-            storage: { characterCount: { characters: () => 0 } }
+            storage: { characterCount: { characters: () => 0 } },
+            setEditable: vi.fn()
         }
     }
 }));
@@ -50,7 +55,15 @@ vi.mock('vue-router', () => ({
 
 vi.mock('@/utils/websocket.js', () => ({
     default: class SocketService {
-        onOpen() {} onClose() {} onError() {} on() {} connect() {} send() {} isConnected() { return true; } close() {}
+        onOpen() {}
+        onClose() {}
+        onError() {}
+        on() {}
+        connect() {}
+        send() { return true; }
+        sendWithAck() { return Promise.resolve({}); }
+        isConnected() { return true; }
+        close() {}
     },
     formatWsUrl: () => 'ws://localhost'
 }));
@@ -62,8 +75,11 @@ vi.mock('@/views/article/_domain/article.js', () => ({
 }));
 
 vi.mock('@/views/creator/_domain/agent.js', () => ({
+    buildStreamingDraftPreview: vi.fn(() => null),
     loadAgentDraftImport: mockLoadAgentDraftImport,
     clearAgentDraftImport: mockClearAgentDraftImport,
+    loadAgentGenerationIntent: mockLoadAgentGenerationIntent,
+    clearAgentGenerationIntent: mockClearAgentGenerationIntent,
     extractArticleSummary: vi.fn(() => Promise.resolve({ summary: 'AI 摘要' }))
 }));
 
@@ -217,5 +233,17 @@ describe('Text.vue Three-Column Layout', () => {
         expect(mockLoadAgentDraftImport).toHaveBeenCalled();
         expect(mockClearAgentDraftImport).toHaveBeenCalledTimes(1);
         expect(mockSetContent).toHaveBeenCalledWith('<p>导入内容</p>', false);
+    });
+
+    it('shows generation banner when entering from agent discussion flow', async () => {
+        wrapper.unmount();
+        mockLoadAgentGenerationIntent.mockReturnValue({ sessionId: 12 });
+
+        wrapper = mount(Text);
+        await flushPromises();
+
+        expect(mockClearAgentGenerationIntent).toHaveBeenCalled();
+        expect(wrapper.find('.ai-generation-banner').exists()).toBe(true);
+        expect(wrapper.text()).toContain('停止生成');
     });
 });

@@ -3,15 +3,15 @@
         <section class="creator-agent-entry">
             <div class="creator-agent-entry__content">
                 <span class="creator-agent-entry__eyebrow">MVP 已就绪</span>
-                <h2 class="creator-agent-entry__title">先和 Agent 把文章聊出来，再带着草稿进入正式编辑器</h2>
+                <h2 class="creator-agent-entry__title">先和 Agent 把问题聊透，再把讨论沉淀成初稿</h2>
                 <p class="creator-agent-entry__text">
-                    Agent Studio 负责会话、首稿生成、候选优化和版本对比；正式编辑器负责继续润色、排版和发布。现在已经可以走完整的 MVP 闭环。
+                    Agent Studio 负责主题讨论、知识点扩展和观点校验；正式编辑器负责承接流式初稿、继续润色、排版和发布。
                 </p>
             </div>
 
             <div class="creator-agent-entry__actions">
                 <el-button class="creator-agent-entry__button" type="primary" @click="handleOpenAgent">
-                    开始 AI 创作
+                    开始思考共创
                 </el-button>
                 <span class="creator-agent-entry__hint">适合先讨论主题、结构和读者定位，再落成稿</span>
             </div>

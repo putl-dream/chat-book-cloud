@@ -31,7 +31,7 @@ public class AgentNotebookServiceImpl implements AgentNotebookService {
     public NotebookSummary initializeNotebook(String title) {
         return NotebookSummary.builder()
                 .goal(title)
-                .summary("会话刚创建，等待收集写作目标和上下文。")
+                .summary("会话刚创建，等待收集主题、论点、知识点和待验证的问题。")
                 .build();
     }
 
