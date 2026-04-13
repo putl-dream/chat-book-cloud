@@ -29,6 +29,11 @@ public class RedisKeyConstants {
     // ==================== Review Module ====================
     public static final String REVIEW_LIST_CACHE = "cbc:%s:interaction:review:%s"; // articleId
 
+    // ==================== Interaction Hot Rank ====================
+    public static final String INTERACTION_HOT_ALL = "cbc:%s:interaction:hot:all";
+    public static final String INTERACTION_HOT_DAY = "cbc:%s:interaction:hot:day:%s"; // yyyyMMdd
+    public static final String INTERACTION_VIEW_DEDUP = "cbc:%s:interaction:dedup:view:%s:%s"; // userId:articleId
+
     // ==================== Social Module ====================
     public static final String FOLLOW_STAT_CACHE = "cbc:%s:social:follow:stat:%s"; // userId
 
@@ -72,6 +77,18 @@ public class RedisKeyConstants {
 
     public static String reviewListCache(String env, String articleId) {
         return String.format(REVIEW_LIST_CACHE, env, articleId);
+    }
+
+    public static String interactionHotAll(String env) {
+        return String.format(INTERACTION_HOT_ALL, env);
+    }
+
+    public static String interactionHotDay(String env, String date) {
+        return String.format(INTERACTION_HOT_DAY, env, date);
+    }
+
+    public static String interactionViewDedup(String env, String userId, String articleId) {
+        return String.format(INTERACTION_VIEW_DEDUP, env, userId, articleId);
     }
 
     public static String followStatCache(String env, String userId) {

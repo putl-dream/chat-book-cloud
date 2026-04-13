@@ -12,7 +12,7 @@ import org.springframework.stereotype.Service;
 
 /**
  * 文章列表首页缓存服务实现
- * Phase 1 只缓存第一页，5分钟 TTL
+ * 最新/标签列表缓存使用较长 TTL，热榜第一页使用短 TTL。
  */
 @Slf4j
 @Service
@@ -22,7 +22,7 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     private final ArticlePageService articlePageService;
 
     @Override
-    @Cacheable(value = "articleListCache", key = "'new:' + #pageNo", unless = "#result == null || #result.getList().isEmpty()")
+    @Cacheable(value = "articleListCache", key = "'new:' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
     public PageResult<ArticleListVO> getNewPage(Integer pageNo, Integer pageSize) {
         // 非首页不缓存
         if (pageNo != 1) {
@@ -32,7 +32,7 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     }
 
     @Override
-    @Cacheable(value = "articleListCache", key = "'hot:' + #pageNo", unless = "#result == null || #result.getList().isEmpty()")
+    @Cacheable(value = "hotArticleListCache", key = "'hot:' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
     public PageResult<ArticleListVO> getHotPage(Integer pageNo, Integer pageSize) {
         if (pageNo != 1) {
             return articlePageService.getHotPage(pageNo, pageSize);
@@ -41,7 +41,7 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     }
 
     @Override
-    @Cacheable(value = "articleListCache", key = "'todayHot:' + #pageNo", unless = "#result == null || #result.getList().isEmpty()")
+    @Cacheable(value = "hotArticleListCache", key = "'todayHot:' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
     public PageResult<ArticleListVO> getTodayHotPage(Integer pageNo, Integer pageSize) {
         if (pageNo != 1) {
             return articlePageService.getTodayHotPage(pageNo, pageSize);
@@ -50,7 +50,7 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     }
 
     @Override
-    @Cacheable(value = "articleListCache", key = "'tag:' + #tagId + ':' + #pageNo", unless = "#result == null || #result.getList().isEmpty()")
+    @Cacheable(value = "articleListCache", key = "'tag:' + #tagId + ':' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
     public PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, Integer tagId) {
         if (pageNo != 1) {
             return articlePageService.getTagPage(pageNo, pageSize, tagId);
@@ -59,19 +59,19 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     }
 
     @Override
-    @CacheEvict(value = "articleListCache", key = "'new:1'")
+    @CacheEvict(value = "articleListCache", allEntries = true)
     public void evictNewCache() {
         log.debug("Evict new cache");
     }
 
     @Override
-    @CacheEvict(value = "articleListCache", key = "'hot:1'")
+    @CacheEvict(value = "hotArticleListCache", allEntries = true)
     public void evictHotCache() {
         log.debug("Evict hot cache");
     }
 
     @Override
-    @CacheEvict(value = "articleListCache", key = "'todayHot:1'")
+    @CacheEvict(value = "hotArticleListCache", allEntries = true)
     public void evictTodayHotCache() {
         log.debug("Evict todayHot cache");
     }

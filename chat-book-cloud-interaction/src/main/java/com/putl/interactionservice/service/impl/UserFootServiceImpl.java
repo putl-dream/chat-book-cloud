@@ -12,6 +12,7 @@ import com.putl.interactionservice.entity.UserFootDO;
 import com.putl.interactionservice.mapper.ArticleStatMapper;
 import com.putl.interactionservice.mapper.ReviewMapper;
 import com.putl.interactionservice.mapper.UserFootMapper;
+import com.putl.interactionservice.service.HotArticleRankService;
 import com.putl.interactionservice.service.UserFootService;
 import com.putl.interactionservice.controller.vo.NotificationVO;
 import com.putl.interactionservice.controller.vo.UserFootListVO;
@@ -19,6 +20,7 @@ import com.putl.interactionservice.controller.vo.UserFootVO;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -35,13 +37,18 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     private final ArticleClient articleClient;
     private final ArticleStatMapper articleStatMapper;
     private final ReviewMapper reviewMapper;
+    private final HotArticleRankService hotArticleRankService;
 
     @Override
     @Transactional
     public boolean addBrowse(Integer articleId, Integer userId) {
         if (articleId == null) return false;
+        boolean shouldCountView = hotArticleRankService.tryAcquireViewToken(articleId, userId);
         if (userId == null || userId <= 0) {
-            incrementViewCount(articleId);
+            if (shouldCountView) {
+                incrementViewCount(articleId);
+                hotArticleRankService.recordView(articleId);
+            }
             return true;
         }
 
@@ -61,11 +68,21 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
                 .praiseStat(0)
                 .readStat(1)
                 .build();
-            boolean saved = this.save(build);
-            if (saved) {
-                incrementViewCount(articleId);
+            try {
+                boolean saved = this.save(build);
+                if (saved && shouldCountView) {
+                    incrementViewCount(articleId);
+                    hotArticleRankService.recordView(articleId);
+                }
+                return saved;
+            } catch (DuplicateKeyException e) {
+                log.debug("Duplicate browse foot ignored, articleId: {}, userId: {}", articleId, userId);
+                if (shouldCountView) {
+                    incrementViewCount(articleId);
+                    hotArticleRankService.recordView(articleId);
+                }
+                return true;
             }
-            return saved;
         }
 
         Integer readStat = foot.getReadStat() == null ? 0 : foot.getReadStat();
@@ -76,7 +93,10 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
                 .eq(UserFootDO::getDocumentId, articleId)
                 .eq(UserFootDO::getUserId, userId));
         }
-        incrementViewCount(articleId);
+        if (shouldCountView) {
+            incrementViewCount(articleId);
+            hotArticleRankService.recordView(articleId);
+        }
         return true;
     }
 
@@ -92,6 +112,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
             .eq(UserFootDO::getDocumentId, articleId)
             .eq(UserFootDO::getUserId, userId));
         changeCollectCount(articleId, status == 1 ? 1 : -1);
+        hotArticleRankService.recordCollection(articleId, status == 1);
         return status;
     }
 
@@ -116,6 +137,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
     public void recordComment(Integer articleId, Integer userId) {
         updateComment(articleId, userId);
         changeCommentCount(articleId, 1);
+        hotArticleRankService.recordComment(articleId);
     }
 
     @Override
@@ -130,6 +152,7 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
             .eq(UserFootDO::getDocumentId, articleId)
             .eq(UserFootDO::getUserId, userId));
         changePraiseCount(articleId, status == 1 ? 1 : -1);
+        hotArticleRankService.recordPraise(articleId, status == 1);
         return status;
     }
 

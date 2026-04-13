@@ -12,12 +12,17 @@ import com.putl.articleservice.mapper.entity.TagDO;
 import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.service.TagService;
 import com.putl.articleservice.utils.PageResult;
+import fun.amireux.chat.book.framework.redis.constant.RedisKeyConstants;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -42,6 +47,9 @@ import java.util.stream.Collectors;
 @Service
 public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements ArticlePageService {
 
+    private static final DateTimeFormatter HOT_DAY_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
+    private static final int HOT_RANK_SCAN_MULTIPLIER = 3;
+
     @Resource
     private TagService tagService;
 
@@ -50,6 +58,12 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
 
     @Resource
     private TagMapper tagMapper;
+
+    @Resource
+    private RedisTemplate<String, Object> redisTemplate;
+
+    @Value("${spring.profiles.active:local}")
+    private String env;
 
     /**
      * 获取最新文章列表，按照创建时间倒序排列。
@@ -65,11 +79,9 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
 
     /**
      * 获取热门文章列表。
-     * 返回最近30天内审核通过的文章，按创建时间倒序排列。
+     * 优先读取 Redis 全站热榜，Redis 不可用或数据不足时再降级到时间排序。
      * <p>
-     * 注意：当前实现基于时间维度的简化版本。
-     * 完整的热门算法应综合考虑浏览量、点赞数、收藏数等因素，
-     * 建议后续引入 Redis 缓存 + 定时任务计算热门度。
+     * Redis 只存 articleId -> score，详情仍由数据库批量查询并按热榜顺序重排。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -77,22 +89,19 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getHotPage(Integer pageNo, Integer pageSize) {
-        // 获取最近30天内的已发布文章
-        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
-                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
-                .ge(ArticleDO::getCreateTime, thirtyDaysAgo)
-                .orderByDesc(ArticleDO::getCreateTime)
+        return getRankedHotPage(
+                RedisKeyConstants.interactionHotAll(env),
+                pageNo,
+                pageSize,
+                this::getHotPageFallback
         );
     }
 
     /**
      * 获取今日热门文章列表。
-     * 返回今天创建的审核通过的文章，按创建时间倒序排列。
+     * 优先读取 Redis 日榜，Redis 不可用或数据不足时再降级到今日发布文章。
      * <p>
-     * 注意：当前实现基于今日发布的文章。
-     * 完整的今日热门算法应基于今日浏览量、点赞数等实时数据排序，
-     * 建议后续引入 Redis 实时统计。
+     * 日榜使用 yyyyMMdd 维度独立存储，避免老文章长期霸榜。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -100,13 +109,140 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getTodayHotPage(Integer pageNo, Integer pageSize) {
-        // 获取今天开始时间
-        LocalDateTime todayStart = LocalDateTime.now().toLocalDate().atStartOfDay();
-        return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
+        return getRankedHotPage(
+                RedisKeyConstants.interactionHotDay(env, LocalDate.now().format(HOT_DAY_FORMATTER)),
+                pageNo,
+                pageSize,
+                this::getTodayHotPageFallback
+        );
+    }
+
+    private PageResult<ArticleListVO> getRankedHotPage(String rankKey,
+                                                       Integer pageNo,
+                                                       Integer pageSize,
+                                                       Function<HotFallbackRequest, PageResult<ArticleListVO>> fallbackSupplier) {
+        if (pageNo == null || pageNo < 1 || pageSize == null || pageSize < 1) {
+            return PageResult.empty();
+        }
+
+        HotFallbackRequest fallbackRequest = new HotFallbackRequest(pageNo, pageSize);
+        try {
+            Long rankTotal = redisTemplate.opsForZSet().zCard(rankKey);
+            if (rankTotal == null || rankTotal == 0) {
+                return fallbackSupplier.apply(fallbackRequest);
+            }
+
+            List<ArticleDO> rankedArticles = loadRankedArticles(rankKey, pageNo, pageSize);
+            if (rankedArticles.isEmpty()) {
+                return fallbackSupplier.apply(fallbackRequest);
+            }
+
+            List<ArticleListVO> rankedList = new ArrayList<>(toBean(rankedArticles));
+            long total = rankTotal;
+            if (rankedList.size() < pageSize) {
+                PageResult<ArticleListVO> fallback = fallbackSupplier.apply(fallbackRequest);
+                mergeFallbackArticles(rankedList, fallback, pageSize);
+                if (fallback != null && fallback.getTotal() != null) {
+                    total = Math.max(total, fallback.getTotal());
+                }
+            }
+            return new PageResult<>(rankedList, total);
+        } catch (Exception e) {
+            log.warn("Failed to load ranked hot page from redis, key: {}, pageNo: {}, pageSize: {}", rankKey, pageNo, pageSize, e);
+            return fallbackSupplier.apply(fallbackRequest);
+        }
+    }
+
+    private List<ArticleDO> loadRankedArticles(String rankKey, Integer pageNo, Integer pageSize) {
+        long start = (long) (pageNo - 1) * pageSize;
+        long cursor = start;
+        int fetchSize = Math.max(pageSize * HOT_RANK_SCAN_MULTIPLIER, pageSize);
+        LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
+
+        while (orderedArticles.size() < pageSize) {
+            Set<Object> rankedMembers = redisTemplate.opsForZSet().reverseRange(rankKey, cursor, cursor + fetchSize - 1);
+            if (rankedMembers == null || rankedMembers.isEmpty()) {
+                break;
+            }
+
+            List<Integer> articleIds = parseRankedArticleIds(rankedMembers);
+            if (!articleIds.isEmpty()) {
+                List<ArticleDO> articleDOS = articleMapper.selectBatchIds(articleIds);
+                Map<Integer, ArticleDO> articleMap = articleDOS.stream()
+                        .filter(Objects::nonNull)
+                        .collect(Collectors.toMap(ArticleDO::getId, Function.identity(), (left, right) -> left));
+
+                for (Integer articleId : articleIds) {
+                    ArticleDO article = articleMap.get(articleId);
+                    if (article == null || article.getStatus() != ArticleStatus.PUBLISHED) {
+                        continue;
+                    }
+                    orderedArticles.putIfAbsent(articleId, article);
+                    if (orderedArticles.size() >= pageSize) {
+                        break;
+                    }
+                }
+            }
+
+            cursor += rankedMembers.size();
+            if (rankedMembers.size() < fetchSize) {
+                break;
+            }
+        }
+
+        return new ArrayList<>(orderedArticles.values());
+    }
+
+    private List<Integer> parseRankedArticleIds(Set<Object> rankedMembers) {
+        List<Integer> articleIds = new ArrayList<>(rankedMembers.size());
+        for (Object rankedMember : rankedMembers) {
+            try {
+                articleIds.add(Integer.valueOf(String.valueOf(rankedMember)));
+            } catch (NumberFormatException e) {
+                log.warn("Invalid article id in redis hot rank, member: {}", rankedMember);
+            }
+        }
+        return articleIds;
+    }
+
+    private void mergeFallbackArticles(List<ArticleListVO> rankedList,
+                                       PageResult<ArticleListVO> fallback,
+                                       Integer pageSize) {
+        if (fallback == null || fallback.getList() == null || fallback.getList().isEmpty()) {
+            return;
+        }
+        Set<Integer> existingIds = rankedList.stream()
+                .map(ArticleListVO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        for (ArticleListVO article : fallback.getList()) {
+            if (article == null || article.getId() == null || !existingIds.add(article.getId())) {
+                continue;
+            }
+            rankedList.add(article);
+            if (rankedList.size() >= pageSize) {
+                return;
+            }
+        }
+    }
+
+    private PageResult<ArticleListVO> getHotPageFallback(HotFallbackRequest request) {
+        LocalDateTime thirtyDaysAgo = LocalDateTime.now().minusDays(30);
+        return toBean(request.pageNo(), request.pageSize(), Wrappers.<ArticleDO>lambdaQuery()
+                .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
+                .ge(ArticleDO::getCreateTime, thirtyDaysAgo)
+                .orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    private PageResult<ArticleListVO> getTodayHotPageFallback(HotFallbackRequest request) {
+        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
+        return toBean(request.pageNo(), request.pageSize(), Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
                 .ge(ArticleDO::getCreateTime, todayStart)
-                .orderByDesc(ArticleDO::getCreateTime)
-        );
+                .orderByDesc(ArticleDO::getCreateTime));
+    }
+
+    private record HotFallbackRequest(Integer pageNo, Integer pageSize) {
     }
 
     /**
