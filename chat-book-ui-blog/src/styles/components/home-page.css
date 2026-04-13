@@ -33,7 +33,7 @@
 
 .home .island-container {
   padding: 32px;
-  margin: 0 0 40px;
+  margin: 0 0 32px;
   background: radial-gradient(circle at top left, var(--color-primary-light), transparent 70%);
   border-radius: var(--border-radius-xl);
   border-bottom: 1px solid var(--border-color-base);

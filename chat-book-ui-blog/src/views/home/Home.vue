@@ -21,7 +21,7 @@
             <div v-for="(item, index) in recommendations.slice(1, 5)"
                  class="hot-item interactive-card glass-effect hover-soft animate-pop" :key="'hot-' + (item.id || index)"
                  :style="{ '--delay': `${index * 0.1 + 0.1}s` }" @click="openArticle(item.id)">
-              <ArticleCard :post="item" variant="image"/>
+              <ArticleCard :post="item" variant="bento-secondary"/>
             </div>
           </template>
         </div>
@@ -69,7 +69,7 @@ const {recommendations, posts, loading, noMoreArticles, fetchPosts, fetchTagArti
 
 const getPostVariant = (post, index) => {
   if (index % 7 === 3 && post.cover) return 'large-image';
-  if (index % 5 === 1 || !post.cover) return 'text-only';
+  if (index % 11 === 5) return 'text-only'; // 偶尔使用纯文本卡片，增加排版错落感
   return 'default';
 };
 
