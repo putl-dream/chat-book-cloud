@@ -1,5 +1,6 @@
 package com.putl.agentservice.service.impl;
 
+import com.putl.agentservice.client.engine.StreamingCancelledException;
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.AgentSessionMapper;
@@ -22,7 +23,9 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.List;
+import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -56,11 +59,13 @@ class DraftGenerationServiceImplTest {
     @Mock
     private MessagePublisher messagePublisher;
 
+    private ActiveDraftGenerationRegistry activeDraftGenerationRegistry;
     private DraftGenerationServiceImpl service;
 
     @BeforeEach
     void setUp() {
         Executor directExecutor = Runnable::run;
+        activeDraftGenerationRegistry = new ActiveDraftGenerationRegistry();
         service = new DraftGenerationServiceImpl(
                 agentSessionMapper,
                 agentMessageMapper,
@@ -68,6 +73,7 @@ class DraftGenerationServiceImplTest {
                 articleClient,
                 agentNotebookCacheService,
                 messagePublisher,
+                activeDraftGenerationRegistry,
                 directExecutor);
 
         when(agentSessionMapper.selectById(anyInt())).thenReturn(AgentSessionDO.builder()
@@ -97,7 +103,7 @@ class DraftGenerationServiceImplTest {
                     34,
                     56,
                     "MiniMax-M2.7");
-        }).when(articleAiGateway).generateDraft(anyList(), any(NotebookSummary.class), any());
+        }).when(articleAiGateway).generateDraft(anyList(), any(NotebookSummary.class), any(), any());
         when(articleClient.createDraft(any())).thenReturn(CommonResult.success(CreateDraftResponse.builder()
                 .draftId(101)
                 .versionNo(1)
@@ -120,7 +126,7 @@ class DraftGenerationServiceImplTest {
 
     @Test
     void generateDraftByWebSocketShouldPublishErrorEventWhenStreamFails() {
-        when(articleAiGateway.generateDraft(anyList(), any(NotebookSummary.class), any()))
+        when(articleAiGateway.generateDraft(anyList(), any(NotebookSummary.class), any(), any()))
                 .thenThrow(new IllegalStateException("Stream failed"));
 
         GenerateDraftRequest request = new GenerateDraftRequest();
@@ -137,7 +143,7 @@ class DraftGenerationServiceImplTest {
 
     @Test
     void generateDraftShouldFailFastWhenArticleServiceReturnsEmptyPayload() {
-        when(articleAiGateway.generateDraft(anyList(), any(NotebookSummary.class), any())).thenReturn(
+        when(articleAiGateway.generateDraft(anyList(), any(NotebookSummary.class), any(), any())).thenReturn(
                 new AiInvocationResult<>(
                         ArticleDraftResult.builder()
                                 .title("标题")
@@ -157,5 +163,39 @@ class DraftGenerationServiceImplTest {
                 IllegalStateException.class,
                 () -> service.generateDraft(request));
         assertEquals("文章草稿保存失败", exception.getMessage());
+    }
+
+    @Test
+    void cancelDraftGenerationByWebSocketShouldPublishStoppedEventAndSkipDone() throws Exception {
+        CountDownLatch streamStarted = new CountDownLatch(1);
+        doAnswer(invocation -> {
+            streamStarted.countDown();
+            while (true) {
+                try {
+                    Thread.sleep(50);
+                } catch (InterruptedException ex) {
+                    Thread.currentThread().interrupt();
+                    throw new StreamingCancelledException();
+                }
+            }
+        }).when(articleAiGateway).generateDraft(anyList(), any(NotebookSummary.class), any(), any());
+
+        GenerateDraftRequest request = new GenerateDraftRequest();
+        request.setSessionId(11);
+
+        Thread generationThread = new Thread(() -> service.generateDraftByWebSocket("1", request));
+        generationThread.start();
+
+        assertTrue(streamStarted.await(1, TimeUnit.SECONDS));
+        service.cancelDraftGenerationByWebSocket("1", request);
+        generationThread.join(1000);
+
+        ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
+        verify(messagePublisher, atLeastOnce()).sendToUser(org.mockito.ArgumentMatchers.eq("1"), payloadCaptor.capture());
+
+        List<String> allPayloads = payloadCaptor.getAllValues().stream().map(String::valueOf).toList();
+        assertTrue(allPayloads.stream().anyMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_STOPPED\"")));
+        assertTrue(allPayloads.stream().noneMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_DONE\"")));
+        verify(articleClient, org.mockito.Mockito.never()).createDraft(any());
     }
 }

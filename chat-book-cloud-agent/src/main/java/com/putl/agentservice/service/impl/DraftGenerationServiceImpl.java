@@ -2,6 +2,8 @@ package com.putl.agentservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.client.engine.StreamingCancelledException;
+import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
@@ -40,6 +42,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
     private static final String AGENT_DRAFT_GENERATE_DELTA = "AGENT_DRAFT_GENERATE_DELTA";
     private static final String AGENT_DRAFT_GENERATE_DONE = "AGENT_DRAFT_GENERATE_DONE";
     private static final String AGENT_DRAFT_GENERATE_ERROR = "AGENT_DRAFT_GENERATE_ERROR";
+    private static final String AGENT_DRAFT_GENERATE_STOPPED = "AGENT_DRAFT_GENERATE_STOPPED";
 
     private final AgentSessionMapper agentSessionMapper;
     private final AgentMessageMapper agentMessageMapper;
@@ -47,6 +50,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
     private final ArticleClient articleClient;
     private final AgentNotebookCacheService agentNotebookCacheService;
     private final MessagePublisher messagePublisher;
+    private final ActiveDraftGenerationRegistry activeDraftGenerationRegistry;
     private final Executor agentChatStreamExecutor;
 
     public DraftGenerationServiceImpl(AgentSessionMapper agentSessionMapper,
@@ -55,6 +59,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                                       ArticleClient articleClient,
                                       AgentNotebookCacheService agentNotebookCacheService,
                                       MessagePublisher messagePublisher,
+                                      ActiveDraftGenerationRegistry activeDraftGenerationRegistry,
                                       @Qualifier("agentChatStreamExecutor") Executor agentChatStreamExecutor) {
         this.agentSessionMapper = agentSessionMapper;
         this.agentMessageMapper = agentMessageMapper;
@@ -62,60 +67,109 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         this.articleClient = articleClient;
         this.agentNotebookCacheService = agentNotebookCacheService;
         this.messagePublisher = messagePublisher;
+        this.activeDraftGenerationRegistry = activeDraftGenerationRegistry;
         this.agentChatStreamExecutor = agentChatStreamExecutor;
     }
 
     @Override
     public DraftGenerateResponse generateDraft(GenerateDraftRequest request) {
-        return doGenerateDraft(request, null, null);
+        return doGenerateDraft(request, StreamingControl.noop(), null, null);
     }
 
     @Override
     public void generateDraftByWebSocket(String userId, GenerateDraftRequest request) {
-        agentChatStreamExecutor.execute(() -> doGenerateDraftByWebSocket(userId, request));
+        ActiveDraftGenerationRegistry.DraftGenerationHandle handle = activeDraftGenerationRegistry.register(
+                userId,
+                request == null ? null : request.getSessionId());
+        agentChatStreamExecutor.execute(() -> doGenerateDraftByWebSocket(handle, request));
     }
 
-    private void doGenerateDraftByWebSocket(String userId, GenerateDraftRequest request) {
+    @Override
+    public void cancelDraftGenerationByWebSocket(String userId, GenerateDraftRequest request) {
         Integer sessionId = request == null ? null : request.getSessionId();
+        ActiveDraftGenerationRegistry.DraftGenerationHandle handle = activeDraftGenerationRegistry.cancel(
+                userId,
+                sessionId,
+                "User requested stop");
+        log.info("Agent draft generation stop requested. sessionId={}, userId={}, activeTaskFound={}",
+                sessionId, userId, handle != null);
+        send(userId, AGENT_DRAFT_GENERATE_STOPPED, payload(sessionId,
+                "message", "已停止生成，你可以直接接管正文"));
+    }
+
+    private void doGenerateDraftByWebSocket(ActiveDraftGenerationRegistry.DraftGenerationHandle handle,
+                                            GenerateDraftRequest request) {
+        Integer sessionId = request == null ? null : request.getSessionId();
+        Thread executionThread = Thread.currentThread();
+        handle.onCancel(executionThread::interrupt);
         try {
-            log.info("Starting agent draft generation. sessionId={}, userId={}", sessionId, userId);
-            send(userId, AGENT_DRAFT_GENERATE_START, payload(sessionId, "message", "正在整理会话上下文..."));
-            send(userId, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在生成首稿内容..."));
+            log.info("Starting agent draft generation. sessionId={}, userId={}", sessionId, handle.getUserId());
+            sendIfActive(handle, AGENT_DRAFT_GENERATE_START, payload(sessionId, "message", "正在整理会话上下文..."));
+            sendIfActive(handle, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在生成首稿内容..."));
             DraftGenerateResponse response = doGenerateDraft(
                     request,
-                    chunk -> send(userId, AGENT_DRAFT_GENERATE_DELTA, payload(sessionId, "chunk", chunk)),
-                    () -> send(userId, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在保存草稿...")));
-            send(userId, AGENT_DRAFT_GENERATE_DONE, payload(sessionId,
+                    handle,
+                    chunk -> {
+                        handle.throwIfCancelled();
+                        sendIfActive(handle, AGENT_DRAFT_GENERATE_DELTA, payload(sessionId, "chunk", chunk));
+                    },
+                    () -> {
+                        handle.throwIfCancelled();
+                        sendIfActive(handle, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在保存草稿..."));
+                    });
+            handle.throwIfCancelled();
+            sendIfActive(handle, AGENT_DRAFT_GENERATE_DONE, payload(sessionId,
                     "draftId", response.getDraftId(),
                     "versionNo", response.getVersionNo(),
                     "title", response.getTitle(),
                     "summary", response.getSummary(),
                     "content", response.getContent()));
             log.info("Completed agent draft generation. sessionId={}, userId={}, draftId={}, versionNo={}",
-                    sessionId, userId, response.getDraftId(), response.getVersionNo());
+                    sessionId, handle.getUserId(), response.getDraftId(), response.getVersionNo());
+        } catch (StreamingCancelledException ex) {
+            log.info("Agent draft generation cancelled. sessionId={}, userId={}, reason={}",
+                    sessionId, handle.getUserId(), defaultText(handle.getCancelReason(), "cancelled"));
         } catch (Exception ex) {
+            if (handle.isCancelled()) {
+                log.info("Agent draft generation finished after cancellation. sessionId={}, userId={}, reason={}",
+                        sessionId, handle.getUserId(), defaultText(handle.getCancelReason(), ex.getMessage()));
+                return;
+            }
             log.error("Agent draft generation failed. sessionId={}, userId={}, reason={}",
-                    sessionId, userId, ex.getMessage(), ex);
-            send(userId, AGENT_DRAFT_GENERATE_ERROR, payload(sessionId,
+                    sessionId, handle.getUserId(), ex.getMessage(), ex);
+            send(handle.getUserId(), AGENT_DRAFT_GENERATE_ERROR, payload(sessionId,
                     "message", defaultText(ex.getMessage(), "生成草稿失败，请稍后重试")));
+        } finally {
+            activeDraftGenerationRegistry.complete(handle);
+            Thread.interrupted();
         }
     }
 
     private DraftGenerateResponse doGenerateDraft(GenerateDraftRequest request,
+                                                  StreamingControl streamingControl,
                                                   Consumer<String> chunkConsumer,
                                                   Runnable beforePersistHook) {
+        StreamingControl safeStreamingControl = streamingControl == null ? StreamingControl.noop() : streamingControl;
+        safeStreamingControl.throwIfCancelled();
         AgentSessionDO session = requireSession(request);
         List<AgentMessageDO> messages = agentMessageMapper.selectList(Wrappers.<AgentMessageDO>lambdaQuery()
                 .eq(AgentMessageDO::getSessionId, request.getSessionId())
                 .orderByAsc(AgentMessageDO::getId));
         NotebookSummary notebook = agentNotebookCacheService.getNotebook(session.getId());
-        AiInvocationResult<ArticleDraftResult> result = articleAiGateway.generateDraft(messages, notebook, chunkConsumer);
+        AiInvocationResult<ArticleDraftResult> result = articleAiGateway.generateDraft(
+                messages,
+                notebook,
+                chunkConsumer,
+                safeStreamingControl);
+        safeStreamingControl.throwIfCancelled();
         ArticleDraftResult draftResult = requireDraftResult(result, request.getSessionId());
 
         if (beforePersistHook != null) {
+            safeStreamingControl.throwIfCancelled();
             beforePersistHook.run();
         }
 
+        safeStreamingControl.throwIfCancelled();
         CreateDraftResponse response = createDraft(session, draftResult);
         return DraftGenerateResponse.builder()
                 .draftId(response.getDraftId())
@@ -190,6 +244,15 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
             return;
         }
         messagePublisher.sendToUser(userId, WebSocketResult.of(type, payload));
+    }
+
+    private void sendIfActive(ActiveDraftGenerationRegistry.DraftGenerationHandle handle,
+                              String type,
+                              Map<String, Object> payload) {
+        if (handle == null || handle.isCancelled() || !activeDraftGenerationRegistry.isCurrent(handle)) {
+            return;
+        }
+        send(handle.getUserId(), type, payload);
     }
 
     private Map<String, Object> payload(Integer sessionId, Object... keyValues) {

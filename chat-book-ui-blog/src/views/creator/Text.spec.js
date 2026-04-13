@@ -10,6 +10,8 @@ const {
     mockClearAgentDraftImport,
     mockLoadAgentGenerationIntent,
     mockClearAgentGenerationIntent,
+    mockSocketSend,
+    mockSocketClose,
     mockSetContent,
     mockEditorRef
 } = vi.hoisted(() => ({
@@ -21,6 +23,8 @@ const {
     mockClearAgentDraftImport: vi.fn(),
     mockLoadAgentGenerationIntent: vi.fn(() => null),
     mockClearAgentGenerationIntent: vi.fn(),
+    mockSocketSend: vi.fn(() => true),
+    mockSocketClose: vi.fn(),
     mockSetContent: vi.fn(),
     mockEditorRef: {
         __v_isRef: true,
@@ -60,10 +64,10 @@ vi.mock('@/utils/websocket.js', () => ({
         onError() {}
         on() {}
         connect() {}
-        send() { return true; }
+        send(type, data) { return mockSocketSend(type, data); }
         sendWithAck() { return Promise.resolve({}); }
         isConnected() { return true; }
-        close() {}
+        close() { mockSocketClose(); }
     },
     formatWsUrl: () => 'ws://localhost'
 }));
@@ -245,5 +249,18 @@ describe('Text.vue Three-Column Layout', () => {
         expect(mockClearAgentGenerationIntent).toHaveBeenCalled();
         expect(wrapper.find('.ai-generation-banner').exists()).toBe(true);
         expect(wrapper.text()).toContain('停止生成');
+    });
+
+    it('sends backend stop request when stopping agent generation', async () => {
+        wrapper.unmount();
+        mockLoadAgentGenerationIntent.mockReturnValue({ sessionId: 12 });
+
+        wrapper = mount(Text);
+        await flushPromises();
+
+        await wrapper.find('.stop-generation-btn').trigger('click');
+
+        expect(mockSocketSend).toHaveBeenCalledWith('AGENT_DRAFT_GENERATE_STOP', { sessionId: 12 });
+        expect(wrapper.text()).toContain('已停止生成');
     });
 });

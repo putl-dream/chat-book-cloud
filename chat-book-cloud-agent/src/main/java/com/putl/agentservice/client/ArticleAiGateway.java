@@ -1,6 +1,7 @@
 package com.putl.agentservice.client;
 
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.model.vo.AgentAssistantMessage;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
@@ -42,9 +43,16 @@ public interface ArticleAiGateway {
      * @param chunkConsumer   内容块回调Consumer，用于处理流式响应
      * @return 生成的草稿结果
      */
+    default AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages,
+                                                                 NotebookSummary notebookSummary,
+                                                                 Consumer<String> chunkConsumer) {
+        return generateDraft(messages, notebookSummary, chunkConsumer, StreamingControl.noop());
+    }
+
     AiInvocationResult<ArticleDraftResult> generateDraft(List<AgentMessageDO> messages,
                                                          NotebookSummary notebookSummary,
-                                                         Consumer<String> chunkConsumer);
+                                                         Consumer<String> chunkConsumer,
+                                                         StreamingControl streamingControl);
 
     /**
      * 优化现有文章草稿

@@ -31,11 +31,13 @@ import { useEditorLayout } from './useEditorLayout.js';
 import { useEditorForm } from './useEditorForm.js';
 
 const AGENT_CHAT_TYPE = 'AGENT_DRAFT_GENERATE';
+const AGENT_DRAFT_STOP_TYPE = 'AGENT_DRAFT_GENERATE_STOP';
 const AGENT_DRAFT_GENERATE_START = 'AGENT_DRAFT_GENERATE_START';
 const AGENT_DRAFT_GENERATE_STATUS = 'AGENT_DRAFT_GENERATE_STATUS';
 const AGENT_DRAFT_GENERATE_DELTA = 'AGENT_DRAFT_GENERATE_DELTA';
 const AGENT_DRAFT_GENERATE_DONE = 'AGENT_DRAFT_GENERATE_DONE';
 const AGENT_DRAFT_GENERATE_ERROR = 'AGENT_DRAFT_GENERATE_ERROR';
+const AGENT_DRAFT_GENERATE_STOPPED = 'AGENT_DRAFT_GENERATE_STOPPED';
 
 function findStableMarkdownBoundary(markdown = '') {
     if (!markdown) {
@@ -117,6 +119,7 @@ export function useEditorLogic() {
     const aiDraftJsonBuffer = ref('');
     const aiStreamingMarkdown = ref('');
     const aiCommittedMarkdown = ref('');
+    const agentGenerationSessionId = ref(null);
     const userEditedTitle = ref(false);
     const userEditedSummary = ref(false);
 
@@ -125,6 +128,7 @@ export function useEditorLogic() {
     let articleSocketService = null;
     let agentSocketService = null;
     let agentSocketReadyPromise = null;
+    let agentStopFallbackTimer = null;
     let ignoreAgentStream = false;
 
     const userId = computed(() => {
@@ -290,7 +294,16 @@ export function useEditorLogic() {
         applyMarkdownToEditor(aiStreamingMarkdown.value, { force });
     };
 
+    const clearAgentStopFallbackTimer = () => {
+        if (!agentStopFallbackTimer) {
+            return;
+        }
+        clearTimeout(agentStopFallbackTimer);
+        agentStopFallbackTimer = null;
+    };
+
     const disconnectAgentWebSocket = () => {
+        clearAgentStopFallbackTimer();
         agentSocketReadyPromise = null;
         if (agentSocketService) {
             agentSocketService.close();
@@ -301,6 +314,7 @@ export function useEditorLogic() {
     const finalizeAgentGeneration = (message) => {
         aiGenerating.value = false;
         aiGenerationStatusText.value = message;
+        agentGenerationSessionId.value = null;
         disconnectAgentWebSocket();
         clearAgentGenerationIntent();
     };
@@ -613,9 +627,19 @@ export function useEditorLogic() {
             flushRemainingMarkdown({ force: true });
             aiGenerating.value = false;
             aiGenerationStatusText.value = payload.message || '初稿生成失败，请稍后重试';
+            agentGenerationSessionId.value = null;
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
             ElMessage.error(payload.message || '初稿生成失败，请稍后重试');
+        });
+
+        agentSocketService.on(AGENT_DRAFT_GENERATE_STOPPED, (payload = {}) => {
+            aiGenerating.value = false;
+            aiGenerationStopped.value = true;
+            aiGenerationStatusText.value = payload.message || '已停止生成，你可以直接接管正文';
+            agentGenerationSessionId.value = null;
+            disconnectAgentWebSocket();
+            clearAgentGenerationIntent();
         });
 
         agentSocketService.onClose(() => {
@@ -625,6 +649,7 @@ export function useEditorLogic() {
             flushRemainingMarkdown({ force: true });
             aiGenerating.value = false;
             aiGenerationStatusText.value = '生成连接已断开，已保留当前内容';
+            agentGenerationSessionId.value = null;
             clearAgentGenerationIntent();
             ElMessage.error('生成连接已断开，已保留当前内容');
         });
@@ -684,6 +709,7 @@ export function useEditorLogic() {
         aiGenerating.value = true;
         aiGenerationStopped.value = false;
         aiGenerationStatusText.value = '正在连接生成通道...';
+        agentGenerationSessionId.value = Number(sessionId);
         aiDraftJsonBuffer.value = '';
         aiStreamingMarkdown.value = '';
         aiCommittedMarkdown.value = '';
@@ -699,6 +725,7 @@ export function useEditorLogic() {
             console.error('Failed to start agent draft generation:', error);
             aiGenerating.value = false;
             aiGenerationStatusText.value = '初稿生成启动失败，请稍后重试';
+            agentGenerationSessionId.value = null;
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
             ElMessage.error('初稿生成启动失败，请稍后重试');
@@ -715,9 +742,25 @@ export function useEditorLogic() {
         aiGenerating.value = false;
         flushRemainingMarkdown({ force: true });
         aiGenerationStatusText.value = '已停止生成，你可以直接接管正文';
-        disconnectAgentWebSocket();
         clearAgentGenerationIntent();
         markContentDirty();
+
+        const sessionId = agentGenerationSessionId.value;
+        const sent = sessionId && agentSocketService
+            ? agentSocketService.send(AGENT_DRAFT_STOP_TYPE, { sessionId })
+            : false;
+
+        if (!sent) {
+            agentGenerationSessionId.value = null;
+            disconnectAgentWebSocket();
+            return;
+        }
+
+        clearAgentStopFallbackTimer();
+        agentStopFallbackTimer = setTimeout(() => {
+            agentGenerationSessionId.value = null;
+            disconnectAgentWebSocket();
+        }, 1500);
     };
 
     const handleUserTitleInput = () => {

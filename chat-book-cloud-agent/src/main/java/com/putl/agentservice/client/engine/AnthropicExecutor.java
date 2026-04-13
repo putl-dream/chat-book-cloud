@@ -59,20 +59,33 @@ public class AnthropicExecutor {
      * @return AI 调用结果
      */
     public AiInvocationResult<String> executeStream(MessageCreateParams params, Consumer<String> chunkConsumer) {
+        return executeStream(params, chunkConsumer, StreamingControl.noop());
+    }
+
+    public AiInvocationResult<String> executeStream(MessageCreateParams params,
+                                                    Consumer<String> chunkConsumer,
+                                                    StreamingControl streamingControl) {
         Instant startedAt = Instant.now();
         StringBuilder content = new StringBuilder();
         AtomicInteger tokenInput = new AtomicInteger(0);
         AtomicInteger tokenOutput = new AtomicInteger(0);
         AtomicReference<String> model = new AtomicReference<>(params.model().asString());
         Consumer<String> safeChunkConsumer = chunkConsumer == null ? ignored -> { } : chunkConsumer;
+        StreamingControl safeStreamingControl = streamingControl == null ? StreamingControl.noop() : streamingControl;
+        safeStreamingControl.throwIfCancelled();
         try (StreamResponse<RawMessageStreamEvent> streamResponse = anthropicClient.messages().createStreaming(params)) {
-            streamResponse.stream().forEachOrdered(event -> {
+            safeStreamingControl.onCancel(streamResponse::close);
+            var eventIterator = streamResponse.stream().iterator();
+            while (eventIterator.hasNext()) {
+                safeStreamingControl.throwIfCancelled();
+                RawMessageStreamEvent event = eventIterator.next();
+                safeStreamingControl.throwIfCancelled();
                 if (event.isMessageStart()) {
                     Message message = event.asMessageStart().message();
                     tokenInput.set(toInt(message.usage().inputTokens()));
                     tokenOutput.set(toInt(message.usage().outputTokens()));
                     model.set(message.model().asString());
-                    return;
+                    continue;
                 }
                 if (event.isMessageDelta()) {
                     MessageDeltaUsage usage = event.asMessageDelta().usage();
@@ -80,23 +93,31 @@ public class AnthropicExecutor {
                     if (usage.inputTokens().isPresent()) {
                         tokenInput.set(toInt(usage.inputTokens().get()));
                     }
-                    return;
+                    continue;
                 }
                 if (!event.isContentBlockDelta()) {
-                    return;
+                    continue;
                 }
                 RawContentBlockDelta delta = event.asContentBlockDelta().delta();
                 if (!delta.isText()) {
-                    return;
+                    continue;
                 }
                 String chunk = delta.asText().text();
                 if (!StringUtils.hasText(chunk)) {
-                    return;
+                    continue;
                 }
                 content.append(chunk);
                 safeChunkConsumer.accept(chunk);
-            });
+            }
+        } catch (StreamingCancelledException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            if (safeStreamingControl.isCancelled()) {
+                throw new StreamingCancelledException();
+            }
+            throw ex;
         }
+        safeStreamingControl.throwIfCancelled();
         int latencyMs = toInt(Duration.between(startedAt, Instant.now()).toMillis());
         if (!StringUtils.hasText(content.toString())) {
             throw new IllegalStateException("Anthropic 流式响应未返回可解析的文本内容");

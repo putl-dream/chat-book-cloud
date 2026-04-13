@@ -47,12 +47,20 @@ public class AnthropicArticleAiExecutionEngine implements ArticleAiExecutionEngi
     public <T> AiInvocationResult<T> execute(ArticleAiTask<T> task,
                                              ArticleAiContext context,
                                              Consumer<String> chunkConsumer) {
+        return execute(task, context, chunkConsumer, StreamingControl.noop());
+    }
+
+    @Override
+    public <T> AiInvocationResult<T> execute(ArticleAiTask<T> task,
+                                             ArticleAiContext context,
+                                             Consumer<String> chunkConsumer,
+                                             StreamingControl streamingControl) {
         if (chunkConsumer != null && !task.supportsStreaming()) {
             throw new IllegalArgumentException("Task does not support streaming: " + task.taskCode());
         }
         AiInvocationResult<String> raw = chunkConsumer == null
                 ? anthropicExecutor.execute(task.createParams(context))
-                : anthropicExecutor.executeStream(task.createParams(context), chunkConsumer);
+                : anthropicExecutor.executeStream(task.createParams(context), chunkConsumer, streamingControl);
         T parsed = task.parseResponse(raw.getData());
         return new AiInvocationResult<>(
                 parsed,
