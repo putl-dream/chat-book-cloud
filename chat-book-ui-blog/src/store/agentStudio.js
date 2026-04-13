@@ -8,10 +8,12 @@ import SocketService, { formatWsUrl } from '@/utils/websocket.js';
 import {
     AGENT_SCENE_TYPE,
     adoptAgentDraftVersion,
+    buildStreamingDraftPreview,
     createAgentSession,
     getAgentSessionDetail,
     normalizeAgentDraft,
     optimizeAgentDraft,
+    saveAgentGenerationIntent,
     saveAgentDraftImport
 } from '@/views/creator/_domain/agent.js';
 import {
@@ -56,48 +58,6 @@ function normalizeMessage(message = {}) {
         createTime: message.createTime ?? '',
         streaming: Boolean(message.streaming)
     };
-}
-
-function decodeJsonStringFragment(value = '') {
-    let candidate = value;
-    while (candidate.length > 0) {
-        try {
-            return JSON.parse(`"${candidate}"`);
-        } catch (error) {
-            candidate = candidate.slice(0, -1);
-        }
-    }
-    return '';
-}
-
-function extractDraftField(buffer = '', fieldName) {
-    const matcher = new RegExp(`"${fieldName}"\\s*:\\s*"`, 'm');
-    const match = matcher.exec(buffer);
-    if (!match) {
-        return '';
-    }
-
-    let rawValue = '';
-    let consecutiveBackslashes = 0;
-    for (let cursor = match.index + match[0].length; cursor < buffer.length; cursor += 1) {
-        const char = buffer[cursor];
-        if (char === '"' && consecutiveBackslashes % 2 === 0) {
-            return decodeJsonStringFragment(rawValue);
-        }
-        rawValue += char;
-        consecutiveBackslashes = char === '\\' ? consecutiveBackslashes + 1 : 0;
-    }
-    return decodeJsonStringFragment(rawValue);
-}
-
-function buildStreamingDraftPreview(buffer = '') {
-    const title = extractDraftField(buffer, 'title');
-    const summary = extractDraftField(buffer, 'summary');
-    const content = extractDraftField(buffer, 'content');
-    if (!title && !summary && !content) {
-        return null;
-    }
-    return normalizeAgentDraft({ title, summary, content });
 }
 
 export const useAgentStudioStore = defineStore('agentStudio', () => {
@@ -187,11 +147,11 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const sessionStatusLabel = computed(() => {
         if (loadingSession.value) return '正在恢复';
-        if (chatting.value) return '对话进行中';
-        if (generatingDraft.value) return '生成首稿中';
+        if (chatting.value) return '讨论进行中';
+        if (generatingDraft.value) return '正在跳转编辑器';
         if (optimizingDraft.value) return '优化重写中';
-        if (sessionId.value) return '会话已激活';
-        return '未创建会话';
+        if (sessionId.value) return '思考会话已激活';
+        return '尚未开始讨论';
     });
 
     // Message Utilities
@@ -535,34 +495,29 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const createDraftFromSession = async () => {
         if (!sessionId.value) {
-            ElMessage.warning('请先开始一段创作对话');
+            ElMessage.warning('请先开始一段主题讨论');
             return;
         }
         if (hasPendingInteractiveForm.value) {
-            ElMessage.warning('请先完成当前问题卡片，再生成首稿');
+            ElMessage.warning('请先完成当前问题卡片，再生成初稿');
             return;
         }
         if (chatting.value) {
-            ElMessage.warning('当前回复尚未完成，请稍后再生成首稿');
+            ElMessage.warning('当前回复尚未完成，请稍后再生成初稿');
             return;
         }
 
         generatingDraft.value = true;
         try {
-            resetDraftStreamingState();
-            draftStreamingStatusText.value = '正在连接生成通道...';
-            const service = await ensureSocketReady();
-            const sent = service.send(AGENT_DRAFT_GENERATE, {
-                sessionId: sessionId.value
+            saveAgentGenerationIntent({
+                sessionId: sessionId.value,
+                source: 'agent-studio'
             });
-            if (!sent) {
-                throw new Error('Agent WebSocket 未连接');
-            }
+            await router.push('/text');
         } catch (error) {
-            console.error('Failed to generate agent draft:', error);
+            console.error('Failed to open editor for agent draft generation:', error);
             generatingDraft.value = false;
-            resetDraftStreamingState();
-            ElMessage.error('生成草稿失败，请稍后重试');
+            ElMessage.error('打开编辑器失败，请稍后重试');
         }
     };
 

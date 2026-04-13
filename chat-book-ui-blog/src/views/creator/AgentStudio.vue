@@ -1,104 +1,36 @@
 <template>
-    <div 
-        class="workspace-layout u-animate-fade-in" 
-        :class="{ 'is-dragging': isDragging }"
-        @mousemove="onDrag"
-        @mouseup="stopDrag"
-        @mouseleave="stopDrag"
-    >
+    <div class="workspace-layout u-animate-fade-in">
         <CreativeHeader class="workspace-header">
             <template #actions>
                 <div class="header-actions">
                     <span class="status-badge" v-if="store.sessionStatusLabel">
                         {{ store.sessionStatusLabel }}
                     </span>
-                    <el-button 
-                        class="header-btn primary" 
-                        :disabled="!store.hasDraft" 
-                        @click="store.importDraftToEditor"
-                        round
-                    >
-                        <el-icon><DocumentChecked /></el-icon> 导入编辑器
+                    <el-button class="header-btn primary" @click="store.openFreshSession" round>
+                        <el-icon><EditPen /></el-icon> 新建对话
                     </el-button>
                 </div>
             </template>
         </CreativeHeader>
 
-        <div class="workspace-body" ref="workspaceBodyRef">
+        <div class="workspace-body">
             <SessionSidebar />
-            <DraftCanvas />
-            
-            <div 
-                v-show="!isMobile"
-                class="layout-splitter" 
-                :class="{ 'is-active': isDragging }" 
-                @mousedown.prevent="startDrag"
-            ></div>
-
-            <ChatController :style="chatControllerStyle" />
+            <ChatController />
         </div>
     </div>
 </template>
 
 <script setup>
-import { onBeforeUnmount, onMounted, watch, ref, computed } from 'vue';
+import { onBeforeUnmount, onMounted, watch } from 'vue';
 import { useRoute } from 'vue-router';
 import { useAgentStudioStore } from '@/store/agentStudio.js';
 import CreativeHeader from '@/views/creator/components/CreativeHeader.vue';
 import SessionSidebar from '@/views/creator/components/agent/SessionSidebar.vue';
-import DraftCanvas from '@/views/creator/components/agent/DraftCanvas.vue';
 import ChatController from '@/views/creator/components/agent/ChatController.vue';
-import { DocumentChecked } from '@element-plus/icons-vue';
+import { EditPen } from '@element-plus/icons-vue';
 
 const route = useRoute();
 const store = useAgentStudioStore();
-
-// --- Dragging Logic for Splitter ---
-const workspaceBodyRef = ref(null);
-const isDragging = ref(false);
-const chatWidth = ref(360);
-const isMobile = ref(false);
-
-const checkViewport = () => {
-    isMobile.value = window.innerWidth <= 900;
-};
-
-const chatControllerStyle = computed(() => {
-    // If mobile, allow responsive CSS to take over
-    if (isMobile.value) {
-        return {};
-    }
-    return { width: `${chatWidth.value}px` };
-});
-
-const startDrag = () => {
-    isDragging.value = true;
-    document.body.style.userSelect = 'none'; // Prevent text selection
-};
-
-const onDrag = (e) => {
-    if (!isDragging.value || !workspaceBodyRef.value) return;
-    
-    const containerRect = workspaceBodyRef.value.getBoundingClientRect();
-    // Calculate new width from the right edge
-    let newWidth = containerRect.right - e.clientX;
-    
-    // Constraints: min 300px, max 50% of the workspace area
-    const maxWidth = containerRect.width * 0.6;
-    const minWidth = 300;
-    
-    if (newWidth < minWidth) newWidth = minWidth;
-    if (newWidth > maxWidth) newWidth = maxWidth;
-    
-    chatWidth.value = newWidth;
-};
-
-const stopDrag = () => {
-    if (isDragging.value) {
-        isDragging.value = false;
-        document.body.style.userSelect = '';
-    }
-};
 
 // --- Hydrate Logic ---
 // Watch Route for session ID changes
@@ -120,13 +52,10 @@ watch(
 
 onMounted(() => {
     store.connectWebSocket();
-    checkViewport();
-    window.addEventListener('resize', checkViewport);
 });
 
 onBeforeUnmount(() => {
     store.disconnectWebSocket();
-    window.removeEventListener('resize', checkViewport);
 });
 </script>
 
@@ -156,7 +85,7 @@ onBeforeUnmount(() => {
     flex: 1;
     display: flex;
     flex-direction: row;
-    min-height: 0; /* Important for scrollable children inside flex column */
+    min-height: 0;
     background: #F9FAFB;
 }
 
@@ -195,43 +124,6 @@ onBeforeUnmount(() => {
 }
 
 /* Splitter Styling */
-.layout-splitter {
-    width: 8px;
-    margin-left: -4px;
-    margin-right: -4px;
-    background: transparent;
-    cursor: col-resize;
-    position: relative;
-    z-index: 20;
-    transition: background-color 0.2s;
-    flex-shrink: 0;
-}
-
-.layout-splitter:hover,
-.layout-splitter.is-active {
-    background: rgba(209, 96, 61, 0.15);
-}
-
-.layout-splitter::after {
-    content: '';
-    position: absolute;
-    left: 3px;
-    top: 50%;
-    transform: translateY(-50%);
-    width: 2px;
-    height: 24px;
-    background: rgba(22, 50, 79, 0.2);
-    border-radius: 2px;
-}
-
-.workspace-layout.is-dragging {
-    cursor: col-resize;
-}
-
-.workspace-layout.is-dragging .layout-splitter {
-    background: rgba(209, 96, 61, 0.25);
-}
-
 @media (max-width: 900px) {
     .workspace-body {
         flex-direction: column;
