@@ -2,12 +2,12 @@
   <footer class="site-footer">
     <div class="site-footer__inner">
       <div class="site-footer__main">
-        <span class="site-footer__brand">ChatBook</span>
+        <span class="site-footer__brand">平安喜乐</span>
         <span class="site-footer__divider" aria-hidden="true"></span>
         <span class="site-footer__meta">内容探索与创作平台</span>
         <span class="site-footer__divider hidden-mobile" aria-hidden="true"></span>
         <span class="site-footer__copyright">
-                    &copy; <time :datetime="currentYear">{{ currentYear }}</time> ChatBook
+                    &copy; <time :datetime="currentYear">{{ currentYear }}</time> 平安喜乐
                 </span>
       </div>
 
@@ -25,8 +25,7 @@ import { ref } from 'vue';
 
 const currentYear = new Date().getFullYear().toString();
 
-// 预留备案号变量。等备案审核通过后，直接填入即可。
-const icpNumber = ref('京ICP备XXXXXXXX号-1');
+const icpNumber = ref('滇ICP备2025058730号-2');
 </script>
 
 <style scoped>

@@ -9,7 +9,7 @@ import App from './App.vue'
 import * as ElementPlusIconsVue from '@element-plus/icons-vue'
 import { initSiteTheme } from '@/composables/useSiteTheme.js'
 
-const APP_NAME = 'ChatBook'
+const APP_NAME = '平安喜乐'
 const ROUTE_TITLES = {
     Home: '首页',
     Learn: '学习',
