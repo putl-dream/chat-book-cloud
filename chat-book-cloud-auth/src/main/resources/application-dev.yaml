@@ -19,4 +19,4 @@ spring:
 
 oauth2:
   success:
-    redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:http://putl.online/login}
+    redirect-url: ${OAUTH2_SUCCESS_REDIRECT_URL:https://putl.online/login}
