@@ -46,7 +46,7 @@ services:
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin@2026}
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required for auth oauth2 login}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required for auth oauth2 login}
-      OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-http://putl.online/login}
+      OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-https://putl.online/login}
     networks:
       - chat-book-net
 
