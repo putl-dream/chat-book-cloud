@@ -1,18 +1,21 @@
 package com.putl.interactionservice.service.impl;
 
-import com.putl.articleservice.api.ArticleClient;
+import com.putl.interactionservice.constant.MqConstant;
+import com.putl.interactionservice.mq.event.HotScoreChangedEvent;
 import com.putl.interactionservice.service.HotArticleRankService;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.redis.constant.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.Duration;
-import java.time.LocalDate;
-import java.time.format.DateTimeFormatter;
+import java.util.UUID;
 
 @Slf4j
 @Service
@@ -24,11 +27,9 @@ public class HotArticleRankServiceImpl implements HotArticleRankService {
     private static final double COMMENT_SCORE = 4D;
     private static final double COLLECT_SCORE = 5D;
     private static final Duration VIEW_DEDUP_TTL = Duration.ofSeconds(5);
-    private static final Duration DAY_RANK_TTL = Duration.ofDays(2);
-    private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
 
     private final RedisTemplate<String, Object> redisTemplate;
-    private final ArticleClient articleClient;
+    private final RabbitTemplate rabbitTemplate;
 
     @Value("${spring.profiles.active:local}")
     private String env;
@@ -53,49 +54,58 @@ public class HotArticleRankServiceImpl implements HotArticleRankService {
 
     @Override
     public void recordView(Integer articleId) {
-        incrementScore(articleId, VIEW_SCORE);
+        publishScoreChange(articleId, VIEW_SCORE, "VIEW");
     }
 
     @Override
     public void recordPraise(Integer articleId, boolean active) {
-        incrementScore(articleId, active ? PRAISE_SCORE : -PRAISE_SCORE);
+        publishScoreChange(articleId, active ? PRAISE_SCORE : -PRAISE_SCORE, active ? "PRAISE_ON" : "PRAISE_OFF");
     }
 
     @Override
     public void recordCollection(Integer articleId, boolean active) {
-        incrementScore(articleId, active ? COLLECT_SCORE : -COLLECT_SCORE);
+        publishScoreChange(articleId, active ? COLLECT_SCORE : -COLLECT_SCORE, active ? "COLLECT_ON" : "COLLECT_OFF");
     }
 
     @Override
     public void recordComment(Integer articleId) {
-        incrementScore(articleId, COMMENT_SCORE);
+        publishScoreChange(articleId, COMMENT_SCORE, "COMMENT");
     }
 
-    private void incrementScore(Integer articleId, double delta) {
+    private void publishScoreChange(Integer articleId, double delta, String actionType) {
         if (articleId == null || delta == 0D) {
             return;
         }
-        String member = String.valueOf(articleId);
-        String allKey = RedisKeyConstants.interactionHotAll(env);
-        String dayKey = RedisKeyConstants.interactionHotDay(env, LocalDate.now().format(DAY_FORMATTER));
-        try {
-            redisTemplate.opsForZSet().incrementScore(allKey, member, delta);
-            redisTemplate.opsForZSet().incrementScore(dayKey, member, delta);
-            redisTemplate.expire(dayKey, DAY_RANK_TTL);
-            evictHotPageCache();
-        } catch (Exception e) {
-            log.warn("Failed to update hot article rank, articleId: {}, delta: {}", articleId, delta, e);
-        }
-    }
+        HotScoreChangedEvent event = HotScoreChangedEvent.builder()
+            .eventId(UUID.randomUUID().toString())
+            .articleId(articleId)
+            .delta(delta)
+            .actionType(actionType)
+            .build();
 
-    private void evictHotPageCache() {
-        try {
-            CommonResult<Void> result = articleClient.evictHotPageCache();
-            if (result == null || !result.isSuccess()) {
-                log.warn("Failed to evict hot page cache after rank update, response: {}", result);
+        Runnable publishTask = () -> {
+            try {
+                rabbitTemplate.convertAndSend(
+                    MqConstant.HOT_EXCHANGE,
+                    MqConstant.HOT_SCORE_CHANGED_ROUTING_KEY,
+                    event
+                );
+            } catch (Exception e) {
+                log.warn("Failed to publish hot score changed event, articleId: {}, delta: {}, actionType: {}",
+                    articleId, delta, actionType, e);
             }
-        } catch (Exception e) {
-            log.warn("Failed to evict hot page cache after rank update", e);
+        };
+
+        if (TransactionSynchronizationManager.isActualTransactionActive()
+            && TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    publishTask.run();
+                }
+            });
+            return;
         }
+        publishTask.run();
     }
 }

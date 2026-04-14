@@ -33,6 +33,8 @@ public class RedisKeyConstants {
     public static final String INTERACTION_HOT_ALL = "cbc:%s:interaction:hot:all";
     public static final String INTERACTION_HOT_DAY = "cbc:%s:interaction:hot:day:%s"; // yyyyMMdd
     public static final String INTERACTION_VIEW_DEDUP = "cbc:%s:interaction:dedup:view:%s:%s"; // userId:articleId
+    public static final String INTERACTION_HOT_EVENT_IDEMPOTENT = "cbc:%s:interaction:hot:event:%s"; // eventId
+    public static final String INTERACTION_HOT_EVICT_LOCK = "cbc:%s:interaction:hot:evict:lock";
 
     // ==================== Social Module ====================
     public static final String FOLLOW_STAT_CACHE = "cbc:%s:social:follow:stat:%s"; // userId
@@ -89,6 +91,14 @@ public class RedisKeyConstants {
 
     public static String interactionViewDedup(String env, String userId, String articleId) {
         return String.format(INTERACTION_VIEW_DEDUP, env, userId, articleId);
+    }
+
+    public static String interactionHotEventIdempotent(String env, String eventId) {
+        return String.format(INTERACTION_HOT_EVENT_IDEMPOTENT, env, eventId);
+    }
+
+    public static String interactionHotEvictLock(String env) {
+        return String.format(INTERACTION_HOT_EVICT_LOCK, env);
     }
 
     public static String followStatCache(String env, String userId) {
