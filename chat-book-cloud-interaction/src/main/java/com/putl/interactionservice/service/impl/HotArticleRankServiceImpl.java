@@ -1,6 +1,8 @@
 package com.putl.interactionservice.service.impl;
 
+import com.putl.articleservice.api.ArticleClient;
 import com.putl.interactionservice.service.HotArticleRankService;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.redis.constant.RedisKeyConstants;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +28,7 @@ public class HotArticleRankServiceImpl implements HotArticleRankService {
     private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
 
     private final RedisTemplate<String, Object> redisTemplate;
+    private final ArticleClient articleClient;
 
     @Value("${spring.profiles.active:local}")
     private String env;
@@ -79,8 +82,20 @@ public class HotArticleRankServiceImpl implements HotArticleRankService {
             redisTemplate.opsForZSet().incrementScore(allKey, member, delta);
             redisTemplate.opsForZSet().incrementScore(dayKey, member, delta);
             redisTemplate.expire(dayKey, DAY_RANK_TTL);
+            evictHotPageCache();
         } catch (Exception e) {
             log.warn("Failed to update hot article rank, articleId: {}, delta: {}", articleId, delta, e);
+        }
+    }
+
+    private void evictHotPageCache() {
+        try {
+            CommonResult<Void> result = articleClient.evictHotPageCache();
+            if (result == null || !result.isSuccess()) {
+                log.warn("Failed to evict hot page cache after rank update, response: {}", result);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evict hot page cache after rank update", e);
         }
     }
 }
