@@ -45,4 +45,7 @@ public interface ArticleClient {
 
     @PostMapping("/draft/internal/version/adopt")
     CommonResult<Void> adoptDraftVersion(@RequestBody DraftVersionAdoptRequest request);
+
+    @PostMapping("/cache/internal/evict/hot")
+    CommonResult<Void> evictHotPageCache();
 }

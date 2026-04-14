@@ -71,6 +71,12 @@ public class ArticleClientFallback implements FallbackFactory<ArticleClient> {
                 log.warn("[ArticleClient] adoptDraftVersion fallback, request: {}", request);
                 return CommonResult.error(500, "Article service unavailable");
             }
+
+            @Override
+            public CommonResult<Void> evictHotPageCache() {
+                log.warn("[ArticleClient] evictHotPageCache fallback");
+                return CommonResult.error(500, "Article service unavailable");
+            }
         };
     }
 }
