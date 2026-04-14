@@ -1,4 +1,10 @@
 spring:
+  rabbitmq:
+    host: ${RABBITMQ_HOST:10.0.0.2}
+    port: ${RABBITMQ_PORT:5672}
+    username: ${RABBITMQ_USERNAME:admin}
+    password: ${RABBITMQ_PASSWORD:admin@2026}
+
   data:
     redis:
       host: ${REDIS_HOST:10.0.0.2}
