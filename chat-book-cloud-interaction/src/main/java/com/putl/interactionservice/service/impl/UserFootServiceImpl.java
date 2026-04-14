@@ -199,6 +199,18 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         Map<Integer, ArticleStatDO> statMap = stats.stream()
                 .collect(Collectors.toMap(ArticleStatDO::getArticleId, Function.identity()));
 
+        List<Integer> missingArticleIds = articleIds.stream()
+                .filter(Objects::nonNull)
+                .filter(articleId -> !statMap.containsKey(articleId))
+                .distinct()
+                .toList();
+        for (Integer missingArticleId : missingArticleIds) {
+            ArticleStatDO rebuiltStat = ensureArticleStat(missingArticleId);
+            if (rebuiltStat != null) {
+                statMap.put(missingArticleId, rebuiltStat);
+            }
+        }
+
         List<UserFootListVO> result = new ArrayList<>();
         for (Integer articleId : articleIds) {
             ArticleStatDO stat = statMap.get(articleId);
