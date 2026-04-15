@@ -4,6 +4,8 @@ import com.putl.articleservice.api.ArticleClient;
 import com.putl.interactionservice.constant.MqConstant;
 import com.putl.interactionservice.mq.event.DelayedEvictHotCacheEvent;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
+import fun.amireux.chat.book.framework.redis.constant.RedisKeyConstants;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -13,6 +15,10 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -27,6 +33,8 @@ import static org.mockito.Mockito.verifyNoInteractions;
 @ExtendWith(MockitoExtension.class)
 class HotArticleRankConsumerTest {
 
+    private static final String ENV = "local";
+
     @Mock
     private RedisTemplate<String, Object> redisTemplate;
 
@@ -38,6 +46,11 @@ class HotArticleRankConsumerTest {
 
     @InjectMocks
     private HotArticleRankConsumer hotArticleRankConsumer;
+
+    @BeforeEach
+    void setUp() {
+        ReflectionTestUtils.setField(hotArticleRankConsumer, "env", ENV);
+    }
 
     @Test
     void consumeDelayedHotCacheEvictShouldAckWhenEvictionSucceeds() {
@@ -79,10 +92,10 @@ class HotArticleRankConsumerTest {
             same(stringSerializer),
             isNull(),
             eq(java.util.List.of(
-                "chat-book:interaction:hot:event:local:hot-event-1",
-                "chat-book:interaction:hot:all:local",
-                "chat-book:interaction:hot:day:local:" + java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE),
-                "chat-book:interaction:hot:evict:lock:local"
+                RedisKeyConstants.interactionHotEventIdempotent(ENV, "hot-event-1"),
+                RedisKeyConstants.interactionHotAll(ENV),
+                RedisKeyConstants.interactionHotDay(ENV, LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE)),
+                RedisKeyConstants.interactionHotEvictLock(ENV)
             )),
             eq("hot-event-1"),
             eq("86400"),

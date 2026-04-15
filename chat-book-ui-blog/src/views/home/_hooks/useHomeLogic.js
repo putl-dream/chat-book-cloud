@@ -1,5 +1,5 @@
 import { ref } from 'vue';
-import { getCategoryPage, getNewPage, getHotPage, getContentTypePage, getTagPage } from "@/views/article/_domain/article.js";
+import { getCategoryPage, getNewPage, getTodayHotPage, getContentTypePage, getTagPage } from "@/views/article/_domain/article.js";
 import { CATEGORY_ENUM, CONTENT_TYPE_ENUM } from "@/constants/index.js";
 
 export function useHomeLogic() {
@@ -47,7 +47,7 @@ export function useHomeLogic() {
     },
     'default': {
       list: (p, s) => getNewPage(p, s),
-      recommend: () => getHotPage(1, 5)
+      recommend: () => getTodayHotPage(1, 5)
     }
   };
 
@@ -59,7 +59,7 @@ export function useHomeLogic() {
     try {
       const [listRes, recommendRes] = await Promise.all([
         getTagPage(page.value, pageSize.value, tagId),
-        getHotPage(1, 5)
+        getTodayHotPage(1, 5)
       ]);
 
       if (recommendRes && recommendRes.list) {
