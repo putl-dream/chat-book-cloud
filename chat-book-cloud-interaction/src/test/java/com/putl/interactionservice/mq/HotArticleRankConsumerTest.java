@@ -12,9 +12,14 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.data.redis.core.RedisTemplate;
+import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.ArgumentMatchers.isNull;
+import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
@@ -42,6 +47,56 @@ class HotArticleRankConsumerTest {
 
         verify(articleClient).evictHotPageCache();
         verifyNoInteractions(rabbitTemplate);
+    }
+
+    @Test
+    void consumeHotScoreChangedShouldExecuteLuaWithStringSerializer() {
+        StringRedisSerializer stringSerializer = new StringRedisSerializer();
+        given(redisTemplate.getStringSerializer()).willReturn(stringSerializer);
+        given(redisTemplate.execute(
+            any(),
+            same(stringSerializer),
+            isNull(),
+            anyList(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any(),
+            any()
+        )).willReturn(java.util.List.of(1L, 1L));
+
+        hotArticleRankConsumer.consumeHotScoreChanged(com.putl.interactionservice.mq.event.HotScoreChangedEvent.builder()
+            .eventId("hot-event-1")
+            .articleId(12)
+            .delta(1.5D)
+            .actionType("VIEW")
+            .build());
+
+        verify(redisTemplate).execute(
+            any(),
+            same(stringSerializer),
+            isNull(),
+            eq(java.util.List.of(
+                "chat-book:interaction:hot:event:local:hot-event-1",
+                "chat-book:interaction:hot:all:local",
+                "chat-book:interaction:hot:day:local:" + java.time.LocalDate.now().format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE),
+                "chat-book:interaction:hot:evict:lock:local"
+            )),
+            eq("hot-event-1"),
+            eq("86400"),
+            eq("1.5"),
+            eq("12"),
+            eq("172800"),
+            eq("hot-event-1"),
+            eq("5")
+        );
+        verify(rabbitTemplate).convertAndSend(
+            eq(MqConstant.HOT_EXCHANGE),
+            eq(MqConstant.HOT_CACHE_EVICT_DELAY_ROUTING_KEY),
+            any(DelayedEvictHotCacheEvent.class)
+        );
     }
 
     @Test
