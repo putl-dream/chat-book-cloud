@@ -35,6 +35,7 @@ public class RedisKeyConstants {
     public static final String INTERACTION_VIEW_DEDUP = "cbc:%s:interaction:dedup:view:%s:%s"; // userId:articleId
     public static final String INTERACTION_HOT_EVENT_IDEMPOTENT = "cbc:%s:interaction:hot:event:%s"; // eventId
     public static final String INTERACTION_HOT_EVICT_LOCK = "cbc:%s:interaction:hot:evict:lock";
+    public static final String INTERACTION_HOT_INIT_LOCK = "cbc:%s:interaction:hot:init:lock";
 
     // ==================== Social Module ====================
     public static final String FOLLOW_STAT_CACHE = "cbc:%s:social:follow:stat:%s"; // userId
@@ -99,6 +100,10 @@ public class RedisKeyConstants {
 
     public static String interactionHotEvictLock(String env) {
         return String.format(INTERACTION_HOT_EVICT_LOCK, env);
+    }
+
+    public static String interactionHotInitLock(String env) {
+        return String.format(INTERACTION_HOT_INIT_LOCK, env);
     }
 
     public static String followStatCache(String env, String userId) {
