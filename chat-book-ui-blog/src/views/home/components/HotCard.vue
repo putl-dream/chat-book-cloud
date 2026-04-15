@@ -12,7 +12,7 @@
 
 <script setup>
 import {onMounted, ref} from "vue";
-import {getHotPage} from "@/views/article/_domain/article.js";
+import {getTodayHotPage} from "@/views/article/_domain/article.js";
 import router from "@/router/index.js";
 
 const hotArticles = ref([]);
@@ -26,7 +26,7 @@ const getRankClass = (index) => {
 
 const queryHotRequest = async () => {
     try {
-        const response = await getHotPage(1, 10);
+        const response = await getTodayHotPage(1, 10);
         if (response && response.list) {
             hotArticles.value = response.list;
         } else if (response && response.records) {

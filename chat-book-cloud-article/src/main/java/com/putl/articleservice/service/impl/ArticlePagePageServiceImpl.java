@@ -99,9 +99,10 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
 
     /**
      * 获取今日热门文章列表。
-     * 优先读取 Redis 日榜，Redis 不可用或数据不足时再降级到今日发布文章。
+     * 优先读取 Redis 日榜，不足时用 Redis 全站总榜补齐。
      * <p>
-     * 日榜使用 yyyyMMdd 维度独立存储，避免老文章长期霸榜。
+     * 日榜使用 yyyyMMdd 维度独立存储，避免老文章长期霸榜；补齐时保持日榜顺序优先，
+     * 并对总榜结果去重，确保前端始终拿到稳定的热门列表。
      *
      * @param pageNo   分页页码
      * @param pageSize 每页大小
@@ -109,12 +110,45 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getTodayHotPage(Integer pageNo, Integer pageSize) {
-        return getRankedHotPage(
-                RedisKeyConstants.interactionHotDay(env, LocalDate.now().format(HOT_DAY_FORMATTER)),
-                pageNo,
-                pageSize,
-                this::getTodayHotPageFallback
-        );
+        if (pageNo == null || pageNo < 1 || pageSize == null || pageSize < 1) {
+            return PageResult.empty();
+        }
+
+        String dayRankKey = RedisKeyConstants.interactionHotDay(env, LocalDate.now().format(HOT_DAY_FORMATTER));
+        String allRankKey = RedisKeyConstants.interactionHotAll(env);
+        long start = (long) (pageNo - 1) * pageSize;
+        long requiredCount = start + pageSize;
+
+        try {
+            Long dayRankTotal = redisTemplate.opsForZSet().zCard(dayRankKey);
+            Long allRankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
+            if ((dayRankTotal == null || dayRankTotal == 0) && (allRankTotal == null || allRankTotal == 0)) {
+                return getHotPage(pageNo, pageSize);
+            }
+
+            LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
+            appendRankedArticles(dayRankKey, requiredCount, orderedArticles);
+            if (orderedArticles.size() < requiredCount) {
+                appendRankedArticles(allRankKey, requiredCount, orderedArticles);
+            }
+
+            List<ArticleDO> rankedArticles = sliceRankedArticles(orderedArticles, start, pageSize);
+            if (rankedArticles.isEmpty()) {
+                return getHotPage(pageNo, pageSize);
+            }
+
+            List<ArticleListVO> rankedList = new ArrayList<>(toBean(rankedArticles));
+            Long refreshedAllRankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
+            Long refreshedDayRankTotal = redisTemplate.opsForZSet().zCard(dayRankKey);
+            long total = refreshedAllRankTotal != null && refreshedAllRankTotal > 0
+                    ? refreshedAllRankTotal
+                    : refreshedDayRankTotal != null ? refreshedDayRankTotal : 0L;
+            return new PageResult<>(rankedList, total);
+        } catch (Exception e) {
+            log.warn("Failed to load today hot page from redis, dayKey: {}, allKey: {}, pageNo: {}, pageSize: {}",
+                    dayRankKey, allRankKey, pageNo, pageSize, e);
+            return getHotPage(pageNo, pageSize);
+        }
     }
 
     private PageResult<ArticleListVO> getRankedHotPage(String rankKey,
@@ -132,20 +166,15 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
                 return fallbackSupplier.apply(fallbackRequest);
             }
 
-            List<ArticleDO> rankedArticles = loadRankedArticles(rankKey, pageNo, pageSize);
+            long start = (long) (pageNo - 1) * pageSize;
+            List<ArticleDO> rankedArticles = loadRankedArticles(rankKey, start, pageSize);
             if (rankedArticles.isEmpty()) {
                 return fallbackSupplier.apply(fallbackRequest);
             }
 
             List<ArticleListVO> rankedList = new ArrayList<>(toBean(rankedArticles));
-            long total = rankTotal;
-            if (rankedList.size() < pageSize) {
-                PageResult<ArticleListVO> fallback = fallbackSupplier.apply(fallbackRequest);
-                mergeFallbackArticles(rankedList, fallback, pageSize);
-                if (fallback != null && fallback.getTotal() != null) {
-                    total = Math.max(total, fallback.getTotal());
-                }
-            }
+            Long refreshedRankTotal = redisTemplate.opsForZSet().zCard(rankKey);
+            long total = refreshedRankTotal != null ? refreshedRankTotal : rankTotal;
             return new PageResult<>(rankedList, total);
         } catch (Exception e) {
             log.warn("Failed to load ranked hot page from redis, key: {}, pageNo: {}, pageSize: {}", rankKey, pageNo, pageSize, e);
@@ -153,32 +182,54 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         }
     }
 
-    private List<ArticleDO> loadRankedArticles(String rankKey, Integer pageNo, Integer pageSize) {
-        long start = (long) (pageNo - 1) * pageSize;
-        long cursor = start;
-        int fetchSize = Math.max(pageSize * HOT_RANK_SCAN_MULTIPLIER, pageSize);
+    private List<ArticleDO> loadRankedArticles(String rankKey, long start, Integer pageSize) {
+        long requiredCount = start + pageSize;
         LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
+        appendRankedArticles(rankKey, requiredCount, orderedArticles);
+        return sliceRankedArticles(orderedArticles, start, pageSize);
+    }
 
-        while (orderedArticles.size() < pageSize) {
+    private void appendRankedArticles(String rankKey, long targetCount, LinkedHashMap<Integer, ArticleDO> orderedArticles) {
+        if (targetCount <= 0) {
+            return;
+        }
+
+        long cursor = 0;
+        int fetchSize = Math.max(Math.toIntExact(Math.min(targetCount * HOT_RANK_SCAN_MULTIPLIER, 200L)), 1);
+        Set<Integer> currentKeySeen = new HashSet<>();
+
+        while (orderedArticles.size() < targetCount) {
             Set<Object> rankedMembers = redisTemplate.opsForZSet().reverseRange(rankKey, cursor, cursor + fetchSize - 1);
             if (rankedMembers == null || rankedMembers.isEmpty()) {
                 break;
             }
 
-            List<Integer> articleIds = parseRankedArticleIds(rankedMembers);
-            if (!articleIds.isEmpty()) {
+            List<RankedArticleMember> articleMembers = parseRankedArticleMembers(rankedMembers);
+            if (!articleMembers.isEmpty()) {
+                List<Integer> articleIds = articleMembers.stream()
+                        .map(RankedArticleMember::articleId)
+                        .toList();
                 List<ArticleDO> articleDOS = articleMapper.selectBatchIds(articleIds);
                 Map<Integer, ArticleDO> articleMap = articleDOS.stream()
                         .filter(Objects::nonNull)
                         .collect(Collectors.toMap(ArticleDO::getId, Function.identity(), (left, right) -> left));
 
-                for (Integer articleId : articleIds) {
+                for (RankedArticleMember articleMember : articleMembers) {
+                    Integer articleId = articleMember.articleId();
                     ArticleDO article = articleMap.get(articleId);
                     if (article == null || article.getStatus() != ArticleStatus.PUBLISHED) {
+                        evictInvalidRankedMember(rankKey, articleMember, article);
+                        continue;
+                    }
+                    if (!currentKeySeen.add(articleId)) {
+                        evictDuplicateRankedMember(rankKey, articleMember);
+                        continue;
+                    }
+                    if (orderedArticles.containsKey(articleId)) {
                         continue;
                     }
                     orderedArticles.putIfAbsent(articleId, article);
-                    if (orderedArticles.size() >= pageSize) {
+                    if (orderedArticles.size() >= targetCount) {
                         break;
                     }
                 }
@@ -189,40 +240,52 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
                 break;
             }
         }
-
-        return new ArrayList<>(orderedArticles.values());
     }
 
-    private List<Integer> parseRankedArticleIds(Set<Object> rankedMembers) {
-        List<Integer> articleIds = new ArrayList<>(rankedMembers.size());
+    private List<ArticleDO> sliceRankedArticles(LinkedHashMap<Integer, ArticleDO> orderedArticles,
+                                                long start,
+                                                Integer pageSize) {
+        if (orderedArticles.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return orderedArticles.values().stream()
+                .skip(start)
+                .limit(pageSize)
+                .toList();
+    }
+
+    private List<RankedArticleMember> parseRankedArticleMembers(Set<Object> rankedMembers) {
+        List<RankedArticleMember> articleMembers = new ArrayList<>(rankedMembers.size());
         for (Object rankedMember : rankedMembers) {
             try {
-                articleIds.add(Integer.valueOf(String.valueOf(rankedMember)));
+                articleMembers.add(new RankedArticleMember(Integer.valueOf(String.valueOf(rankedMember)), rankedMember));
             } catch (NumberFormatException e) {
                 log.warn("Invalid article id in redis hot rank, member: {}", rankedMember);
             }
         }
-        return articleIds;
+        return articleMembers;
     }
 
-    private void mergeFallbackArticles(List<ArticleListVO> rankedList,
-                                       PageResult<ArticleListVO> fallback,
-                                       Integer pageSize) {
-        if (fallback == null || fallback.getList() == null || fallback.getList().isEmpty()) {
-            return;
+    private void evictInvalidRankedMember(String rankKey, RankedArticleMember articleMember, ArticleDO article) {
+        try {
+            Long removed = redisTemplate.opsForZSet().remove(rankKey, articleMember.rawMember());
+            if (removed != null && removed > 0) {
+                String reason = article == null ? "missing" : "status=" + article.getStatus();
+                log.info("Removed invalid hot rank member, key: {}, articleId: {}, reason: {}", rankKey, articleMember.articleId(), reason);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to evict invalid hot rank member, key: {}, articleId: {}", rankKey, articleMember.articleId(), e);
         }
-        Set<Integer> existingIds = rankedList.stream()
-                .map(ArticleListVO::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
-        for (ArticleListVO article : fallback.getList()) {
-            if (article == null || article.getId() == null || !existingIds.add(article.getId())) {
-                continue;
+    }
+
+    private void evictDuplicateRankedMember(String rankKey, RankedArticleMember articleMember) {
+        try {
+            Long removed = redisTemplate.opsForZSet().remove(rankKey, articleMember.rawMember());
+            if (removed != null && removed > 0) {
+                log.info("Removed duplicate hot rank member, key: {}, articleId: {}", rankKey, articleMember.articleId());
             }
-            rankedList.add(article);
-            if (rankedList.size() >= pageSize) {
-                return;
-            }
+        } catch (Exception e) {
+            log.warn("Failed to evict duplicate hot rank member, key: {}, articleId: {}", rankKey, articleMember.articleId(), e);
         }
     }
 
@@ -243,6 +306,9 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     }
 
     private record HotFallbackRequest(Integer pageNo, Integer pageSize) {
+    }
+
+    private record RankedArticleMember(Integer articleId, Object rawMember) {
     }
 
     /**
