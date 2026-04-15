@@ -23,6 +23,9 @@ public class RequestLoggingFilter extends OncePerRequestFilter {
         String uri = request.getRequestURI();
         String method = request.getMethod();
         String authHeader = request.getHeader("token");
+        if (authHeader == null || authHeader.isBlank()) {
+            authHeader = request.getHeader("Authorization");
+        }
 
         log.info("Request received: {} {}, Auth present: {}", method, uri, authHeader != null ? "yes" : "no");
 

@@ -6,6 +6,8 @@ import fun.amireux.chat.book.framework.common.pojo.ErrorType;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.multipart.MaxUploadSizeExceededException;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.servlet.resource.NoResourceFoundException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -43,6 +45,22 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.NOT_FOUND)
                 .body(CommonResult.error(ErrorType.ERROR_404.code(), "资源不存在: " + ex.getResourcePath()));
+    }
+
+    @ExceptionHandler(MaxUploadSizeExceededException.class)
+    public ResponseEntity<CommonResult<Void>> handleMaxUploadSizeExceeded(MaxUploadSizeExceededException ex) {
+        log.warn("上传文件超过大小限制: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(CommonResult.error(ErrorType.ERROR_400.code(), "上传文件过大"));
+    }
+
+    @ExceptionHandler(MultipartException.class)
+    public ResponseEntity<CommonResult<Void>> handleMultipartException(MultipartException ex) {
+        log.warn("Multipart 请求解析失败: {}", ex.getMessage(), ex);
+        return ResponseEntity
+                .status(HttpStatus.BAD_REQUEST)
+                .body(CommonResult.error(ErrorType.ERROR_400.code(), "文件上传请求格式错误"));
     }
 
     /**
