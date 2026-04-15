@@ -16,4 +16,9 @@ public class DelayedEvictHotCacheEvent {
     private String sourceEventId;
 
     private Integer articleId;
+
+    /**
+     * Backward compatible with already queued messages that do not carry this field.
+     */
+    private Integer attempt;
 }
