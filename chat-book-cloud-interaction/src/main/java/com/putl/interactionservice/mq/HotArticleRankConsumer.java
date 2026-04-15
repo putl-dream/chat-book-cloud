@@ -29,6 +29,7 @@ public class HotArticleRankConsumer {
     private static final Duration HOT_EVENT_IDEMPOTENT_TTL = Duration.ofDays(1);
     private static final Duration HOT_DAY_RANK_TTL = Duration.ofDays(2);
     private static final Duration HOT_EVICT_LOCK_TTL = Duration.ofSeconds(5);
+    private static final int MAX_HOT_CACHE_EVICT_ATTEMPTS = 3;
     private static final DateTimeFormatter DAY_FORMATTER = DateTimeFormatter.BASIC_ISO_DATE;
     private static final DefaultRedisScript<List> APPLY_HOT_SCORE_SCRIPT = buildApplyHotScoreScript();
 
@@ -82,6 +83,7 @@ public class HotArticleRankConsumer {
             .eventId(UUID.randomUUID().toString())
             .sourceEventId(event.getEventId())
             .articleId(event.getArticleId())
+            .attempt(1)
             .build();
 
         try {
@@ -98,13 +100,25 @@ public class HotArticleRankConsumer {
 
     @RabbitListener(queues = MqConstant.HOT_CACHE_EVICT_EXECUTE_QUEUE)
     public void consumeDelayedHotCacheEvict(DelayedEvictHotCacheEvent event) {
-        CommonResult<Void> result = articleClient.evictHotPageCache();
-        if (result == null || !result.isSuccess()) {
-            throw new IllegalStateException("Failed to evict hot page cache, response: " + result);
+        if (event == null) {
+            log.warn("Ignore null delayed hot cache evict event");
+            return;
         }
-        log.debug("Evicted hot article cache, sourceEventId: {}, articleId: {}",
-            event == null ? null : event.getSourceEventId(),
-            event == null ? null : event.getArticleId());
+
+        int attempt = resolveAttempt(event);
+        try {
+            CommonResult<Void> result = articleClient.evictHotPageCache();
+            if (result == null || !result.isSuccess()) {
+                scheduleHotCacheEvictRetry(event, attempt, "response=" + result, null);
+                return;
+            }
+            log.debug("Evicted hot article cache, sourceEventId: {}, articleId: {}, attempt: {}",
+                event.getSourceEventId(),
+                event.getArticleId(),
+                attempt);
+        } catch (Exception e) {
+            scheduleHotCacheEvictRetry(event, attempt, "exception", e);
+        }
     }
 
     private static boolean scriptFlag(List<?> values, int index) {
@@ -116,6 +130,55 @@ public class HotArticleRankConsumer {
             return number.longValue() == 1L;
         }
         return "1".equals(String.valueOf(value));
+    }
+
+    private int resolveAttempt(DelayedEvictHotCacheEvent event) {
+        if (event.getAttempt() == null || event.getAttempt() < 1) {
+            return 1;
+        }
+        return event.getAttempt();
+    }
+
+    private void scheduleHotCacheEvictRetry(DelayedEvictHotCacheEvent event,
+                                            int attempt,
+                                            String reason,
+                                            Exception exception) {
+        if (attempt >= MAX_HOT_CACHE_EVICT_ATTEMPTS) {
+            log.error("Failed to evict hot page cache after {} attempts, sourceEventId: {}, articleId: {}, reason: {}",
+                attempt,
+                event.getSourceEventId(),
+                event.getArticleId(),
+                reason,
+                exception);
+            return;
+        }
+
+        DelayedEvictHotCacheEvent retryEvent = DelayedEvictHotCacheEvent.builder()
+            .eventId(UUID.randomUUID().toString())
+            .sourceEventId(event.getSourceEventId())
+            .articleId(event.getArticleId())
+            .attempt(attempt + 1)
+            .build();
+
+        try {
+            rabbitTemplate.convertAndSend(
+                MqConstant.HOT_EXCHANGE,
+                MqConstant.HOT_CACHE_EVICT_DELAY_ROUTING_KEY,
+                retryEvent
+            );
+            log.warn("Retry delayed hot cache evict scheduled, sourceEventId: {}, articleId: {}, nextAttempt: {}, reason: {}",
+                event.getSourceEventId(),
+                event.getArticleId(),
+                attempt + 1,
+                reason,
+                exception);
+        } catch (Exception publishException) {
+            log.error("Failed to schedule delayed hot cache evict retry, sourceEventId: {}, articleId: {}, nextAttempt: {}",
+                event.getSourceEventId(),
+                event.getArticleId(),
+                attempt + 1,
+                publishException);
+        }
     }
 
     private static DefaultRedisScript<List> buildApplyHotScoreScript() {

@@ -1,6 +1,11 @@
 spring:
   config:
     import: optional:nacos:article-service-${spring.profiles.active}.yml
+  servlet:
+    multipart:
+      enabled: true
+      max-file-size: 100MB
+      max-request-size: 100MB
   cloud:
     circuitbreaker:
       bulkhead:
@@ -33,6 +38,11 @@ resilience4j:
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 4s
+        cancelRunningFuture: true
 
 file:
   storage:

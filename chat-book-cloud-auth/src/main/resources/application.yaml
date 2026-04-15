@@ -36,5 +36,5 @@ mybatis-plus:
 
 # JWT Token Expiration Configuration
 auth:
-  jwt-access-expiration: 15   # Access token expiration in minutes
+  jwt-access-expiration: 120   # Access token expiration in minutes
   jwt-refresh-expiration: 7   # Refresh token expiration in days

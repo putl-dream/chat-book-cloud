@@ -6,6 +6,8 @@ import com.putl.interactionservice.entity.ArticleStatDO;
 import com.putl.interactionservice.mapper.ArticleStatMapper;
 import com.putl.interactionservice.mapper.ReviewMapper;
 import com.putl.interactionservice.mapper.UserFootMapper;
+import com.putl.interactionservice.mapper.dto.ArticleCommentCountAggregate;
+import com.putl.interactionservice.mapper.dto.ArticleFootStatAggregate;
 import com.putl.interactionservice.service.HotArticleRankService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -60,10 +62,19 @@ class UserFootServiceImplTest {
                 .commentCount(6L)
                 .collectCount(3L)
                 .build();
+        ArticleFootStatAggregate footAggregate = new ArticleFootStatAggregate();
+        footAggregate.setArticleId(missingArticleId);
+        footAggregate.setTotalCount(15L);
+        footAggregate.setReadCount(0L);
+        footAggregate.setPraiseCount(7L);
+        footAggregate.setCollectCount(4L);
+        ArticleCommentCountAggregate commentAggregate = new ArticleCommentCountAggregate();
+        commentAggregate.setArticleId(missingArticleId);
+        commentAggregate.setCommentCount(5L);
+
         given(articleStatMapper.selectList(any())).willReturn(List.of(existingStat));
-        given(articleStatMapper.selectOne(any())).willReturn(null);
-        given(userFootMapper.selectCount(any())).willReturn(15L, 7L, 4L);
-        given(reviewMapper.selectCount(any())).willReturn(5L);
+        given(userFootMapper.aggregateArticleStats(any())).willReturn(List.of(footAggregate));
+        given(reviewMapper.countByArticleIds(any())).willReturn(List.of(commentAggregate));
 
         List<UserFootListVO> result = userFootService.getUserFootListByArticleIds(List.of(existingArticleId, missingArticleId));
 
