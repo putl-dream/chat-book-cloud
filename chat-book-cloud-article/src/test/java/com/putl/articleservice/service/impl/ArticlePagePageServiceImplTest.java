@@ -6,6 +6,8 @@ import com.putl.articleservice.enums.ArticleStatus;
 import com.putl.articleservice.mapper.ArticleMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.utils.PageResult;
+import com.putl.interactionservice.api.InteractionClient;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -48,6 +50,9 @@ class ArticlePagePageServiceImplTest {
     @Mock
     private ZSetOperations<String, Object> zSetOperations;
 
+    @Mock
+    private InteractionClient interactionClient;
+
     private ArticlePagePageServiceImpl service;
 
     @BeforeEach
@@ -55,6 +60,7 @@ class ArticlePagePageServiceImplTest {
         service = spy(new ArticlePagePageServiceImpl());
         ReflectionTestUtils.setField(service, "articleMapper", articleMapper);
         ReflectionTestUtils.setField(service, "redisTemplate", redisTemplate);
+        ReflectionTestUtils.setField(service, "interactionClient", interactionClient);
         ReflectionTestUtils.setField(service, "env", ENV);
 
         when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
@@ -103,6 +109,24 @@ class ArticlePagePageServiceImplTest {
         verify(zSetOperations).remove(HOT_ALL_KEY, 13);
         verify(zSetOperations).remove(HOT_ALL_KEY, 17);
         verify(service, never()).toBean(eq(1), eq(5), any(Wrapper.class));
+    }
+
+    @Test
+    void getHotPageShouldTriggerLazyInitializationWhenGlobalRankIsEmpty() {
+        when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(0L, 2L, 2L);
+        when(interactionClient.initializeAllHotRankIfAbsent()).thenReturn(CommonResult.success(2L));
+        when(zSetOperations.reverseRange(HOT_ALL_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17));
+        when(articleMapper.selectBatchIds(anyList())).thenReturn(List.of(
+            article(13, ArticleStatus.PUBLISHED),
+            article(17, ArticleStatus.PUBLISHED)
+        ));
+
+        PageResult<ArticleListVO> result = service.getHotPage(1, 5);
+
+        assertThat(result.getList()).extracting(ArticleListVO::getId)
+            .containsExactly(13, 17);
+        assertThat(result.getTotal()).isEqualTo(2L);
+        verify(interactionClient).initializeAllHotRankIfAbsent();
     }
 
     @Test

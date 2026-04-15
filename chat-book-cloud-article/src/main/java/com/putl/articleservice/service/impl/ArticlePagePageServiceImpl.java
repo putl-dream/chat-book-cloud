@@ -12,6 +12,8 @@ import com.putl.articleservice.mapper.entity.TagDO;
 import com.putl.articleservice.service.ArticlePageService;
 import com.putl.articleservice.service.TagService;
 import com.putl.articleservice.utils.PageResult;
+import com.putl.interactionservice.api.InteractionClient;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.redis.constant.RedisKeyConstants;
 import jakarta.annotation.Resource;
 import lombok.extern.slf4j.Slf4j;
@@ -62,6 +64,9 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
 
+    @Resource
+    private InteractionClient interactionClient;
+
     @Value("${spring.profiles.active:local}")
     private String env;
 
@@ -89,6 +94,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
      */
     @Override
     public PageResult<ArticleListVO> getHotPage(Integer pageNo, Integer pageSize) {
+        ensureAllHotRankReady();
         return getRankedHotPage(
                 RedisKeyConstants.interactionHotAll(env),
                 pageNo,
@@ -120,6 +126,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         long requiredCount = start + pageSize;
 
         try {
+            ensureAllHotRankReady();
             Long dayRankTotal = redisTemplate.opsForZSet().zCard(dayRankKey);
             Long allRankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
             if ((dayRankTotal == null || dayRankTotal == 0) && (allRankTotal == null || allRankTotal == 0)) {
@@ -286,6 +293,23 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
             }
         } catch (Exception e) {
             log.warn("Failed to evict duplicate hot rank member, key: {}, articleId: {}", rankKey, articleMember.articleId(), e);
+        }
+    }
+
+    private void ensureAllHotRankReady() {
+        String allRankKey = RedisKeyConstants.interactionHotAll(env);
+        try {
+            Long rankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
+            if (rankTotal != null && rankTotal > 0) {
+                return;
+            }
+
+            CommonResult<Long> result = interactionClient.initializeAllHotRankIfAbsent();
+            if (result == null || !result.isSuccess()) {
+                log.warn("Lazy initialization of global hot rank failed, response: {}", result);
+            }
+        } catch (Exception e) {
+            log.warn("Failed to trigger lazy initialization of global hot rank, key: {}", allRankKey, e);
         }
     }
 

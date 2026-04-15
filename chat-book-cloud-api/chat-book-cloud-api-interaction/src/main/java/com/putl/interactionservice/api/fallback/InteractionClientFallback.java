@@ -66,6 +66,12 @@ public class InteractionClientFallback implements FallbackFactory<InteractionCli
             }
 
             @Override
+            public CommonResult<Long> initializeAllHotRankIfAbsent() {
+                log.warn("[InteractionClient] initializeAllHotRankIfAbsent fallback");
+                return CommonResult.error(500, "Interaction service unavailable");
+            }
+
+            @Override
             public CommonResult<List<ArticleListVO>> getHistory(Integer page, Integer size) {
                 log.warn("[InteractionClient] getHistory fallback, page: {}, size: {}", page, size);
                 return CommonResult.error(500, "Interaction service unavailable");

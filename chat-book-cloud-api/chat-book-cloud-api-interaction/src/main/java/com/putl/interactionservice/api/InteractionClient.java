@@ -41,6 +41,9 @@ public interface InteractionClient {
     @PostMapping("/interaction/foot/getUserFootListByArticleIds")
     CommonResult<List<UserFootListVO>> getUserFootListByArticleIds(@RequestBody List<Integer> articleIds);
 
+    @PostMapping("/interaction/internal/hot/initialize-all")
+    CommonResult<Long> initializeAllHotRankIfAbsent();
+
     @GetMapping("/interaction/foot/getHistory")
     CommonResult<List<ArticleListVO>> getHistory(@RequestParam("page") Integer page, @RequestParam("size") Integer size);
 

@@ -2,6 +2,8 @@ package com.putl.interactionservice.service;
 
 public interface HotArticleRankService {
 
+    long initializeAllRankIfAbsent();
+
     boolean tryAcquireViewToken(Integer articleId, Integer userId);
 
     void recordView(Integer articleId);
