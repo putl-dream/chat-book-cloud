@@ -13,6 +13,7 @@ import org.springframework.amqp.rabbit.core.RabbitTemplate;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.stereotype.Component;
 
 import java.time.Duration;
@@ -56,16 +57,13 @@ public class HotArticleRankConsumer {
         String dayKey = RedisKeyConstants.interactionHotDay(env, LocalDate.now().format(DAY_FORMATTER));
         String evictLockKey = RedisKeyConstants.interactionHotEvictLock(env);
 
-        List<?> scriptResult = redisTemplate.execute(
-            APPLY_HOT_SCORE_SCRIPT,
-            List.of(eventKey, allKey, dayKey, evictLockKey),
-            event.getEventId(),
-            String.valueOf(HOT_EVENT_IDEMPOTENT_TTL.getSeconds()),
-            String.valueOf(event.getDelta()),
+        List<?> scriptResult = executeApplyHotScoreScript(
+            event,
             articleId,
-            String.valueOf(HOT_DAY_RANK_TTL.getSeconds()),
-            event.getEventId(),
-            String.valueOf(HOT_EVICT_LOCK_TTL.getSeconds())
+            eventKey,
+            allKey,
+            dayKey,
+            evictLockKey
         );
 
         boolean processed = scriptFlag(scriptResult, 0);
@@ -137,6 +135,30 @@ public class HotArticleRankConsumer {
             return 1;
         }
         return event.getAttempt();
+    }
+
+    private List<?> executeApplyHotScoreScript(HotScoreChangedEvent event,
+                                               String articleId,
+                                               String eventKey,
+                                               String allKey,
+                                               String dayKey,
+                                               String evictLockKey) {
+        // Lua arguments must stay as plain strings. The shared object RedisTemplate uses
+        // JSON value serialization, which would wrap TTL values in quotes and break EX/EXPIRE.
+        RedisSerializer<String> argsSerializer = redisTemplate.getStringSerializer();
+        return redisTemplate.execute(
+            APPLY_HOT_SCORE_SCRIPT,
+            argsSerializer,
+            null,
+            List.of(eventKey, allKey, dayKey, evictLockKey),
+            event.getEventId(),
+            String.valueOf(HOT_EVENT_IDEMPOTENT_TTL.getSeconds()),
+            String.valueOf(event.getDelta()),
+            articleId,
+            String.valueOf(HOT_DAY_RANK_TTL.getSeconds()),
+            event.getEventId(),
+            String.valueOf(HOT_EVICT_LOCK_TTL.getSeconds())
+        );
     }
 
     private void scheduleHotCacheEvictRetry(DelayedEvictHotCacheEvent event,
