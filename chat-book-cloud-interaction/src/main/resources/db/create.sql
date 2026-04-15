@@ -63,6 +63,9 @@ create table user_foot
 create index idx_document_user
     on user_foot (document_user_id);
 
+create index idx_document_id
+    on user_foot (document_id);
+
 create table article_stat
 (
     id            int auto_increment comment '主键id'

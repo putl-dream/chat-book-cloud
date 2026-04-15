@@ -33,6 +33,11 @@ resilience4j:
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 4s
+        cancelRunningFuture: true
 
 file:
   storage:

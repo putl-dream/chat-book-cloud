@@ -12,6 +12,8 @@ import com.putl.interactionservice.entity.UserFootDO;
 import com.putl.interactionservice.mapper.ArticleStatMapper;
 import com.putl.interactionservice.mapper.ReviewMapper;
 import com.putl.interactionservice.mapper.UserFootMapper;
+import com.putl.interactionservice.mapper.dto.ArticleCommentCountAggregate;
+import com.putl.interactionservice.mapper.dto.ArticleFootStatAggregate;
 import com.putl.interactionservice.service.HotArticleRankService;
 import com.putl.interactionservice.service.UserFootService;
 import com.putl.interactionservice.controller.vo.NotificationVO;
@@ -194,21 +196,22 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         if (articleIds == null || articleIds.isEmpty()) {
             return new ArrayList<>();
         }
-        List<ArticleStatDO> stats = articleStatMapper.selectList(
-                Wrappers.<ArticleStatDO>lambdaQuery().in(ArticleStatDO::getArticleId, articleIds));
+        List<Integer> uniqueArticleIds = articleIds.stream()
+            .filter(Objects::nonNull)
+            .distinct()
+            .toList();
+        List<ArticleStatDO> stats = uniqueArticleIds.isEmpty()
+            ? Collections.emptyList()
+            : articleStatMapper.selectList(
+                Wrappers.<ArticleStatDO>lambdaQuery().in(ArticleStatDO::getArticleId, uniqueArticleIds));
         Map<Integer, ArticleStatDO> statMap = stats.stream()
                 .collect(Collectors.toMap(ArticleStatDO::getArticleId, Function.identity()));
 
-        List<Integer> missingArticleIds = articleIds.stream()
-                .filter(Objects::nonNull)
-                .filter(articleId -> !statMap.containsKey(articleId))
-                .distinct()
-                .toList();
-        for (Integer missingArticleId : missingArticleIds) {
-            ArticleStatDO rebuiltStat = ensureArticleStat(missingArticleId);
-            if (rebuiltStat != null) {
-                statMap.put(missingArticleId, rebuiltStat);
-            }
+        List<Integer> missingArticleIds = uniqueArticleIds.stream()
+            .filter(articleId -> !statMap.containsKey(articleId))
+            .toList();
+        if (!missingArticleIds.isEmpty()) {
+            statMap.putAll(rebuildMissingArticleStats(missingArticleIds));
         }
 
         List<UserFootListVO> result = new ArrayList<>();
@@ -360,6 +363,53 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         return build;
     }
 
+    private Map<Integer, ArticleStatDO> rebuildMissingArticleStats(List<Integer> missingArticleIds) {
+        Map<Integer, ArticleStatDO> rebuiltStats = new HashMap<>();
+        List<ArticleFootStatAggregate> footAggregates = userFootMapper.aggregateArticleStats(missingArticleIds);
+        if (footAggregates == null) {
+            footAggregates = Collections.emptyList();
+        }
+        Map<Integer, ArticleFootStatAggregate> footStatMap = footAggregates.stream()
+            .filter(Objects::nonNull)
+            .filter(item -> item.getArticleId() != null)
+            .collect(Collectors.toMap(ArticleFootStatAggregate::getArticleId, Function.identity(), (left, right) -> left));
+        List<ArticleCommentCountAggregate> commentAggregates = reviewMapper.countByArticleIds(missingArticleIds);
+        if (commentAggregates == null) {
+            commentAggregates = Collections.emptyList();
+        }
+        Map<Integer, Long> commentCountMap = commentAggregates.stream()
+            .filter(Objects::nonNull)
+            .filter(item -> item.getArticleId() != null)
+            .collect(Collectors.toMap(
+                ArticleCommentCountAggregate::getArticleId,
+                item -> defaultLong(item.getCommentCount()),
+                Long::max
+            ));
+
+        LocalDateTime now = LocalDateTime.now();
+        for (Integer articleId : missingArticleIds) {
+            ArticleFootStatAggregate aggregate = footStatMap.get(articleId);
+            long totalCount = aggregate == null ? 0L : defaultLong(aggregate.getTotalCount());
+            long readCount = aggregate == null ? 0L : defaultLong(aggregate.getReadCount());
+            ArticleStatDO rebuiltStat = ArticleStatDO.builder()
+                .articleId(articleId)
+                .viewCount(readCount > 0 ? readCount : totalCount)
+                .praiseCount(aggregate == null ? 0L : defaultLong(aggregate.getPraiseCount()))
+                .commentCount(commentCountMap.getOrDefault(articleId, 0L))
+                .collectCount(aggregate == null ? 0L : defaultLong(aggregate.getCollectCount()))
+                .createTime(now)
+                .updateTime(now)
+                .build();
+            try {
+                articleStatMapper.insert(rebuiltStat);
+            } catch (Exception e) {
+                log.debug("Concurrent articleStat insert ignored, articleId: {}", articleId, e);
+            }
+            rebuiltStats.put(articleId, rebuiltStat);
+        }
+        return rebuiltStats;
+    }
+
     private void incrementViewCount(Integer articleId) {
         ensureArticleStat(articleId);
         articleStatMapper.update(null, new UpdateWrapper<ArticleStatDO>()
@@ -385,5 +435,9 @@ public class UserFootServiceImpl extends ServiceImpl<UserFootMapper, UserFootDO>
         articleStatMapper.update(null, new UpdateWrapper<ArticleStatDO>()
             .eq("article_id", articleId)
             .setSql(column + " = GREATEST(" + column + " + (" + delta + "), 0), update_time = NOW()"));
+    }
+
+    private long defaultLong(Long value) {
+        return value == null ? 0L : value;
     }
 }
