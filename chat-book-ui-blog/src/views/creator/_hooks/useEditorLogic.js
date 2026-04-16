@@ -4,8 +4,8 @@ import { ElMessage, ElMessageBox } from 'element-plus';
 import { useEditor } from '@tiptap/vue-3';
 
 import { publishArticle, saveDraftArticle } from '@/views/article/_domain/article.js';
-import { getTagsByType } from '@/views/article/_domain/tag.js';
-import { ARTICLE_TYPE_ENUM, TAG_TYPE_ENUM } from '@/constants';
+import { getHotAuthorTags, searchAuthorTags } from '@/views/article/_domain/tag.js';
+import { ARTICLE_TYPE_ENUM } from '@/constants';
 import SocketService, { formatWsUrl } from '@/utils/websocket.js';
 import { API_CONFIG } from '@/config/index.js';
 import { clearDraft, isDraftNewer, loadDraft, saveDraft } from '@/utils/draftStorage.js';
@@ -84,13 +84,10 @@ export function useEditorLogic() {
     const {
         publishDialogVisible,
         publishForm,
-        topicTags,
-        techTags,
-        pathTags,
-        selectedTopicTags,
-        selectedTechTags,
-        selectedPathTag,
-        updateTagIds,
+        authorTagOptions,
+        setAuthorTags,
+        setAuthorTagOptions,
+        mergeAuthorTagOptions,
         handleCoverUpload,
         beforeCoverUpload
     } = useEditorForm();
@@ -200,30 +197,37 @@ export function useEditorLogic() {
         saveDraft(userId.value, articleId.value, buildCurrentPayload());
     };
 
+    const normalizeAuthorTagOptions = (options = []) => (
+        (options || [])
+            .filter((item) => item && item.name)
+            .map((item) => ({
+                id: item.id ?? item.name,
+                name: item.name
+            }))
+    );
+
     const loadTags = async () => {
         try {
-            const [topicRes, techRes, pathRes] = await Promise.all([
-                getTagsByType(TAG_TYPE_ENUM.TOPIC),
-                getTagsByType(TAG_TYPE_ENUM.TECH),
-                getTagsByType(TAG_TYPE_ENUM.PATH)
-            ]);
-            topicTags.value = topicRes || [];
-            techTags.value = techRes || [];
-            pathTags.value = pathRes || [];
+            const hotTags = await getHotAuthorTags(20);
+            setAuthorTagOptions(normalizeAuthorTagOptions(hotTags));
+            mergeAuthorTagOptions(publishForm.value.authorTags || []);
         } catch (error) {
-            console.error('加载标签失败:', error);
+            console.error('加载作者标签失败:', error);
         }
     };
 
-    const syncSelectedTags = (tagIds = []) => {
-        const nextTagIds = Array.isArray(tagIds) ? tagIds : [];
-        const topicIds = topicTags.value.map(tag => tag.id);
-        const techIds = techTags.value.map(tag => tag.id);
-        const pathIds = pathTags.value.map(tag => tag.id);
-
-        selectedTopicTags.value = nextTagIds.filter(id => topicIds.includes(id));
-        selectedTechTags.value = nextTagIds.filter(id => techIds.includes(id));
-        selectedPathTag.value = nextTagIds.find(id => pathIds.includes(id)) || null;
+    const handleAuthorTagSearch = async (keyword) => {
+        try {
+            if (!keyword || !keyword.trim()) {
+                await loadTags();
+                return;
+            }
+            const matchedTags = await searchAuthorTags(keyword.trim(), 20);
+            setAuthorTagOptions(normalizeAuthorTagOptions(matchedTags));
+            mergeAuthorTagOptions(publishForm.value.authorTags || []);
+        } catch (error) {
+            console.error('搜索作者标签失败:', error);
+        }
     };
 
     const applyPublishFormState = (sourceData = {}) => {
@@ -235,8 +239,8 @@ export function useEditorLogic() {
             ? sourceData.creationStatements
             : [];
         publishForm.value.cover = sourceData.cover || '';
-        publishForm.value.tagIds = sourceData.tagIds || [];
-        syncSelectedTags(publishForm.value.tagIds);
+        publishForm.value.authorTags = Array.isArray(sourceData.authorTags) ? sourceData.authorTags : [];
+        mergeAuthorTagOptions(publishForm.value.authorTags);
     };
 
     const setHydratingWindow = (active) => {
@@ -447,8 +451,8 @@ export function useEditorLogic() {
 
     const confirmPublish = () => {
         if (!title.value) return ElMessage.warning('请输入标题');
-        if (!publishForm.value.tagIds || publishForm.value.tagIds.length === 0) {
-            return ElMessage.warning('请至少选择一个文章标签');
+        if (!publishForm.value.authorTags || publishForm.value.authorTags.length === 0) {
+            return ElMessage.warning('请至少填写一个作者标签');
         }
         if (!publishForm.value.articleType) {
             return ElMessage.warning('请选择文章类型');
@@ -872,14 +876,9 @@ export function useEditorLogic() {
         wordCount,
         publishDialogVisible,
         publishForm,
-        topicTags,
+        authorTagOptions,
         layoutState,
         dragging,
-        techTags,
-        pathTags,
-        selectedTopicTags,
-        selectedTechTags,
-        selectedPathTag,
         isSaving,
         summaryGenerating,
         saveState,
@@ -896,7 +895,8 @@ export function useEditorLogic() {
         aiRenderTick,
         editorContentEditable,
 
-        updateTagIds,
+        setAuthorTags,
+        handleAuthorTagSearch,
         handleCoverUpload,
         beforeCoverUpload,
         handleExtractSummary,

@@ -27,7 +27,7 @@ public interface ArticleListCacheService {
     /**
      * 获取标签下的文章列表（仅第一页缓存）
      */
-    PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, Integer tagId);
+    PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, String authorTagName);
 
     /**
      * 失效首页最新文章缓存

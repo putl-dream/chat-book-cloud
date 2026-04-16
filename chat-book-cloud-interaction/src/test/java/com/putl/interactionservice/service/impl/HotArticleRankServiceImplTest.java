@@ -53,7 +53,6 @@ class HotArticleRankServiceImplTest {
         service = new HotArticleRankServiceImpl(redisTemplate, rabbitTemplate, articleStatMapper);
         ReflectionTestUtils.setField(service, "env", ENV);
         when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
-        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
     }
 
     @Test
@@ -69,6 +68,7 @@ class HotArticleRankServiceImplTest {
     @Test
     void initializeAllRankIfAbsentShouldWarmRedisFromArticleStats() {
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(0L, 0L, 2L);
+        when(redisTemplate.opsForValue()).thenReturn(valueOperations);
         when(valueOperations.setIfAbsent(eq(HOT_INIT_LOCK_KEY), any(), any(Duration.class))).thenReturn(true);
         when(articleStatMapper.selectAllForHotRank()).thenReturn(List.of(
             ArticleStatDO.builder().articleId(13).viewCount(2L).praiseCount(1L).commentCount(0L).collectCount(0L).build(),

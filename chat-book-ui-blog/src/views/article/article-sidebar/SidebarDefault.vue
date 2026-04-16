@@ -10,7 +10,7 @@
         </div>
 
         <div class="sidebar-module">
-            <ArticleTagCard :articleId="articleId" :tagIds="tagIds" />
+            <ArticleTagCard :articleId="articleId" :author-tags="authorTags" />
         </div>
 
         <div class="sidebar-module">
@@ -30,7 +30,7 @@ const props = defineProps({
         type: [Number, String],
         required: true
     },
-    tagIds: {
+    authorTags: {
         type: Array,
         default: () => []
     },

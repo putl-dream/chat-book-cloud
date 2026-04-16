@@ -14,7 +14,7 @@ export function useHomeLogic() {
   const currentFilters = ref({
     contentType: null,
     category: null,
-    tagId: null
+    tagName: null
   });
 
   const apiStrategy = {
@@ -52,13 +52,13 @@ export function useHomeLogic() {
   };
 
   // 按标签获取文章的策略
-  const fetchTagArticles = async (tagId) => {
+  const fetchTagArticles = async (authorTagName) => {
     if (loading.value || noMoreArticles.value) return;
     loading.value = true;
 
     try {
       const [listRes, recommendRes] = await Promise.all([
-        getTagPage(page.value, pageSize.value, tagId),
+        getTagPage(page.value, pageSize.value, authorTagName),
         getTodayHotPage(1, 5)
       ]);
 

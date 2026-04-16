@@ -117,7 +117,8 @@ export type ReviewArticle = {
   authorAvatar?: string | null;
   category: number;
   contentType?: number | null;
-  tagIds?: number[];
+  authorTags?: string[];
+  systemTags?: string[];
   createdAt: string;
   praiseCount: number;
   commentCount: number;
@@ -137,21 +138,27 @@ export type AdminOperationLog = {
   createTime: string;
 };
 
-export type AdminTag = {
+export type AdminSystemTag = {
   id: number;
   name: string;
-  type: 1 | 2 | 3 | number;
-  color: string;
+  code: string;
+  dimension: string;
+  description?: string | null;
+  status: string;
   sort: number;
-  relatedArticles?: number;
+  recommendWeight: number;
+  articleCount?: number;
 };
 
-export type AdminTagFormValues = {
+export type AdminSystemTagFormValues = {
   id?: number;
   name: string;
-  type: 1 | 2 | 3;
-  color: string;
+  code: string;
+  dimension: string;
+  description?: string;
+  status: string;
   sort: number;
+  recommendWeight: number;
 };
 
 export type InteractionEvent = {
@@ -182,7 +189,8 @@ export type ContentArticle = {
   authorAvatar?: string | null;
   category: number;
   contentType: number;
-  tagIds?: number[];
+  authorTags?: string[];
+  systemTags?: string[];
   status: number;
   praiseCount: number;
   commentCount: number;

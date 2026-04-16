@@ -35,7 +35,7 @@ export function buildArticlePayload(rawData) {
         content: rawData.html,
         category: rawData.publishForm.category,
         contentType: rawData.publishForm.contentType,
-        tagIds: rawData.publishForm.tagIds,
+        authorTags: rawData.publishForm.authorTags,
         abstractText: rawData.publishForm.abstractText,
         articleType: rawData.publishForm.articleType,
         creationStatements: rawData.publishForm.creationStatements,

@@ -1,6 +1,6 @@
 /**
  * 本地草稿存储工具
- * 基于 localStorage 实现，TTL 7 �?
+ * 基于 localStorage 实现，TTL 7 ?
  */
 
 const DRAFT_PREFIX = 'draft';
@@ -17,7 +17,7 @@ function getDraftKey(userId, articleId) {
 }
 
 /**
- * 获取 TTL 毫秒�?
+ * 获取 TTL 毫秒?
  * @returns {number}
  */
 function getTTLMs() {
@@ -39,10 +39,10 @@ function hasMeaningfulContent(draft) {
 }
 
 /**
- * 保存草稿�?localStorage
+ * 保存草稿?localStorage
  * @param {string|number} userId
  * @param {string|number|null} articleId
- * @param {object} data - buildPayload() 格式的数�?
+ * @param {object} data - buildPayload() 格式的数?
  * @returns {boolean} 是否保存成功
  */
 export function saveDraft(userId, articleId, data) {
@@ -56,7 +56,7 @@ export function saveDraft(userId, articleId, data) {
         content: data.content ?? '',
         category: data.category ?? null,
         contentType: data.contentType ?? 0,
-        tagIds: data.tagIds ?? [],
+        authorTags: data.authorTags ?? [],
         abstractText: data.abstractText ?? '',
         cover: data.cover ?? '',
         savedAt: new Date().toISOString()
@@ -68,7 +68,7 @@ export function saveDraft(userId, articleId, data) {
     try {
         const key = getDraftKey(userId, articleId);
         const payload = JSON.stringify(draft);
-        // 存入�?TTL 的结�?
+        // 存入?TTL 的结?
         const stored = JSON.stringify({
             data: draft,
             expireAt: Date.now() + getTTLMs()
@@ -82,10 +82,10 @@ export function saveDraft(userId, articleId, data) {
 }
 
 /**
- * �?localStorage 加载草稿
+ * ?localStorage 加载草稿
  * @param {string|number} userId
  * @param {string|number|null} articleId
- * @returns {object|null} 草稿数据�?null
+ * @returns {object|null} 草稿数据?null
  */
 export function loadDraft(userId, articleId) {
     if (!userId) return null;
@@ -97,13 +97,13 @@ export function loadDraft(userId, articleId) {
 
         const { data, expireAt } = JSON.parse(stored);
 
-        // 检�?TTL
+        // 检?TTL
         if (Date.now() > expireAt) {
             clearDraft(userId, articleId);
             return null;
         }
 
-        // 校验数据结构完整�?
+        // 校验数据结构完整?
         if (!data || typeof data !== 'object') {
             clearDraft(userId, articleId);
             return null;
@@ -132,7 +132,7 @@ export function clearDraft(userId, articleId) {
 }
 
 /**
- * 检查是否存在草�?
+ * 检查是否存在草?
  * @param {string|number} userId
  * @param {string|number|null} articleId
  * @returns {boolean}
@@ -146,7 +146,7 @@ export function hasDraft(userId, articleId) {
 /**
  * 比较草稿是否比服务端更新
  * @param {object} draft - 本地草稿
- * @param {string|number} serverSavedAt - 服务端更新时�?(ISO string 或时间戳)
+ * @param {string|number} serverSavedAt - 服务端更新时?(ISO string 或时间戳)
  * @returns {boolean} true if draft is newer
  */
 export function isDraftNewer(draft, serverSavedAt) {

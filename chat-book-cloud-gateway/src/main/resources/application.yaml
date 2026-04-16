@@ -48,11 +48,11 @@ spring:
                 redis-rate-limiter.burstCapacity: ${GATEWAY_RATE_LIMIT_BURST_CAPACITY:40}
                 redis-rate-limiter.requestedTokens: ${GATEWAY_RATE_LIMIT_REQUESTED_TOKENS:1}
 
-        # 文章服务核心业务 - /api/article/**, /api/page/**
+        # 文章服务核心业务 - /api/article/**, /api/page/**, /api/author-tag/**, /api/system-tag/**, /api/tag-map/**
         - id: article-service
           uri: ${ARTICLE_SERVICE_URI:lb://chat-book-cloud-article}
           predicates:
-            - Path=/api/article/**,/api/page/**,/api/tag/**
+            - Path=/api/article/**,/api/page/**,/api/tag/**,/api/author-tag/**,/api/system-tag/**,/api/tag-map/**
           filters:
             - StripPrefix=1
             - name: RequestRateLimiter
@@ -215,11 +215,11 @@ authentication:
       pattern: /api/page/adminArticlePage
     - name: admin-article-review-action-api
       pattern: /api/article/admin/**
-    - name: admin-tag-create-api
-      pattern: /api/tag/create
-    - name: admin-tag-update-api
-      pattern: /api/tag/update
-    - name: admin-tag-delete-api
-      pattern: /api/tag/delete
+    - name: admin-author-tag-api
+      pattern: /api/author-tag/admin/**
+    - name: admin-system-tag-api
+      pattern: /api/system-tag/**
+    - name: admin-tag-map-api
+      pattern: /api/tag-map/**
     - name: admin-review-api
       pattern: /api/interaction/admin/review/**

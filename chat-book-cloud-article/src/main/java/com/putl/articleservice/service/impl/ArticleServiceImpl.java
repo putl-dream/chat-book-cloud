@@ -17,8 +17,10 @@ import com.putl.articleservice.mapper.entity.AdminOperationLogDO;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.mapper.entity.ArticleInfoDO;
 import com.putl.articleservice.mapper.entity.ArticleReviewLogDO;
+import com.putl.articleservice.service.ArticleTagService;
 import com.putl.articleservice.service.ArticleService;
-import com.putl.articleservice.service.TagService;
+import com.putl.articleservice.service.AuthorTagService;
+import com.putl.articleservice.service.SystemTagService;
 import com.putl.articleservice.utils.PageResult;
 import com.putl.interactionservice.api.InteractionClient;
 import com.putl.interactionservice.api.dto.UserFootListVO;
@@ -61,7 +63,9 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
     private final AdminOperationLogMapper adminOperationLogMapper;
     private final InteractionClient interactionClient;
     private final UserClient userClient;
-    private final TagService tagService;
+    private final ArticleTagService articleTagService;
+    private final AuthorTagService authorTagService;
+    private final SystemTagService systemTagService;
 
     @Override
     @Cacheable(value = "articleCache", key = "#articleId", unless = "#result == null")
@@ -95,8 +99,8 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
             articleVO.setAuthorAvatar(author.getPhoto());
         }
 
-        // 回填文章标签
-        articleVO.setTagIds(tagService.getArticleTagIds(articleId));
+        articleVO.setAuthorTags(authorTagService.getArticleAuthorTags(articleId));
+        articleVO.setSystemTags(systemTagService.getArticleSystemTags(articleId));
         fillInteractionState(articleId, articleVO);
         return articleVO;
     }
@@ -124,9 +128,18 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
         Page<ArticleDO> articleDOPage = articleMapper.selectPage(page, Wrappers.<ArticleDO>lambdaQuery()
                 .ne(ArticleDO::getStatus, ArticleStatus.DELETED));
         List<ArticleVO> articleVOS = BeanUtil.toBean(articleDOPage.getRecords(), ArticleVO.class);
+        Map<Integer, List<String>> authorTagMap = authorTagService.getArticleAuthorTagMap(
+                articleDOPage.getRecords().stream().map(ArticleDO::getId).toList()
+        );
+        Map<Integer, List<String>> systemTagMap = systemTagService.getArticleSystemTagMap(
+                articleDOPage.getRecords().stream().map(ArticleDO::getId).toList()
+        );
         for (int i = 0; i < articleVOS.size(); i++) {
+            Integer articleId = articleDOPage.getRecords().get(i).getId();
             articleVOS.get(i).setUpdatedAt(articleDOPage.getRecords().get(i).getUpdateTime());
             articleVOS.get(i).setCreationStatements(parseCreationStatements(articleDOPage.getRecords().get(i).getCreationStatement()));
+            articleVOS.get(i).setAuthorTags(authorTagMap.get(articleId));
+            articleVOS.get(i).setSystemTags(systemTagMap.get(articleId));
         }
         return new PageResult<>(articleVOS, articleDOPage.getTotal());
     }
@@ -245,10 +258,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .build();
         articleMapper.insert(articleDO);
         upsertArticleInfo(articleDO, command.getContent(), usernameSnapshot);
-        // 保存文章标签
-        if (command.getTagIds() != null && !command.getTagIds().isEmpty()) {
-            tagService.setArticleTags(articleDO.getId(), command.getTagIds());
-        }
+        articleTagService.replaceArticleTags(articleDO.getId(), currentUserId, command.getAuthorTags());
         return articleMapper.selectById(articleDO.getId());
     }
 
@@ -275,8 +285,7 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
                 .build();
         articleMapper.updateById(articleDO);
         upsertArticleInfo(articleMapper.selectById(existing.getId()), command.getContent(), articleDO.getUserName());
-        // 更新文章标签
-        tagService.setArticleTags(existing.getId(), command.getTagIds());
+        articleTagService.replaceArticleTags(existing.getId(), currentUserId, command.getAuthorTags());
         return articleMapper.selectById(existing.getId());
     }
 
@@ -340,8 +349,8 @@ public class ArticleServiceImpl extends BaseAbstractArticle implements ArticleSe
         if (command == null) {
             throw new BusinessException(400, "文章内容不能为空");
         }
-        if (command.getTagIds() == null || command.getTagIds().isEmpty()) {
-            throw new BusinessException(400, "文章标签不能为空");
+        if (command.getAuthorTags() == null || command.getAuthorTags().isEmpty()) {
+            throw new BusinessException(400, "作者标签不能为空");
         }
 
         String articleType = normalizeArticleType(command.getArticleType());

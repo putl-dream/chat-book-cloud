@@ -17,54 +17,101 @@ create table article
 )
     comment '文章表' row_format = DYNAMIC;
 
-create table tag
+create table author_tag
 (
-    id          int auto_increment primary key,
-    name        varchar(32)  not null comment '标签名称',
-    type        tinyint      not null default 1 comment '标签类型 1-技术栈 2-学习路径 3-主题标签',
-    color       varchar(16)  default '#409EFF' comment '标签颜色',
-    sort        int          default 0 comment '排序权重',
-    create_time datetime     default CURRENT_TIMESTAMP,
-    update_time datetime     default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
-    unique key uk_name_type (name, type)
-) comment '标签表' row_format = DYNAMIC;
+    id              int auto_increment primary key,
+    name            varchar(32) collate utf8mb4_bin        not null comment '作者标签展示名称',
+    normalized_name varchar(64)                            not null default '' comment '轻量规范化名称',
+    creator_id      int                                    null comment '首个创建者',
+    status          varchar(16)                            not null default 'ACTIVE' comment 'ACTIVE/DISABLED',
+    create_time     datetime                               not null default CURRENT_TIMESTAMP,
+    update_time     datetime                               not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    unique key uk_author_tag_name (name),
+    key idx_author_tag_normalized_name (normalized_name),
+    key idx_author_tag_status (status)
+) comment '作者标签表' row_format = DYNAMIC;
 
-create table article_tag
+create table article_author_tag_rel
 (
-    id          int auto_increment primary key,
-    article_id  int          not null comment '文章ID',
-    tag_id      int          not null comment '标签ID',
-    create_time datetime     default CURRENT_TIMESTAMP,
-    unique key uk_article_tag (article_id, tag_id),
-    key idx_tag_id (tag_id),
-    constraint fk_article_tag_article foreign key (article_id) references article(id) on delete cascade,
-    constraint fk_article_tag_tag foreign key (tag_id) references tag(id) on delete cascade
-) comment '文章标签关联表' row_format = DYNAMIC;
+    id             int auto_increment primary key,
+    article_id     int                                    not null comment '文章ID',
+    author_tag_id  int                                    not null comment '作者标签ID',
+    create_time    datetime                               not null default CURRENT_TIMESTAMP,
+    unique key uk_article_author_tag (article_id, author_tag_id),
+    key idx_article_author_tag_rel_tag_id (author_tag_id),
+    constraint fk_article_author_tag_rel_article foreign key (article_id) references article(id) on delete cascade,
+    constraint fk_article_author_tag_rel_tag foreign key (author_tag_id) references author_tag(id) on delete cascade
+) comment '文章作者标签关联表' row_format = DYNAMIC;
 
--- 初始化预置标签数据
-insert into tag (name, type, color, sort) values
--- 主题标签 (type=3)
-('AI / 大模型', 3, '#7C3AED', 1),
-('技术选型', 3, '#0F766E', 2),
-('架构设计', 3, '#EA580C', 3),
-('工程实践', 3, '#2563EB', 4),
-('产品思考', 3, '#BE185D', 5),
-('行业观察', 3, '#475569', 6),
--- 技术栈标签 (type=1)
-('Java', 1, '#B07219', 101),
-('Python', 1, '#3572A5', 102),
-('Go', 1, '#00ADD8', 103),
-('Vue', 1, '#41B883', 104),
-('React', 1, '#61DAFB', 105),
-('MySQL', 1, '#4479A1', 106),
-('Spring Boot', 1, '#6DB33F', 107),
-('Docker', 1, '#2496ED', 108),
--- 学习路径标签 (type=2)
-('入门', 2, '#67C23A', 201),
-('进阶', 2, '#E6A23C', 202),
-('实战', 2, '#F56C6C', 203),
-('源码', 2, '#909399', 204),
-('面试', 2, '#C71585', 205);
+create table system_tag
+(
+    id                int auto_increment primary key,
+    name              varchar(32)                            not null comment '系统标签名称',
+    code              varchar(64)                            not null comment '稳定编码',
+    dimension         varchar(32)                            not null comment '标签维度',
+    description       varchar(255)                           not null default '' comment '标签描述',
+    status            varchar(16)                            not null default 'ACTIVE' comment 'ACTIVE/DISABLED',
+    sort              int                                    not null default 0 comment '排序权重',
+    recommend_weight  decimal(10, 2)                         not null default 1.00 comment '推荐权重',
+    create_time       datetime                               not null default CURRENT_TIMESTAMP,
+    update_time       datetime                               not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    unique key uk_system_tag_code (code),
+    key idx_system_tag_dimension_status (dimension, status)
+) comment '系统标签表' row_format = DYNAMIC;
+
+create table article_system_tag_rel
+(
+    id             int auto_increment primary key,
+    article_id     int                                    not null comment '文章ID',
+    system_tag_id  int                                    not null comment '系统标签ID',
+    source         varchar(16)                            not null default 'RULE' comment 'RULE/VECTOR/ADMIN',
+    confidence     decimal(10, 2)                         not null default 1.00 comment '置信度',
+    create_time    datetime                               not null default CURRENT_TIMESTAMP,
+    update_time    datetime                               not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    unique key uk_article_system_tag (article_id, system_tag_id),
+    key idx_article_system_tag_rel_tag_id (system_tag_id),
+    key idx_article_system_tag_rel_article_source (article_id, source),
+    constraint fk_article_system_tag_rel_article foreign key (article_id) references article(id) on delete cascade,
+    constraint fk_article_system_tag_rel_tag foreign key (system_tag_id) references system_tag(id) on delete cascade
+) comment '文章系统标签关联表' row_format = DYNAMIC;
+
+create table author_tag_system_tag_map
+(
+    id             int auto_increment primary key,
+    author_tag_id  int                                    not null comment '作者标签ID',
+    system_tag_id  int                                    not null comment '系统标签ID',
+    source         varchar(16)                            not null default 'RULE' comment 'RULE/VECTOR/ADMIN',
+    confidence     decimal(10, 2)                         not null default 1.00 comment '置信度',
+    status         varchar(16)                            not null default 'ACTIVE' comment 'ACTIVE/DISABLED',
+    create_time    datetime                               not null default CURRENT_TIMESTAMP,
+    update_time    datetime                               not null default CURRENT_TIMESTAMP on update CURRENT_TIMESTAMP,
+    unique key uk_author_system_tag_map (author_tag_id, system_tag_id),
+    key idx_author_system_tag_map_tag (system_tag_id),
+    key idx_author_system_tag_map_status (status),
+    constraint fk_author_system_tag_map_author foreign key (author_tag_id) references author_tag(id) on delete cascade,
+    constraint fk_author_system_tag_map_system foreign key (system_tag_id) references system_tag(id) on delete cascade
+) comment '作者标签与系统标签映射表' row_format = DYNAMIC;
+
+insert into system_tag (name, code, dimension, description, sort, recommend_weight) values
+('AI / 大模型', 'TOPIC_AI_LLM', 'topic', 'AI 与大模型相关内容', 10, 1.20),
+('技术选型', 'TOPIC_TECH_SELECTION', 'topic', '技术选型与方案比较', 20, 1.00),
+('架构设计', 'TOPIC_ARCHITECTURE', 'topic', '系统架构与设计方法', 30, 1.10),
+('工程实践', 'TOPIC_ENGINEERING', 'topic', '工程化与交付实践', 40, 1.05),
+('产品思考', 'TOPIC_PRODUCT', 'intent', '面向产品与业务的思考', 50, 0.95),
+('行业观察', 'TOPIC_INDUSTRY', 'scene', '行业趋势与观察', 60, 0.90),
+('Java', 'STACK_JAVA', 'stack', 'Java 技术栈', 110, 1.00),
+('Python', 'STACK_PYTHON', 'stack', 'Python 技术栈', 120, 1.00),
+('Go', 'STACK_GO', 'stack', 'Go 技术栈', 130, 1.00),
+('Vue', 'STACK_VUE', 'stack', 'Vue 技术栈', 140, 1.00),
+('React', 'STACK_REACT', 'stack', 'React 技术栈', 150, 1.00),
+('MySQL', 'STACK_MYSQL', 'stack', 'MySQL 技术栈', 160, 1.00),
+('Spring Boot', 'STACK_SPRING_BOOT', 'stack', 'Spring Boot 技术栈', 170, 1.00),
+('Docker', 'STACK_DOCKER', 'stack', 'Docker 技术栈', 180, 1.00),
+('入门', 'AUDIENCE_BEGINNER', 'audience', '适合入门读者', 210, 0.90),
+('进阶', 'AUDIENCE_ADVANCED', 'audience', '适合进阶读者', 220, 1.00),
+('实战', 'SCENE_PRACTICE', 'scene', '偏实战落地内容', 230, 1.05),
+('源码', 'SCENE_SOURCE_CODE', 'scene', '偏源码分析内容', 240, 0.95),
+('面试', 'SCENE_INTERVIEW', 'scene', '偏面试准备内容', 250, 0.90);
 
 create table article_info
 (

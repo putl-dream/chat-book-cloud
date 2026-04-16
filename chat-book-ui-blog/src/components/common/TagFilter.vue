@@ -2,71 +2,57 @@
     <div class="tag-filter">
         <el-dropdown @command="handleTagSelect" trigger="click">
             <el-button type="primary" plain>
-                标签筛�?<el-icon><ArrowDown /></el-icon>
+                作者标签筛选 <el-icon><ArrowDown /></el-icon>
             </el-button>
             <template #dropdown>
                 <el-dropdown-menu>
                     <div class="tag-group">
-                        <div class="tag-group-title">技术栈</div>
-                        <el-dropdown-item v-for="tag in techTags" :key="tag.id" :command="tag.id">
-                            <el-tag :color="tag.color" size="small" effect="dark">{{ tag.name }}</el-tag>
-                        </el-dropdown-item>
-                    </div>
-                    <el-divider style="margin: 8px 0" />
-                    <div class="tag-group">
-                        <div class="tag-group-title">学习路径</div>
-                        <el-dropdown-item v-for="tag in pathTags" :key="tag.id" :command="tag.id">
-                            <el-tag :color="tag.color" size="small" effect="dark">{{ tag.name }}</el-tag>
+                        <div class="tag-group-title">热门作者标签</div>
+                        <el-dropdown-item
+                            v-for="tag in hotTags"
+                            :key="tag.id || tag.name"
+                            :command="tag.name"
+                        >
+                            <span class="tag-option-name">{{ tag.name }}</span>
+                            <span v-if="tag.articleCount" class="tag-option-count">{{ tag.articleCount }}</span>
                         </el-dropdown-item>
                     </div>
                 </el-dropdown-menu>
             </template>
         </el-dropdown>
-        <div v-if="selectedTag" class="selected-tag">
-            <el-tag closable @close="clearTagFilter" :color="selectedTag.color" effect="dark">
-                {{ selectedTag.name }}
+        <div v-if="selectedTagName" class="selected-tag">
+            <el-tag closable effect="dark" @close="clearTagFilter">
+                {{ selectedTagName }}
             </el-tag>
         </div>
     </div>
 </template>
 
 <script setup>
-import { ref, onMounted, computed, watch } from 'vue'
+import { onMounted, ref } from 'vue'
 import { ArrowDown } from '@element-plus/icons-vue'
-import { getTagsByType, getAllTags } from '@/views/article/_domain/tag.js'
-import { TAG_TYPE_ENUM } from '@/constants/index.js'
+import { getHotAuthorTags } from '@/views/article/_domain/tag.js'
 
 const emit = defineEmits(['tag-change'])
 
-const techTags = ref([])
-const pathTags = ref([])
-const selectedTagId = ref(null)
-const selectedTag = computed(() => {
-    const allTags = [...techTags.value, ...pathTags.value]
-    return allTags.find(tag => tag.id === selectedTagId.value)
-})
+const hotTags = ref([])
+const selectedTagName = ref('')
 
 const loadTags = async () => {
     try {
-        const [techRes, pathRes] = await Promise.all([
-            getTagsByType(TAG_TYPE_ENUM.TECH),
-            getTagsByType(TAG_TYPE_ENUM.PATH)
-        ])
-        // http.js already unwraps CommonResult, data is directly available
-        techTags.value = techRes || []
-        pathTags.value = pathRes || []
+        hotTags.value = await getHotAuthorTags(20) || []
     } catch (error) {
-        console.error('加载标签失败:', error)
+        console.error('加载作者标签失败:', error)
     }
 }
 
-const handleTagSelect = (tagId) => {
-    selectedTagId.value = tagId
-    emit('tag-change', tagId)
+const handleTagSelect = (tagName) => {
+    selectedTagName.value = tagName
+    emit('tag-change', tagName)
 }
 
 const clearTagFilter = () => {
-    selectedTagId.value = null
+    selectedTagName.value = ''
     emit('tag-change', null)
 }
 
@@ -83,14 +69,24 @@ onMounted(() => {
 }
 
 .tag-group {
+    min-width: 180px;
     padding: 4px 12px;
 }
 
 .tag-group-title {
-    font-size: 12px;
-    color: var(--text-color-secondary);
     margin-bottom: 8px;
+    color: var(--text-color-secondary);
+    font-size: 12px;
     font-weight: 500;
+}
+
+.tag-option-name {
+    margin-right: 8px;
+}
+
+.tag-option-count {
+    color: var(--text-color-secondary);
+    font-size: 12px;
 }
 
 .selected-tag {

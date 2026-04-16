@@ -9,30 +9,28 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
-/**
- * 标签实体类
- */
 @Data
 @Builder
-@TableName("tag")
-@AllArgsConstructor
 @NoArgsConstructor
-public class TagDO implements Serializable {
+@AllArgsConstructor
+@TableName("author_tag_system_tag_map")
+public class AuthorTagSystemTagMapDO implements Serializable {
+
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private String name;
+    private Integer authorTagId;
 
-    /**
-     * 标签类型：1-技术栈 2-学习路径 3-主题标签
-     */
-    private Integer type;
+    private Integer systemTagId;
 
-    private String color;
+    private String source;
 
-    private Integer sort;
+    private BigDecimal confidence;
+
+    private String status;
 
     private LocalDateTime createTime;
 

@@ -64,7 +64,7 @@ import {useHomeLogic} from "./_hooks/useHomeLogic.js";
 const route = useRoute();
 
 const currentPath = ref('/');
-const currentTagId = ref(null);
+const currentTagName = ref(null);
 const {recommendations, posts, loading, noMoreArticles, fetchPosts, fetchTagArticles, resetPosts} = useHomeLogic();
 
 const getPostVariant = (post, index) => {
@@ -80,8 +80,8 @@ const handleScroll = (e) => {
   const scrollHeight = target.scrollHeight;
 
   if (scrollTop + clientHeight >= scrollHeight - 50) {
-    if (currentTagId.value) {
-      fetchTagArticles(currentTagId.value);
+    if (currentTagName.value) {
+      fetchTagArticles(currentTagName.value);
     } else {
       fetchPosts(currentPath.value);
     }
@@ -98,11 +98,11 @@ watch(
       resetPosts();
       // 检查是否是标签路由
       if (newPath.startsWith('/tag/')) {
-        currentTagId.value = parseInt(route.params.tagId);
+        currentTagName.value = String(route.params.tagName || '');
         currentPath.value = '/tags';
-        await fetchTagArticles(currentTagId.value);
+        await fetchTagArticles(currentTagName.value);
       } else {
-        currentTagId.value = null;
+        currentTagName.value = null;
         currentPath.value = newPath;
         await fetchPosts(newPath);
       }

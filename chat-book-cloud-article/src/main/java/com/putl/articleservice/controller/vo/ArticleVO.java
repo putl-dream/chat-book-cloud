@@ -51,8 +51,11 @@ public class ArticleVO {
     @Schema(description = "内容类型：0-学习/教程 1-实战/项目")
     private Integer contentType;
 
-    @Schema(description = "文章标签ID列表")
-    private List<Integer> tagIds;
+    @Schema(description = "作者标签")
+    private List<String> authorTags;
+
+    @Schema(description = "系统标签")
+    private List<String> systemTags;
 
     @Schema(description = "文章摘要")
     private String abstractText;

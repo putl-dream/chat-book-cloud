@@ -107,7 +107,8 @@ vi.mock('@/views/creator/components/PublishDialog.vue', () => ({ default: { temp
 vi.mock('@/views/article/components/ArticleToc.vue', () => ({ default: { template: '<div></div>' } }));
 vi.mock('@/components/common/rich-text/RichTextEditor.vue', () => ({ default: { template: '<div class="rich-text-editor"></div>' } }));
 vi.mock('@/views/article/_domain/tag.js', () => ({
-    getTagsByType: vi.fn(() => Promise.resolve([]))
+    getHotAuthorTags: vi.fn(() => Promise.resolve([])),
+    searchAuthorTags: vi.fn(() => Promise.resolve([]))
 }));
 
 describe('Text.vue Editor Layout Adjustments', () => {

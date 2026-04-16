@@ -11,8 +11,8 @@ import type { LoginVO } from "@/services/auth";
 import type {
   AdminCount,
   AdminOperationLog,
-  AdminTag,
-  AdminTagFormValues,
+  AdminSystemTag,
+  AdminSystemTagFormValues,
   AdminUser,
   ArticleReviewResult,
   CommonApiResponse,
@@ -51,7 +51,8 @@ type BackendReviewArticle = {
   authorAvatar?: string | null;
   category: number;
   contentType?: number | null;
-  tagIds?: number[] | null;
+  authorTags?: string[] | null;
+  systemTags?: string[] | null;
   praiseCount?: number | null;
   commentCount?: number | null;
   viewCount?: number | null;
@@ -330,7 +331,8 @@ function mapReviewArticle(article: BackendReviewArticle): ReviewArticle {
     authorAvatar: article.authorAvatar,
     category: article.category,
     contentType: article.contentType ?? null,
-    tagIds: article.tagIds ?? [],
+    authorTags: article.authorTags ?? [],
+    systemTags: article.systemTags ?? [],
     createdAt: article.createTime || "时间未返回",
     praiseCount: toNumber(article.praiseCount),
     commentCount: toNumber(article.commentCount),
@@ -495,21 +497,25 @@ export async function getReviewArticlesPage(params?: {
   };
 }
 
-export async function getTagsPage(params?: {
+export async function getSystemTagsPage(params?: {
   page?: number;
   size?: number;
-  type?: number;
-}): Promise<PaginatedResult<AdminTag>> {
+  keyword?: string | null;
+  dimension?: string | null;
+  status?: string | null;
+}): Promise<PaginatedResult<AdminSystemTag>> {
   const page = params?.page ?? 1;
   const size = params?.size ?? 12;
-  const result = await requestBrowser<BackendPageResult<AdminTag>>(
-    "/tag/page",
+  const result = await requestBrowser<BackendPageResult<AdminSystemTag>>(
+    "/system-tag/page",
     {
       method: "POST",
       body: JSON.stringify({
         pageNo: page,
         pageSize: size,
-        type: params?.type ?? undefined,
+        keyword: params?.keyword ?? undefined,
+        dimension: params?.dimension ?? undefined,
+        status: params?.status ?? undefined,
       }),
     }
   );
@@ -517,13 +523,13 @@ export async function getTagsPage(params?: {
   return mapPageResult(result, page, size);
 }
 
-export function getTagList() {
-  return requestBrowser<AdminTag[]>("/tag/list", { method: "GET" });
+export function getSystemTagList() {
+  return requestBrowser<AdminSystemTag[]>("/system-tag/list", { method: "GET" });
 }
 
-export function createTag(values: AdminTagFormValues) {
-  return requestBrowser<AdminTag>(
-    "/tag/create",
+export function createSystemTag(values: AdminSystemTagFormValues) {
+  return requestBrowser<AdminSystemTag>(
+    "/system-tag/create",
     {
       method: "POST",
       body: JSON.stringify(values),
@@ -532,9 +538,9 @@ export function createTag(values: AdminTagFormValues) {
   );
 }
 
-export function updateTag(values: AdminTagFormValues) {
+export function updateSystemTag(values: AdminSystemTagFormValues) {
   return requestBrowser<void>(
-    "/tag/update",
+    "/system-tag/update",
     {
       method: "POST",
       body: JSON.stringify(values),
@@ -543,8 +549,12 @@ export function updateTag(values: AdminTagFormValues) {
   );
 }
 
-export function deleteTag(tagId: number) {
-  return requestBrowser<void>(`/tag/delete?tagId=${tagId}`, { method: "DELETE" }, { redirectOnUnauthorized: true });
+export function deleteSystemTag(systemTagId: number) {
+  return requestBrowser<void>(
+    `/system-tag/delete?systemTagId=${systemTagId}`,
+    { method: "DELETE" },
+    { redirectOnUnauthorized: true }
+  );
 }
 
 export function approveReviewArticle(articleId: number) {

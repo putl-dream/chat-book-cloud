@@ -70,7 +70,7 @@ export function saveAgentDraftImport(draft) {
         abstractText: normalized.summary,
         category: null,
         contentType: 0,
-        tagIds: [],
+        authorTags: [],
         articleType: ARTICLE_TYPE_ENUM.ORIGINAL,
         creationStatements: [CREATION_STATEMENT_ENUM.AI_ASSISTED],
         cover: '',
