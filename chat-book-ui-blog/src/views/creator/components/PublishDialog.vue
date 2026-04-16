@@ -12,37 +12,30 @@
         :close-on-click-modal="true">
         <div class="publish-form-content">
             <div class="form-item">
-                <div class="form-label">文章标签 *</div>
-                <div class="modern-tags">
-                    <div v-for="tag in topicTags" :key="tag.id" class="modern-tag capsule"
-                        :class="{ 'is-selected': selectedTopicTags.includes(tag.id) }" @click="toggleTopicTag(tag.id)">
-                        <span class="tag-dot"
-                            :style="{ backgroundColor: selectedTopicTags.includes(tag.id) ? (tag.color || 'var(--color-primary)') : '#d9d9d9' }"></span>
-                        <span class="tag-name">{{ tag.name }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-item">
-                <div class="form-label">技术栈 <span class="label-hint">（补充标签，可选 1-3 个）</span></div>
-                <div class="modern-tags">
-                    <div v-for="tag in techTags" :key="tag.id" class="modern-tag capsule"
-                        :class="{ 'is-selected': selectedTechTags.includes(tag.id) }" @click="toggleTechTag(tag.id)">
-                        <span class="tag-dot"
-                            :style="{ backgroundColor: selectedTechTags.includes(tag.id) ? (tag.color || 'var(--color-primary)') : '#d9d9d9' }"></span>
-                        <span class="tag-name">{{ tag.name }}</span>
-                    </div>
-                </div>
-            </div>
-
-            <div class="form-item">
-                <div class="form-label">学习路径 <span class="label-hint">（可选 1 个）</span></div>
-                <div class="segmented-control wrap-control">
-                    <div v-for="tag in pathTags" :key="tag.id" class="segment-item"
-                        :class="{ active: selectedPathTag === tag.id }" @click="selectPathTag(tag.id)">
-                        {{ tag.name }}
-                    </div>
-                </div>
+                <div class="form-label">作者标签 *</div>
+                <el-select
+                    :model-value="publishForm.authorTags"
+                    class="modern-select"
+                    multiple
+                    filterable
+                    remote
+                    :remote-method="handleTagKeywordInput"
+                    allow-create
+                    default-first-option
+                    reserve-keyword
+                    :multiple-limit="5"
+                    :popper-append-to-body="false"
+                    placeholder="最多 5 个，前台展示只使用作者标签"
+                    @update:model-value="handleAuthorTagsChange"
+                    @change="handleAuthorTagsChange"
+                    @visible-change="handleTagDropdownVisible">
+                    <el-option
+                        v-for="tag in authorTagOptions"
+                        :key="tag.id || tag.name"
+                        :label="tag.name"
+                        :value="tag.name" />
+                </el-select>
+                <div class="field-caption">系统标签会根据后台映射自动生成，作者无需手动选择。</div>
             </div>
 
             <div class="form-item">
@@ -122,10 +115,10 @@
 </template>
 
 <script setup>
-import {computed} from 'vue';
-import {UploadFilled} from '@element-plus/icons-vue';
-import {ElMessage} from 'element-plus';
-import {ARTICLE_TYPE_NAMES, CREATION_STATEMENT_NAMES} from '@/constants';
+import { computed } from 'vue';
+import { UploadFilled } from '@element-plus/icons-vue';
+import { ElMessage } from 'element-plus';
+import { ARTICLE_TYPE_NAMES, CREATION_STATEMENT_NAMES } from '@/constants';
 
 const props = defineProps({
     modelValue: {
@@ -140,29 +133,9 @@ const props = defineProps({
         type: Object,
         required: true,
     },
-    topicTags: {
+    authorTagOptions: {
         type: Array,
         default: () => [],
-    },
-    techTags: {
-        type: Array,
-        default: () => [],
-    },
-    pathTags: {
-        type: Array,
-        default: () => [],
-    },
-    selectedTopicTags: {
-        type: Array,
-        default: () => [],
-    },
-    selectedTechTags: {
-        type: Array,
-        default: () => [],
-    },
-    selectedPathTag: {
-        type: [Number, String],
-        default: null,
     },
     handleCoverUpload: {
         type: Function,
@@ -178,7 +151,7 @@ const props = defineProps({
     },
 });
 
-const emit = defineEmits(['update:modelValue', 'confirm', 'change-topic-tags', 'change-tech-tags', 'change-path-tag', 'extract-summary']);
+const emit = defineEmits(['update:modelValue', 'confirm', 'change-author-tags', 'search-author-tags', 'extract-summary']);
 
 const visible = computed({
     get: () => props.modelValue,
@@ -215,39 +188,25 @@ const contentType = computed({
     }
 });
 
-const toggleTopicTag = (id) => {
-    const current = [...props.selectedTopicTags];
-    const index = current.indexOf(id);
-    if (index > -1) {
-        current.splice(index, 1);
-    } else {
-        if (current.length < 5) {
-            current.push(id);
-        } else {
-            ElMessage.warning('最多只能选择 5 个文章标签');
-            return;
-        }
+const handleAuthorTagsChange = (values = []) => {
+    const normalized = [...new Set((Array.isArray(values) ? values : [])
+        .map((item) => String(item || '').trim().replace(/\s+/g, ' '))
+        .filter(Boolean))];
+    if (normalized.length > 5) {
+        ElMessage.warning('最多只能填写 5 个作者标签');
+        emit('change-author-tags', normalized.slice(0, 5));
+        return;
     }
-    emit('change-topic-tags', current);
+    emit('change-author-tags', normalized);
 };
 
-const toggleTechTag = (id) => {
-    const current = [...props.selectedTechTags];
-    const index = current.indexOf(id);
-    if (index > -1) {
-        current.splice(index, 1);
-    } else {
-        if (current.length < 3) {
-            current.push(id);
-        } else {
-            ElMessage.warning('最多只能选择 3 个技术栈');
-            return;
-        }
-    }
-    emit('change-tech-tags', current);
+const handleTagKeywordInput = (keyword) => {
+    emit('search-author-tags', keyword);
 };
 
-const selectPathTag = (id) => {
-    emit('change-path-tag', id);
+const handleTagDropdownVisible = (visible) => {
+    if (visible) {
+        emit('search-author-tags', '');
+    }
 };
 </script>

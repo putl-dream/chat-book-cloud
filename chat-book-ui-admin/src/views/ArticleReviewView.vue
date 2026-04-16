@@ -47,10 +47,16 @@
               创建于 {{ focusedArticle.createdAt }}
             </p>
             <div class="chip-row">
-              <span v-for="tagName in getTagNames(focusedArticle.tagIds)" :key="`${focusedArticle.id}-${tagName}`" class="chip">
+              <span v-for="tagName in focusedArticle.authorTags || []" :key="`${focusedArticle.id}-author-${tagName}`" class="chip">
                 {{ tagName }}
               </span>
-              <span v-if="getTagNames(focusedArticle.tagIds).length === 0" class="chip">未关联标签</span>
+              <span v-if="(focusedArticle.authorTags || []).length === 0" class="chip">未关联作者标签</span>
+            </div>
+            <div class="chip-row">
+              <span v-for="tagName in focusedArticle.systemTags || []" :key="`${focusedArticle.id}-system-${tagName}`" class="chip">
+                系统: {{ tagName }}
+              </span>
+              <span v-if="(focusedArticle.systemTags || []).length === 0" class="chip">未生成系统标签</span>
             </div>
           </article>
           <article class="stack-item">
@@ -135,8 +141,10 @@
 
             <div class="chip-row">
               <span class="chip">{{ contentTypeMap[article.contentType ?? -1] || "未标记类型" }}</span>
-              <span v-for="tagName in getTagNames(article.tagIds)" :key="`${article.id}-${tagName}`" class="chip">{{ tagName }}</span>
-              <span v-if="getTagNames(article.tagIds).length === 0" class="chip">未关联标签</span>
+              <span v-for="tagName in article.authorTags || []" :key="`${article.id}-author-${tagName}`" class="chip">{{ tagName }}</span>
+              <span v-if="(article.authorTags || []).length === 0" class="chip">未关联作者标签</span>
+              <span v-for="tagName in article.systemTags || []" :key="`${article.id}-system-${tagName}`" class="chip">系统: {{ tagName }}</span>
+              <span v-if="(article.systemTags || []).length === 0" class="chip">未生成系统标签</span>
               <span v-if="focusId === article.id" class="chip">当前聚焦文章</span>
             </div>
 
@@ -234,10 +242,9 @@ import {
   batchReviewArticles,
   BrowserApiError,
   getReviewArticlesPage,
-  getTagList,
   rejectReviewArticle,
 } from "@/services/admin-api";
-import type { AdminTag, PaginatedResult, ReviewAction, ReviewArticle } from "@/types/admin";
+import type { PaginatedResult, ReviewAction, ReviewArticle } from "@/types/admin";
 
 type RejectDialogState =
   | {
@@ -257,8 +264,6 @@ const rejectReason = ref("");
 const submitting = ref(false);
 const message = ref("");
 const errorMessage = ref("");
-const tagList = ref<AdminTag[]>([]);
-const tagListLoaded = ref(false);
 
 function parsePositiveInt(value: unknown, fallback: number) {
   const parsed = Number(value);
@@ -273,12 +278,6 @@ const authorCount = computed(() => new Set(reviewPage.value?.list.map((article) 
 const allSelected = computed(
   () => !!reviewPage.value?.list.length && reviewPage.value.list.every((article) => selectedIds.value.includes(article.id))
 );
-const tagNameMap = computed(() => new Map(tagList.value.map((tag) => [tag.id, tag.name])));
-
-function getTagNames(tagIds?: number[]) {
-  return (tagIds ?? []).map((tagId) => tagNameMap.value.get(tagId) || `#${tagId}`);
-}
-
 function buildQuery(nextPage = page.value, nextFocus = focusId.value || undefined) {
   return {
     ...(nextFocus ? { focus: String(nextFocus) } : {}),
@@ -287,24 +286,10 @@ function buildQuery(nextPage = page.value, nextFocus = focusId.value || undefine
   };
 }
 
-async function loadTagList() {
-  if (tagListLoaded.value) return;
-
-  try {
-    tagList.value = await getTagList();
-    tagListLoaded.value = true;
-  } catch {
-    tagListLoaded.value = false;
-  }
-}
-
 async function loadReviewPage() {
   try {
     errorMessage.value = "";
-    const [pageResult] = await Promise.all([
-      getReviewArticlesPage({ page: page.value, size: size.value }),
-      loadTagList(),
-    ]);
+    const pageResult = await getReviewArticlesPage({ page: page.value, size: size.value });
     reviewPage.value = pageResult;
     selectedIds.value = [];
 

@@ -32,7 +32,7 @@ const routes = [
                 meta: { headerType: 'common', showSearch: true, showFooter: true }
             },
             {
-                path: 'tag/:tagId',
+                path: 'tag/:tagName',
                 name: 'TagArticles',
                 component: () => import('@/views/home/Home.vue'),
                 meta: { headerType: 'common', showSearch: true, showFooter: true }

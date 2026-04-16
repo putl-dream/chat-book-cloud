@@ -49,8 +49,11 @@ public class ArticleListVO implements Serializable {
     @Schema(description = "内容类型：0-学习/教程 1-实战/项目")
     private Integer contentType;
 
-    @Schema(description = "标签ID列表")
-    private List<Integer> tagIds;
+    @Schema(description = "作者标签")
+    private List<String> authorTags;
+
+    @Schema(description = "系统标签")
+    private List<String> systemTags;
 
     @Schema(description = "文章状态：0-草稿 1-待审核 2-已发布 -1-已删除")
     private Integer status;

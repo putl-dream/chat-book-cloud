@@ -8,12 +8,12 @@ import request from '@/utils/http.js'
 export function uploadFile(file) {
     // 创建 FormData 对象
     const formData = new FormData();
-    // 将文件添加到 FormData �?
+    // 将文件添加到 FormData ?
     formData.append('file', file);
-    // 配置请求�?
+    // 配置请求?
     const config = {
         headers: {
-            'Content-Type': 'multipart/form-data' // 重要：让浏览器自动设�?multipart/form-data 的边�?
+            'Content-Type': 'multipart/form-data' // 重要：让浏览器自动设?multipart/form-data 的边?
         }
     };
     return request.post(`/article/file/upload`, formData, config);
@@ -47,7 +47,7 @@ export function publishArticle(params) {
 }
 
 /**
- * 兼容旧接口：统一映射到草稿保�?
+ * 兼容旧接口：统一映射到草稿保?
  * @param {object} params ArticleVO
  * @returns
  */
@@ -56,7 +56,7 @@ export function addArticle(params) {
 }
 
 /**
- * 兼容旧接口：统一映射到草稿保�?
+ * 兼容旧接口：统一映射到草稿保?
  * @param {object} params ArticleVO
  * @returns
  */
@@ -74,7 +74,7 @@ export function deleteArticle(id) {
 }
 
 /**
- * 获取最新文章列�?
+ * 获取最新文章列?
  * @param {number} pageNo
  * @param {number} pageSize
  */
@@ -111,7 +111,7 @@ export function getCategoryPage(pageNo, pageSize, category) {
 }
 
 /**
- * 根据关键词搜索文�?
+ * 根据关键词搜索文?
  * @param {number} pageNo
  * @param {number} pageSize
  * @param {string} keyword
@@ -159,7 +159,7 @@ export function getUserCollectPage(pageNo, pageSize) {
 }
 
 /**
- * 获取用户发布的文章列�?
+ * 获取用户发布的文章列?
  * @param {number} pageNo
  * @param {number} pageSize
  * @param {string} userId
@@ -169,7 +169,7 @@ export function getUserArticlePage(pageNo, pageSize) {
 }
 
 /**
- * 获取用户草稿箱文章列�?
+ * 获取用户草稿箱文章列?
  * @param {number} pageNo
  * @param {number} pageSize
  * @param {string} userId
@@ -179,7 +179,7 @@ export function getUserDraftArticlePage(pageNo, pageSize) {
 }
 
 /**
- * 获取管理员审核文章列�?
+ * 获取管理员审核文章列?
  * @param {number} pageNo
  * @param {number} pageSize
  */
@@ -201,10 +201,10 @@ export function getContentTypePage(pageNo, pageSize, contentType) {
  * 根据标签获取文章列表
  * @param {number} pageNo
  * @param {number} pageSize
- * @param {number} tagId
+ * @param {string} authorTagName
  */
-export function getTagPage(pageNo, pageSize, tagId) {
-    return request.post('/page/tagPage', { pageNo, pageSize, tagId });
+export function getTagPage(pageNo, pageSize, authorTagName) {
+    return request.post('/page/tagPage', { pageNo, pageSize, authorTagName });
 }
 
 /**

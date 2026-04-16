@@ -9,7 +9,8 @@ import com.putl.userservice.api.dto.UserResult;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.controller.vo.ArticleVO;
 import com.putl.articleservice.mapper.ArticleMapper;
-import com.putl.articleservice.mapper.ArticleTagMapper;
+import com.putl.articleservice.service.AuthorTagService;
+import com.putl.articleservice.service.SystemTagService;
 import com.putl.articleservice.mapper.entity.ArticleDO;
 import com.putl.articleservice.utils.PageResult;
 import fun.amireux.chat.book.framework.common.utils.BeanUtil;
@@ -20,11 +21,6 @@ import lombok.extern.slf4j.Slf4j;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
-
 /**
  * 文章列表功能
  * - 获取最新文章列表
@@ -47,7 +43,10 @@ public abstract class BaseAbstractArticle {
     protected ArticleMapper articleMapper;
 
     @Resource
-    private ArticleTagMapper articleTagMapper;
+    private AuthorTagService authorTagService;
+
+    @Resource
+    private SystemTagService systemTagService;
 
     @Resource
     private UserClient userClient;
@@ -149,10 +148,12 @@ public abstract class BaseAbstractArticle {
         }
 
         // 批量查询标签 Map
-        Map<Integer, List<Integer>> tagMap = new HashMap<>();
+        Map<Integer, List<String>> authorTagMap = new HashMap<>();
+        Map<Integer, List<String>> systemTagMap = new HashMap<>();
         if (!articleIds.isEmpty()) {
             try {
-                tagMap = articleTagMapper.selectTagIdMapByArticleIds(articleIds);
+                authorTagMap = authorTagService.getArticleAuthorTagMap(articleIds);
+                systemTagMap = systemTagService.getArticleSystemTagMap(articleIds);
             } catch (Exception e) {
                 log.warn("批量获取文章标签失败, articleIds: {}", articleIds, e);
             }
@@ -179,14 +180,15 @@ public abstract class BaseAbstractArticle {
                 article.setCollectCount(0L);
             }
 
-            // 设置 contentType / status / updateTime / tagIds
+            // 设置 contentType / status / updateTime / tags
             ArticleDO articleDO = articleDOMap.get(article.getId());
             if (articleDO != null) {
                 article.setContentType(articleDO.getContentType());
                 article.setStatus(articleDO.getStatus() != null ? articleDO.getStatus().getStatus() : null);
                 article.setUpdateTime(articleDO.getUpdateTime());
             }
-            article.setTagIds(tagMap.get(article.getId()));
+            article.setAuthorTags(authorTagMap.get(article.getId()));
+            article.setSystemTags(systemTagMap.get(article.getId()));
         }
     }
 }

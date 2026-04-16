@@ -5,12 +5,10 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.articleservice.controller.dto.AdminArticlePageRequestDTO;
 import com.putl.articleservice.controller.vo.ArticleListVO;
 import com.putl.articleservice.enums.ArticleStatus;
-import com.putl.articleservice.mapper.ArticleTagMapper;
-import com.putl.articleservice.mapper.TagMapper;
 import com.putl.articleservice.mapper.entity.ArticleDO;
-import com.putl.articleservice.mapper.entity.TagDO;
 import com.putl.articleservice.service.ArticlePageService;
-import com.putl.articleservice.service.TagService;
+import com.putl.articleservice.service.AuthorTagService;
+import com.putl.articleservice.service.SystemTagService;
 import com.putl.articleservice.utils.PageResult;
 import com.putl.interactionservice.api.InteractionClient;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
@@ -53,13 +51,10 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     private static final int HOT_RANK_SCAN_MULTIPLIER = 3;
 
     @Resource
-    private TagService tagService;
+    private AuthorTagService authorTagService;
 
     @Resource
-    private ArticleTagMapper articleTagMapper;
-
-    @Resource
-    private TagMapper tagMapper;
+    private SystemTagService systemTagService;
 
     @Resource
     private RedisTemplate<String, Object> redisTemplate;
@@ -563,8 +558,8 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     }
 
     @Override
-    public PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, Integer tagId) {
-        List<Integer> articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+    public PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, String authorTagName) {
+        List<Integer> articleIds = authorTagService.getArticleIdsByAuthorTagName(authorTagName);
         if (articleIds == null || articleIds.isEmpty()) {
             return new PageResult<>(Collections.emptyList(), 0L);
         }
@@ -575,12 +570,12 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     }
 
     @Override
-    public PageResult<ArticleListVO> getMultiFilterPage(Integer pageNo, Integer pageSize, Integer contentType, Integer category, Integer tagId) {
+    public PageResult<ArticleListVO> getMultiFilterPage(Integer pageNo, Integer pageSize, Integer contentType, Integer category, String authorTagName) {
         List<Integer> articleIds = null;
 
         // 如果有标签筛选，先获取标签关联的文章ID
-        if (tagId != null) {
-            articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+        if (StringUtils.hasText(authorTagName)) {
+            articleIds = authorTagService.getArticleIdsByAuthorTagName(authorTagName);
             if (articleIds == null || articleIds.isEmpty()) {
                 return new PageResult<>(Collections.emptyList(), 0L);
             }
@@ -603,9 +598,10 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
             return new PageResult<>(Collections.emptyList(), 0L);
         }
 
-        // 获取当前文章的标签
-        List<Integer> currentTagIds = tagService.getArticleTagIds(articleId);
-        if (currentTagIds.isEmpty()) {
+        // 获取当前文章的作者标签 / 系统标签
+        List<String> currentAuthorTags = authorTagService.getArticleAuthorTags(articleId);
+        List<String> currentSystemTags = systemTagService.getArticleSystemTags(articleId);
+        if (currentAuthorTags.isEmpty() && currentSystemTags.isEmpty()) {
             // 无标签时，基于分类和内容类型推荐
             return toBean(pageNo, pageSize, Wrappers.<ArticleDO>lambdaQuery()
                     .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
@@ -615,31 +611,24 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
                     .orderByDesc(ArticleDO::getCreateTime));
         }
 
-        // 获取当前文章的标签信息（区分技术栈和学习路径）
-        List<TagDO> currentTags = tagMapper.selectList(
-                new com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper<TagDO>()
-                        .in(TagDO::getId, currentTagIds)
-        );
-        List<Integer> techTagIds = currentTags.stream().filter(t -> t.getType() == 1).map(TagDO::getId).toList();
-        List<Integer> pathTagIds = currentTags.stream().filter(t -> t.getType() == 2).map(TagDO::getId).toList();
-
         // 获取有共同标签的文章ID及其标签交集
-        // 先收集所有相关的文章ID
         Set<Integer> relatedArticleIds = new HashSet<>();
-        for (Integer tagId : currentTagIds) {
-            List<Integer> articleIds = articleTagMapper.selectArticleIdsByTagId(tagId);
+        for (String authorTag : currentAuthorTags) {
+            List<Integer> articleIds = authorTagService.getArticleIdsByAuthorTagName(authorTag);
             if (articleIds != null) {
                 relatedArticleIds.addAll(articleIds);
             }
         }
+        relatedArticleIds.addAll(systemTagService.getArticleIdsBySystemTagNames(currentSystemTags));
         relatedArticleIds.remove(articleId); // 排除当前文章
 
         if (relatedArticleIds.isEmpty()) {
             return new PageResult<>(Collections.emptyList(), 0L);
         }
 
-        // 获取这些文章的标签Map
-        Map<Integer, List<Integer>> articleTagMap = articleTagMapper.selectTagIdMapByArticleIds(new ArrayList<>(relatedArticleIds));
+        // 获取这些文章的标签 Map
+        Map<Integer, List<String>> articleAuthorTagMap = authorTagService.getArticleAuthorTagMap(new ArrayList<>(relatedArticleIds));
+        Map<Integer, List<String>> articleSystemTagMap = systemTagService.getArticleSystemTagMap(new ArrayList<>(relatedArticleIds));
 
         // 批量获取相关文章，避免 N+1 查询
         List<ArticleDO> relatedArticles = articleMapper.selectBatchIds(relatedArticleIds);
@@ -648,23 +637,23 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
 
         // 排除当前文章，计算每篇文章的推荐得分
         List<Map.Entry<Integer, Integer>> scoredArticles = new ArrayList<>(); // <articleId, score>
-        for (Map.Entry<Integer, List<Integer>> entry : articleTagMap.entrySet()) {
-            Integer relatedArticleId = entry.getKey();
+        Set<String> currentAuthorTagSet = new LinkedHashSet<>(currentAuthorTags);
+        Set<String> currentSystemTagSet = new LinkedHashSet<>(currentSystemTags);
+        for (Integer relatedArticleId : relatedArticleIds) {
             if (relatedArticleId.equals(articleId)) {
                 continue;
             }
-            List<Integer> relatedTagIds = entry.getValue();
+            List<String> relatedAuthorTags = articleAuthorTagMap.getOrDefault(relatedArticleId, Collections.emptyList());
+            List<String> relatedSystemTags = articleSystemTagMap.getOrDefault(relatedArticleId, Collections.emptyList());
 
             int score = 0;
-            // 共同技术栈标签：每个 +3 分
-            for (Integer techTagId : techTagIds) {
-                if (relatedTagIds.contains(techTagId)) {
+            for (String authorTag : relatedAuthorTags) {
+                if (currentAuthorTagSet.contains(authorTag)) {
                     score += 3;
                 }
             }
-            // 共同学习路径标签：每个 +2 分
-            for (Integer pathTagId : pathTagIds) {
-                if (relatedTagIds.contains(pathTagId)) {
+            for (String systemTag : relatedSystemTags) {
+                if (currentSystemTagSet.contains(systemTag)) {
                     score += 2;
                 }
             }
@@ -694,14 +683,17 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
             return articleB.getCreateTime().compareTo(articleA.getCreateTime());
         });
 
-        // 取前 pageSize 条
+        long offset = Math.max((long) ((pageNo == null ? 1 : pageNo) - 1) * (pageSize == null ? 10 : pageSize), 0L);
+        int limit = pageSize == null || pageSize < 1 ? 10 : pageSize;
+
         List<Integer> topArticleIds = scoredArticles.stream()
-                .limit(pageSize)
+                .skip(offset)
+                .limit(limit)
                 .map(Map.Entry::getKey)
                 .toList();
 
         if (topArticleIds.isEmpty()) {
-            return new PageResult<>(Collections.emptyList(), 0L);
+            return new PageResult<>(Collections.emptyList(), (long) scoredArticles.size());
         }
 
         List<ArticleListVO> result = selectIds(topArticleIds);
@@ -713,6 +705,6 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
                 .filter(Objects::nonNull)
                 .toList();
 
-        return new PageResult<>(orderedResult, (long) orderedResult.size());
+        return new PageResult<>(orderedResult, (long) scoredArticles.size());
     }
 }

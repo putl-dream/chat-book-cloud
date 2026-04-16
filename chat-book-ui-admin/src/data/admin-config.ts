@@ -125,8 +125,8 @@ export const dashboardServices: ServiceReadiness[] = [
   {
     service: "chat-book-cloud-article",
     responsibility: "待审核文章、内容治理、标签体系和文章统计",
-    currentApi: "/page/adminArticlePage, /article/queryPendingReviewCount, /article/admin/review/*, /article/admin/page, /tag/*",
-    backendGap: "正文详情、审核记录查询和标签运营统计仍待继续增强。",
+    currentApi: "/page/adminArticlePage, /article/queryPendingReviewCount, /article/admin/review/*, /article/admin/page, /author-tag/*, /system-tag/*, /tag-map/*",
+    backendGap: "正文详情、审核记录查询和映射批量治理仍待继续增强。",
     priority: "high",
   },
   {

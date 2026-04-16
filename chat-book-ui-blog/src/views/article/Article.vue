@@ -27,7 +27,7 @@
                     </main>
 
                     <div v-if="isMobile" class="mobile-bottom-cards">
-                        <ArticleTagCard :articleId="articleId" :tagIds="article.tagIds || []" />
+                        <ArticleTagCard :articleId="articleId" :author-tags="article.authorTags || []" />
                         <RelatedCard :articleId="articleId" />
                     </div>
                 </div>
@@ -115,7 +115,7 @@ const followLabel = computed(() => {
 const activePanelProps = computed(() => {
     const baseProps = {
         articleId: articleId.value,
-        tagIds: article.value?.tagIds || []
+        authorTags: article.value?.authorTags || []
     };
 
     if (activePanel.value === PANEL_TYPE.DEFAULT) {

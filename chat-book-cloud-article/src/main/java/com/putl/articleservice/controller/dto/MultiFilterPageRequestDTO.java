@@ -16,6 +16,6 @@ public class MultiFilterPageRequestDTO extends PageRequestDTO {
     @Schema(description = "技术分类")
     private Integer category;
 
-    @Schema(description = "标签ID")
-    private Integer tagId;
+    @Schema(description = "作者标签名称")
+    private String authorTagName;
 }

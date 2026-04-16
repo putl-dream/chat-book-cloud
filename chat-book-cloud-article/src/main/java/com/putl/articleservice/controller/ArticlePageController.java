@@ -126,7 +126,7 @@ public class ArticlePageController {
     @Operation(summary = "根据标签获取文章列表")
     @PostMapping("/tagPage")
     public CommonResult<PageResult<ArticleListVO>> getTagPage(@Valid @RequestBody TagPageRequestDTO request) {
-        return CommonResult.success(articleListCacheService.getTagPage(request.getPageNo(), request.getPageSize(), request.getTagId()));
+        return CommonResult.success(articleListCacheService.getTagPage(request.getPageNo(), request.getPageSize(), request.getAuthorTagName()));
     }
 
     @Operation(summary = "多条件筛选文章")
@@ -134,7 +134,7 @@ public class ArticlePageController {
     public CommonResult<PageResult<ArticleListVO>> getMultiFilterPage(@Valid @RequestBody MultiFilterPageRequestDTO request) {
         return CommonResult.success(articlePageService.getMultiFilterPage(
                 request.getPageNo(), request.getPageSize(),
-                request.getContentType(), request.getCategory(), request.getTagId()));
+                request.getContentType(), request.getCategory(), request.getAuthorTagName()));
     }
 
     @Operation(summary = "相关推荐文章列表")

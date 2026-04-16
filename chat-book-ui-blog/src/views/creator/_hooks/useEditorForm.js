@@ -6,29 +6,33 @@ import { ARTICLE_TYPE_ENUM } from '@/constants';
 
 export function useEditorForm() {
     const publishDialogVisible = ref(false);
-    
+
     const publishForm = ref({
         category: null,
         contentType: 0,
-        tagIds: [],
+        authorTags: [],
         abstractText: '',
         articleType: ARTICLE_TYPE_ENUM.ORIGINAL,
         creationStatements: [],
         cover: ''
     });
 
-    const topicTags = ref([]);
-    const techTags = ref([]);
-    const pathTags = ref([]);
-    const selectedTopicTags = ref([]);
-    const selectedTechTags = ref([]);
-    const selectedPathTag = ref(null);
+    const authorTagOptions = ref([]);
 
-    const updateTagIds = () => {
-        const topicIds = selectedTopicTags.value || [];
-        const techIds = selectedTechTags.value || [];
-        const pathId = selectedPathTag.value ? [selectedPathTag.value] : [];
-        publishForm.value.tagIds = [...topicIds, ...techIds, ...pathId];
+    const setAuthorTags = (tags = []) => {
+        const normalized = Array.isArray(tags) ? tags.filter(Boolean) : [];
+        publishForm.value.authorTags = normalized;
+        const existingNames = (authorTagOptions.value || []).map((item) => item.name);
+        authorTagOptions.value = [...new Set([...existingNames, ...normalized])].map((name) => ({ id: name, name }));
+    };
+
+    const setAuthorTagOptions = (options = []) => {
+        authorTagOptions.value = Array.isArray(options) ? options : [];
+    };
+
+    const mergeAuthorTagOptions = (tags = []) => {
+        const nextNames = [...new Set([...(authorTagOptions.value || []).map((item) => item.name), ...tags])];
+        authorTagOptions.value = nextNames.map((name) => ({ id: name, name }));
     };
 
     const handleCoverUpload = async (option) => {
@@ -57,13 +61,10 @@ export function useEditorForm() {
     return {
         publishDialogVisible,
         publishForm,
-        topicTags,
-        techTags,
-        pathTags,
-        selectedTopicTags,
-        selectedTechTags,
-        selectedPathTag,
-        updateTagIds,
+        authorTagOptions,
+        setAuthorTags,
+        setAuthorTagOptions,
+        mergeAuthorTagOptions,
         handleCoverUpload,
         beforeCoverUpload
     };

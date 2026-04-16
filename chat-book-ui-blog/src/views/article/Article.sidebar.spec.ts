@@ -44,7 +44,7 @@ const buildLogicMock = () => ({
         createTime: '2026-03-21 10:00:00',
         viewCount: 128,
         userId: 2,
-        tagIds: [1, 2]
+        authorTags: ['Spring Boot', 'Redis']
     }),
     praiseStat: ref(0),
     collectStat: ref(0),

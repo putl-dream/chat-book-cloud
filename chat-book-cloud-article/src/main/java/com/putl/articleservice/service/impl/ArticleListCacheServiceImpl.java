@@ -47,12 +47,12 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     }
 
     @Override
-    @Cacheable(value = "articleListCache", key = "'tag:' + #tagId + ':' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
-    public PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, Integer tagId) {
+    @Cacheable(value = "articleListCache", key = "'tag:' + #authorTagName + ':' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
+    public PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, String authorTagName) {
         if (pageNo != 1) {
-            return articlePageService.getTagPage(pageNo, pageSize, tagId);
+            return articlePageService.getTagPage(pageNo, pageSize, authorTagName);
         }
-        return articlePageService.getTagPage(pageNo, pageSize, tagId);
+        return articlePageService.getTagPage(pageNo, pageSize, authorTagName);
     }
 
     @Override

@@ -210,17 +210,11 @@
             v-model="publishDialogVisible"
             :publish-form="publishForm"
             :category-options="categoryOptions"
-            :topic-tags="topicTags"
-            :tech-tags="techTags"
-            :path-tags="pathTags"
-            :selected-topic-tags="selectedTopicTags"
-            :selected-tech-tags="selectedTechTags"
-            :selected-path-tag="selectedPathTag"
-            @change-topic-tags="handleTopicTagsChange"
+            :author-tag-options="authorTagOptions"
+            @change-author-tags="handleAuthorTagsChange"
+            @search-author-tags="handleAuthorTagSearch"
             @extract-summary="handleExtractSummary"
             :summary-generating="summaryGenerating"
-            @change-tech-tags="handleTechTagsChange"
-            @change-path-tag="handlePathTagChange"
             :handle-cover-upload="handleCoverUpload"
             :before-cover-upload="beforeCoverUpload"
             @confirm="confirmPublish"
@@ -252,14 +246,9 @@ const {
     wordCount,
     publishDialogVisible,
     publishForm,
-    topicTags,
+    authorTagOptions,
     layoutState,
     dragging,
-    techTags,
-    pathTags,
-    selectedTopicTags,
-    selectedTechTags,
-    selectedPathTag,
     isSaving,
     summaryGenerating,
     saveState,
@@ -274,7 +263,8 @@ const {
     aiGenerationStopped,
     aiRenderTick,
     editorContentEditable,
-    updateTagIds,
+    setAuthorTags,
+    handleAuthorTagSearch,
     handleCoverUpload,
     beforeCoverUpload,
     handleExtractSummary,
@@ -342,19 +332,8 @@ const handleSummaryInput = () => {
     handleUserSummaryInput();
 };
 
-const handleTopicTagsChange = (value) => {
-    selectedTopicTags.value = value;
-    updateTagIds();
-};
-
-const handleTechTagsChange = (value) => {
-    selectedTechTags.value = value;
-    updateTagIds();
-};
-
-const handlePathTagChange = (value) => {
-    selectedPathTag.value = value;
-    updateTagIds();
+const handleAuthorTagsChange = (value) => {
+    setAuthorTags(value);
 };
 
 const saveContent = async () => {

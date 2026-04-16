@@ -68,11 +68,11 @@ public interface ArticlePageService {
     // 根据内容类型获取文章列表
     PageResult<ArticleListVO> getContentTypePage(Integer pageNo, Integer pageSize, Integer contentType);
 
-    // 根据标签ID获取文章列表
-    PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, Integer tagId);
+    // 根据作者标签获取文章列表
+    PageResult<ArticleListVO> getTagPage(Integer pageNo, Integer pageSize, String authorTagName);
 
     // 多条件筛选文章
-    PageResult<ArticleListVO> getMultiFilterPage(Integer pageNo, Integer pageSize, Integer contentType, Integer category, Integer tagId);
+    PageResult<ArticleListVO> getMultiFilterPage(Integer pageNo, Integer pageSize, Integer contentType, Integer category, String authorTagName);
 
     // 相关推荐文章列表
     PageResult<ArticleListVO> relatedPage(Integer articleId, Integer pageNo, Integer pageSize);
