@@ -4,7 +4,9 @@ spring:
     nacos:
       discovery:
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
-        namespace: ${NACOS_NAMESPACE:putl}
+        namespace: ${NACOS_NAMESPACE:local}
+        username: ${NACOS_USERNAME:nacos} # 用户名
+        password: ${NACOS_PASSWORD:nacos@2026} # 密码
 
 --- ###==================== Nacos 配置中心 ====================
 spring:
@@ -15,6 +17,8 @@ spring:
           enabled: true
         server-addr: ${NACOS_SERVER_ADDR:127.0.0.1:8848}
         namespace: ${NACOS_CONFIG_NAMESPACE:public}
+        username: ${NACOS_USERNAME:nacos} # 用户名
+        password: ${NACOS_PASSWORD:nacos@2026} # 密码
         group: ${NACOS_GROUP:DEFAULT_GROUP}
         shared-configs:
           - data-id: common.yaml

@@ -2,6 +2,7 @@ package com.putl.agentservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.agentservice.config.AnthropicProperties;
+import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.enums.AgentSessionStatus;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.AgentSessionMapper;
@@ -20,6 +21,7 @@ import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.context.UserContext;
 import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 
 import java.util.List;
 
@@ -49,13 +51,21 @@ public class AgentSessionServiceImpl implements AgentSessionService {
 
     @Override
     public AgentSessionCreateResponse createSession(CreateAgentSessionRequest request) {
-        NotebookSummary notebook = agentNotebookService.initializeNotebook(request.getTitle());
+        String sessionTitle = request != null && StringUtils.hasText(request.getTitle())
+                ? request.getTitle().trim()
+                : "新的 AI 创作会话";
+        AgentSceneType initialScene = AgentSceneType.initialScene(
+                request == null ? null : request.getSceneType(),
+                request == null ? null : request.getTargetDraftId());
+        NotebookSummary notebook = agentNotebookService.initializeNotebook(
+                sessionTitle,
+                initialScene);
         AgentSessionDO session = AgentSessionDO.builder()
                 .userId(currentUserId())
-                .sceneType(request.getSceneType())
-                .targetArticleId(request.getTargetArticleId())
-                .targetDraftId(request.getTargetDraftId())
-                .title(request.getTitle())
+                .sceneType(initialScene)
+                .targetArticleId(request == null ? null : request.getTargetArticleId())
+                .targetDraftId(request == null ? null : request.getTargetDraftId())
+                .title(sessionTitle)
                 .status(AgentSessionStatus.ACTIVE)
                 .notebookSummary(JsonUtil.toJsonString(notebook))
                 .model(anthropicProperties.getAnthropic().getModel().getChat())
@@ -71,6 +81,8 @@ public class AgentSessionServiceImpl implements AgentSessionService {
     @Override
     public AgentSessionDetailResponse getSessionDetail(Integer sessionId) {
         AgentSessionDO session = agentSessionMapper.selectById(sessionId);
+        NotebookSummary notebook = session == null ? NotebookSummary.builder().build()
+                : agentNotebookCacheService.getNotebook(sessionId);
         List<AgentMessageDO> messages = agentMessageMapper.selectList(Wrappers.<AgentMessageDO>lambdaQuery()
                 .eq(AgentMessageDO::getSessionId, sessionId)
                 .orderByAsc(AgentMessageDO::getId));
@@ -85,6 +97,7 @@ public class AgentSessionServiceImpl implements AgentSessionService {
                 .session(session)
                 .messages(messages)
                 .draft(draft)
+                .notebook(notebook)
                 .build();
     }
 

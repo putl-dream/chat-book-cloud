@@ -3,11 +3,14 @@ package com.putl.agentservice.client;
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.client.engine.ArticleAiExecutionEngine;
 import com.putl.agentservice.client.engine.StreamingControl;
+import com.putl.agentservice.client.task.ArticleEditChatTask;
 import com.putl.agentservice.client.task.ArticleChatTask;
 import com.putl.agentservice.client.task.ArticleDraftGenerateTask;
 import com.putl.agentservice.client.task.ArticleDraftOptimizeTask;
+import com.putl.agentservice.client.task.ArticleLearnTask;
 import com.putl.agentservice.client.task.ArticleSummaryExtractTask;
 import com.putl.agentservice.client.task.NotebookSummarizeTask;
+import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.model.vo.AgentAssistantMessage;
 import com.putl.agentservice.model.vo.AiInvocationResult;
@@ -29,7 +32,9 @@ import java.util.function.Consumer;
 public class AnthropicArticleAiGateway implements ArticleAiGateway {
 
     private final ArticleAiExecutionEngine executionEngine;
-    private final ArticleChatTask articleChatTask;
+    private final ArticleChatTask articleDiscussTask;
+    private final ArticleLearnTask articleLearnTask;
+    private final ArticleEditChatTask articleEditChatTask;
     private final ArticleDraftGenerateTask articleDraftGenerateTask;
     private final ArticleDraftOptimizeTask articleDraftOptimizeTask;
     private final ArticleSummaryExtractTask articleSummaryExtractTask;
@@ -46,13 +51,17 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
      * @param notebookSummarizeTask    笔记本摘要任务
      */
     public AnthropicArticleAiGateway(ArticleAiExecutionEngine executionEngine,
-                                     ArticleChatTask articleChatTask,
+                                     ArticleChatTask articleDiscussTask,
+                                     ArticleLearnTask articleLearnTask,
+                                     ArticleEditChatTask articleEditChatTask,
                                      ArticleDraftGenerateTask articleDraftGenerateTask,
                                      ArticleDraftOptimizeTask articleDraftOptimizeTask,
                                      ArticleSummaryExtractTask articleSummaryExtractTask,
                                      NotebookSummarizeTask notebookSummarizeTask) {
         this.executionEngine = executionEngine;
-        this.articleChatTask = articleChatTask;
+        this.articleDiscussTask = articleDiscussTask;
+        this.articleLearnTask = articleLearnTask;
+        this.articleEditChatTask = articleEditChatTask;
         this.articleDraftGenerateTask = articleDraftGenerateTask;
         this.articleDraftOptimizeTask = articleDraftOptimizeTask;
         this.articleSummaryExtractTask = articleSummaryExtractTask;
@@ -68,11 +77,26 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
      */
     @Override
     public AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary) {
+        return chat(messages, notebookSummary, AgentSceneType.DISCUSS, null, null, null);
+    }
+
+    @Override
+    public AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages,
+                                                          NotebookSummary notebookSummary,
+                                                          AgentSceneType sceneType,
+                                                          String currentTitle,
+                                                          String currentSummary,
+                                                          String currentContent) {
+        AgentSceneType runtimeScene = sceneType == null ? AgentSceneType.DISCUSS : sceneType.toRuntimeScene();
         return executionEngine.execute(
-                articleChatTask,
+                resolveChatTask(runtimeScene),
                 ArticleAiContext.builder()
                         .messages(messages)
                         .notebookSummary(notebookSummary)
+                        .sceneType(runtimeScene)
+                        .currentTitle(currentTitle)
+                        .currentSummary(currentSummary)
+                        .currentContent(currentContent)
                         .build());
     }
 
@@ -174,5 +198,13 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
                         .messages(messages)
                         .notebookSummary(currentNotebook)
                         .build());
+    }
+
+    private com.putl.agentservice.client.engine.ArticleAiTask<AgentAssistantMessage> resolveChatTask(AgentSceneType sceneType) {
+        return switch (sceneType) {
+            case LEARN -> articleLearnTask;
+            case EDIT -> articleEditChatTask;
+            default -> articleDiscussTask;
+        };
     }
 }

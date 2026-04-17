@@ -2,6 +2,9 @@ package com.putl.agentservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.enums.AgentAssistantAction;
+import com.putl.agentservice.enums.AgentSceneType;
+import com.putl.agentservice.enums.DraftReadiness;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.model.vo.AiInvocationResult;
@@ -28,10 +31,16 @@ public class AgentNotebookServiceImpl implements AgentNotebookService {
     }
 
     @Override
-    public NotebookSummary initializeNotebook(String title) {
+    public NotebookSummary initializeNotebook(String title, AgentSceneType initialScene) {
+        AgentSceneType scene = initialScene == null ? AgentSceneType.DISCUSS : initialScene.toRuntimeScene();
         return NotebookSummary.builder()
                 .goal(title)
-                .summary("会话刚创建，等待收集主题、论点、知识点和待验证的问题。")
+                .currentScene(scene)
+                .draftReadiness(DraftReadiness.NOT_READY)
+                .nextSuggestedAction(scene == AgentSceneType.LEARN ? AgentAssistantAction.TEACH : AgentAssistantAction.ASK)
+                .summary(scene == AgentSceneType.EDIT
+                        ? "会话刚创建，等待明确需要润色、改写或补全的草稿范围。"
+                        : "会话刚创建，等待收集主题、论点、知识点和待验证的问题。")
                 .build();
     }
 

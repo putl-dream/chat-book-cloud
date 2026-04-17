@@ -36,7 +36,7 @@
                     <el-icon class="session-icon"><ChatDotRound /></el-icon>
                     <div class="session-info">
                         <span class="session-name" :title="store.sessionTitle">{{ store.sessionTitle }}</span>
-                        <span class="session-meta">当前会话</span>
+                        <span class="session-meta">{{ store.currentSceneLabel }}</span>
                     </div>
                 </div>
 

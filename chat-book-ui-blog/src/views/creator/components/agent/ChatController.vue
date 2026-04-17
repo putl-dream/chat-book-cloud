@@ -2,8 +2,15 @@
     <div class="chat-controller">
         <div class="chat-header">
             <div class="chat-heading">
-                <h3 class="chat-title">思考共创助手</h3>
-                <p class="chat-subtitle">围绕主题、论点和疑问展开讨论，准备好了再生成初稿。</p>
+                <div class="scene-line">
+                    <span class="scene-badge">{{ store.currentSceneLabel }}</span>
+                    <span v-if="store.nextSceneLabel && store.nextSceneLabel !== store.currentSceneLabel" class="scene-next">
+                        下一阶段：{{ store.nextSceneLabel }}
+                    </span>
+                </div>
+                <h3 class="chat-title">{{ store.currentSceneLabel }}</h3>
+                <p class="chat-subtitle">{{ store.currentSceneSubtitle }}</p>
+                <p v-if="store.switchReason" class="chat-reason">{{ store.switchReason }}</p>
             </div>
             <div class="chat-actions">
                 <el-button 
@@ -11,10 +18,10 @@
                     type="primary" 
                     size="small" 
                     :loading="store.generatingDraft"
-                    :disabled="!store.hasMessages || store.chatting || store.loadingSession || store.hasPendingInteractiveForm"
+                    :disabled="!store.hasMessages || store.chatting || store.loadingSession || store.hasPendingInteractiveForm || (!store.isDraftReady && store.currentScene !== 'EDIT')"
                     @click="store.createDraftFromSession"
                 >
-                    生成初稿
+                    {{ store.generateButtonLabel }}
                 </el-button>
             </div>
         </div>
@@ -94,7 +101,7 @@
                 请先完成上方问题卡片，Agent 会在收到完整答案后继续生成建议
             </div>
             <div class="footer-hint" v-else>
-                当前阶段以讨论为主，确认方向后再手动点击“生成初稿”进入编辑器。
+                {{ store.sceneFooterHint }}
             </div>
         </div>
     </div>
@@ -176,6 +183,30 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
     min-width: 0;
 }
 
+.scene-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.scene-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    background: rgba(209, 96, 61, 0.12);
+    color: #b24a28;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+
+.scene-next {
+    font-size: 11px;
+    color: rgba(19, 39, 63, 0.52);
+}
+
 .chat-title {
     margin: 0;
     font-size: 18px;
@@ -189,6 +220,13 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
     font-size: 13px;
     line-height: 1.5;
     color: rgba(19, 39, 63, 0.58);
+}
+
+.chat-reason {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.4;
+    color: rgba(19, 39, 63, 0.46);
 }
 
 .chat-actions {

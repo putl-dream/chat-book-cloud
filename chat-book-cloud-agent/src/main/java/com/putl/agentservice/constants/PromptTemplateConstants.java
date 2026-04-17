@@ -14,6 +14,12 @@ public final class PromptTemplateConstants {
      */
     public static final String ARTICLE_CHAT = "article_chat_v1.txt";
 
+    public static final String ARTICLE_DISCUSS = "article_discuss_v1.txt";
+
+    public static final String ARTICLE_LEARN = "article_learn_v1.txt";
+
+    public static final String ARTICLE_EDIT = "article_edit_v1.txt";
+
     /**
      * 草稿生成模板，用于 generateDraft() 方法。
      * 要求模型输出 JSON {title, summary, content}

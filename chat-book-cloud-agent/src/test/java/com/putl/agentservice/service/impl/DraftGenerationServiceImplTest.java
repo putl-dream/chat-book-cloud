@@ -2,6 +2,9 @@ package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.engine.StreamingCancelledException;
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.enums.AgentAssistantAction;
+import com.putl.agentservice.enums.AgentSceneType;
+import com.putl.agentservice.enums.DraftReadiness;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
@@ -10,6 +13,7 @@ import com.putl.agentservice.model.dto.GenerateDraftRequest;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.model.vo.SceneDecision;
 import com.putl.agentservice.service.AgentNotebookCacheService;
 import com.putl.articleservice.api.ArticleClient;
 import com.putl.articleservice.api.dto.CreateDraftResponse;
@@ -59,6 +63,9 @@ class DraftGenerationServiceImplTest {
     @Mock
     private MessagePublisher messagePublisher;
 
+    @Mock
+    private AgentSceneRouter agentSceneRouter;
+
     private ActiveDraftGenerationRegistry activeDraftGenerationRegistry;
     private DraftGenerationServiceImpl service;
 
@@ -74,6 +81,7 @@ class DraftGenerationServiceImplTest {
                 agentNotebookCacheService,
                 messagePublisher,
                 activeDraftGenerationRegistry,
+                agentSceneRouter,
                 directExecutor);
 
         when(agentSessionMapper.selectById(anyInt())).thenReturn(AgentSessionDO.builder()
@@ -88,6 +96,16 @@ class DraftGenerationServiceImplTest {
 
     @Test
     void generateDraftByWebSocketShouldStreamAndPublishDoneEvent() {
+        when(agentSceneRouter.draftGeneratedDecision(any(NotebookSummary.class))).thenReturn(SceneDecision.builder()
+                .currentScene(AgentSceneType.DRAFT)
+                .nextScene(AgentSceneType.EDIT)
+                .assistantAction(AgentAssistantAction.EDIT_DRAFT)
+                .draftReadiness(DraftReadiness.READY)
+                .build());
+        when(agentSceneRouter.applyDecision(any(NotebookSummary.class), any(SceneDecision.class), org.mockito.ArgumentMatchers.eq(true)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(agentSceneRouter.finalizeDecision(any(SceneDecision.class), any(NotebookSummary.class), org.mockito.ArgumentMatchers.eq(true)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             Consumer<String> chunkConsumer = invocation.getArgument(2, Consumer.class);
@@ -122,6 +140,8 @@ class DraftGenerationServiceImplTest {
         assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_DONE\"")));
         assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"draftId\":101")));
         assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"summary\":null")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"currentScene\":\"DRAFT\"")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"nextScene\":\"EDIT\"")));
     }
 
     @Test

@@ -1,5 +1,6 @@
 package com.putl.agentservice.client.engine;
 
+import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.model.vo.NotebookSummary;
 import lombok.Builder;
@@ -14,6 +15,8 @@ public class ArticleAiContext {
     private final List<AgentMessageDO> messages;
 
     private final NotebookSummary notebookSummary;
+
+    private final AgentSceneType sceneType;
 
     private final String instruction;
 

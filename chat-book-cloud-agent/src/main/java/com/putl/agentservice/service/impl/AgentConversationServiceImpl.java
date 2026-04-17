@@ -4,8 +4,10 @@ import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
 import com.putl.agentservice.enums.AgentMessageRole;
+import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.mapper.entity.AgentSessionDO;
 import com.putl.agentservice.model.dto.AgentChatRequest;
 import com.putl.agentservice.model.dto.InteractionAnswerRequest;
 import com.putl.agentservice.model.dto.InteractionResponseRequest;
@@ -13,12 +15,19 @@ import com.putl.agentservice.model.vo.AgentAssistantMessage;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.AgentChatMessageVO;
 import com.putl.agentservice.model.vo.AgentChatResponse;
+import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.model.vo.SceneDecision;
 import com.putl.agentservice.service.AgentConversationService;
+import com.putl.agentservice.service.AgentNotebookService;
 import com.putl.agentservice.service.AgentConversationWindowService;
 import com.putl.agentservice.service.AgentNotebookCacheService;
+import com.putl.articleservice.api.ArticleClient;
+import com.putl.articleservice.api.dto.DraftDetailDTO;
+import fun.amireux.chat.book.framework.common.pojo.CommonResult;
 import fun.amireux.chat.book.framework.common.utils.JsonUtil;
 import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
 import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Service;
 import org.springframework.util.CollectionUtils;
@@ -27,11 +36,13 @@ import org.springframework.web.servlet.mvc.method.annotation.SseEmitter;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.StringJoiner;
 import java.util.concurrent.Executor;
 
+@Slf4j
 @Service
 public class AgentConversationServiceImpl implements AgentConversationService {
 
@@ -39,24 +50,36 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     private static final String AGENT_CHAT_ERROR = "AGENT_CHAT_ERROR";
 
     private final AgentMessageMapper agentMessageMapper;
+    private final AgentSessionMapper agentSessionMapper;
     private final ArticleAiGateway articleAiGateway;
     private final AgentConversationWindowService agentConversationWindowService;
     private final AgentNotebookCacheService agentNotebookCacheService;
+    private final AgentNotebookService agentNotebookService;
+    private final AgentSceneRouter agentSceneRouter;
+    private final ArticleClient articleClient;
     private final AgentChatProperties agentChatProperties;
     private final Executor agentChatStreamExecutor;
     private final MessagePublisher messagePublisher;
 
     public AgentConversationServiceImpl(AgentMessageMapper agentMessageMapper,
+                                        AgentSessionMapper agentSessionMapper,
                                         ArticleAiGateway articleAiGateway,
                                         AgentConversationWindowService agentConversationWindowService,
                                         AgentNotebookCacheService agentNotebookCacheService,
+                                        AgentNotebookService agentNotebookService,
+                                        AgentSceneRouter agentSceneRouter,
+                                        ArticleClient articleClient,
                                         AgentChatProperties agentChatProperties,
                                         MessagePublisher messagePublisher,
                                         @Qualifier("agentChatStreamExecutor") Executor agentChatStreamExecutor) {
         this.agentMessageMapper = agentMessageMapper;
+        this.agentSessionMapper = agentSessionMapper;
         this.articleAiGateway = articleAiGateway;
         this.agentConversationWindowService = agentConversationWindowService;
         this.agentNotebookCacheService = agentNotebookCacheService;
+        this.agentNotebookService = agentNotebookService;
+        this.agentSceneRouter = agentSceneRouter;
+        this.articleClient = articleClient;
         this.agentChatProperties = agentChatProperties;
         this.messagePublisher = messagePublisher;
         this.agentChatStreamExecutor = agentChatStreamExecutor;
@@ -68,6 +91,11 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         return AgentChatResponse.builder()
                 .reply(result.aiReply().getData().getContent())
                 .message(toMessageVO(result.assistantMessage()))
+                .currentScene(result.sceneDecision().getCurrentScene())
+                .nextScene(result.sceneDecision().getNextScene())
+                .switchReason(result.sceneDecision().getSwitchReason())
+                .assistantAction(result.sceneDecision().getAssistantAction())
+                .draftReadiness(result.sceneDecision().getDraftReadiness())
                 .build();
     }
 
@@ -85,6 +113,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private ChatExecutionResult executeChat(AgentChatRequest request) {
         PreparedUserMessage preparedUserMessage = prepareUserMessage(request);
+        AgentSessionDO session = requireSession(request == null ? null : request.getSessionId());
+        NotebookSummary currentNotebook = agentNotebookCacheService.getNotebook(session.getId());
+        DraftDetailDTO draftDetail = loadDraftDetail(session);
         List<AgentMessageDO> recentMessages = agentConversationWindowService.getRecentMessages(request.getSessionId());
         AgentMessageDO userMessage = saveMessage(
                 request.getSessionId(),
@@ -96,7 +127,14 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 0,
                 0);
         List<AgentMessageDO> messages = agentConversationWindowService.appendMessage(request.getSessionId(), recentMessages, userMessage);
-        AiInvocationResult<AgentAssistantMessage> aiReply = articleAiGateway.chat(messages, agentNotebookCacheService.getNotebook(request.getSessionId()));
+        SceneDecision routedScene = agentSceneRouter.route(session, messages, currentNotebook, draftDetail != null);
+        AiInvocationResult<AgentAssistantMessage> aiReply = articleAiGateway.chat(
+                messages,
+                currentNotebook,
+                routedScene.getCurrentScene(),
+                draftDetail == null ? null : draftDetail.getTitle(),
+                draftDetail == null ? null : draftDetail.getSummary(),
+                draftDetail == null ? null : draftDetail.getContent());
         AgentAssistantMessage assistant = normalizeAssistantMessage(aiReply.getData());
         AgentMessageDO assistantMessage = saveMessage(
                 request.getSessionId(),
@@ -108,7 +146,13 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 aiReply.getTokenOutput(),
                 aiReply.getLatencyMs());
         agentConversationWindowService.appendMessage(request.getSessionId(), messages, assistantMessage);
-        return new ChatExecutionResult(aiReply, assistantMessage);
+        NotebookSummary stabilizedNotebook = safelyRefreshNotebook(
+                request.getSessionId(),
+                currentNotebook,
+                routedScene,
+                draftDetail != null);
+        SceneDecision finalizedScene = agentSceneRouter.finalizeDecision(routedScene, stabilizedNotebook, draftDetail != null);
+        return new ChatExecutionResult(aiReply, assistantMessage, finalizedScene);
     }
 
     private AgentMessageDO saveMessage(Integer sessionId,
@@ -135,7 +179,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private void doChatStream(AgentChatRequest request, SseEmitter emitter) {
         try {
-            sendEvent(emitter, "start", Map.of("sessionId", request.getSessionId()));
+            Map<String, Object> startPayload = new LinkedHashMap<>();
+            startPayload.put("sessionId", request == null ? null : request.getSessionId());
+            sendEvent(emitter, "start", startPayload);
             ChatExecutionResult result = executeChat(request);
             sendEvent(emitter, "done", donePayload(request, result));
             emitter.complete();
@@ -159,20 +205,27 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     }
 
     private Map<String, Object> donePayload(AgentChatRequest request, ChatExecutionResult result) {
-        return Map.of(
-                "sessionId", request.getSessionId(),
-                "reply", result.aiReply().getData().getContent(),
-                "message", toMessageVO(result.assistantMessage()),
-                "tokenInput", result.aiReply().getTokenInput(),
-                "tokenOutput", result.aiReply().getTokenOutput(),
-                "latencyMs", result.aiReply().getLatencyMs(),
-                "model", result.aiReply().getModel());
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", request.getSessionId());
+        payload.put("reply", result.aiReply().getData().getContent());
+        payload.put("message", toMessageVO(result.assistantMessage()));
+        payload.put("currentScene", result.sceneDecision().getCurrentScene());
+        payload.put("nextScene", result.sceneDecision().getNextScene());
+        payload.put("switchReason", defaultText(result.sceneDecision().getSwitchReason()));
+        payload.put("assistantAction", result.sceneDecision().getAssistantAction());
+        payload.put("draftReadiness", result.sceneDecision().getDraftReadiness());
+        payload.put("tokenInput", result.aiReply().getTokenInput());
+        payload.put("tokenOutput", result.aiReply().getTokenOutput());
+        payload.put("latencyMs", result.aiReply().getLatencyMs());
+        payload.put("model", result.aiReply().getModel());
+        return payload;
     }
 
     private Map<String, Object> errorPayload(AgentChatRequest request, Exception ex) {
-        return Map.of(
-                "sessionId", request.getSessionId(),
-                "message", defaultText(ex.getMessage()));
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", request == null ? null : request.getSessionId());
+        payload.put("message", defaultText(ex.getMessage()));
+        return payload;
     }
 
     private void sendEvent(SseEmitter emitter, String eventName, Object payload) {
@@ -185,6 +238,45 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private String defaultText(String value) {
         return value == null ? "" : value;
+    }
+
+    private AgentSessionDO requireSession(Integer sessionId) {
+        if (sessionId == null || sessionId <= 0) {
+            throw new IllegalArgumentException("会话不存在或已失效");
+        }
+        AgentSessionDO session = agentSessionMapper.selectById(sessionId);
+        if (session == null) {
+            throw new IllegalArgumentException("会话不存在或已失效");
+        }
+        return session;
+    }
+
+    private DraftDetailDTO loadDraftDetail(AgentSessionDO session) {
+        if (session == null || session.getTargetDraftId() == null || session.getTargetDraftId() <= 0) {
+            return null;
+        }
+        CommonResult<DraftDetailDTO> draftResult = articleClient.getDraftDetail(session.getTargetDraftId());
+        if (draftResult == null || !draftResult.isSuccess()) {
+            return null;
+        }
+        return draftResult.getData();
+    }
+
+    private NotebookSummary safelyRefreshNotebook(Integer sessionId,
+                                                  NotebookSummary fallbackNotebook,
+                                                  SceneDecision sceneDecision,
+                                                  boolean hasDraftContext) {
+        try {
+            NotebookSummary refreshedNotebook = agentNotebookService.refreshNotebook(sessionId);
+            NotebookSummary stabilizedNotebook = agentSceneRouter.applyDecision(refreshedNotebook, sceneDecision, hasDraftContext);
+            agentNotebookCacheService.saveNotebook(sessionId, stabilizedNotebook);
+            return stabilizedNotebook;
+        } catch (Exception ex) {
+            log.warn("Failed to refresh notebook after chat. sessionId={}, reason={}", sessionId, ex.getMessage(), ex);
+            NotebookSummary stabilizedNotebook = agentSceneRouter.applyDecision(fallbackNotebook, sceneDecision, hasDraftContext);
+            agentNotebookCacheService.saveNotebook(sessionId, stabilizedNotebook);
+            return stabilizedNotebook;
+        }
     }
 
     private AgentAssistantMessage normalizeAssistantMessage(AgentAssistantMessage message) {
@@ -307,6 +399,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     }
 
     private record ChatExecutionResult(AiInvocationResult<AgentAssistantMessage> aiReply,
-                                       AgentMessageDO assistantMessage) {
+                                       AgentMessageDO assistantMessage,
+                                       SceneDecision sceneDecision) {
     }
 }
