@@ -64,17 +64,11 @@ class ArticlePagePageServiceImplTest {
         ReflectionTestUtils.setField(service, "env", ENV);
 
         when(redisTemplate.opsForZSet()).thenReturn(zSetOperations);
-
-        doAnswer(invocation -> {
-            List<ArticleDO> articles = invocation.getArgument(0);
-            return articles.stream()
-                .map(article -> ArticleListVO.builder().id(article.getId()).build())
-                .toList();
-        }).when(service).toBean(anyList());
     }
 
     @Test
     void getHotPageShouldKeepRedisRankOrderWithoutFillingLatestArticles() {
+        stubRankedArticleMapping();
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(3L, 3L);
         when(zSetOperations.reverseRange(HOT_ALL_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17, 25));
         when(articleMapper.selectBatchIds(anyList())).thenReturn(List.of(
@@ -93,6 +87,7 @@ class ArticlePagePageServiceImplTest {
 
     @Test
     void getHotPageShouldDropInvalidRankMembersInsteadOfMergingFallbackArticles() {
+        stubRankedArticleMapping();
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(3L, 1L);
         when(zSetOperations.reverseRange(HOT_ALL_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17, 25));
         when(articleMapper.selectBatchIds(anyList())).thenReturn(List.of(
@@ -113,6 +108,7 @@ class ArticlePagePageServiceImplTest {
 
     @Test
     void getHotPageShouldTriggerLazyInitializationWhenGlobalRankIsEmpty() {
+        stubRankedArticleMapping();
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(0L, 2L, 2L);
         when(interactionClient.initializeAllHotRankIfAbsent()).thenReturn(CommonResult.success(2L));
         when(zSetOperations.reverseRange(HOT_ALL_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17));
@@ -131,6 +127,7 @@ class ArticlePagePageServiceImplTest {
 
     @Test
     void getTodayHotPageShouldPrioritizeDayRankAndFillFromOverallRank() {
+        stubRankedArticleMapping();
         when(zSetOperations.zCard(HOT_DAY_KEY)).thenReturn(2L, 2L);
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(5L, 5L);
         when(zSetOperations.reverseRange(HOT_DAY_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17));
@@ -160,6 +157,7 @@ class ArticlePagePageServiceImplTest {
     void getTodayHotPageShouldFallbackToTodayScopeInsteadOfGlobalHotPage() {
         when(zSetOperations.zCard(HOT_DAY_KEY)).thenReturn(0L);
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(0L);
+        when(interactionClient.initializeAllHotRankIfAbsent()).thenReturn(CommonResult.success(0L));
         PageResult<ArticleListVO> todayFallback = new PageResult<>(
             List.of(ArticleListVO.builder().id(25).build()),
             1L
@@ -173,6 +171,15 @@ class ArticlePagePageServiceImplTest {
         assertThat(result.getList()).extracting(ArticleListVO::getId)
             .containsExactly(25);
         verify(service, never()).getHotPage(1, 5);
+    }
+
+    private void stubRankedArticleMapping() {
+        doAnswer(invocation -> {
+            List<ArticleDO> articles = invocation.getArgument(0);
+            return articles.stream()
+                .map(article -> ArticleListVO.builder().id(article.getId()).build())
+                .toList();
+        }).when(service).toBean(anyList());
     }
 
     private static ArticleDO article(Integer id, ArticleStatus status) {
