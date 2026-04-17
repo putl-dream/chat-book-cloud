@@ -17,7 +17,10 @@ import {
     loadAgentDraftImport,
     loadAgentGenerationIntent
 } from '@/views/creator/_domain/agent.js';
-import { AGENT_SOCKET_EVENT } from '@/views/creator/_domain/agent-stream.js';
+import {
+    AGENT_STREAM_COMMAND,
+    AGENT_STREAM_EVENT
+} from '@/views/creator/_domain/stream-constants.js';
 import {
     AGENT_RUN_KIND,
     AGENT_RUN_STATUS,
@@ -580,7 +583,7 @@ export function useEditorLogic() {
             maxReconnectAttempts: 0
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
+        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -592,7 +595,7 @@ export function useEditorLogic() {
             });
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
+        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -608,7 +611,7 @@ export function useEditorLogic() {
             );
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
+        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
             if (ignoreAgentStream || typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
@@ -626,7 +629,7 @@ export function useEditorLogic() {
             applyMarkdownToEditor(preview.content);
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
+        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -659,7 +662,7 @@ export function useEditorLogic() {
             ElMessage.success('初稿已生成，可继续编辑');
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
+        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -670,7 +673,7 @@ export function useEditorLogic() {
             ElMessage.error(payload.message || '初稿生成失败，请稍后重试');
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STOPPED, (payload = {}) => {
+        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_STOPPED, (payload = {}) => {
             agentDraftRun.value = stopArtifactRun(agentDraftRun.value, payload.message || '已停止生成，你可以直接接管正文');
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
@@ -749,7 +752,7 @@ export function useEditorLogic() {
 
         try {
             const service = await ensureAgentSocketReady();
-            const sent = service.send(AGENT_SOCKET_EVENT.DRAFT_GENERATE, { sessionId });
+            const sent = service.send(AGENT_STREAM_COMMAND.DRAFT_GENERATE, { sessionId });
             if (!sent) {
                 throw new Error('Agent WebSocket 未连接');
             }
@@ -775,7 +778,7 @@ export function useEditorLogic() {
 
         const sessionId = agentDraftRun.value.sessionId;
         const sent = sessionId && agentSocketService
-            ? agentSocketService.send(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STOP, { sessionId })
+            ? agentSocketService.send(AGENT_STREAM_COMMAND.DRAFT_GENERATE_STOP, { sessionId })
             : false;
 
         if (!sent) {

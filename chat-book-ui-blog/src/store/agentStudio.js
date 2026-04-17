@@ -31,7 +31,10 @@ import {
     normalizeAgentMessageType,
     normalizeMessagePayload
 } from '@/views/creator/_domain/agent-interaction.js';
-import { AGENT_SOCKET_EVENT } from '@/views/creator/_domain/agent-stream.js';
+import {
+    AGENT_STREAM_COMMAND,
+    AGENT_STREAM_EVENT
+} from '@/views/creator/_domain/stream-constants.js';
 import {
     AGENT_RUN_KIND,
     AGENT_RUN_STATUS,
@@ -524,7 +527,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         closingSocket = false;
         socketService = new SocketService(resolveAgentSocketUrl(), getAccessToken());
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_START, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.CHAT_START, (payload = {}) => {
             chatRun.value = startMessageRun(chatRun.value, {
                 runId: chatRun.value.runId ?? getStreamingAssistantMessageId(),
                 messageId: getStreamingAssistantMessageId(),
@@ -533,7 +536,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_DELTA, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.CHAT_DELTA, (payload = {}) => {
             const streamingAssistantMessageId = getStreamingAssistantMessageId();
             if (!streamingAssistantMessageId || typeof payload.content !== 'string') return;
             const messageIndex = findMessageIndex(streamingAssistantMessageId);
@@ -557,7 +560,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             };
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_DONE, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.CHAT_DONE, (payload = {}) => {
             console.debug('[agent-chat-done]', {
                 sessionId: payload.sessionId ?? sessionId.value,
                 deltaCount: getStreamingAssistantDeltaCount(),
@@ -580,13 +583,13 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_ERROR, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.CHAT_ERROR, (payload = {}) => {
             chatRun.value = failMessageRun(chatRun.value, payload.message || '发送失败，请稍后重试');
             discardStreamingMessage();
             ElMessage.error(payload.message || '发送失败，请稍后重试');
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
             draftRun.value = startArtifactRun(draftRun.value, {
                 runId: payload.sessionId ?? sessionId.value,
                 sessionId: payload.sessionId ?? sessionId.value,
@@ -595,7 +598,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
             draftRun.value = updateArtifactStatus(
                 generatingDraft.value
                     ? draftRun.value
@@ -608,7 +611,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             );
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
             if (typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
@@ -619,7 +622,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
             draft.value = normalizeAgentDraft({
                 draftId: payload.draftId,
                 versionNo: payload.versionNo,
@@ -668,7 +671,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
+        socketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
             draftRun.value = failArtifactRun(draftRun.value, payload.message || '生成草稿失败，请稍后重试');
             resetDraftStreamingState({ resetRuntime: false });
             ElMessage.error(payload.message || '生成草稿失败，请稍后重试');
@@ -965,7 +968,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 streaming: true
             }));
 
-            const sent = service.send(AGENT_SOCKET_EVENT.CHAT, {
+            const sent = service.send(AGENT_STREAM_COMMAND.CHAT, {
                 sessionId: currentSessionId,
                 content
             });
@@ -1142,7 +1145,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 streaming: true
             }));
 
-            const sent = service.send(AGENT_SOCKET_EVENT.CHAT, {
+            const sent = service.send(AGENT_STREAM_COMMAND.CHAT, {
                 sessionId: sessionId.value,
                 interactionResponse
             });
