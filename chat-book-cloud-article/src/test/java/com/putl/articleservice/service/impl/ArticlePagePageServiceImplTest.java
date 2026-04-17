@@ -154,6 +154,49 @@ class ArticlePagePageServiceImplTest {
     }
 
     @Test
+    void getTodayHotPageShouldReturnDayRankWhenGlobalRankIsEmpty() {
+        stubRankedArticleMapping();
+        when(zSetOperations.zCard(HOT_DAY_KEY)).thenReturn(7L, 7L);
+        when(zSetOperations.reverseRange(HOT_DAY_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17, 25, 24, 23, 26, 22));
+        when(articleMapper.selectBatchIds(anyList())).thenReturn(List.of(
+            article(13, ArticleStatus.PUBLISHED),
+            article(17, ArticleStatus.PUBLISHED),
+            article(25, ArticleStatus.PUBLISHED),
+            article(24, ArticleStatus.PUBLISHED),
+            article(23, ArticleStatus.PUBLISHED),
+            article(26, ArticleStatus.PUBLISHED),
+            article(22, ArticleStatus.PUBLISHED)
+        ));
+
+        PageResult<ArticleListVO> result = service.getTodayHotPage(1, 5);
+
+        assertThat(result.getList()).extracting(ArticleListVO::getId)
+            .containsExactly(13, 17, 25, 24, 23);
+        assertThat(result.getTotal()).isEqualTo(7L);
+        verify(zSetOperations, never()).zCard(HOT_ALL_KEY);
+        verify(service, never()).toBean(eq(1), eq(5), any(Wrapper.class));
+    }
+
+    @Test
+    void getTodayHotPageShouldKeepDayRankWhenGlobalRankLookupFails() {
+        stubRankedArticleMapping();
+        when(zSetOperations.zCard(HOT_DAY_KEY)).thenReturn(2L, 2L);
+        when(zSetOperations.reverseRange(HOT_DAY_KEY, 0L, 14L)).thenReturn(linkedSet(13, 17));
+        when(articleMapper.selectBatchIds(anyList())).thenReturn(List.of(
+            article(13, ArticleStatus.PUBLISHED),
+            article(17, ArticleStatus.PUBLISHED)
+        ));
+        when(zSetOperations.zCard(HOT_ALL_KEY)).thenThrow(new RuntimeException("global rank unavailable"));
+
+        PageResult<ArticleListVO> result = service.getTodayHotPage(1, 5);
+
+        assertThat(result.getList()).extracting(ArticleListVO::getId)
+            .containsExactly(13, 17);
+        assertThat(result.getTotal()).isEqualTo(2L);
+        verify(service, never()).toBean(eq(1), eq(5), any(Wrapper.class));
+    }
+
+    @Test
     void getTodayHotPageShouldFallbackToTodayScopeInsteadOfGlobalHotPage() {
         when(zSetOperations.zCard(HOT_DAY_KEY)).thenReturn(0L);
         when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(0L);
