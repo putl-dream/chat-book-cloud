@@ -1,8 +1,10 @@
 package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
+import com.putl.agentservice.constants.AgentStreamEventConstants;
 import com.putl.agentservice.enums.AgentMessageRole;
 import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.AgentMessageMapper;
@@ -46,9 +48,6 @@ import java.util.concurrent.Executor;
 @Service
 public class AgentConversationServiceImpl implements AgentConversationService {
 
-    private static final String AGENT_CHAT_DONE = "AGENT_CHAT_DONE";
-    private static final String AGENT_CHAT_ERROR = "AGENT_CHAT_ERROR";
-
     private final AgentMessageMapper agentMessageMapper;
     private final AgentSessionMapper agentSessionMapper;
     private final ArticleAiGateway articleAiGateway;
@@ -87,7 +86,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     @Override
     public AgentChatResponse chat(AgentChatRequest request) {
-        ChatExecutionResult result = executeChat(request);
+        ChatExecutionResult result = executeChat(request, ignored -> { }, StreamingControl.noop(), new StreamingChatPreviewState());
         return AgentChatResponse.builder()
                 .reply(result.aiReply().getData().getContent())
                 .message(toMessageVO(result.assistantMessage()))
@@ -112,6 +111,13 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     }
 
     private ChatExecutionResult executeChat(AgentChatRequest request) {
+        return executeChat(request, ignored -> { }, StreamingControl.noop(), new StreamingChatPreviewState());
+    }
+
+    private ChatExecutionResult executeChat(AgentChatRequest request,
+                                            java.util.function.Consumer<String> previewConsumer,
+                                            StreamingControl streamingControl,
+                                            StreamingChatPreviewState previewState) {
         PreparedUserMessage preparedUserMessage = prepareUserMessage(request);
         AgentSessionDO session = requireSession(request == null ? null : request.getSessionId());
         NotebookSummary currentNotebook = agentNotebookCacheService.getNotebook(session.getId());
@@ -134,7 +140,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 routedScene.getCurrentScene(),
                 draftDetail == null ? null : draftDetail.getTitle(),
                 draftDetail == null ? null : draftDetail.getSummary(),
-                draftDetail == null ? null : draftDetail.getContent());
+                draftDetail == null ? null : draftDetail.getContent(),
+                chunk -> handleStreamingChunk(chunk, previewConsumer, previewState),
+                streamingControl);
         AgentAssistantMessage assistant = normalizeAssistantMessage(aiReply.getData());
         AgentMessageDO assistantMessage = saveMessage(
                 request.getSessionId(),
@@ -182,7 +190,11 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             Map<String, Object> startPayload = new LinkedHashMap<>();
             startPayload.put("sessionId", request == null ? null : request.getSessionId());
             sendEvent(emitter, "start", startPayload);
-            ChatExecutionResult result = executeChat(request);
+            StreamingChatPreviewState previewState = new StreamingChatPreviewState();
+            ChatExecutionResult result = executeChat(request, preview ->
+                    sendEvent(emitter, "delta", payload(request == null ? null : request.getSessionId(), "content", preview)),
+                    StreamingControl.noop(),
+                    previewState);
             sendEvent(emitter, "done", donePayload(request, result));
             emitter.complete();
         } catch (Exception ex) {
@@ -197,11 +209,51 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private void doChatWebSocket(String userId, AgentChatRequest request) {
         try {
-            ChatExecutionResult result = executeChat(request);
-            messagePublisher.sendToUser(userId, WebSocketResult.of(AGENT_CHAT_DONE, donePayload(request, result)));
+            Integer sessionId = request == null ? null : request.getSessionId();
+            sendStart(userId, sessionId);
+            StreamingChatPreviewState previewState = new StreamingChatPreviewState();
+            ChatExecutionResult result = executeChat(request, preview ->
+                    sendDelta(userId, sessionId, preview), StreamingControl.noop(), previewState);
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_CHAT_DONE, donePayload(request, result)));
         } catch (Exception ex) {
-            messagePublisher.sendToUser(userId, WebSocketResult.of(AGENT_CHAT_ERROR, errorPayload(request, ex)));
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_CHAT_ERROR, errorPayload(request, ex)));
         }
+    }
+
+    private void handleStreamingChunk(String chunk,
+                                      java.util.function.Consumer<String> previewConsumer,
+                                      StreamingChatPreviewState previewState) {
+        if (previewState == null || chunk == null || chunk.isEmpty()) {
+            return;
+        }
+        previewState.rawBuffer.append(chunk);
+        String previewContent = StructuredMessageStreamPreviewExtractor.extractContent(previewState.rawBuffer.toString());
+        if (!StringUtils.hasText(previewContent) || previewContent.equals(previewState.lastPreview)) {
+            return;
+        }
+
+        String delta = previewContent.startsWith(previewState.lastPreview)
+                ? previewContent.substring(previewState.lastPreview.length())
+                : previewContent;
+        previewState.lastPreview = previewContent;
+        if (StringUtils.hasText(delta)) {
+            previewConsumer.accept(delta);
+        }
+    }
+
+    private void sendStart(String userId, Integer sessionId) {
+        messagePublisher.sendToUser(userId, WebSocketResult.of(
+                AgentStreamEventConstants.AGENT_CHAT_START,
+                payload(sessionId, "message", "正在思考...", "renderHint", "text_preview")));
+    }
+
+    private void sendDelta(String userId, Integer sessionId, String content) {
+        if (!StringUtils.hasText(content)) {
+            return;
+        }
+        messagePublisher.sendToUser(userId, WebSocketResult.of(
+                AgentStreamEventConstants.AGENT_CHAT_DELTA,
+                payload(sessionId, "content", content)));
     }
 
     private Map<String, Object> donePayload(AgentChatRequest request, ChatExecutionResult result) {
@@ -234,6 +286,18 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         } catch (IOException ex) {
             throw new IllegalStateException("SSE 发送失败", ex);
         }
+    }
+
+    private Map<String, Object> payload(Integer sessionId, Object... values) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("sessionId", sessionId);
+        if (values == null) {
+            return payload;
+        }
+        for (int index = 0; index + 1 < values.length; index += 2) {
+            payload.put(String.valueOf(values[index]), values[index + 1]);
+        }
+        return payload;
     }
 
     private String defaultText(String value) {
@@ -401,5 +465,11 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     private record ChatExecutionResult(AiInvocationResult<AgentAssistantMessage> aiReply,
                                        AgentMessageDO assistantMessage,
                                        SceneDecision sceneDecision) {
+    }
+
+    private static final class StreamingChatPreviewState {
+
+        private final StringBuilder rawBuffer = new StringBuilder();
+        private String lastPreview = "";
     }
 }

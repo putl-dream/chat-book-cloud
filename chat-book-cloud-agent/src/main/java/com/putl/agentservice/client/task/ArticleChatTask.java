@@ -42,6 +42,11 @@ public class ArticleChatTask extends AbstractAnthropicArticleAiTask<AgentAssista
         return "article_discuss";
     }
 
+    @Override
+    public boolean supportsStreaming() {
+        return true;
+    }
+
     /**
      * 创建对话请求参数
      *

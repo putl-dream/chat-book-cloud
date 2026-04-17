@@ -17,6 +17,7 @@ import {
     loadAgentDraftImport,
     loadAgentGenerationIntent
 } from '@/views/creator/_domain/agent.js';
+import { AGENT_SOCKET_EVENT } from '@/views/creator/_domain/agent-stream.js';
 import {
     applyRichTextEditorAttributes,
     createRichTextEditorAttributes,
@@ -29,15 +30,6 @@ import { buildArticlePayload, extractTextSummarySource, hasMeaningfulContent } f
 
 import { useEditorLayout } from './useEditorLayout.js';
 import { useEditorForm } from './useEditorForm.js';
-
-const AGENT_CHAT_TYPE = 'AGENT_DRAFT_GENERATE';
-const AGENT_DRAFT_STOP_TYPE = 'AGENT_DRAFT_GENERATE_STOP';
-const AGENT_DRAFT_GENERATE_START = 'AGENT_DRAFT_GENERATE_START';
-const AGENT_DRAFT_GENERATE_STATUS = 'AGENT_DRAFT_GENERATE_STATUS';
-const AGENT_DRAFT_GENERATE_DELTA = 'AGENT_DRAFT_GENERATE_DELTA';
-const AGENT_DRAFT_GENERATE_DONE = 'AGENT_DRAFT_GENERATE_DONE';
-const AGENT_DRAFT_GENERATE_ERROR = 'AGENT_DRAFT_GENERATE_ERROR';
-const AGENT_DRAFT_GENERATE_STOPPED = 'AGENT_DRAFT_GENERATE_STOPPED';
 
 function findStableMarkdownBoundary(markdown = '') {
     if (!markdown) {
@@ -572,7 +564,7 @@ export function useEditorLogic() {
             maxReconnectAttempts: 0
         });
 
-        agentSocketService.on(AGENT_DRAFT_GENERATE_START, (payload = {}) => {
+        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -581,7 +573,7 @@ export function useEditorLogic() {
             aiGenerationStatusText.value = payload.message || '正在整理讨论上下文...';
         });
 
-        agentSocketService.on(AGENT_DRAFT_GENERATE_STATUS, (payload = {}) => {
+        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -589,7 +581,7 @@ export function useEditorLogic() {
             aiGenerationStatusText.value = payload.message || aiGenerationStatusText.value || '正在生成正文...';
         });
 
-        agentSocketService.on(AGENT_DRAFT_GENERATE_DELTA, (payload = {}) => {
+        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
             if (ignoreAgentStream || typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
@@ -604,7 +596,7 @@ export function useEditorLogic() {
             applyMarkdownToEditor(preview.content);
         });
 
-        agentSocketService.on(AGENT_DRAFT_GENERATE_DONE, (payload = {}) => {
+        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -624,7 +616,7 @@ export function useEditorLogic() {
             ElMessage.success('初稿已生成，可继续编辑');
         });
 
-        agentSocketService.on(AGENT_DRAFT_GENERATE_ERROR, (payload = {}) => {
+        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -637,7 +629,7 @@ export function useEditorLogic() {
             ElMessage.error(payload.message || '初稿生成失败，请稍后重试');
         });
 
-        agentSocketService.on(AGENT_DRAFT_GENERATE_STOPPED, (payload = {}) => {
+        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STOPPED, (payload = {}) => {
             aiGenerating.value = false;
             aiGenerationStopped.value = true;
             aiGenerationStatusText.value = payload.message || '已停止生成，你可以直接接管正文';
@@ -721,7 +713,7 @@ export function useEditorLogic() {
 
         try {
             const service = await ensureAgentSocketReady();
-            const sent = service.send(AGENT_CHAT_TYPE, { sessionId });
+            const sent = service.send(AGENT_SOCKET_EVENT.DRAFT_GENERATE, { sessionId });
             if (!sent) {
                 throw new Error('Agent WebSocket 未连接');
             }
@@ -751,7 +743,7 @@ export function useEditorLogic() {
 
         const sessionId = agentGenerationSessionId.value;
         const sent = sessionId && agentSocketService
-            ? agentSocketService.send(AGENT_DRAFT_STOP_TYPE, { sessionId })
+            ? agentSocketService.send(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STOP, { sessionId })
             : false;
 
         if (!sent) {

@@ -34,6 +34,26 @@ public interface ArticleAiGateway {
                                                    String currentSummary,
                                                    String currentContent);
 
+    default AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages,
+                                                           NotebookSummary notebookSummary,
+                                                           AgentSceneType sceneType,
+                                                           String currentTitle,
+                                                           String currentSummary,
+                                                           String currentContent,
+                                                           Consumer<String> chunkConsumer) {
+        return chat(messages, notebookSummary, sceneType, currentTitle, currentSummary, currentContent,
+                chunkConsumer, StreamingControl.noop());
+    }
+
+    AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages,
+                                                   NotebookSummary notebookSummary,
+                                                   AgentSceneType sceneType,
+                                                   String currentTitle,
+                                                   String currentSummary,
+                                                   String currentContent,
+                                                   Consumer<String> chunkConsumer,
+                                                   StreamingControl streamingControl);
+
     /**
      * 生成文章草稿（非流式）
      *

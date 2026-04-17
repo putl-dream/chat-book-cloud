@@ -1,5 +1,6 @@
 package com.putl.agentservice.ws;
 
+import com.putl.agentservice.constants.AgentStreamEventConstants;
 import com.putl.agentservice.model.dto.AgentChatRequest;
 import com.putl.agentservice.service.AgentConversationService;
 import fun.amireux.chat.book.framework.websocket.domain.WebSocketResult;
@@ -14,9 +15,6 @@ import java.util.Map;
 @Component
 public class AgentChatMessageHandler implements MessageHandler<AgentChatWsMessage> {
 
-    private static final String AGENT_CHAT = "AGENT_CHAT";
-    private static final String AGENT_CHAT_ERROR = "AGENT_CHAT_ERROR";
-
     @Resource
     private AgentConversationService agentConversationService;
 
@@ -25,7 +23,7 @@ public class AgentChatMessageHandler implements MessageHandler<AgentChatWsMessag
 
     @Override
     public String getType() {
-        return AGENT_CHAT;
+        return AgentStreamEventConstants.AGENT_CHAT;
     }
 
     @Override
@@ -55,6 +53,6 @@ public class AgentChatMessageHandler implements MessageHandler<AgentChatWsMessag
     }
 
     private void sendError(String userId, String message) {
-        messagePublisher.sendToUser(userId, WebSocketResult.of(AGENT_CHAT_ERROR, Map.of("message", message)));
+        messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_CHAT_ERROR, Map.of("message", message)));
     }
 }

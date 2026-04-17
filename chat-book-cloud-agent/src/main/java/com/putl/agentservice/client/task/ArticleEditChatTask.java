@@ -31,6 +31,11 @@ public class ArticleEditChatTask extends AbstractAnthropicArticleAiTask<AgentAss
     }
 
     @Override
+    public boolean supportsStreaming() {
+        return true;
+    }
+
+    @Override
     public MessageCreateParams createParams(ArticleAiContext context) {
         MessageCreateParams.Builder builder = newRequest(
                 properties.getAnthropic().getModel().getChat(),

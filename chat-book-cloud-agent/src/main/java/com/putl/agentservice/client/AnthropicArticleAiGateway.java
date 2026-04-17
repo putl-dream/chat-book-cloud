@@ -87,6 +87,19 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
                                                           String currentTitle,
                                                           String currentSummary,
                                                           String currentContent) {
+        return chat(messages, notebookSummary, sceneType, currentTitle, currentSummary, currentContent, null,
+                StreamingControl.noop());
+    }
+
+    @Override
+    public AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages,
+                                                          NotebookSummary notebookSummary,
+                                                          AgentSceneType sceneType,
+                                                          String currentTitle,
+                                                          String currentSummary,
+                                                          String currentContent,
+                                                          Consumer<String> chunkConsumer,
+                                                          StreamingControl streamingControl) {
         AgentSceneType runtimeScene = sceneType == null ? AgentSceneType.DISCUSS : sceneType.toRuntimeScene();
         return executionEngine.execute(
                 resolveChatTask(runtimeScene),
@@ -97,7 +110,9 @@ public class AnthropicArticleAiGateway implements ArticleAiGateway {
                         .currentTitle(currentTitle)
                         .currentSummary(currentSummary)
                         .currentContent(currentContent)
-                        .build());
+                        .build(),
+                chunkConsumer,
+                streamingControl);
     }
 
     /**
