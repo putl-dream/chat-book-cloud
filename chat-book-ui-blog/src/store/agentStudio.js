@@ -13,6 +13,7 @@ import {
     buildStreamingDraftPreview,
     createAgentSession,
     getAgentSessionDetail,
+    getAgentSessionPage,
     normalizeAssistantAction,
     normalizeAgentDraft,
     normalizeDraftReadiness,
@@ -43,6 +44,7 @@ const AGENT_DRAFT_GENERATE_STATUS = 'AGENT_DRAFT_GENERATE_STATUS';
 const AGENT_DRAFT_GENERATE_DELTA = 'AGENT_DRAFT_GENERATE_DELTA';
 const AGENT_DRAFT_GENERATE_DONE = 'AGENT_DRAFT_GENERATE_DONE';
 const AGENT_DRAFT_GENERATE_ERROR = 'AGENT_DRAFT_GENERATE_ERROR';
+const DEFAULT_HISTORY_PAGE_SIZE = 12;
 
 const SCENE_LABELS = Object.freeze({
     [AGENT_SCENE_TYPE.DISCUSS]: '讨论共创',
@@ -88,6 +90,50 @@ function normalizeNotebook(notebook = {}) {
     };
 }
 
+function normalizeSessionSummary(sessionRecord = {}) {
+    return {
+        id: sessionRecord.id ? Number(sessionRecord.id) : null,
+        title: sessionRecord.title ?? DEFAULT_SESSION_TITLE,
+        sceneType: normalizeSceneType(sessionRecord.sceneType, AGENT_SCENE_TYPE.DISCUSS),
+        status: sessionRecord.status ?? 'ACTIVE',
+        targetDraftId: sessionRecord.targetDraftId ?? null,
+        createTime: sessionRecord.createTime ?? '',
+        updateTime: sessionRecord.updateTime ?? sessionRecord.createTime ?? ''
+    };
+}
+
+function toSessionTimestamp(value) {
+    if (!value) {
+        return 0;
+    }
+    const parsed = new Date(value).getTime();
+    return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function sortSessionHistory(list = []) {
+    return [...list].sort((left, right) =>
+        toSessionTimestamp(right.updateTime) - toSessionTimestamp(left.updateTime)
+        || (Number(right.id) || 0) - (Number(left.id) || 0));
+}
+
+function mergeSessionHistory(existingList = [], incomingList = []) {
+    const mergedMap = new Map();
+    [...existingList, ...incomingList].forEach((item) => {
+        if (item?.id) {
+            mergedMap.set(item.id, item);
+        }
+    });
+    return sortSessionHistory([...mergedMap.values()]);
+}
+
+function matchesSessionKeyword(title, keyword = '') {
+    const normalizedKeyword = String(keyword || '').trim().toLowerCase();
+    if (!normalizedKeyword) {
+        return true;
+    }
+    return String(title || '').toLowerCase().includes(normalizedKeyword);
+}
+
 export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Basic States
     const loadingSession = ref(false);
@@ -108,6 +154,14 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const draftReadiness = ref(AGENT_DRAFT_READINESS.NOT_READY);
     const assistantAction = ref(AGENT_ASSISTANT_ACTION.ASK);
     const switchReason = ref('');
+
+    const sessionHistory = ref([]);
+    const sessionHistoryLoading = ref(false);
+    const sessionHistoryLoadingMore = ref(false);
+    const sessionHistoryTotal = ref(0);
+    const sessionHistoryKeyword = ref('');
+    const sessionHistoryPageNo = ref(0);
+    const sessionHistoryPageSize = ref(DEFAULT_HISTORY_PAGE_SIZE);
     
     // Draft states
     const draft = ref(null);
@@ -121,6 +175,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     let socketReadyPromise = null;
     let streamingAssistantMessageId = null;
     let closingSocket = false;
+    let sessionHistoryRequestSerial = 0;
 
     // Computed
     const interactionResponseMap = computed(() => {
@@ -211,6 +266,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const activeDraftVersion = computed(() => draft.value?.versionNo ?? null);
     const pendingDraftVersion = computed(() => candidateDraft.value?.versionNo ?? null);
+    const hasSessionHistory = computed(() => sessionHistory.value.length > 0);
+    const hasMoreSessionHistory = computed(() => sessionHistory.value.length < sessionHistoryTotal.value);
 
     const sessionStatusLabel = computed(() => {
         if (loadingSession.value) return '正在恢复';
@@ -227,6 +284,50 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const clearStreamingState = () => {
         streamingAssistantMessageId = null;
         chatting.value = false;
+    };
+
+    const upsertSessionHistory = (source = {}, options = {}) => {
+        const normalized = normalizeSessionSummary(source);
+        if (!normalized.id) {
+            return;
+        }
+
+        const {
+            ignoreFilter = false,
+            removeWhenFiltered = false
+        } = options;
+
+        const matchesKeyword = ignoreFilter || matchesSessionKeyword(normalized.title, sessionHistoryKeyword.value);
+        if (!matchesKeyword) {
+            if (removeWhenFiltered) {
+                sessionHistory.value = sessionHistory.value.filter((item) => item.id !== normalized.id);
+            }
+            return;
+        }
+
+        const existing = sessionHistory.value.find((item) => item.id === normalized.id) ?? {};
+        sessionHistory.value = sortSessionHistory([
+            {
+                ...existing,
+                ...normalized
+            },
+            ...sessionHistory.value.filter((item) => item.id !== normalized.id)
+        ]);
+    };
+
+    const syncActiveSessionHistory = (overrides = {}, options = {}) => {
+        if (!sessionId.value) {
+            return;
+        }
+        upsertSessionHistory({
+            id: sessionId.value,
+            title: overrides.title ?? sessionTitle.value ?? session.value?.title ?? DEFAULT_SESSION_TITLE,
+            sceneType: overrides.sceneType ?? currentScene.value ?? session.value?.sceneType,
+            status: overrides.status ?? session.value?.status ?? 'ACTIVE',
+            targetDraftId: overrides.targetDraftId ?? session.value?.targetDraftId ?? null,
+            createTime: overrides.createTime ?? session.value?.createTime ?? '',
+            updateTime: overrides.updateTime ?? new Date().toISOString()
+        }, options);
     };
 
     const applyScenePayload = (payload = {}, sourceNotebook = null) => {
@@ -345,6 +446,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         socketService.on(AGENT_CHAT_DONE, (payload = {}) => {
             applyScenePayload(payload);
             finishStreamingMessage(payload.message ?? payload.reply ?? '');
+            syncActiveSessionHistory({
+                sceneType: payload.currentScene ?? currentScene.value,
+                updateTime: new Date().toISOString()
+            }, {
+                removeWhenFiltered: true
+            });
         });
 
         socketService.on(AGENT_CHAT_ERROR, (payload = {}) => {
@@ -407,6 +514,14 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: '✅ 首稿生成完毕。你可以继续在对话框中圈出需要修改的段落或者补充新要求。'
             }));
+
+            syncActiveSessionHistory({
+                sceneType: payload.currentScene ?? AGENT_SCENE_TYPE.DRAFT,
+                targetDraftId: payload.draftId,
+                updateTime: new Date().toISOString()
+            }, {
+                removeWhenFiltered: true
+            });
 
             ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
         });
@@ -486,6 +601,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const resetStudioState = () => {
         session.value = null;
         sessionId.value = null;
+        sessionTitle.value = DEFAULT_SESSION_TITLE;
         messages.value = [];
         notebook.value = null;
         currentScene.value = AGENT_SCENE_TYPE.DISCUSS;
@@ -497,6 +613,80 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         candidateDraft.value = null;
         streamingAssistantMessageId = null;
         resetDraftStreamingState();
+    };
+
+    const fetchSessionHistory = async ({ reset = false, keyword = sessionHistoryKeyword.value } = {}) => {
+        if (!reset && (!hasMoreSessionHistory.value || sessionHistoryLoading.value || sessionHistoryLoadingMore.value)) {
+            return;
+        }
+
+        const normalizedKeyword = String(keyword || '').trim();
+        const nextPageNo = reset ? 1 : sessionHistoryPageNo.value + 1;
+        const requestSerial = ++sessionHistoryRequestSerial;
+
+        if (reset) {
+            sessionHistoryLoadingMore.value = false;
+            sessionHistoryLoading.value = true;
+            sessionHistoryKeyword.value = normalizedKeyword;
+        } else {
+            sessionHistoryLoadingMore.value = true;
+        }
+
+        try {
+            const response = await getAgentSessionPage(nextPageNo, sessionHistoryPageSize.value, normalizedKeyword);
+            if (requestSerial !== sessionHistoryRequestSerial || response === null) {
+                return;
+            }
+
+            const nextRecords = Array.isArray(response?.list)
+                ? response.list.map(normalizeSessionSummary)
+                : [];
+
+            sessionHistory.value = reset
+                ? sortSessionHistory(nextRecords)
+                : mergeSessionHistory(sessionHistory.value, nextRecords);
+            sessionHistoryTotal.value = Number(response?.total ?? sessionHistory.value.length);
+            sessionHistoryPageNo.value = nextPageNo;
+        } catch (error) {
+            console.error('Failed to fetch agent session history:', error);
+            ElMessage.error('查询历史会话失败，请稍后重试');
+        } finally {
+            if (requestSerial === sessionHistoryRequestSerial) {
+                if (reset) {
+                    sessionHistoryLoading.value = false;
+                } else {
+                    sessionHistoryLoadingMore.value = false;
+                }
+            }
+        }
+    };
+
+    const refreshSessionHistory = async (keyword = sessionHistoryKeyword.value) => {
+        sessionHistoryPageNo.value = 0;
+        sessionHistoryTotal.value = 0;
+        await fetchSessionHistory({
+            reset: true,
+            keyword
+        });
+    };
+
+    const loadMoreSessionHistory = async () => {
+        await fetchSessionHistory();
+    };
+
+    const openSessionHistory = async (target) => {
+        const targetSessionId = Number(target?.id ?? target);
+        if (!targetSessionId || targetSessionId === sessionId.value) {
+            return;
+        }
+        if (chatting.value || generatingDraft.value) {
+            ElMessage.warning('当前流程尚未完成，请稍后再切换会话');
+            return;
+        }
+        await router.push({
+            name: 'AgentStudio',
+            params: { sessionId: targetSessionId }
+        });
     };
 
     const hydrateSession = async (id) => {
@@ -519,6 +709,9 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             candidateDraft.value = null;
             streamingAssistantMessageId = null;
             resetDraftStreamingState();
+            upsertSessionHistory(detail.session || {}, {
+                removeWhenFiltered: true
+            });
             applyScenePayload({
                 currentScene: detail.notebook?.currentScene ?? detail.session?.sceneType,
                 nextScene: detail.notebook?.currentScene ?? detail.session?.sceneType,
@@ -543,13 +736,16 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 sceneType: AGENT_SCENE_TYPE.DISCUSS,
                 title
             });
+            const now = new Date().toISOString();
             sessionId.value = response.sessionId;
             session.value = {
                 id: response.sessionId,
                 title,
                 sceneType: AGENT_SCENE_TYPE.DISCUSS,
                 status: 'ACTIVE',
-                targetDraftId: null
+                targetDraftId: null,
+                createTime: now,
+                updateTime: now
             };
             sessionTitle.value = title;
             notebook.value = normalizeNotebook({
@@ -565,6 +761,14 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 assistantAction: AGENT_ASSISTANT_ACTION.ASK,
                 switchReason: ''
             }, notebook.value);
+            syncActiveSessionHistory({
+                title,
+                sceneType: AGENT_SCENE_TYPE.DISCUSS,
+                createTime: now,
+                updateTime: now
+            }, {
+                removeWhenFiltered: true
+            });
             await router.replace({
                 name: 'AgentStudio',
                 params: { sessionId: response.sessionId }
@@ -603,6 +807,11 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content
             }));
+            syncActiveSessionHistory({
+                updateTime: new Date().toISOString()
+            }, {
+                removeWhenFiltered: true
+            });
 
             const assistantMessageId = `assistant-${Date.now()}`;
             streamingAssistantMessageId = assistantMessageId;
@@ -770,6 +979,11 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 content: buildInteractionResponseSummary(message.payload, answersMap),
                 payload: { interactionResponse }
             }));
+            syncActiveSessionHistory({
+                updateTime: new Date().toISOString()
+            }, {
+                removeWhenFiltered: true
+            });
 
             const assistantMessageId = `assistant-${Date.now()}`;
             streamingAssistantMessageId = assistantMessageId;
@@ -817,6 +1031,11 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         draftReadiness,
         assistantAction,
         switchReason,
+        sessionHistory,
+        sessionHistoryLoading,
+        sessionHistoryLoadingMore,
+        sessionHistoryTotal,
+        sessionHistoryKeyword,
         visibleMessages,
         draft,
         candidateDraft,
@@ -839,11 +1058,17 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         currentSceneSubtitle,
         sceneFooterHint,
         generateButtonLabel,
+        hasSessionHistory,
+        hasMoreSessionHistory,
         
         // Methods
         connectWebSocket,
         disconnectWebSocket,
         resetStudioState,
+        fetchSessionHistory,
+        refreshSessionHistory,
+        loadMoreSessionHistory,
+        openSessionHistory,
         hydrateSession,
         ensureSession,
         openFreshSession,

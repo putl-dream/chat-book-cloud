@@ -38,6 +38,12 @@ export function getAgentSessionDetail(sessionId) {
     });
 }
 
+export function getAgentSessionPage(pageNo = 1, pageSize = 12, keyword = '') {
+    return request.get('/agent/session/page', {
+        params: { pageNo, pageSize, keyword }
+    });
+}
+
 export function chatWithAgent(params) {
     return request.post('/agent/session/chat', params, {
         timeout: 60000

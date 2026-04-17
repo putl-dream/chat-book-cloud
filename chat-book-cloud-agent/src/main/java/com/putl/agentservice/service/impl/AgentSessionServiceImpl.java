@@ -1,6 +1,7 @@
 package com.putl.agentservice.service.impl;
 
 import com.baomidou.mybatisplus.core.toolkit.Wrappers;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.putl.agentservice.config.AnthropicProperties;
 import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.enums.AgentSessionStatus;
@@ -11,6 +12,8 @@ import com.putl.agentservice.mapper.entity.AgentSessionDO;
 import com.putl.agentservice.model.dto.CreateAgentSessionRequest;
 import com.putl.agentservice.model.vo.AgentSessionCreateResponse;
 import com.putl.agentservice.model.vo.AgentSessionDetailResponse;
+import com.putl.agentservice.model.vo.AgentSessionListItemResponse;
+import com.putl.agentservice.model.vo.AgentSessionPageResponse;
 import com.putl.agentservice.model.vo.NotebookSummary;
 import com.putl.agentservice.service.AgentNotebookCacheService;
 import com.putl.agentservice.service.AgentNotebookService;
@@ -80,7 +83,7 @@ public class AgentSessionServiceImpl implements AgentSessionService {
 
     @Override
     public AgentSessionDetailResponse getSessionDetail(Integer sessionId) {
-        AgentSessionDO session = agentSessionMapper.selectById(sessionId);
+        AgentSessionDO session = requireOwnedSession(sessionId);
         NotebookSummary notebook = session == null ? NotebookSummary.builder().build()
                 : agentNotebookCacheService.getNotebook(sessionId);
         List<AgentMessageDO> messages = agentMessageMapper.selectList(Wrappers.<AgentMessageDO>lambdaQuery()
@@ -101,8 +104,57 @@ public class AgentSessionServiceImpl implements AgentSessionService {
                 .build();
     }
 
+    @Override
+    public AgentSessionPageResponse getSessionPage(Integer pageNo, Integer pageSize, String keyword) {
+        int normalizedPageNo = pageNo == null || pageNo < 1 ? 1 : pageNo;
+        int normalizedPageSize = pageSize == null || pageSize < 1 ? 12 : Math.min(pageSize, 50);
+        String normalizedKeyword = StringUtils.hasText(keyword) ? keyword.trim() : null;
+
+        Page<AgentSessionDO> page = agentSessionMapper.selectPage(
+                new Page<>(normalizedPageNo, normalizedPageSize),
+                Wrappers.<AgentSessionDO>lambdaQuery()
+                        .eq(AgentSessionDO::getUserId, currentUserId())
+                        .like(StringUtils.hasText(normalizedKeyword), AgentSessionDO::getTitle, normalizedKeyword)
+                        .orderByDesc(AgentSessionDO::getUpdateTime)
+                        .orderByDesc(AgentSessionDO::getId));
+
+        List<AgentSessionListItemResponse> list = page.getRecords().stream()
+                .map(this::toSessionListItem)
+                .toList();
+        return AgentSessionPageResponse.builder()
+                .list(list)
+                .total(page.getTotal())
+                .build();
+    }
+
     private Integer currentUserId() {
         String userId = UserContext.getUserId();
         return (userId == null || userId.isBlank()) ? 0 : Integer.parseInt(userId);
+    }
+
+    private AgentSessionDO requireOwnedSession(Integer sessionId) {
+        if (sessionId == null || sessionId <= 0) {
+            throw new IllegalArgumentException("会话不存在或已失效");
+        }
+        AgentSessionDO session = agentSessionMapper.selectOne(Wrappers.<AgentSessionDO>lambdaQuery()
+                .eq(AgentSessionDO::getId, sessionId)
+                .eq(AgentSessionDO::getUserId, currentUserId())
+                .last("limit 1"));
+        if (session == null) {
+            throw new IllegalArgumentException("会话不存在或无权限访问");
+        }
+        return session;
+    }
+
+    private AgentSessionListItemResponse toSessionListItem(AgentSessionDO session) {
+        return AgentSessionListItemResponse.builder()
+                .id(session.getId())
+                .title(session.getTitle())
+                .sceneType(session.getSceneType())
+                .status(session.getStatus())
+                .targetDraftId(session.getTargetDraftId())
+                .createTime(session.getCreateTime())
+                .updateTime(session.getUpdateTime())
+                .build();
     }
 }
