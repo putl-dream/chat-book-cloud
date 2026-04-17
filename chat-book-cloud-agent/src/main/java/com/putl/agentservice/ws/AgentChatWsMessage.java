@@ -13,6 +13,6 @@ public class AgentChatWsMessage extends BaseMessage {
     private AgentChatRequest data;
 
     public AgentChatWsMessage() {
-        super(AgentStreamEventConstants.AGENT_CHAT);
+        super(AgentStreamEventConstants.MESSAGE_CREATE);
     }
 }

@@ -37,16 +37,21 @@ public class AiResponseParser {
      * @return 解析后的助手消息对象
      */
     public AgentAssistantMessage parseStructuredChat(String rawText) {
+        String previewText = StructuredChatOutputFormat.extractPreview(rawText).trim();
         String payload = extractJsonPayload(rawText);
         AgentAssistantMessage parsed = JsonUtil.parseObject(payload, AgentAssistantMessage.class);
         if (parsed == null) {
+            String fallbackText = StringUtils.hasText(previewText) ? previewText : defaultText(rawText).trim();
+            if (StructuredChatOutputFormat.containsEnvelope(rawText)) {
+                log.warn("Failed to parse structured chat envelope, fallback to preview text. payload={}", payload);
+            }
             return AgentAssistantMessage.builder()
                     .messageType(AgentMessageTypeConstants.TEXT)
-                    .content(defaultText(rawText).trim())
+                    .content(fallbackText)
                     .payload(null)
                     .build();
         }
-        return normalizeStructuredChat(parsed, rawText);
+        return normalizeStructuredChat(parsed, StringUtils.hasText(previewText) ? previewText : rawText);
     }
 
     /**
@@ -214,6 +219,10 @@ public class AiResponseParser {
      * @return JSON 字符串
      */
     private String extractJsonPayload(String rawText) {
+        String envelopePayload = stripCodeFence(StructuredChatOutputFormat.extractFinalPayload(rawText));
+        if (StringUtils.hasText(envelopePayload)) {
+            return envelopePayload;
+        }
         String text = stripCodeFence(rawText);
         int start = text.indexOf('{');
         int end = text.lastIndexOf('}');

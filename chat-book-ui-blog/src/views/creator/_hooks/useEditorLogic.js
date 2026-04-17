@@ -15,9 +15,25 @@ import {
     clearAgentGenerationIntent,
     extractArticleSummary,
     loadAgentDraftImport,
-    loadAgentGenerationIntent
+    loadAgentGenerationIntent,
+    normalizeAgentDraft
 } from '@/views/creator/_domain/agent.js';
-import { AGENT_SOCKET_EVENT } from '@/views/creator/_domain/agent-stream.js';
+import {
+    AGENT_RUNTIME_COMMAND
+} from '@/views/creator/_domain/stream-constants.js';
+import {
+    AGENT_RUN_KIND,
+    AGENT_RUN_STATUS,
+    AGENT_RUNTIME_EVENT,
+    appendArtifactDelta,
+    completeArtifactRun,
+    createRunRuntime,
+    failArtifactRun,
+    resetRunRuntime,
+    startArtifactRun,
+    stopArtifactRun,
+    updateArtifactStatus
+} from '@/views/creator/_domain/run-runtime.js';
 import {
     applyRichTextEditorAttributes,
     createRichTextEditorAttributes,
@@ -101,14 +117,9 @@ export function useEditorLogic() {
             : false
     );
 
-    const aiGenerating = ref(false);
-    const aiGenerationStopped = ref(false);
-    const aiGenerationStatusText = ref('');
+    const agentDraftRun = ref(createRunRuntime({ runKind: AGENT_RUN_KIND.DRAFT }));
     const aiRenderTick = ref(0);
-    const aiDraftJsonBuffer = ref('');
-    const aiStreamingMarkdown = ref('');
     const aiCommittedMarkdown = ref('');
-    const agentGenerationSessionId = ref(null);
     const userEditedTitle = ref(false);
     const userEditedSummary = ref(false);
 
@@ -124,6 +135,10 @@ export function useEditorLogic() {
         const userInfo = JSON.parse(localStorage.getItem('userInfo') || '{}');
         return userInfo.id || null;
     });
+
+    const aiGenerating = computed(() => agentDraftRun.value.status === AGENT_RUN_STATUS.RUNNING);
+    const aiGenerationStopped = computed(() => agentDraftRun.value.status === AGENT_RUN_STATUS.STOPPED);
+    const aiGenerationStatusText = computed(() => agentDraftRun.value.statusText || '');
 
     const statusText = computed(() => {
         if (aiGenerating.value) {
@@ -261,8 +276,7 @@ export function useEditorLogic() {
         applyEditorHtml('');
         userEditedTitle.value = false;
         userEditedSummary.value = false;
-        aiDraftJsonBuffer.value = '';
-        aiStreamingMarkdown.value = '';
+        agentDraftRun.value = resetRunRuntime(agentDraftRun.value);
         aiCommittedMarkdown.value = '';
         aiRenderTick.value = 0;
         hasUnsavedChanges.value = false;
@@ -284,10 +298,13 @@ export function useEditorLogic() {
     };
 
     const flushRemainingMarkdown = ({ force = false } = {}) => {
-        if (!aiStreamingMarkdown.value) {
+        const markdown = agentDraftRun.value.finalArtifact?.content
+            || agentDraftRun.value.artifactPreview?.content
+            || '';
+        if (!markdown) {
             return;
         }
-        applyMarkdownToEditor(aiStreamingMarkdown.value, { force });
+        applyMarkdownToEditor(markdown, { force });
     };
 
     const clearAgentStopFallbackTimer = () => {
@@ -308,9 +325,12 @@ export function useEditorLogic() {
     };
 
     const finalizeAgentGeneration = (message) => {
-        aiGenerating.value = false;
-        aiGenerationStatusText.value = message;
-        agentGenerationSessionId.value = null;
+        agentDraftRun.value = completeArtifactRun(agentDraftRun.value, {
+            sessionId: agentDraftRun.value.sessionId,
+            artifactPreview: agentDraftRun.value.artifactPreview,
+            finalArtifact: agentDraftRun.value.finalArtifact ?? agentDraftRun.value.artifactPreview,
+            statusText: message
+        });
         disconnectAgentWebSocket();
         clearAgentGenerationIntent();
     };
@@ -564,51 +584,77 @@ export function useEditorLogic() {
             maxReconnectAttempts: 0
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STARTED, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
-            aiGenerating.value = true;
-            aiGenerationStopped.value = false;
-            aiGenerationStatusText.value = payload.message || '正在整理讨论上下文...';
+            agentDraftRun.value = startArtifactRun(agentDraftRun.value, {
+                runId: payload.sessionId ?? agentDraftRun.value.runId,
+                sessionId: payload.sessionId ?? agentDraftRun.value.sessionId,
+                source: 'editor',
+                statusText: payload.statusText || '正在整理讨论上下文...'
+            });
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STATUS, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
-            aiGenerating.value = true;
-            aiGenerationStatusText.value = payload.message || aiGenerationStatusText.value || '正在生成正文...';
+            agentDraftRun.value = updateArtifactStatus(
+                aiGenerating.value
+                    ? agentDraftRun.value
+                    : startArtifactRun(agentDraftRun.value, {
+                        runId: payload.sessionId ?? agentDraftRun.value.runId,
+                        sessionId: payload.sessionId ?? agentDraftRun.value.sessionId,
+                        source: 'editor'
+                    }),
+                payload.statusText || aiGenerationStatusText.value || '正在生成正文...'
+            );
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_DELTA, (payload = {}) => {
             if (ignoreAgentStream || typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
 
-            aiDraftJsonBuffer.value = `${aiDraftJsonBuffer.value}${payload.chunk}`;
-            const preview = buildStreamingDraftPreview(aiDraftJsonBuffer.value);
+            agentDraftRun.value = appendArtifactDelta(agentDraftRun.value, {
+                chunk: payload.chunk,
+                statusText: aiGenerationStatusText.value || '正在生成正文...',
+                buildPreview: buildStreamingDraftPreview
+            });
+            const preview = agentDraftRun.value.artifactPreview;
             if (!preview?.content) {
                 return;
             }
 
-            aiStreamingMarkdown.value = preview.content;
             applyMarkdownToEditor(preview.content);
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
 
-            aiStreamingMarkdown.value = payload.content || aiStreamingMarkdown.value;
+            const finalArtifact = normalizeAgentDraft(payload.finalArtifact || {});
+            agentDraftRun.value = completeArtifactRun(agentDraftRun.value, {
+                sessionId: payload.sessionId ?? agentDraftRun.value.sessionId,
+                artifactPreview: normalizeAgentDraft({
+                    ...finalArtifact,
+                    content: finalArtifact.content || agentDraftRun.value.artifactPreview?.content || ''
+                }),
+                finalArtifact: normalizeAgentDraft({
+                    ...finalArtifact,
+                    content: finalArtifact.content || agentDraftRun.value.artifactPreview?.content || ''
+                }),
+                statusText: '初稿已生成，可继续编辑'
+            });
             flushRemainingMarkdown({ force: true });
 
-            if (!userEditedTitle.value && payload.title) {
-                title.value = payload.title;
+            if (!userEditedTitle.value && finalArtifact.title) {
+                title.value = finalArtifact.title;
             }
-            if (!userEditedSummary.value && payload.summary) {
-                publishForm.value.abstractText = payload.summary;
+            if (!userEditedSummary.value && finalArtifact.summary) {
+                publishForm.value.abstractText = finalArtifact.summary;
             }
 
             markContentDirty();
@@ -616,24 +662,19 @@ export function useEditorLogic() {
             ElMessage.success('初稿已生成，可继续编辑');
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_FAILED, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
             flushRemainingMarkdown({ force: true });
-            aiGenerating.value = false;
-            aiGenerationStatusText.value = payload.message || '初稿生成失败，请稍后重试';
-            agentGenerationSessionId.value = null;
+            agentDraftRun.value = failArtifactRun(agentDraftRun.value, payload.message || '初稿生成失败，请稍后重试');
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
             ElMessage.error(payload.message || '初稿生成失败，请稍后重试');
         });
 
-        agentSocketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STOPPED, (payload = {}) => {
-            aiGenerating.value = false;
-            aiGenerationStopped.value = true;
-            aiGenerationStatusText.value = payload.message || '已停止生成，你可以直接接管正文';
-            agentGenerationSessionId.value = null;
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STOPPED, (payload = {}) => {
+            agentDraftRun.value = stopArtifactRun(agentDraftRun.value, payload.statusText || '已停止生成，你可以直接接管正文');
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
         });
@@ -643,9 +684,7 @@ export function useEditorLogic() {
                 return;
             }
             flushRemainingMarkdown({ force: true });
-            aiGenerating.value = false;
-            aiGenerationStatusText.value = '生成连接已断开，已保留当前内容';
-            agentGenerationSessionId.value = null;
+            agentDraftRun.value = failArtifactRun(agentDraftRun.value, '生成连接已断开，已保留当前内容');
             clearAgentGenerationIntent();
             ElMessage.error('生成连接已断开，已保留当前内容');
         });
@@ -702,26 +741,24 @@ export function useEditorLogic() {
         }
 
         ignoreAgentStream = false;
-        aiGenerating.value = true;
-        aiGenerationStopped.value = false;
-        aiGenerationStatusText.value = '正在连接生成通道...';
-        agentGenerationSessionId.value = Number(sessionId);
-        aiDraftJsonBuffer.value = '';
-        aiStreamingMarkdown.value = '';
+        agentDraftRun.value = startArtifactRun(agentDraftRun.value, {
+            runId: Number(sessionId),
+            sessionId: Number(sessionId),
+            source: 'editor',
+            statusText: '正在连接生成通道...'
+        });
         aiCommittedMarkdown.value = '';
         aiRenderTick.value = 0;
 
         try {
             const service = await ensureAgentSocketReady();
-            const sent = service.send(AGENT_SOCKET_EVENT.DRAFT_GENERATE, { sessionId });
+            const sent = service.send(AGENT_RUNTIME_COMMAND.ARTIFACT_GENERATE, { sessionId });
             if (!sent) {
                 throw new Error('Agent WebSocket 未连接');
             }
         } catch (error) {
             console.error('Failed to start agent draft generation:', error);
-            aiGenerating.value = false;
-            aiGenerationStatusText.value = '初稿生成启动失败，请稍后重试';
-            agentGenerationSessionId.value = null;
+            agentDraftRun.value = failArtifactRun(agentDraftRun.value, '初稿生成启动失败，请稍后重试');
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
             ElMessage.error('初稿生成启动失败，请稍后重试');
@@ -734,27 +771,23 @@ export function useEditorLogic() {
         }
 
         ignoreAgentStream = true;
-        aiGenerationStopped.value = true;
-        aiGenerating.value = false;
+        agentDraftRun.value = stopArtifactRun(agentDraftRun.value, '已停止生成，你可以直接接管正文');
         flushRemainingMarkdown({ force: true });
-        aiGenerationStatusText.value = '已停止生成，你可以直接接管正文';
         clearAgentGenerationIntent();
         markContentDirty();
 
-        const sessionId = agentGenerationSessionId.value;
+        const sessionId = agentDraftRun.value.sessionId;
         const sent = sessionId && agentSocketService
-            ? agentSocketService.send(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STOP, { sessionId })
+            ? agentSocketService.send(AGENT_RUNTIME_COMMAND.ARTIFACT_STOP, { sessionId })
             : false;
 
         if (!sent) {
-            agentGenerationSessionId.value = null;
             disconnectAgentWebSocket();
             return;
         }
 
         clearAgentStopFallbackTimer();
         agentStopFallbackTimer = setTimeout(() => {
-            agentGenerationSessionId.value = null;
             disconnectAgentWebSocket();
         }, 1500);
     };

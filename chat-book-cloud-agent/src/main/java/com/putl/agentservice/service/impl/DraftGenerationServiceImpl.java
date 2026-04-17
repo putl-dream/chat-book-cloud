@@ -91,8 +91,8 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                 "User requested stop");
         log.info("Agent draft generation stop requested. sessionId={}, userId={}, activeTaskFound={}",
                 sessionId, userId, handle != null);
-        send(userId, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STOPPED, payload(sessionId,
-                "message", "已停止生成，你可以直接接管正文"));
+        send(userId, AgentStreamEventConstants.ARTIFACT_STOPPED, payload(sessionId,
+                "statusText", "已停止生成，你可以直接接管正文"));
     }
 
     private void doGenerateDraftByWebSocket(ActiveDraftGenerationRegistry.DraftGenerationHandle handle,
@@ -102,26 +102,22 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         handle.onCancel(executionThread::interrupt);
         try {
             log.info("Starting agent draft generation. sessionId={}, userId={}", sessionId, handle.getUserId());
-            sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_START, payload(sessionId, "message", "正在整理会话上下文..."));
-            sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在生成首稿内容..."));
+            sendIfActive(handle, AgentStreamEventConstants.ARTIFACT_STARTED, payload(sessionId, "statusText", "正在整理会话上下文..."));
+            sendIfActive(handle, AgentStreamEventConstants.ARTIFACT_STATUS, payload(sessionId, "statusText", "正在生成首稿内容..."));
             DraftGenerateResponse response = doGenerateDraft(
                     request,
                     handle,
                     chunk -> {
                         handle.throwIfCancelled();
-                        sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_DELTA, payload(sessionId, "chunk", chunk));
+                        sendIfActive(handle, AgentStreamEventConstants.ARTIFACT_DELTA, payload(sessionId, "chunk", chunk));
                     },
                     () -> {
                         handle.throwIfCancelled();
-                        sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在保存草稿..."));
+                        sendIfActive(handle, AgentStreamEventConstants.ARTIFACT_STATUS, payload(sessionId, "statusText", "正在保存草稿..."));
                     });
             handle.throwIfCancelled();
-            sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_DONE, payload(sessionId,
-                    "draftId", response.getDraftId(),
-                    "versionNo", response.getVersionNo(),
-                    "title", response.getTitle(),
-                    "summary", response.getSummary(),
-                    "content", response.getContent(),
+            sendIfActive(handle, AgentStreamEventConstants.ARTIFACT_COMPLETED, payload(sessionId,
+                    "finalArtifact", finalArtifactPayload(response),
                     "currentScene", response.getCurrentScene(),
                     "nextScene", response.getNextScene(),
                     "assistantAction", response.getAssistantAction(),
@@ -139,7 +135,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
             }
             log.error("Agent draft generation failed. sessionId={}, userId={}, reason={}",
                     sessionId, handle.getUserId(), ex.getMessage(), ex);
-            send(handle.getUserId(), AgentStreamEventConstants.AGENT_DRAFT_GENERATE_ERROR, payload(sessionId,
+            send(handle.getUserId(), AgentStreamEventConstants.ARTIFACT_FAILED, payload(sessionId,
                     "message", defaultText(ex.getMessage(), "生成草稿失败，请稍后重试")));
         } finally {
             activeDraftGenerationRegistry.complete(handle);
@@ -292,5 +288,15 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
             return value;
         }
         return fallback;
+    }
+
+    private Map<String, Object> finalArtifactPayload(DraftGenerateResponse response) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("draftId", response == null ? null : response.getDraftId());
+        payload.put("versionNo", response == null ? null : response.getVersionNo());
+        payload.put("title", response == null ? "" : defaultText(response.getTitle(), ""));
+        payload.put("summary", response == null ? "" : defaultText(response.getSummary(), ""));
+        payload.put("content", response == null ? "" : defaultText(response.getContent(), ""));
+        return payload;
     }
 }

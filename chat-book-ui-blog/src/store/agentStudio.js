@@ -31,7 +31,26 @@ import {
     normalizeAgentMessageType,
     normalizeMessagePayload
 } from '@/views/creator/_domain/agent-interaction.js';
-import { AGENT_SOCKET_EVENT } from '@/views/creator/_domain/agent-stream.js';
+import {
+    AGENT_RUNTIME_COMMAND
+} from '@/views/creator/_domain/stream-constants.js';
+import {
+    AGENT_RUN_KIND,
+    AGENT_RUN_STATUS,
+    AGENT_RUNTIME_EVENT,
+    appendArtifactDelta,
+    appendMessagePreviewDelta,
+    completeArtifactRun,
+    completeMessageRun,
+    createRunRuntime,
+    failArtifactRun,
+    failMessageRun,
+    resetRunRuntime,
+    startArtifactRun,
+    startMessageRun,
+    stopArtifactRun,
+    updateArtifactStatus
+} from '@/views/creator/_domain/run-runtime.js';
 import router from '@/router/index.js';
 
 const DEFAULT_SESSION_TITLE = '新的 AI 创作会话';
@@ -129,8 +148,6 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Basic States
     const loadingSession = ref(false);
     const creatingSession = ref(false);
-    const chatting = ref(false);
-    const generatingDraft = ref(false);
     const optimizingDraft = ref(false);
     const adoptingCandidate = ref(false);
 
@@ -157,16 +174,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Draft states
     const draft = ref(null);
     const candidateDraft = ref(null);
-    const draftStreamingBuffer = ref('');
-    const draftStreamingPreview = ref(null);
-    const draftStreamingStatusText = ref('');
+    const chatRun = ref(createRunRuntime({ runKind: AGENT_RUN_KIND.CHAT }));
+    const draftRun = ref(createRunRuntime({ runKind: AGENT_RUN_KIND.DRAFT }));
 
     // WebSocket Internals (not reactive)
     let socketService = null;
     let socketReadyPromise = null;
-    let streamingAssistantMessageId = null;
-    let streamingAssistantDeltaCount = 0;
-    let streamingAssistantRevealTimer = null;
     let closingSocket = false;
     let sessionHistoryRequestSerial = 0;
 
@@ -185,14 +198,15 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const visibleMessages = computed(() => messages.value
         .filter((message) => !isInteractionResponseMessage(message))
         .map((message) => {
-            if (message.role === 'assistant' && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM) {
-                const formId = message.payload?.formId;
+            const projectedMessage = projectVisibleMessage(message);
+            if (projectedMessage.role === 'assistant' && projectedMessage.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM) {
+                const formId = projectedMessage.payload?.formId;
                 return {
-                    ...message,
+                    ...projectedMessage,
                     interactionResponse: formId ? (interactionResponseMap.value.get(formId) ?? null) : null
                 };
             }
-            return message;
+            return projectedMessage;
         }));
 
     const hasMessages = computed(() => visibleMessages.value.length > 0);
@@ -254,13 +268,16 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         if (!generatingDraft.value) {
             return null;
         }
-        return draftStreamingPreview.value;
+        return draftRun.value.artifactPreview;
     });
 
     const activeDraftVersion = computed(() => draft.value?.versionNo ?? null);
     const pendingDraftVersion = computed(() => candidateDraft.value?.versionNo ?? null);
     const hasSessionHistory = computed(() => sessionHistory.value.length > 0);
     const hasMoreSessionHistory = computed(() => sessionHistory.value.length < sessionHistoryTotal.value);
+    const chatting = computed(() => chatRun.value.status === AGENT_RUN_STATUS.RUNNING);
+    const generatingDraft = computed(() => draftRun.value.status === AGENT_RUN_STATUS.RUNNING);
+    const draftStreamingStatusText = computed(() => draftRun.value.statusText || '');
 
     const sessionStatusLabel = computed(() => {
         if (loadingSession.value) return '正在恢复';
@@ -274,18 +291,21 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Message Utilities
     const findMessageIndex = (messageId) => messages.value.findIndex((item) => item.id === messageId);
 
-    const clearStreamingRevealTimer = () => {
-        if (streamingAssistantRevealTimer) {
-            clearTimeout(streamingAssistantRevealTimer);
-            streamingAssistantRevealTimer = null;
+    const clearStreamingState = ({ resetRuntime = false } = {}) => {
+        if (resetRuntime) {
+            chatRun.value = resetRunRuntime(chatRun.value);
+            return;
         }
-    };
-
-    const clearStreamingState = () => {
-        clearStreamingRevealTimer();
-        streamingAssistantMessageId = null;
-        streamingAssistantDeltaCount = 0;
-        chatting.value = false;
+        chatRun.value = createRunRuntime({
+            ...chatRun.value,
+            previewText: '',
+            previewParts: [],
+            meta: {
+                ...(chatRun.value.meta || {}),
+                messageId: null,
+                deltaCount: 0
+            }
+        });
     };
 
     const upsertSessionHistory = (source = {}, options = {}) => {
@@ -363,68 +383,61 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         }
     };
 
-    const resetDraftStreamingState = () => {
-        draftStreamingBuffer.value = '';
-        draftStreamingPreview.value = null;
-        draftStreamingStatusText.value = '';
+    const resetDraftStreamingState = ({ resetRuntime = true } = {}) => {
+        if (resetRuntime) {
+            draftRun.value = resetRunRuntime(draftRun.value);
+            return;
+        }
+        draftRun.value = createRunRuntime({
+            ...draftRun.value,
+            artifactBuffer: '',
+            artifactPreview: null
+        });
     };
 
-    const finishStreamingMessage = (reply = '') => {
+    const getStreamingAssistantMessageId = () => chatRun.value.meta?.messageId ?? null;
+    const getStreamingPreviewText = () => String(chatRun.value.previewText || '');
+
+    const projectVisibleMessage = (message) => {
+        if (!message?.streaming || message.id !== getStreamingAssistantMessageId()) {
+            return message;
+        }
+        return {
+            ...message,
+            content: getStreamingPreviewText(),
+            previewText: getStreamingPreviewText(),
+            previewParts: chatRun.value.previewParts
+        };
+    };
+
+    const beginStreamingAssistantMessage = (messageId, activeSessionId) => {
+        chatRun.value = startMessageRun(chatRun.value, {
+            runId: messageId,
+            messageId,
+            sessionId: activeSessionId ?? sessionId.value,
+            statusText: '正在思考...'
+        });
+    };
+
+    const finishStreamingMessage = (completionPayload = {}) => {
+        const streamingAssistantMessageId = getStreamingAssistantMessageId();
+        const finalMessage = completionPayload?.finalMessage
+            ? normalizeMessage(completionPayload.finalMessage)
+            : null;
         if (!streamingAssistantMessageId) {
-            chatting.value = false;
+            chatRun.value = completeMessageRun(chatRun.value, {
+                sessionId: completionPayload.sessionId ?? sessionId.value,
+                finalMessage,
+                statusText: '回复已完成'
+            });
+            clearStreamingState();
             return;
         }
 
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
-            const normalized = typeof reply === 'object' && reply !== null
-                ? normalizeMessage({
-                    ...reply,
-                    id: reply.id ?? current.id,
-                    role: reply.role ?? 'ASSISTANT'
-                })
-                : normalizeMessage({
-                    id: current.id,
-                    role: 'ASSISTANT',
-                    messageType: AGENT_MESSAGE_TYPE.TEXT,
-                    content: typeof reply === 'string' && reply.length > 0 ? reply : current.content
-                });
-
-            const shouldRevealProgressively = normalized.messageType === AGENT_MESSAGE_TYPE.TEXT
-                && typeof normalized.content === 'string'
-                && normalized.content.length > 0
-                && (streamingAssistantDeltaCount <= 1 || !current.content);
-
-            if (shouldRevealProgressively && normalized.content.length > (current.content || '').length) {
-                const baseContent = current.content || '';
-                const remainingContent = normalized.content.slice(baseContent.length);
-                const chunkSize = Math.max(2, Math.ceil(remainingContent.length / 24));
-
-                const applyRevealStep = (cursor = 0) => {
-                    const nextCursor = Math.min(cursor + chunkSize, remainingContent.length);
-                    const nextContent = `${baseContent}${remainingContent.slice(0, nextCursor)}`;
-                    messages.value[messageIndex] = {
-                        ...current,
-                        ...normalized,
-                        content: nextContent,
-                        streaming: nextCursor < remainingContent.length
-                    };
-
-                    if (nextCursor >= remainingContent.length) {
-                        clearStreamingState();
-                        return;
-                    }
-
-                    streamingAssistantRevealTimer = setTimeout(() => {
-                        applyRevealStep(nextCursor);
-                    }, 20);
-                };
-
-                clearStreamingRevealTimer();
-                applyRevealStep(0);
-                return;
-            }
+            const normalized = resolveCompletedStreamingMessage(current, completionPayload);
 
             messages.value[messageIndex] = {
                 ...current,
@@ -432,27 +445,65 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 streaming: false
             };
         }
+        chatRun.value = completeMessageRun(chatRun.value, {
+            sessionId: sessionId.value,
+            finalMessage,
+            statusText: '回复已完成'
+        });
         clearStreamingState();
     };
 
-    const discardStreamingMessage = () => {
+    const resolveCompletedStreamingMessage = (current, completionPayload = {}) => {
+        const previewText = typeof completionPayload?.previewText === 'string'
+            ? completionPayload.previewText
+            : getStreamingPreviewText();
+        if (completionPayload?.finalMessage && typeof completionPayload.finalMessage === 'object') {
+            const normalized = normalizeMessage({
+                ...completionPayload.finalMessage,
+                id: completionPayload.finalMessage.id ?? current.id,
+                role: completionPayload.finalMessage.role ?? 'ASSISTANT'
+            });
+            const shouldUsePreviewFallback = normalized.messageType === AGENT_MESSAGE_TYPE.TEXT
+                && (!normalized.content || completionPayload?.telemetry?.previewFallbackApplied);
+            if (shouldUsePreviewFallback && previewText) {
+                return {
+                    ...normalized,
+                    content: previewText
+                };
+            }
+            return normalized;
+        }
+        return normalizeMessage({
+            id: current.id,
+            role: 'ASSISTANT',
+            messageType: AGENT_MESSAGE_TYPE.TEXT,
+            content: previewText || current.content
+        });
+    };
+
+    const discardStreamingMessage = (errorMessage = '') => {
+        const streamingAssistantMessageId = getStreamingAssistantMessageId();
         if (!streamingAssistantMessageId) {
-            chatting.value = false;
+            chatRun.value = failMessageRun(chatRun.value, errorMessage);
+            clearStreamingState();
             return;
         }
 
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
-            if (!current.content) {
+            const previewText = getStreamingPreviewText();
+            if (!current.content && !previewText) {
                 messages.value.splice(messageIndex, 1);
             } else {
                 messages.value[messageIndex] = {
                     ...current,
+                    content: current.content || previewText,
                     streaming: false
                 };
             }
         }
+        chatRun.value = failMessageRun(chatRun.value, errorMessage);
         clearStreamingState();
     };
 
@@ -468,43 +519,27 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         closingSocket = false;
         socketService = new SocketService(resolveAgentSocketUrl(), getAccessToken());
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_START, () => {
-            chatting.value = true;
+        socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_STARTED, (payload = {}) => {
+            chatRun.value = startMessageRun(chatRun.value, {
+                runId: chatRun.value.runId ?? getStreamingAssistantMessageId(),
+                messageId: getStreamingAssistantMessageId(),
+                sessionId: payload.sessionId ?? sessionId.value,
+                statusText: payload.statusText || '正在思考...'
+            });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_DELTA, (payload = {}) => {
-            if (!streamingAssistantMessageId || typeof payload.content !== 'string') return;
+        socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_DELTA, (payload = {}) => {
+            const streamingAssistantMessageId = getStreamingAssistantMessageId();
+            if (!streamingAssistantMessageId || typeof payload.delta !== 'string') return;
             const messageIndex = findMessageIndex(streamingAssistantMessageId);
             if (messageIndex < 0) return;
 
-            clearStreamingRevealTimer();
-            streamingAssistantDeltaCount += 1;
-            const current = messages.value[messageIndex];
-            const nextContent = `${current.content || ''}${payload.content}`;
-            console.debug('[agent-chat-delta]', {
-                sessionId: payload.sessionId ?? sessionId.value,
-                deltaIndex: streamingAssistantDeltaCount,
-                chunkLength: payload.content.length,
-                chunk: payload.content,
-                accumulatedLength: nextContent.length
-            });
-            messages.value[messageIndex] = {
-                ...current,
-                content: nextContent,
-                streaming: true
-            };
+            chatRun.value = appendMessagePreviewDelta(chatRun.value, payload.delta);
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_DONE, (payload = {}) => {
-            console.debug('[agent-chat-done]', {
-                sessionId: payload.sessionId ?? sessionId.value,
-                deltaCount: streamingAssistantDeltaCount,
-                replyLength: typeof payload.reply === 'string' ? payload.reply.length : 0,
-                messageType: payload.message?.messageType ?? payload.messageType ?? null,
-                reply: payload.reply
-            });
+        socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_COMPLETED, (payload = {}) => {
             applyScenePayload(payload);
-            finishStreamingMessage(payload.message ?? payload.reply ?? '');
+            finishStreamingMessage(payload);
             syncActiveSessionHistory({
                 sceneType: payload.currentScene ?? currentScene.value,
                 updateTime: new Date().toISOString()
@@ -513,48 +548,57 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.CHAT_ERROR, (payload = {}) => {
-            discardStreamingMessage();
+        socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_FAILED, (payload = {}) => {
+            discardStreamingMessage(payload.message || '发送失败，请稍后重试');
             ElMessage.error(payload.message || '发送失败，请稍后重试');
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
-            generatingDraft.value = true;
-            draftStreamingBuffer.value = '';
-            draftStreamingPreview.value = null;
-            draftStreamingStatusText.value = payload.message || '正在整理会话上下文...';
+        socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STARTED, (payload = {}) => {
+            draftRun.value = startArtifactRun(draftRun.value, {
+                runId: payload.sessionId ?? sessionId.value,
+                sessionId: payload.sessionId ?? sessionId.value,
+                source: 'agent-studio',
+                statusText: payload.statusText || '正在整理会话上下文...'
+            });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
-            if (!generatingDraft.value) {
-                generatingDraft.value = true;
-            }
-            draftStreamingStatusText.value = payload.message || draftStreamingStatusText.value || '正在生成首稿内容...';
+        socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STATUS, (payload = {}) => {
+            draftRun.value = updateArtifactStatus(
+                generatingDraft.value
+                    ? draftRun.value
+                    : startArtifactRun(draftRun.value, {
+                        runId: payload.sessionId ?? sessionId.value,
+                        sessionId: payload.sessionId ?? sessionId.value,
+                        source: 'agent-studio'
+                    }),
+                payload.statusText || draftStreamingStatusText.value || '正在生成首稿内容...'
+            );
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
+        socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_DELTA, (payload = {}) => {
             if (typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
-            draftStreamingBuffer.value = `${draftStreamingBuffer.value}${payload.chunk}`;
-            draftStreamingStatusText.value = draftStreamingStatusText.value || '正在生成首稿内容...';
-            draftStreamingPreview.value = buildStreamingDraftPreview(draftStreamingBuffer.value);
+            draftRun.value = appendArtifactDelta(draftRun.value, {
+                chunk: payload.chunk,
+                statusText: draftStreamingStatusText.value || '正在生成首稿内容...',
+                buildPreview: buildStreamingDraftPreview
+            });
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
-            draft.value = normalizeAgentDraft({
-                draftId: payload.draftId,
-                versionNo: payload.versionNo,
-                title: payload.title,
-                summary: payload.summary,
-                content: payload.content
-            });
+        socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED, (payload = {}) => {
+            draft.value = normalizeAgentDraft(payload.finalArtifact || {});
             candidateDraft.value = null;
-            generatingDraft.value = false;
-            resetDraftStreamingState();
+            draftRun.value = completeArtifactRun(draftRun.value, {
+                sessionId: payload.sessionId ?? sessionId.value,
+                artifactPreview: draftRun.value.artifactPreview,
+                finalArtifact: draft.value,
+                statusText: '首稿已生成'
+            });
+            resetDraftStreamingState({ resetRuntime: false });
 
             if (session.value) {
-                session.value.targetDraftId = payload.draftId;
+                session.value.targetDraftId = draft.value?.draftId ?? null;
             }
             applyScenePayload(payload, notebook.value ? {
                 ...notebook.value,
@@ -576,7 +620,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
             syncActiveSessionHistory({
                 sceneType: payload.currentScene ?? AGENT_SCENE_TYPE.DRAFT,
-                targetDraftId: payload.draftId,
+                targetDraftId: draft.value?.draftId ?? null,
                 updateTime: new Date().toISOString()
             }, {
                 removeWhenFiltered: true
@@ -585,9 +629,9 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
         });
 
-        socketService.on(AGENT_SOCKET_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
-            generatingDraft.value = false;
-            resetDraftStreamingState();
+        socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_FAILED, (payload = {}) => {
+            draftRun.value = failArtifactRun(draftRun.value, payload.message || '生成草稿失败，请稍后重试');
+            resetDraftStreamingState({ resetRuntime: false });
             ElMessage.error(payload.message || '生成草稿失败，请稍后重试');
         });
 
@@ -598,8 +642,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 ElMessage.error('Agent 连接已断开，请重试');
             }
             if (generatingDraft.value) {
-                generatingDraft.value = false;
-                resetDraftStreamingState();
+                draftRun.value = failArtifactRun(draftRun.value, 'Agent 连接已断开，首稿生成已中断');
+                resetDraftStreamingState({ resetRuntime: false });
                 ElMessage.error('Agent 连接已断开，首稿生成已中断');
             }
         });
@@ -648,7 +692,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const disconnectWebSocket = () => {
         closingSocket = true;
         socketReadyPromise = null;
-        clearStreamingState();
+        clearStreamingState({ resetRuntime: true });
         if (socketService) {
             socketService.close();
             socketService = null;
@@ -670,7 +714,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         switchReason.value = '';
         draft.value = null;
         candidateDraft.value = null;
-        clearStreamingState();
+        clearStreamingState({ resetRuntime: true });
         resetDraftStreamingState();
     };
 
@@ -766,7 +810,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             notebook.value = detail.notebook ? normalizeNotebook(detail.notebook) : null;
             draft.value = detail.draft ? normalizeAgentDraft(detail.draft) : null;
             candidateDraft.value = null;
-            clearStreamingState();
+            clearStreamingState({ resetRuntime: true });
             resetDraftStreamingState();
             upsertSessionHistory(detail.session || {}, {
                 removeWhenFiltered: true
@@ -855,7 +899,6 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             return;
         }
 
-        chatting.value = true;
         try {
             const currentSessionId = await ensureSession(content);
             const service = await ensureSocketReady();
@@ -873,9 +916,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
 
             const assistantMessageId = `assistant-${Date.now()}`;
-            streamingAssistantMessageId = assistantMessageId;
-            streamingAssistantDeltaCount = 0;
-            clearStreamingRevealTimer();
+            beginStreamingAssistantMessage(assistantMessageId, currentSessionId);
             messages.value.push(normalizeMessage({
                 id: assistantMessageId,
                 role: 'ASSISTANT',
@@ -884,7 +925,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 streaming: true
             }));
 
-            const sent = service.send(AGENT_SOCKET_EVENT.CHAT, {
+            const sent = service.send(AGENT_RUNTIME_COMMAND.MESSAGE_CREATE, {
                 sessionId: currentSessionId,
                 content
             });
@@ -916,7 +957,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             return;
         }
 
-        generatingDraft.value = true;
+        draftRun.value = startArtifactRun(draftRun.value, {
+            runId: sessionId.value,
+            sessionId: sessionId.value,
+            source: 'agent-studio',
+            statusText: '正在跳转编辑器'
+        });
         try {
             saveAgentGenerationIntent({
                 sessionId: sessionId.value,
@@ -925,7 +971,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             await router.push('/text');
         } catch (error) {
             console.error('Failed to open editor for agent draft generation:', error);
-            generatingDraft.value = false;
+            draftRun.value = failArtifactRun(draftRun.value, '打开编辑器失败，请稍后重试');
+            resetDraftStreamingState({ resetRuntime: false });
             ElMessage.error('打开编辑器失败，请稍后重试');
         }
     };
@@ -1028,7 +1075,6 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             return;
         }
 
-        chatting.value = true;
         const optimisticMessageId = `user-form-${Date.now()}`;
         try {
             const service = await ensureSocketReady();
@@ -1047,7 +1093,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             });
 
             const assistantMessageId = `assistant-${Date.now()}`;
-            streamingAssistantMessageId = assistantMessageId;
+            beginStreamingAssistantMessage(assistantMessageId, sessionId.value);
             messages.value.push(normalizeMessage({
                 id: assistantMessageId,
                 role: 'ASSISTANT',
@@ -1056,7 +1102,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 streaming: true
             }));
 
-            const sent = service.send(AGENT_SOCKET_EVENT.CHAT, {
+            const sent = service.send(AGENT_RUNTIME_COMMAND.MESSAGE_CREATE, {
                 sessionId: sessionId.value,
                 interactionResponse
             });

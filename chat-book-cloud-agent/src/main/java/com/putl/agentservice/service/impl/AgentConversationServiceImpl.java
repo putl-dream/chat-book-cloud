@@ -1,6 +1,7 @@
 package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.client.engine.StructuredChatOutputFormat;
 import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
@@ -88,7 +89,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     public AgentChatResponse chat(AgentChatRequest request) {
         ChatExecutionResult result = executeChat(request, ignored -> { }, StreamingControl.noop(), new StreamingChatPreviewState());
         return AgentChatResponse.builder()
-                .reply(result.aiReply().getData().getContent())
+                .reply(result.assistantMessage().getContent())
                 .message(toMessageVO(result.assistantMessage()))
                 .currentScene(result.sceneDecision().getCurrentScene())
                 .nextScene(result.sceneDecision().getNextScene())
@@ -143,7 +144,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 draftDetail == null ? null : draftDetail.getContent(),
                 chunk -> handleStreamingChunk(chunk, previewConsumer, previewState),
                 streamingControl);
-        AgentAssistantMessage assistant = normalizeAssistantMessage(aiReply.getData());
+        AssistantMessageResolution resolution = reconcileAssistantMessage(aiReply.getData(), previewState);
+        AgentAssistantMessage assistant = resolution.message();
+        aiReply.setData(assistant);
         AgentMessageDO assistantMessage = saveMessage(
                 request.getSessionId(),
                 AgentMessageRole.ASSISTANT,
@@ -160,7 +163,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 routedScene,
                 draftDetail != null);
         SceneDecision finalizedScene = agentSceneRouter.finalizeDecision(routedScene, stabilizedNotebook, draftDetail != null);
-        return new ChatExecutionResult(aiReply, assistantMessage, finalizedScene);
+        StreamingChatSummary streamSummary = buildStreamSummary(previewState, resolution);
+        logChatStreamTelemetry(request == null ? null : request.getSessionId(), aiReply, assistant, streamSummary);
+        return new ChatExecutionResult(aiReply, assistantMessage, finalizedScene, streamSummary);
     }
 
     private AgentMessageDO saveMessage(Integer sessionId,
@@ -187,19 +192,17 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private void doChatStream(AgentChatRequest request, SseEmitter emitter) {
         try {
-            Map<String, Object> startPayload = new LinkedHashMap<>();
-            startPayload.put("sessionId", request == null ? null : request.getSessionId());
-            sendEvent(emitter, "start", startPayload);
+            sendEvent(emitter, AgentStreamEventConstants.MESSAGE_STARTED, startPayload(request == null ? null : request.getSessionId()));
             StreamingChatPreviewState previewState = new StreamingChatPreviewState();
             ChatExecutionResult result = executeChat(request, preview ->
-                    sendEvent(emitter, "delta", payload(request == null ? null : request.getSessionId(), "content", preview)),
+                    sendEvent(emitter, AgentStreamEventConstants.MESSAGE_DELTA, payload(request == null ? null : request.getSessionId(), "delta", preview)),
                     StreamingControl.noop(),
                     previewState);
-            sendEvent(emitter, "done", donePayload(request, result));
+            sendEvent(emitter, AgentStreamEventConstants.MESSAGE_COMPLETED, donePayload(request, result));
             emitter.complete();
         } catch (Exception ex) {
             try {
-                sendEvent(emitter, "error", Map.of("message", defaultText(ex.getMessage())));
+                sendEvent(emitter, AgentStreamEventConstants.MESSAGE_FAILED, errorPayload(request, ex));
                 emitter.complete();
             } catch (Exception ignored) {
                 emitter.completeWithError(ex);
@@ -214,9 +217,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             StreamingChatPreviewState previewState = new StreamingChatPreviewState();
             ChatExecutionResult result = executeChat(request, preview ->
                     sendDelta(userId, sessionId, preview), StreamingControl.noop(), previewState);
-            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_CHAT_DONE, donePayload(request, result)));
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.MESSAGE_COMPLETED, donePayload(request, result)));
         } catch (Exception ex) {
-            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_CHAT_ERROR, errorPayload(request, ex)));
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.MESSAGE_FAILED, errorPayload(request, ex)));
         }
     }
 
@@ -227,24 +230,18 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             return;
         }
         previewState.rawBuffer.append(chunk);
-        String previewContent = StructuredMessageStreamPreviewExtractor.extractContent(previewState.rawBuffer.toString());
-        if (!StringUtils.hasText(previewContent) || previewContent.equals(previewState.lastPreview)) {
-            return;
-        }
-
-        String delta = previewContent.startsWith(previewState.lastPreview)
-                ? previewContent.substring(previewState.lastPreview.length())
-                : previewContent;
-        previewState.lastPreview = previewContent;
-        if (StringUtils.hasText(delta)) {
-            previewConsumer.accept(delta);
+        String rawBuffer = previewState.rawBuffer.toString();
+        String previewContent = StructuredChatOutputFormat.extractPreview(rawBuffer);
+        if (StringUtils.hasText(previewContent)) {
+            previewState.previewMode = "tagged_preview";
+            publishPreviewDelta(previewContent, previewConsumer, previewState);
         }
     }
 
     private void sendStart(String userId, Integer sessionId) {
         messagePublisher.sendToUser(userId, WebSocketResult.of(
-                AgentStreamEventConstants.AGENT_CHAT_START,
-                payload(sessionId, "message", "正在思考...", "renderHint", "text_preview")));
+                AgentStreamEventConstants.MESSAGE_STARTED,
+                startPayload(sessionId)));
     }
 
     private void sendDelta(String userId, Integer sessionId, String content) {
@@ -252,24 +249,22 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             return;
         }
         messagePublisher.sendToUser(userId, WebSocketResult.of(
-                AgentStreamEventConstants.AGENT_CHAT_DELTA,
-                payload(sessionId, "content", content)));
+                AgentStreamEventConstants.MESSAGE_DELTA,
+                payload(sessionId, "delta", content)));
     }
 
     private Map<String, Object> donePayload(AgentChatRequest request, ChatExecutionResult result) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("sessionId", request.getSessionId());
-        payload.put("reply", result.aiReply().getData().getContent());
-        payload.put("message", toMessageVO(result.assistantMessage()));
+        payload.put("finalMessage", toMessageVO(result.assistantMessage()));
+        payload.put("previewText", result.streamSummary().previewText());
         payload.put("currentScene", result.sceneDecision().getCurrentScene());
         payload.put("nextScene", result.sceneDecision().getNextScene());
         payload.put("switchReason", defaultText(result.sceneDecision().getSwitchReason()));
         payload.put("assistantAction", result.sceneDecision().getAssistantAction());
         payload.put("draftReadiness", result.sceneDecision().getDraftReadiness());
-        payload.put("tokenInput", result.aiReply().getTokenInput());
-        payload.put("tokenOutput", result.aiReply().getTokenOutput());
-        payload.put("latencyMs", result.aiReply().getLatencyMs());
-        payload.put("model", result.aiReply().getModel());
+        payload.put("usage", usagePayload(result.aiReply()));
+        payload.put("telemetry", telemetryPayload(result.streamSummary()));
         return payload;
     }
 
@@ -286,6 +281,10 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         } catch (IOException ex) {
             throw new IllegalStateException("SSE 发送失败", ex);
         }
+    }
+
+    private Map<String, Object> startPayload(Integer sessionId) {
+        return payload(sessionId, "statusText", "正在思考...", "renderHint", "text_preview");
     }
 
     private Map<String, Object> payload(Integer sessionId, Object... values) {
@@ -367,6 +366,113 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 .content(defaultText(message.getContent()).trim())
                 .payload(message.getPayload())
                 .build();
+    }
+
+    private AssistantMessageResolution reconcileAssistantMessage(AgentAssistantMessage message,
+                                                                StreamingChatPreviewState previewState) {
+        AgentAssistantMessage normalized = normalizeAssistantMessage(message);
+        String previewText = previewState == null ? "" : defaultText(previewState.lastPreview).trim();
+        if (!StringUtils.hasText(previewText)) {
+            return new AssistantMessageResolution(normalized, false, false);
+        }
+
+        String messageType = defaultText(normalized.getMessageType()).trim().toLowerCase(Locale.ROOT);
+        String finalContent = defaultText(normalized.getContent()).trim();
+        boolean previewMismatch = StringUtils.hasText(finalContent) && !previewText.equals(finalContent);
+
+        if (!StringUtils.hasText(finalContent)) {
+            return new AssistantMessageResolution(
+                    AgentAssistantMessage.builder()
+                            .messageType(StringUtils.hasText(messageType) ? messageType : AgentMessageTypeConstants.TEXT)
+                            .content(previewText)
+                            .payload(normalized.getPayload())
+                            .build(),
+                    true,
+                    true);
+        }
+
+        if (previewText.startsWith(finalContent) && previewText.length() > finalContent.length()) {
+            return new AssistantMessageResolution(
+                    AgentAssistantMessage.builder()
+                            .messageType(StringUtils.hasText(messageType) ? messageType : AgentMessageTypeConstants.TEXT)
+                            .content(previewText)
+                            .payload(normalized.getPayload())
+                            .build(),
+                    true,
+                    true);
+        }
+
+        return new AssistantMessageResolution(normalized, previewMismatch, false);
+    }
+
+    private void publishPreviewDelta(String previewContent,
+                                     java.util.function.Consumer<String> previewConsumer,
+                                     StreamingChatPreviewState previewState) {
+        if (!StringUtils.hasText(previewContent) || previewContent.equals(previewState.lastPreview)) {
+            return;
+        }
+
+        String delta = previewContent.startsWith(previewState.lastPreview)
+                ? previewContent.substring(previewState.lastPreview.length())
+                : previewContent;
+        previewState.lastPreview = previewContent;
+        if (!StringUtils.hasText(delta)) {
+            return;
+        }
+        previewState.deltaCount += 1;
+        if (previewState.firstDeltaLatencyMs == null) {
+            previewState.firstDeltaLatencyMs = Math.max(0L, System.currentTimeMillis() - previewState.startedAtMs);
+        }
+        previewConsumer.accept(delta);
+    }
+
+    private StreamingChatSummary buildStreamSummary(StreamingChatPreviewState previewState,
+                                                   AssistantMessageResolution resolution) {
+        return new StreamingChatSummary(
+                previewState == null ? "" : defaultText(previewState.lastPreview),
+                previewState == null ? "none" : defaultText(previewState.previewMode),
+                previewState == null || previewState.firstDeltaLatencyMs == null
+                        ? null
+                        : Math.toIntExact(Math.min(Integer.MAX_VALUE, previewState.firstDeltaLatencyMs)),
+                previewState == null ? 0 : previewState.deltaCount,
+                resolution.previewMismatch(),
+                resolution.previewFallbackApplied());
+    }
+
+    private Map<String, Object> usagePayload(AiInvocationResult<AgentAssistantMessage> aiReply) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("tokenInput", aiReply == null ? null : aiReply.getTokenInput());
+        payload.put("tokenOutput", aiReply == null ? null : aiReply.getTokenOutput());
+        payload.put("latencyMs", aiReply == null ? null : aiReply.getLatencyMs());
+        payload.put("model", aiReply == null ? null : aiReply.getModel());
+        return payload;
+    }
+
+    private Map<String, Object> telemetryPayload(StreamingChatSummary streamSummary) {
+        Map<String, Object> payload = new LinkedHashMap<>();
+        payload.put("previewMode", defaultText(streamSummary.previewMode()));
+        payload.put("deltaCount", streamSummary.deltaCount());
+        payload.put("firstDeltaLatencyMs", streamSummary.firstDeltaLatencyMs());
+        payload.put("previewMismatch", streamSummary.previewMismatch());
+        payload.put("previewFallbackApplied", streamSummary.previewFallbackApplied());
+        return payload;
+    }
+
+    private void logChatStreamTelemetry(Integer sessionId,
+                                        AiInvocationResult<AgentAssistantMessage> aiReply,
+                                        AgentAssistantMessage assistant,
+                                        StreamingChatSummary streamSummary) {
+        log.info("Agent chat stream completed. sessionId={}, previewMode={}, deltaCount={}, firstDeltaLatencyMs={}, completionLatencyMs={}, previewChars={}, previewMismatch={}, previewFallbackApplied={}, messageType={}, model={}",
+                sessionId,
+                defaultText(streamSummary.previewMode()),
+                streamSummary.deltaCount(),
+                streamSummary.firstDeltaLatencyMs(),
+                aiReply == null ? null : aiReply.getLatencyMs(),
+                defaultText(streamSummary.previewText()).length(),
+                streamSummary.previewMismatch(),
+                streamSummary.previewFallbackApplied(),
+                assistant == null ? null : assistant.getMessageType(),
+                aiReply == null ? null : aiReply.getModel());
     }
 
     private PreparedUserMessage prepareUserMessage(AgentChatRequest request) {
@@ -464,12 +570,30 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private record ChatExecutionResult(AiInvocationResult<AgentAssistantMessage> aiReply,
                                        AgentMessageDO assistantMessage,
-                                       SceneDecision sceneDecision) {
+                                       SceneDecision sceneDecision,
+                                       StreamingChatSummary streamSummary) {
+    }
+
+    private record AssistantMessageResolution(AgentAssistantMessage message,
+                                              boolean previewMismatch,
+                                              boolean previewFallbackApplied) {
+    }
+
+    private record StreamingChatSummary(String previewText,
+                                        String previewMode,
+                                        Integer firstDeltaLatencyMs,
+                                        int deltaCount,
+                                        boolean previewMismatch,
+                                        boolean previewFallbackApplied) {
     }
 
     private static final class StreamingChatPreviewState {
 
+        private final long startedAtMs = System.currentTimeMillis();
         private final StringBuilder rawBuffer = new StringBuilder();
         private String lastPreview = "";
+        private String previewMode = "none";
+        private Long firstDeltaLatencyMs;
+        private int deltaCount;
     }
 }

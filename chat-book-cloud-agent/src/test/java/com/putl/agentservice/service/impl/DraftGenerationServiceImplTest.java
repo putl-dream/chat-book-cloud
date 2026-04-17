@@ -2,6 +2,7 @@ package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.engine.StreamingCancelledException;
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.constants.AgentStreamEventConstants;
 import com.putl.agentservice.enums.AgentAssistantAction;
 import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.enums.DraftReadiness;
@@ -135,11 +136,12 @@ class DraftGenerationServiceImplTest {
         verify(messagePublisher, atLeastOnce()).sendToUser(org.mockito.ArgumentMatchers.eq("1"), payloadCaptor.capture());
 
         List<Object> allPayloads = payloadCaptor.getAllValues();
-        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_START\"")));
-        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_DELTA\"")));
-        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_DONE\"")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"" + AgentStreamEventConstants.ARTIFACT_STARTED + "\"")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"" + AgentStreamEventConstants.ARTIFACT_DELTA + "\"")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"type\":\"" + AgentStreamEventConstants.ARTIFACT_COMPLETED + "\"")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"finalArtifact\"")));
         assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"draftId\":101")));
-        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"summary\":null")));
+        assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"summary\":\"\"")));
         assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"currentScene\":\"DRAFT\"")));
         assertTrue(allPayloads.stream().map(String::valueOf).anyMatch(payload -> payload.contains("\"nextScene\":\"EDIT\"")));
     }
@@ -157,7 +159,7 @@ class DraftGenerationServiceImplTest {
         verify(messagePublisher, atLeastOnce()).sendToUser(org.mockito.ArgumentMatchers.eq("1"), payloadCaptor.capture());
 
         String lastPayload = String.valueOf(payloadCaptor.getAllValues().get(payloadCaptor.getAllValues().size() - 1));
-        assertTrue(lastPayload.contains("\"type\":\"AGENT_DRAFT_GENERATE_ERROR\""));
+        assertTrue(lastPayload.contains("\"type\":\"" + AgentStreamEventConstants.ARTIFACT_FAILED + "\""));
         assertTrue(lastPayload.contains("Stream failed"));
     }
 
@@ -214,8 +216,8 @@ class DraftGenerationServiceImplTest {
         verify(messagePublisher, atLeastOnce()).sendToUser(org.mockito.ArgumentMatchers.eq("1"), payloadCaptor.capture());
 
         List<String> allPayloads = payloadCaptor.getAllValues().stream().map(String::valueOf).toList();
-        assertTrue(allPayloads.stream().anyMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_STOPPED\"")));
-        assertTrue(allPayloads.stream().noneMatch(payload -> payload.contains("\"type\":\"AGENT_DRAFT_GENERATE_DONE\"")));
+        assertTrue(allPayloads.stream().anyMatch(payload -> payload.contains("\"type\":\"" + AgentStreamEventConstants.ARTIFACT_STOPPED + "\"")));
+        assertTrue(allPayloads.stream().noneMatch(payload -> payload.contains("\"type\":\"" + AgentStreamEventConstants.ARTIFACT_COMPLETED + "\"")));
         verify(articleClient, org.mockito.Mockito.never()).createDraft(any());
     }
 }
