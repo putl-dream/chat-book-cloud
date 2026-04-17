@@ -165,6 +165,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     let socketService = null;
     let socketReadyPromise = null;
     let streamingAssistantMessageId = null;
+    let streamingAssistantDeltaCount = 0;
+    let streamingAssistantRevealTimer = null;
     let closingSocket = false;
     let sessionHistoryRequestSerial = 0;
 
@@ -272,8 +274,17 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Message Utilities
     const findMessageIndex = (messageId) => messages.value.findIndex((item) => item.id === messageId);
 
+    const clearStreamingRevealTimer = () => {
+        if (streamingAssistantRevealTimer) {
+            clearTimeout(streamingAssistantRevealTimer);
+            streamingAssistantRevealTimer = null;
+        }
+    };
+
     const clearStreamingState = () => {
+        clearStreamingRevealTimer();
         streamingAssistantMessageId = null;
+        streamingAssistantDeltaCount = 0;
         chatting.value = false;
     };
 
@@ -379,6 +390,42 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                     messageType: AGENT_MESSAGE_TYPE.TEXT,
                     content: typeof reply === 'string' && reply.length > 0 ? reply : current.content
                 });
+
+            const shouldRevealProgressively = normalized.messageType === AGENT_MESSAGE_TYPE.TEXT
+                && typeof normalized.content === 'string'
+                && normalized.content.length > 0
+                && (streamingAssistantDeltaCount <= 1 || !current.content);
+
+            if (shouldRevealProgressively && normalized.content.length > (current.content || '').length) {
+                const baseContent = current.content || '';
+                const remainingContent = normalized.content.slice(baseContent.length);
+                const chunkSize = Math.max(2, Math.ceil(remainingContent.length / 24));
+
+                const applyRevealStep = (cursor = 0) => {
+                    const nextCursor = Math.min(cursor + chunkSize, remainingContent.length);
+                    const nextContent = `${baseContent}${remainingContent.slice(0, nextCursor)}`;
+                    messages.value[messageIndex] = {
+                        ...current,
+                        ...normalized,
+                        content: nextContent,
+                        streaming: nextCursor < remainingContent.length
+                    };
+
+                    if (nextCursor >= remainingContent.length) {
+                        clearStreamingState();
+                        return;
+                    }
+
+                    streamingAssistantRevealTimer = setTimeout(() => {
+                        applyRevealStep(nextCursor);
+                    }, 20);
+                };
+
+                clearStreamingRevealTimer();
+                applyRevealStep(0);
+                return;
+            }
+
             messages.value[messageIndex] = {
                 ...current,
                 ...normalized,
@@ -430,15 +477,32 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             const messageIndex = findMessageIndex(streamingAssistantMessageId);
             if (messageIndex < 0) return;
 
+            clearStreamingRevealTimer();
+            streamingAssistantDeltaCount += 1;
             const current = messages.value[messageIndex];
+            const nextContent = `${current.content || ''}${payload.content}`;
+            console.debug('[agent-chat-delta]', {
+                sessionId: payload.sessionId ?? sessionId.value,
+                deltaIndex: streamingAssistantDeltaCount,
+                chunkLength: payload.content.length,
+                chunk: payload.content,
+                accumulatedLength: nextContent.length
+            });
             messages.value[messageIndex] = {
                 ...current,
-                content: `${current.content || ''}${payload.content}`,
+                content: nextContent,
                 streaming: true
             };
         });
 
         socketService.on(AGENT_SOCKET_EVENT.CHAT_DONE, (payload = {}) => {
+            console.debug('[agent-chat-done]', {
+                sessionId: payload.sessionId ?? sessionId.value,
+                deltaCount: streamingAssistantDeltaCount,
+                replyLength: typeof payload.reply === 'string' ? payload.reply.length : 0,
+                messageType: payload.message?.messageType ?? payload.messageType ?? null,
+                reply: payload.reply
+            });
             applyScenePayload(payload);
             finishStreamingMessage(payload.message ?? payload.reply ?? '');
             syncActiveSessionHistory({
@@ -584,7 +648,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const disconnectWebSocket = () => {
         closingSocket = true;
         socketReadyPromise = null;
-        streamingAssistantMessageId = null;
+        clearStreamingState();
         if (socketService) {
             socketService.close();
             socketService = null;
@@ -606,7 +670,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         switchReason.value = '';
         draft.value = null;
         candidateDraft.value = null;
-        streamingAssistantMessageId = null;
+        clearStreamingState();
         resetDraftStreamingState();
     };
 
@@ -702,7 +766,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             notebook.value = detail.notebook ? normalizeNotebook(detail.notebook) : null;
             draft.value = detail.draft ? normalizeAgentDraft(detail.draft) : null;
             candidateDraft.value = null;
-            streamingAssistantMessageId = null;
+            clearStreamingState();
             resetDraftStreamingState();
             upsertSessionHistory(detail.session || {}, {
                 removeWhenFiltered: true
@@ -810,6 +874,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
             const assistantMessageId = `assistant-${Date.now()}`;
             streamingAssistantMessageId = assistantMessageId;
+            streamingAssistantDeltaCount = 0;
+            clearStreamingRevealTimer();
             messages.value.push(normalizeMessage({
                 id: assistantMessageId,
                 role: 'ASSISTANT',
