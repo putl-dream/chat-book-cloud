@@ -26,4 +26,7 @@ public class AgentSessionDetailResponse {
 
     @Schema(description = "当前草稿")
     private DraftDetailDTO draft;
+
+    @Schema(description = "当前 notebook")
+    private NotebookSummary notebook;
 }

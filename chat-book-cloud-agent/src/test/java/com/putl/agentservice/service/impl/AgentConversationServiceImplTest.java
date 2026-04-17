@@ -3,9 +3,14 @@ package com.putl.agentservice.service.impl;
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
+import com.putl.agentservice.enums.AgentAssistantAction;
 import com.putl.agentservice.enums.AgentMessageRole;
+import com.putl.agentservice.enums.AgentSceneType;
+import com.putl.agentservice.enums.DraftReadiness;
+import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
+import com.putl.agentservice.mapper.entity.AgentSessionDO;
 import com.putl.agentservice.model.dto.AgentChatRequest;
 import com.putl.agentservice.model.dto.InteractionAnswerRequest;
 import com.putl.agentservice.model.dto.InteractionResponseRequest;
@@ -16,8 +21,11 @@ import com.putl.agentservice.model.vo.InteractiveFormPayload;
 import com.putl.agentservice.model.vo.InteractiveOption;
 import com.putl.agentservice.model.vo.InteractiveQuestion;
 import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.model.vo.SceneDecision;
 import com.putl.agentservice.service.AgentConversationWindowService;
 import com.putl.agentservice.service.AgentNotebookCacheService;
+import com.putl.agentservice.service.AgentNotebookService;
+import com.putl.articleservice.api.ArticleClient;
 import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -33,6 +41,7 @@ import java.util.concurrent.Executor;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.Mockito.times;
@@ -46,6 +55,9 @@ class AgentConversationServiceImplTest {
     private AgentMessageMapper agentMessageMapper;
 
     @Mock
+    private AgentSessionMapper agentSessionMapper;
+
+    @Mock
     private ArticleAiGateway articleAiGateway;
 
     @Mock
@@ -53,6 +65,15 @@ class AgentConversationServiceImplTest {
 
     @Mock
     private AgentNotebookCacheService agentNotebookCacheService;
+
+    @Mock
+    private AgentNotebookService agentNotebookService;
+
+    @Mock
+    private AgentSceneRouter agentSceneRouter;
+
+    @Mock
+    private ArticleClient articleClient;
 
     @Mock
     private AgentChatProperties agentChatProperties;
@@ -67,9 +88,13 @@ class AgentConversationServiceImplTest {
         Executor directExecutor = Runnable::run;
         service = new AgentConversationServiceImpl(
                 agentMessageMapper,
+                agentSessionMapper,
                 articleAiGateway,
                 agentConversationWindowService,
                 agentNotebookCacheService,
+                agentNotebookService,
+                agentSceneRouter,
+                articleClient,
                 agentChatProperties,
                 messagePublisher,
                 directExecutor);
@@ -83,6 +108,22 @@ class AgentConversationServiceImplTest {
             return current;
         });
         when(agentNotebookCacheService.getNotebook(anyInt())).thenReturn(NotebookSummary.builder().build());
+        when(agentNotebookService.refreshNotebook(anyInt())).thenReturn(NotebookSummary.builder().build());
+        when(agentSessionMapper.selectById(anyInt())).thenReturn(AgentSessionDO.builder()
+                .id(101)
+                .sceneType(AgentSceneType.DISCUSS)
+                .build());
+        when(agentSceneRouter.route(any(), anyList(), any(NotebookSummary.class), anyBoolean())).thenReturn(SceneDecision.builder()
+                .currentScene(AgentSceneType.DISCUSS)
+                .nextScene(AgentSceneType.DRAFT)
+                .switchReason("route")
+                .assistantAction(AgentAssistantAction.SUGGEST_DRAFT)
+                .draftReadiness(DraftReadiness.READY)
+                .build());
+        when(agentSceneRouter.applyDecision(any(NotebookSummary.class), any(SceneDecision.class), anyBoolean()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(agentSceneRouter.finalizeDecision(any(SceneDecision.class), any(NotebookSummary.class), anyBoolean()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     @Test
@@ -117,7 +158,8 @@ class AgentConversationServiceImplTest {
                 34,
                 56,
                 "claude-test");
-        when(articleAiGateway.chat(anyList(), any(NotebookSummary.class))).thenReturn(aiReply);
+        when(articleAiGateway.chat(anyList(), any(NotebookSummary.class), any(AgentSceneType.class), any(), any(), any()))
+                .thenReturn(aiReply);
 
         AgentChatResponse response = service.chat(request);
 
@@ -139,6 +181,9 @@ class AgentConversationServiceImplTest {
 
         assertEquals(AgentMessageTypeConstants.INTERACTIVE_FORM, response.getMessage().getMessageType());
         assertTrue(response.getMessage().getPayload().toString().contains("\"formId\":\"followup_form\""));
+        assertEquals(AgentSceneType.DISCUSS, response.getCurrentScene());
+        assertEquals(AgentSceneType.DRAFT, response.getNextScene());
+        assertEquals(DraftReadiness.READY, response.getDraftReadiness());
     }
 
     private InteractionResponseRequest buildInteractionResponse() {

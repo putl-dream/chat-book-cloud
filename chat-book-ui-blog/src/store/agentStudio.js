@@ -6,12 +6,17 @@ import { API_CONFIG } from '@/config/index.js';
 import { getAccessToken } from '@/utils/token.js';
 import SocketService, { formatWsUrl } from '@/utils/websocket.js';
 import {
+    AGENT_ASSISTANT_ACTION,
+    AGENT_DRAFT_READINESS,
     AGENT_SCENE_TYPE,
     adoptAgentDraftVersion,
     buildStreamingDraftPreview,
     createAgentSession,
     getAgentSessionDetail,
+    normalizeAssistantAction,
     normalizeAgentDraft,
+    normalizeDraftReadiness,
+    normalizeSceneType,
     optimizeAgentDraft,
     saveAgentGenerationIntent,
     saveAgentDraftImport
@@ -39,6 +44,20 @@ const AGENT_DRAFT_GENERATE_DELTA = 'AGENT_DRAFT_GENERATE_DELTA';
 const AGENT_DRAFT_GENERATE_DONE = 'AGENT_DRAFT_GENERATE_DONE';
 const AGENT_DRAFT_GENERATE_ERROR = 'AGENT_DRAFT_GENERATE_ERROR';
 
+const SCENE_LABELS = Object.freeze({
+    [AGENT_SCENE_TYPE.DISCUSS]: '讨论共创',
+    [AGENT_SCENE_TYPE.LEARN]: '学习整理',
+    [AGENT_SCENE_TYPE.DRAFT]: '首稿生成',
+    [AGENT_SCENE_TYPE.EDIT]: '智能编辑'
+});
+
+const SCENE_SUBTITLES = Object.freeze({
+    [AGENT_SCENE_TYPE.DISCUSS]: '围绕主题、论点和事实边界展开讨论，逐步收敛写作方向。',
+    [AGENT_SCENE_TYPE.LEARN]: '聚焦概念解释、知识点梳理和例子拆解，把知识转成可写素材。',
+    [AGENT_SCENE_TYPE.DRAFT]: '当前材料已接近成稿条件，可以进入首稿生成并开始搭建正文。',
+    [AGENT_SCENE_TYPE.EDIT]: '已有草稿后，继续围绕润色、改写、扩写和补全推进。'
+});
+
 function normalizeMessageRole(role) {
     const roleMap = {
         USER: 'user',
@@ -60,6 +79,15 @@ function normalizeMessage(message = {}) {
     };
 }
 
+function normalizeNotebook(notebook = {}) {
+    return {
+        ...notebook,
+        currentScene: normalizeSceneType(notebook.currentScene, AGENT_SCENE_TYPE.DISCUSS),
+        draftReadiness: normalizeDraftReadiness(notebook.draftReadiness, AGENT_DRAFT_READINESS.NOT_READY),
+        nextSuggestedAction: normalizeAssistantAction(notebook.nextSuggestedAction, AGENT_ASSISTANT_ACTION.ASK)
+    };
+}
+
 export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Basic States
     const loadingSession = ref(false);
@@ -74,6 +102,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const sessionId = ref(null);
     const sessionTitle = ref(DEFAULT_SESSION_TITLE);
     const messages = ref([]);
+    const notebook = ref(null);
+    const currentScene = ref(AGENT_SCENE_TYPE.DISCUSS);
+    const nextScene = ref(AGENT_SCENE_TYPE.DISCUSS);
+    const draftReadiness = ref(AGENT_DRAFT_READINESS.NOT_READY);
+    const assistantAction = ref(AGENT_ASSISTANT_ACTION.ASK);
+    const switchReason = ref('');
     
     // Draft states
     const draft = ref(null);
@@ -116,11 +150,44 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const hasMessages = computed(() => visibleMessages.value.length > 0);
     const hasDraft = computed(() => Boolean(draft.value?.draftId));
     const hasCandidateDraft = computed(() => Boolean(candidateDraft.value?.versionNo));
+    const isDraftReady = computed(() => draftReadiness.value === AGENT_DRAFT_READINESS.READY);
     const hasPendingInteractiveForm = computed(() => visibleMessages.value.some((message) =>
         message.role === 'assistant'
         && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM
         && !message.interactionResponse
     ));
+    const currentSceneLabel = computed(() => SCENE_LABELS[currentScene.value] || '讨论共创');
+    const nextSceneLabel = computed(() => SCENE_LABELS[nextScene.value] || currentSceneLabel.value);
+    const currentSceneSubtitle = computed(() => SCENE_SUBTITLES[currentScene.value] || SCENE_SUBTITLES[AGENT_SCENE_TYPE.DISCUSS]);
+    const sceneFooterHint = computed(() => {
+        if (hasPendingInteractiveForm.value) {
+            return '请先完成上方问题卡片，Agent 会在收到完整答案后继续推进当前场景。';
+        }
+        if (currentScene.value === AGENT_SCENE_TYPE.LEARN) {
+            return isDraftReady.value
+                ? '知识点已逐步沉淀，可以继续学习，也可以切换到首稿生成。'
+                : '当前以知识解释和梳理为主，先把关键概念讲透。';
+        }
+        if (currentScene.value === AGENT_SCENE_TYPE.EDIT) {
+            return '当前已进入编辑语境，可以继续描述你想润色、改写或补全的目标。';
+        }
+        if (currentScene.value === AGENT_SCENE_TYPE.DRAFT) {
+            return '当前材料已接近成稿条件，可以直接进入首稿生成，再回到编辑场景继续修改。';
+        }
+        if (isDraftReady.value) {
+            return '讨论信息已经比较完整，可以继续打磨，也可以开始生成首稿。';
+        }
+        return '当前以讨论为主，先补齐主题、事实和结构，再进入首稿生成。';
+    });
+    const generateButtonLabel = computed(() => {
+        if (currentScene.value === AGENT_SCENE_TYPE.EDIT || hasDraft.value) {
+            return '继续生成首稿';
+        }
+        if (isDraftReady.value || nextScene.value === AGENT_SCENE_TYPE.DRAFT || assistantAction.value === AGENT_ASSISTANT_ACTION.SUGGEST_DRAFT) {
+            return '进入首稿生成';
+        }
+        return '生成初稿';
+    });
     
     // Core Status Enum computed for the Middle Canvas UI (DraftCanvas)
     // Values: 'empty' | 'generating' | 'completed' | 'optimizing'
@@ -147,10 +214,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const sessionStatusLabel = computed(() => {
         if (loadingSession.value) return '正在恢复';
-        if (chatting.value) return '讨论进行中';
+        if (chatting.value) return `${currentSceneLabel.value}中`;
         if (generatingDraft.value) return '正在跳转编辑器';
         if (optimizingDraft.value) return '优化重写中';
-        if (sessionId.value) return '思考会话已激活';
+        if (sessionId.value) return `${currentSceneLabel.value}已激活`;
         return '尚未开始讨论';
     });
 
@@ -160,6 +227,37 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const clearStreamingState = () => {
         streamingAssistantMessageId = null;
         chatting.value = false;
+    };
+
+    const applyScenePayload = (payload = {}, sourceNotebook = null) => {
+        const normalizedNotebook = sourceNotebook ? normalizeNotebook(sourceNotebook) : null;
+        notebook.value = normalizedNotebook ?? notebook.value;
+        currentScene.value = normalizeSceneType(
+            payload.currentScene ?? normalizedNotebook?.currentScene ?? session.value?.sceneType,
+            AGENT_SCENE_TYPE.DISCUSS
+        );
+        nextScene.value = normalizeSceneType(
+            payload.nextScene ?? currentScene.value,
+            currentScene.value
+        );
+        draftReadiness.value = normalizeDraftReadiness(
+            payload.draftReadiness ?? normalizedNotebook?.draftReadiness,
+            draftReadiness.value
+        );
+        assistantAction.value = normalizeAssistantAction(
+            payload.assistantAction ?? normalizedNotebook?.nextSuggestedAction,
+            assistantAction.value
+        );
+        switchReason.value = payload.switchReason ?? switchReason.value ?? '';
+
+        if (session.value) {
+            session.value.sceneType = currentScene.value;
+        }
+        if (notebook.value) {
+            notebook.value.currentScene = currentScene.value;
+            notebook.value.draftReadiness = draftReadiness.value;
+            notebook.value.nextSuggestedAction = assistantAction.value;
+        }
     };
 
     const resetDraftStreamingState = () => {
@@ -245,6 +343,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         });
 
         socketService.on(AGENT_CHAT_DONE, (payload = {}) => {
+            applyScenePayload(payload);
             finishStreamingMessage(payload.message ?? payload.reply ?? '');
         });
 
@@ -291,6 +390,16 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             if (session.value) {
                 session.value.targetDraftId = payload.draftId;
             }
+            applyScenePayload(payload, notebook.value ? {
+                ...notebook.value,
+                currentScene: payload.currentScene ?? AGENT_SCENE_TYPE.DRAFT,
+                draftReadiness: payload.draftReadiness ?? AGENT_DRAFT_READINESS.READY,
+                nextSuggestedAction: payload.assistantAction ?? AGENT_ASSISTANT_ACTION.EDIT_DRAFT
+            } : {
+                currentScene: payload.currentScene ?? AGENT_SCENE_TYPE.DRAFT,
+                draftReadiness: payload.draftReadiness ?? AGENT_DRAFT_READINESS.READY,
+                nextSuggestedAction: payload.assistantAction ?? AGENT_ASSISTANT_ACTION.EDIT_DRAFT
+            });
 
             messages.value.push(normalizeMessage({
                 id: `system-${Date.now()}`,
@@ -378,6 +487,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         session.value = null;
         sessionId.value = null;
         messages.value = [];
+        notebook.value = null;
+        currentScene.value = AGENT_SCENE_TYPE.DISCUSS;
+        nextScene.value = AGENT_SCENE_TYPE.DISCUSS;
+        draftReadiness.value = AGENT_DRAFT_READINESS.NOT_READY;
+        assistantAction.value = AGENT_ASSISTANT_ACTION.ASK;
+        switchReason.value = '';
         draft.value = null;
         candidateDraft.value = null;
         streamingAssistantMessageId = null;
@@ -399,10 +514,17 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             messages.value = Array.isArray(detail.messages)
                 ? detail.messages.map(normalizeMessage)
                 : [];
+            notebook.value = detail.notebook ? normalizeNotebook(detail.notebook) : null;
             draft.value = detail.draft ? normalizeAgentDraft(detail.draft) : null;
             candidateDraft.value = null;
             streamingAssistantMessageId = null;
             resetDraftStreamingState();
+            applyScenePayload({
+                currentScene: detail.notebook?.currentScene ?? detail.session?.sceneType,
+                nextScene: detail.notebook?.currentScene ?? detail.session?.sceneType,
+                draftReadiness: detail.notebook?.draftReadiness,
+                assistantAction: detail.notebook?.nextSuggestedAction
+            }, detail.notebook ?? null);
         } catch (error) {
             console.error('Failed to hydrate agent session:', error);
             ElMessage.error('恢复会话失败，请稍后重试');
@@ -418,18 +540,31 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         try {
             const title = sessionTitle.value?.trim() || seedMessage.trim().slice(0, 20) || DEFAULT_SESSION_TITLE;
             const response = await createAgentSession({
-                sceneType: AGENT_SCENE_TYPE.CREATE,
+                sceneType: AGENT_SCENE_TYPE.DISCUSS,
                 title
             });
             sessionId.value = response.sessionId;
             session.value = {
                 id: response.sessionId,
                 title,
-                sceneType: AGENT_SCENE_TYPE.CREATE,
+                sceneType: AGENT_SCENE_TYPE.DISCUSS,
                 status: 'ACTIVE',
                 targetDraftId: null
             };
             sessionTitle.value = title;
+            notebook.value = normalizeNotebook({
+                goal: title,
+                currentScene: AGENT_SCENE_TYPE.DISCUSS,
+                draftReadiness: AGENT_DRAFT_READINESS.NOT_READY,
+                nextSuggestedAction: AGENT_ASSISTANT_ACTION.ASK
+            });
+            applyScenePayload({
+                currentScene: AGENT_SCENE_TYPE.DISCUSS,
+                nextScene: AGENT_SCENE_TYPE.DISCUSS,
+                draftReadiness: AGENT_DRAFT_READINESS.NOT_READY,
+                assistantAction: AGENT_ASSISTANT_ACTION.ASK,
+                switchReason: ''
+            }, notebook.value);
             await router.replace({
                 name: 'AgentStudio',
                 params: { sessionId: response.sessionId }
@@ -504,6 +639,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         }
         if (chatting.value) {
             ElMessage.warning('当前回复尚未完成，请稍后再生成初稿');
+            return;
+        }
+        if (!isDraftReady.value && currentScene.value !== AGENT_SCENE_TYPE.EDIT) {
+            ElMessage.warning('当前材料还没有准备到首稿阶段，建议先继续讨论或学习补齐关键信息');
             return;
         }
 
@@ -672,6 +811,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         sessionId,
         sessionTitle,
         messages,
+        notebook,
+        currentScene,
+        nextScene,
+        draftReadiness,
+        assistantAction,
+        switchReason,
         visibleMessages,
         draft,
         candidateDraft,
@@ -682,12 +827,18 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         hasMessages,
         hasDraft,
         hasCandidateDraft,
+        isDraftReady,
         hasPendingInteractiveForm,
         draftStatus,
         displayDraft,
         activeDraftVersion,
         pendingDraftVersion,
         sessionStatusLabel,
+        currentSceneLabel,
+        nextSceneLabel,
+        currentSceneSubtitle,
+        sceneFooterHint,
+        generateButtonLabel,
         
         // Methods
         connectWebSocket,

@@ -3,8 +3,26 @@ import { buildRichTextEditorHtml } from '@/components/common/rich-text/content-p
 import { ARTICLE_TYPE_ENUM, CREATION_STATEMENT_ENUM } from '@/constants';
 
 export const AGENT_SCENE_TYPE = Object.freeze({
+    DISCUSS: 'DISCUSS',
+    LEARN: 'LEARN',
+    DRAFT: 'DRAFT',
+    EDIT: 'EDIT',
     CREATE: 'CREATE',
     OPTIMIZE: 'OPTIMIZE'
+});
+
+export const AGENT_ASSISTANT_ACTION = Object.freeze({
+    ASK: 'ASK',
+    TEACH: 'TEACH',
+    SUGGEST_DRAFT: 'SUGGEST_DRAFT',
+    GENERATE_DRAFT: 'GENERATE_DRAFT',
+    EDIT_DRAFT: 'EDIT_DRAFT'
+});
+
+export const AGENT_DRAFT_READINESS = Object.freeze({
+    NOT_READY: 'NOT_READY',
+    PARTIAL: 'PARTIAL',
+    READY: 'READY'
 });
 
 const EDITOR_IMPORT_KEY = 'chat-book-agent-editor-import';
@@ -193,4 +211,34 @@ export function buildStreamingDraftPreview(buffer = '') {
         return null;
     }
     return normalizeAgentDraft({ title, summary, content });
+}
+
+export function normalizeSceneType(sceneType, fallback = AGENT_SCENE_TYPE.DISCUSS) {
+    if (!sceneType) {
+        return fallback;
+    }
+    const normalized = String(sceneType).toUpperCase();
+    if (normalized === AGENT_SCENE_TYPE.CREATE) {
+        return AGENT_SCENE_TYPE.DISCUSS;
+    }
+    if (normalized === AGENT_SCENE_TYPE.OPTIMIZE) {
+        return AGENT_SCENE_TYPE.EDIT;
+    }
+    return Object.values(AGENT_SCENE_TYPE).includes(normalized) ? normalized : fallback;
+}
+
+export function normalizeDraftReadiness(value, fallback = AGENT_DRAFT_READINESS.NOT_READY) {
+    if (!value) {
+        return fallback;
+    }
+    const normalized = String(value).toUpperCase();
+    return Object.values(AGENT_DRAFT_READINESS).includes(normalized) ? normalized : fallback;
+}
+
+export function normalizeAssistantAction(value, fallback = AGENT_ASSISTANT_ACTION.ASK) {
+    if (!value) {
+        return fallback;
+    }
+    const normalized = String(value).toUpperCase();
+    return Object.values(AGENT_ASSISTANT_ACTION).includes(normalized) ? normalized : fallback;
 }

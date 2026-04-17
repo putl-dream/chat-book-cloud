@@ -13,6 +13,7 @@ import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
 import com.putl.agentservice.model.vo.DraftGenerateResponse;
 import com.putl.agentservice.model.vo.NotebookSummary;
+import com.putl.agentservice.model.vo.SceneDecision;
 import com.putl.agentservice.service.AgentNotebookCacheService;
 import com.putl.agentservice.service.DraftGenerationService;
 import com.putl.articleservice.api.ArticleClient;
@@ -51,6 +52,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
     private final AgentNotebookCacheService agentNotebookCacheService;
     private final MessagePublisher messagePublisher;
     private final ActiveDraftGenerationRegistry activeDraftGenerationRegistry;
+    private final AgentSceneRouter agentSceneRouter;
     private final Executor agentChatStreamExecutor;
 
     public DraftGenerationServiceImpl(AgentSessionMapper agentSessionMapper,
@@ -60,6 +62,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                                       AgentNotebookCacheService agentNotebookCacheService,
                                       MessagePublisher messagePublisher,
                                       ActiveDraftGenerationRegistry activeDraftGenerationRegistry,
+                                      AgentSceneRouter agentSceneRouter,
                                       @Qualifier("agentChatStreamExecutor") Executor agentChatStreamExecutor) {
         this.agentSessionMapper = agentSessionMapper;
         this.agentMessageMapper = agentMessageMapper;
@@ -68,6 +71,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         this.agentNotebookCacheService = agentNotebookCacheService;
         this.messagePublisher = messagePublisher;
         this.activeDraftGenerationRegistry = activeDraftGenerationRegistry;
+        this.agentSceneRouter = agentSceneRouter;
         this.agentChatStreamExecutor = agentChatStreamExecutor;
     }
 
@@ -123,7 +127,11 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                     "versionNo", response.getVersionNo(),
                     "title", response.getTitle(),
                     "summary", response.getSummary(),
-                    "content", response.getContent()));
+                    "content", response.getContent(),
+                    "currentScene", response.getCurrentScene(),
+                    "nextScene", response.getNextScene(),
+                    "assistantAction", response.getAssistantAction(),
+                    "draftReadiness", response.getDraftReadiness()));
             log.info("Completed agent draft generation. sessionId={}, userId={}, draftId={}, versionNo={}",
                     sessionId, handle.getUserId(), response.getDraftId(), response.getVersionNo());
         } catch (StreamingCancelledException ex) {
@@ -171,12 +179,17 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
 
         safeStreamingControl.throwIfCancelled();
         CreateDraftResponse response = createDraft(session, draftResult);
+        SceneDecision sceneDecision = updateNotebookAfterDraftGeneration(session.getId());
         return DraftGenerateResponse.builder()
                 .draftId(response.getDraftId())
                 .versionNo(response.getVersionNo())
                 .title(draftResult.getTitle())
                 .summary(draftResult.getSummary())
                 .content(draftResult.getContent())
+                .currentScene(sceneDecision.getCurrentScene())
+                .nextScene(sceneDecision.getNextScene())
+                .assistantAction(sceneDecision.getAssistantAction())
+                .draftReadiness(sceneDecision.getDraftReadiness())
                 .build();
     }
 
@@ -236,6 +249,19 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                 Objects.requireNonNullElse(result.getTokenOutput(), 0),
                 Objects.requireNonNullElse(result.getLatencyMs(), 0));
         return draftResult;
+    }
+
+    private SceneDecision updateNotebookAfterDraftGeneration(Integer sessionId) {
+        try {
+            NotebookSummary currentNotebook = agentNotebookCacheService.getNotebook(sessionId);
+            SceneDecision sceneDecision = agentSceneRouter.draftGeneratedDecision(currentNotebook);
+            NotebookSummary updatedNotebook = agentSceneRouter.applyDecision(currentNotebook, sceneDecision, true);
+            agentNotebookCacheService.saveNotebook(sessionId, updatedNotebook);
+            return agentSceneRouter.finalizeDecision(sceneDecision, updatedNotebook, true);
+        } catch (Exception ex) {
+            log.warn("Failed to update notebook after draft generation. sessionId={}, reason={}", sessionId, ex.getMessage(), ex);
+            return agentSceneRouter.draftGeneratedDecision(NotebookSummary.builder().build());
+        }
     }
 
     private void send(String userId, String type, Map<String, Object> payload) {

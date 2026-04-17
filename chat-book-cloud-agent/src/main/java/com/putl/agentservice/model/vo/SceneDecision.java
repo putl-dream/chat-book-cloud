@@ -3,7 +3,6 @@ package com.putl.agentservice.model.vo;
 import com.putl.agentservice.enums.AgentAssistantAction;
 import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.enums.DraftReadiness;
-import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -13,27 +12,15 @@ import lombok.NoArgsConstructor;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-@Schema(description = "聊天响应")
-public class AgentChatResponse {
+public class SceneDecision {
 
-    @Schema(description = "AI 回复")
-    private String reply;
-
-    @Schema(description = "AI 消息")
-    private AgentChatMessageVO message;
-
-    @Schema(description = "当前执行场景")
     private AgentSceneType currentScene;
 
-    @Schema(description = "建议的下一场景")
     private AgentSceneType nextScene;
 
-    @Schema(description = "场景切换原因")
     private String switchReason;
 
-    @Schema(description = "助手动作")
     private AgentAssistantAction assistantAction;
 
-    @Schema(description = "首稿准备度")
     private DraftReadiness draftReadiness;
 }

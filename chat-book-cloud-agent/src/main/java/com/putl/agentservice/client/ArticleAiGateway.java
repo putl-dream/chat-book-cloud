@@ -2,6 +2,7 @@ package com.putl.agentservice.client;
 
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
 import com.putl.agentservice.client.engine.StreamingControl;
+import com.putl.agentservice.enums.AgentSceneType;
 import com.putl.agentservice.model.vo.AgentAssistantMessage;
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import com.putl.agentservice.model.vo.ArticleDraftResult;
@@ -25,6 +26,13 @@ public interface ArticleAiGateway {
      * @return AI 助手回复结果
      */
     AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages, NotebookSummary notebookSummary);
+
+    AiInvocationResult<AgentAssistantMessage> chat(List<AgentMessageDO> messages,
+                                                   NotebookSummary notebookSummary,
+                                                   AgentSceneType sceneType,
+                                                   String currentTitle,
+                                                   String currentSummary,
+                                                   String currentContent);
 
     /**
      * 生成文章草稿（非流式）

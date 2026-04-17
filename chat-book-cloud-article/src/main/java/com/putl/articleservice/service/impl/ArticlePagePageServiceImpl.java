@@ -121,37 +121,37 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         long start = (long) (pageNo - 1) * pageSize;
         long requiredCount = start + pageSize;
 
-        try {
+        Long dayRankTotal = getRankTotalSafely(dayRankKey);
+        Long allRankTotal = null;
+        LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
+
+        appendRankedArticlesSafely(dayRankKey, requiredCount, orderedArticles);
+        if (orderedArticles.size() < requiredCount) {
             ensureAllHotRankReady();
-            Long dayRankTotal = redisTemplate.opsForZSet().zCard(dayRankKey);
-            Long allRankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
+            allRankTotal = getRankTotalSafely(allRankKey);
+            if (allRankTotal != null && allRankTotal > 0) {
+                appendRankedArticlesSafely(allRankKey, requiredCount, orderedArticles);
+            }
+        }
+
+        List<ArticleDO> rankedArticles = sliceRankedArticles(orderedArticles, start, pageSize);
+        if (rankedArticles.isEmpty()) {
             if ((dayRankTotal == null || dayRankTotal == 0) && (allRankTotal == null || allRankTotal == 0)) {
                 return getTodayHotPageFallback(fallbackRequest);
             }
-
-            LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
-            appendRankedArticles(dayRankKey, requiredCount, orderedArticles);
-            if (orderedArticles.size() < requiredCount) {
-                appendRankedArticles(allRankKey, requiredCount, orderedArticles);
+            if (!orderedArticles.isEmpty()) {
+                return PageResult.empty(resolveTodayHotTotal(dayRankTotal, allRankTotal, orderedArticles.size()));
             }
-
-            List<ArticleDO> rankedArticles = sliceRankedArticles(orderedArticles, start, pageSize);
-            if (rankedArticles.isEmpty()) {
-                return getTodayHotPageFallback(fallbackRequest);
-            }
-
-            List<ArticleListVO> rankedList = new ArrayList<>(toBean(rankedArticles));
-            Long refreshedAllRankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
-            Long refreshedDayRankTotal = redisTemplate.opsForZSet().zCard(dayRankKey);
-            long total = refreshedAllRankTotal != null && refreshedAllRankTotal > 0
-                    ? refreshedAllRankTotal
-                    : refreshedDayRankTotal != null ? refreshedDayRankTotal : 0L;
-            return new PageResult<>(rankedList, total);
-        } catch (Exception e) {
-            log.warn("Failed to load today hot page from redis, dayKey: {}, allKey: {}, pageNo: {}, pageSize: {}",
-                    dayRankKey, allRankKey, pageNo, pageSize, e);
+            log.warn("Today hot rank returned no articles after filtering, dayKey: {}, allKey: {}, pageNo: {}, pageSize: {}",
+                    dayRankKey, allRankKey, pageNo, pageSize);
             return getTodayHotPageFallback(fallbackRequest);
         }
+
+        List<ArticleListVO> rankedList = new ArrayList<>(toBean(rankedArticles));
+        Long refreshedDayRankTotal = getRankTotalSafely(dayRankKey);
+        Long refreshedAllRankTotal = allRankTotal != null ? getRankTotalSafely(allRankKey) : allRankTotal;
+        long total = resolveTodayHotTotal(refreshedDayRankTotal, refreshedAllRankTotal, rankedList.size());
+        return new PageResult<>(rankedList, total);
     }
 
     private PageResult<ArticleListVO> getRankedHotPage(String rankKey,
@@ -190,6 +190,35 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
         appendRankedArticles(rankKey, requiredCount, orderedArticles);
         return sliceRankedArticles(orderedArticles, start, pageSize);
+    }
+
+    private Long getRankTotalSafely(String rankKey) {
+        try {
+            return redisTemplate.opsForZSet().zCard(rankKey);
+        } catch (Exception e) {
+            log.warn("Failed to read hot rank total, key: {}", rankKey, e);
+            return null;
+        }
+    }
+
+    private void appendRankedArticlesSafely(String rankKey,
+                                            long targetCount,
+                                            LinkedHashMap<Integer, ArticleDO> orderedArticles) {
+        try {
+            appendRankedArticles(rankKey, targetCount, orderedArticles);
+        } catch (Exception e) {
+            log.warn("Failed to append ranked articles, key: {}, targetCount: {}", rankKey, targetCount, e);
+        }
+    }
+
+    private long resolveTodayHotTotal(Long dayRankTotal, Long allRankTotal, int currentSize) {
+        if (allRankTotal != null && allRankTotal > 0) {
+            return allRankTotal;
+        }
+        if (dayRankTotal != null && dayRankTotal > 0) {
+            return dayRankTotal;
+        }
+        return currentSize;
     }
 
     private void appendRankedArticles(String rankKey, long targetCount, LinkedHashMap<Integer, ArticleDO> orderedArticles) {
@@ -318,10 +347,8 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
     }
 
     private PageResult<ArticleListVO> getTodayHotPageFallback(HotFallbackRequest request) {
-        LocalDateTime todayStart = LocalDate.now().atStartOfDay();
         return toBean(request.pageNo(), request.pageSize(), Wrappers.<ArticleDO>lambdaQuery()
                 .eq(ArticleDO::getStatus, ArticleStatus.PUBLISHED)
-                .ge(ArticleDO::getCreateTime, todayStart)
                 .orderByDesc(ArticleDO::getCreateTime));
     }
 
