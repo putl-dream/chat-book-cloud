@@ -3,7 +3,7 @@
 import { flushPromises, mount } from '@vue/test-utils';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import Text from './Text.vue';
-import { AGENT_STREAM_COMMAND } from '@/views/creator/_domain/stream-constants.js';
+import { AGENT_RUNTIME_COMMAND } from '@/views/creator/_domain/stream-constants.js';
 
 const {
     mockRouter,
@@ -262,7 +262,7 @@ describe('Text.vue Three-Column Layout', () => {
 
         await wrapper.find('.stop-generation-btn').trigger('click');
 
-        expect(mockSocketSend).toHaveBeenCalledWith(AGENT_STREAM_COMMAND.DRAFT_GENERATE_STOP, { sessionId: 12 });
+        expect(mockSocketSend).toHaveBeenCalledWith(AGENT_RUNTIME_COMMAND.ARTIFACT_STOP, { sessionId: 12 });
         expect(wrapper.text()).toContain('已停止生成');
     });
 });

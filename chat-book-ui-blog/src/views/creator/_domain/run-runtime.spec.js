@@ -8,17 +8,14 @@ import {
     appendMessagePreviewDelta,
     completeArtifactRun,
     createRunRuntime,
-    mapSocketEventToRuntimeEvent,
     startArtifactRun,
     startMessageRun
 } from './run-runtime.js';
-import { AGENT_STREAM_EVENT } from './stream-constants.js';
 
 describe('run-runtime', () => {
-    it('maps compatibility socket events to runtime events', () => {
-        expect(mapSocketEventToRuntimeEvent(AGENT_STREAM_EVENT.CHAT_DELTA)).toBe(AGENT_RUNTIME_EVENT.MESSAGE_DELTA);
-        expect(mapSocketEventToRuntimeEvent(AGENT_STREAM_EVENT.DRAFT_GENERATE_DONE)).toBe(AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED);
-        expect(mapSocketEventToRuntimeEvent('UNKNOWN_EVENT')).toBeNull();
+    it('exposes generic runtime event names directly', () => {
+        expect(AGENT_RUNTIME_EVENT.MESSAGE_DELTA).toBe('message.delta');
+        expect(AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED).toBe('artifact.completed');
     });
 
     it('accumulates chat preview text and delta counters', () => {

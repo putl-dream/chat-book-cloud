@@ -1,5 +1,3 @@
-import { AGENT_STREAM_EVENT } from '@/views/creator/_domain/stream-constants.js';
-
 export const AGENT_RUN_KIND = Object.freeze({
     CHAT: 'chat',
     DRAFT: 'draft'
@@ -24,19 +22,6 @@ export const AGENT_RUNTIME_EVENT = Object.freeze({
     ARTIFACT_COMPLETED: 'artifact.completed',
     ARTIFACT_FAILED: 'artifact.failed',
     ARTIFACT_STOPPED: 'artifact.stopped'
-});
-
-const SOCKET_TO_RUNTIME_EVENT = Object.freeze({
-    [AGENT_STREAM_EVENT.CHAT_START]: AGENT_RUNTIME_EVENT.MESSAGE_STARTED,
-    [AGENT_STREAM_EVENT.CHAT_DELTA]: AGENT_RUNTIME_EVENT.MESSAGE_DELTA,
-    [AGENT_STREAM_EVENT.CHAT_DONE]: AGENT_RUNTIME_EVENT.MESSAGE_COMPLETED,
-    [AGENT_STREAM_EVENT.CHAT_ERROR]: AGENT_RUNTIME_EVENT.MESSAGE_FAILED,
-    [AGENT_STREAM_EVENT.DRAFT_GENERATE_START]: AGENT_RUNTIME_EVENT.ARTIFACT_STARTED,
-    [AGENT_STREAM_EVENT.DRAFT_GENERATE_DELTA]: AGENT_RUNTIME_EVENT.ARTIFACT_DELTA,
-    [AGENT_STREAM_EVENT.DRAFT_GENERATE_STATUS]: AGENT_RUNTIME_EVENT.ARTIFACT_STATUS,
-    [AGENT_STREAM_EVENT.DRAFT_GENERATE_DONE]: AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED,
-    [AGENT_STREAM_EVENT.DRAFT_GENERATE_ERROR]: AGENT_RUNTIME_EVENT.ARTIFACT_FAILED,
-    [AGENT_STREAM_EVENT.DRAFT_GENERATE_STOPPED]: AGENT_RUNTIME_EVENT.ARTIFACT_STOPPED
 });
 
 function toPreviewParts(previewText = '') {
@@ -85,10 +70,6 @@ export function resetRunRuntime(current = {}) {
     return createRunRuntime({
         runKind: current?.runKind ?? null
     });
-}
-
-export function mapSocketEventToRuntimeEvent(eventType) {
-    return SOCKET_TO_RUNTIME_EVENT[eventType] ?? null;
 }
 
 export function startMessageRun(current = {}, options = {}) {

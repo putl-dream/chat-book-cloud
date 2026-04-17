@@ -22,7 +22,7 @@ public class AgentDraftGenerateMessageHandler implements MessageHandler<AgentDra
 
     @Override
     public String getType() {
-        return AgentStreamEventConstants.AGENT_DRAFT_GENERATE;
+        return AgentStreamEventConstants.ARTIFACT_GENERATE;
     }
 
     @Override
@@ -34,7 +34,7 @@ public class AgentDraftGenerateMessageHandler implements MessageHandler<AgentDra
     public void handleMessage(String userId, AgentDraftGenerateWsMessage message) {
         GenerateDraftRequest request = message.getData();
         if (request == null || request.getSessionId() == null || request.getSessionId() <= 0) {
-            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_DRAFT_GENERATE_ERROR, Map.of("message", "会话不存在或已失效")));
+            messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.ARTIFACT_FAILED, Map.of("message", "会话不存在或已失效")));
             return;
         }
         draftGenerationService.generateDraftByWebSocket(userId, request);

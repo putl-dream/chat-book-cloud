@@ -13,6 +13,6 @@ public class AgentDraftStopWsMessage extends BaseMessage {
     private GenerateDraftRequest data;
 
     public AgentDraftStopWsMessage() {
-        super(AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STOP);
+        super(AgentStreamEventConstants.ARTIFACT_STOP);
     }
 }

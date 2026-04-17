@@ -192,7 +192,7 @@ class AgentConversationServiceImplTest {
     }
 
     @Test
-    void chatByWebSocketShouldPublishStartDeltaAndDone() {
+    void chatByWebSocketShouldPublishRuntimeEvents() {
         AgentChatRequest request = new AgentChatRequest();
         request.setSessionId(101);
         request.setContent("帮我整理一个选题");
@@ -221,13 +221,15 @@ class AgentConversationServiceImplTest {
         List<String> payloads = payloadCaptor.getAllValues().stream().map(String::valueOf).toList();
 
         assertEquals(4, payloads.size());
-        Assertions.assertTrue(payloads.get(0).contains(AgentStreamEventConstants.AGENT_CHAT_START));
-        Assertions.assertTrue(payloads.get(1).contains(AgentStreamEventConstants.AGENT_CHAT_DELTA));
-        Assertions.assertTrue(payloads.get(1).contains("\"content\":\"先\""));
-        Assertions.assertTrue(payloads.get(2).contains(AgentStreamEventConstants.AGENT_CHAT_DELTA));
-        Assertions.assertTrue(payloads.get(2).contains("\"content\":\"看受众\""));
-        Assertions.assertTrue(payloads.get(3).contains(AgentStreamEventConstants.AGENT_CHAT_DONE));
-        Assertions.assertTrue(payloads.get(3).contains("先看受众"));
+        Assertions.assertTrue(payloads.get(0).contains(AgentStreamEventConstants.MESSAGE_STARTED));
+        Assertions.assertTrue(payloads.get(0).contains("\"statusText\":\"正在思考...\""));
+        Assertions.assertTrue(payloads.get(1).contains(AgentStreamEventConstants.MESSAGE_DELTA));
+        Assertions.assertTrue(payloads.get(1).contains("\"delta\":\"先\""));
+        Assertions.assertTrue(payloads.get(2).contains(AgentStreamEventConstants.MESSAGE_DELTA));
+        Assertions.assertTrue(payloads.get(2).contains("\"delta\":\"看受众\""));
+        Assertions.assertTrue(payloads.get(3).contains(AgentStreamEventConstants.MESSAGE_COMPLETED));
+        Assertions.assertTrue(payloads.get(3).contains("\"finalMessage\""));
+        Assertions.assertTrue(payloads.get(3).contains("\"previewText\":\"先看受众\""));
         Assertions.assertTrue(payloads.get(3).contains("\"previewMode\":\"tagged_preview\""));
     }
 

@@ -13,6 +13,6 @@ public class AgentDraftGenerateWsMessage extends BaseMessage {
     private GenerateDraftRequest data;
 
     public AgentDraftGenerateWsMessage() {
-        super(AgentStreamEventConstants.AGENT_DRAFT_GENERATE);
+        super(AgentStreamEventConstants.ARTIFACT_GENERATE);
     }
 }

@@ -15,15 +15,16 @@ import {
     clearAgentGenerationIntent,
     extractArticleSummary,
     loadAgentDraftImport,
-    loadAgentGenerationIntent
+    loadAgentGenerationIntent,
+    normalizeAgentDraft
 } from '@/views/creator/_domain/agent.js';
 import {
-    AGENT_STREAM_COMMAND,
-    AGENT_STREAM_EVENT
+    AGENT_RUNTIME_COMMAND
 } from '@/views/creator/_domain/stream-constants.js';
 import {
     AGENT_RUN_KIND,
     AGENT_RUN_STATUS,
+    AGENT_RUNTIME_EVENT,
     appendArtifactDelta,
     completeArtifactRun,
     createRunRuntime,
@@ -583,7 +584,7 @@ export function useEditorLogic() {
             maxReconnectAttempts: 0
         });
 
-        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_START, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STARTED, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -591,11 +592,11 @@ export function useEditorLogic() {
                 runId: payload.sessionId ?? agentDraftRun.value.runId,
                 sessionId: payload.sessionId ?? agentDraftRun.value.sessionId,
                 source: 'editor',
-                statusText: payload.message || '正在整理讨论上下文...'
+                statusText: payload.statusText || '正在整理讨论上下文...'
             });
         });
 
-        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_STATUS, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STATUS, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -607,11 +608,11 @@ export function useEditorLogic() {
                         sessionId: payload.sessionId ?? agentDraftRun.value.sessionId,
                         source: 'editor'
                     }),
-                payload.message || aiGenerationStatusText.value || '正在生成正文...'
+                payload.statusText || aiGenerationStatusText.value || '正在生成正文...'
             );
         });
 
-        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_DELTA, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_DELTA, (payload = {}) => {
             if (ignoreAgentStream || typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
@@ -629,32 +630,31 @@ export function useEditorLogic() {
             applyMarkdownToEditor(preview.content);
         });
 
-        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_DONE, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
 
+            const finalArtifact = normalizeAgentDraft(payload.finalArtifact || {});
             agentDraftRun.value = completeArtifactRun(agentDraftRun.value, {
                 sessionId: payload.sessionId ?? agentDraftRun.value.sessionId,
                 artifactPreview: normalizeAgentDraft({
-                    title: payload.title,
-                    summary: payload.summary,
-                    content: payload.content || agentDraftRun.value.artifactPreview?.content || ''
+                    ...finalArtifact,
+                    content: finalArtifact.content || agentDraftRun.value.artifactPreview?.content || ''
                 }),
                 finalArtifact: normalizeAgentDraft({
-                    title: payload.title,
-                    summary: payload.summary,
-                    content: payload.content || agentDraftRun.value.artifactPreview?.content || ''
+                    ...finalArtifact,
+                    content: finalArtifact.content || agentDraftRun.value.artifactPreview?.content || ''
                 }),
                 statusText: '初稿已生成，可继续编辑'
             });
             flushRemainingMarkdown({ force: true });
 
-            if (!userEditedTitle.value && payload.title) {
-                title.value = payload.title;
+            if (!userEditedTitle.value && finalArtifact.title) {
+                title.value = finalArtifact.title;
             }
-            if (!userEditedSummary.value && payload.summary) {
-                publishForm.value.abstractText = payload.summary;
+            if (!userEditedSummary.value && finalArtifact.summary) {
+                publishForm.value.abstractText = finalArtifact.summary;
             }
 
             markContentDirty();
@@ -662,7 +662,7 @@ export function useEditorLogic() {
             ElMessage.success('初稿已生成，可继续编辑');
         });
 
-        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_ERROR, (payload = {}) => {
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_FAILED, (payload = {}) => {
             if (ignoreAgentStream) {
                 return;
             }
@@ -673,8 +673,8 @@ export function useEditorLogic() {
             ElMessage.error(payload.message || '初稿生成失败，请稍后重试');
         });
 
-        agentSocketService.on(AGENT_STREAM_EVENT.DRAFT_GENERATE_STOPPED, (payload = {}) => {
-            agentDraftRun.value = stopArtifactRun(agentDraftRun.value, payload.message || '已停止生成，你可以直接接管正文');
+        agentSocketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STOPPED, (payload = {}) => {
+            agentDraftRun.value = stopArtifactRun(agentDraftRun.value, payload.statusText || '已停止生成，你可以直接接管正文');
             disconnectAgentWebSocket();
             clearAgentGenerationIntent();
         });
@@ -752,7 +752,7 @@ export function useEditorLogic() {
 
         try {
             const service = await ensureAgentSocketReady();
-            const sent = service.send(AGENT_STREAM_COMMAND.DRAFT_GENERATE, { sessionId });
+            const sent = service.send(AGENT_RUNTIME_COMMAND.ARTIFACT_GENERATE, { sessionId });
             if (!sent) {
                 throw new Error('Agent WebSocket 未连接');
             }
@@ -778,7 +778,7 @@ export function useEditorLogic() {
 
         const sessionId = agentDraftRun.value.sessionId;
         const sent = sessionId && agentSocketService
-            ? agentSocketService.send(AGENT_STREAM_COMMAND.DRAFT_GENERATE_STOP, { sessionId })
+            ? agentSocketService.send(AGENT_RUNTIME_COMMAND.ARTIFACT_STOP, { sessionId })
             : false;
 
         if (!sent) {

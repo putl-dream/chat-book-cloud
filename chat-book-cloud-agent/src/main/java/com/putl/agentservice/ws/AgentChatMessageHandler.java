@@ -23,7 +23,7 @@ public class AgentChatMessageHandler implements MessageHandler<AgentChatWsMessag
 
     @Override
     public String getType() {
-        return AgentStreamEventConstants.AGENT_CHAT;
+        return AgentStreamEventConstants.MESSAGE_CREATE;
     }
 
     @Override
@@ -53,6 +53,6 @@ public class AgentChatMessageHandler implements MessageHandler<AgentChatWsMessag
     }
 
     private void sendError(String userId, String message) {
-        messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.AGENT_CHAT_ERROR, Map.of("message", message)));
+        messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.MESSAGE_FAILED, Map.of("message", message)));
     }
 }
