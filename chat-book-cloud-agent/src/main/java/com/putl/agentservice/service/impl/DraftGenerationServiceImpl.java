@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.toolkit.Wrappers;
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.client.engine.StreamingCancelledException;
 import com.putl.agentservice.client.engine.StreamingControl;
+import com.putl.agentservice.constants.AgentStreamEventConstants;
 import com.putl.agentservice.mapper.AgentMessageMapper;
 import com.putl.agentservice.mapper.AgentSessionMapper;
 import com.putl.agentservice.mapper.entity.AgentMessageDO;
@@ -37,13 +38,6 @@ import java.util.function.Consumer;
 @Slf4j
 @Service
 public class DraftGenerationServiceImpl implements DraftGenerationService {
-
-    private static final String AGENT_DRAFT_GENERATE_START = "AGENT_DRAFT_GENERATE_START";
-    private static final String AGENT_DRAFT_GENERATE_STATUS = "AGENT_DRAFT_GENERATE_STATUS";
-    private static final String AGENT_DRAFT_GENERATE_DELTA = "AGENT_DRAFT_GENERATE_DELTA";
-    private static final String AGENT_DRAFT_GENERATE_DONE = "AGENT_DRAFT_GENERATE_DONE";
-    private static final String AGENT_DRAFT_GENERATE_ERROR = "AGENT_DRAFT_GENERATE_ERROR";
-    private static final String AGENT_DRAFT_GENERATE_STOPPED = "AGENT_DRAFT_GENERATE_STOPPED";
 
     private final AgentSessionMapper agentSessionMapper;
     private final AgentMessageMapper agentMessageMapper;
@@ -97,7 +91,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
                 "User requested stop");
         log.info("Agent draft generation stop requested. sessionId={}, userId={}, activeTaskFound={}",
                 sessionId, userId, handle != null);
-        send(userId, AGENT_DRAFT_GENERATE_STOPPED, payload(sessionId,
+        send(userId, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STOPPED, payload(sessionId,
                 "message", "已停止生成，你可以直接接管正文"));
     }
 
@@ -108,21 +102,21 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
         handle.onCancel(executionThread::interrupt);
         try {
             log.info("Starting agent draft generation. sessionId={}, userId={}", sessionId, handle.getUserId());
-            sendIfActive(handle, AGENT_DRAFT_GENERATE_START, payload(sessionId, "message", "正在整理会话上下文..."));
-            sendIfActive(handle, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在生成首稿内容..."));
+            sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_START, payload(sessionId, "message", "正在整理会话上下文..."));
+            sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在生成首稿内容..."));
             DraftGenerateResponse response = doGenerateDraft(
                     request,
                     handle,
                     chunk -> {
                         handle.throwIfCancelled();
-                        sendIfActive(handle, AGENT_DRAFT_GENERATE_DELTA, payload(sessionId, "chunk", chunk));
+                        sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_DELTA, payload(sessionId, "chunk", chunk));
                     },
                     () -> {
                         handle.throwIfCancelled();
-                        sendIfActive(handle, AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在保存草稿..."));
+                        sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_STATUS, payload(sessionId, "message", "正在保存草稿..."));
                     });
             handle.throwIfCancelled();
-            sendIfActive(handle, AGENT_DRAFT_GENERATE_DONE, payload(sessionId,
+            sendIfActive(handle, AgentStreamEventConstants.AGENT_DRAFT_GENERATE_DONE, payload(sessionId,
                     "draftId", response.getDraftId(),
                     "versionNo", response.getVersionNo(),
                     "title", response.getTitle(),
@@ -145,7 +139,7 @@ public class DraftGenerationServiceImpl implements DraftGenerationService {
             }
             log.error("Agent draft generation failed. sessionId={}, userId={}, reason={}",
                     sessionId, handle.getUserId(), ex.getMessage(), ex);
-            send(handle.getUserId(), AGENT_DRAFT_GENERATE_ERROR, payload(sessionId,
+            send(handle.getUserId(), AgentStreamEventConstants.AGENT_DRAFT_GENERATE_ERROR, payload(sessionId,
                     "message", defaultText(ex.getMessage(), "生成草稿失败，请稍后重试")));
         } finally {
             activeDraftGenerationRegistry.complete(handle);

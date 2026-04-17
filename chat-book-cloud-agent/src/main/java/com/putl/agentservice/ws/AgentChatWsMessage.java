@@ -1,5 +1,6 @@
 package com.putl.agentservice.ws;
 
+import com.putl.agentservice.constants.AgentStreamEventConstants;
 import com.putl.agentservice.model.dto.AgentChatRequest;
 import fun.amireux.chat.book.framework.websocket.domain.BaseMessage;
 import lombok.Data;
@@ -12,6 +13,6 @@ public class AgentChatWsMessage extends BaseMessage {
     private AgentChatRequest data;
 
     public AgentChatWsMessage() {
-        super("AGENT_CHAT");
+        super(AgentStreamEventConstants.AGENT_CHAT);
     }
 }

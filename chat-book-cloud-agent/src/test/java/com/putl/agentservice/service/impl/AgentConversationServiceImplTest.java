@@ -1,8 +1,10 @@
 package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
+import com.putl.agentservice.constants.AgentStreamEventConstants;
 import com.putl.agentservice.enums.AgentAssistantAction;
 import com.putl.agentservice.enums.AgentMessageRole;
 import com.putl.agentservice.enums.AgentSceneType;
@@ -27,6 +29,7 @@ import com.putl.agentservice.service.AgentNotebookCacheService;
 import com.putl.agentservice.service.AgentNotebookService;
 import com.putl.articleservice.api.ArticleClient;
 import fun.amireux.chat.book.framework.websocket.server.MessagePublisher;
+import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -44,7 +47,9 @@ import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyList;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.doAnswer;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -158,7 +163,7 @@ class AgentConversationServiceImplTest {
                 34,
                 56,
                 "claude-test");
-        when(articleAiGateway.chat(anyList(), any(NotebookSummary.class), any(AgentSceneType.class), any(), any(), any()))
+        when(articleAiGateway.chat(anyList(), any(NotebookSummary.class), any(AgentSceneType.class), any(), any(), any(), any(), any(StreamingControl.class)))
                 .thenReturn(aiReply);
 
         AgentChatResponse response = service.chat(request);
@@ -184,6 +189,45 @@ class AgentConversationServiceImplTest {
         assertEquals(AgentSceneType.DISCUSS, response.getCurrentScene());
         assertEquals(AgentSceneType.DRAFT, response.getNextScene());
         assertEquals(DraftReadiness.READY, response.getDraftReadiness());
+    }
+
+    @Test
+    void chatByWebSocketShouldPublishStartDeltaAndDone() {
+        AgentChatRequest request = new AgentChatRequest();
+        request.setSessionId(101);
+        request.setContent("帮我整理一个选题");
+
+        doAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            java.util.function.Consumer<String> consumer = invocation.getArgument(6, java.util.function.Consumer.class);
+            consumer.accept("{\"messageType\":\"text\",\"content\":\"先");
+            consumer.accept("看受众\"");
+            return new AiInvocationResult<>(
+                    AgentAssistantMessage.builder()
+                            .messageType(AgentMessageTypeConstants.TEXT)
+                            .content("先看受众")
+                            .build(),
+                    10,
+                    20,
+                    30,
+                    "claude-test");
+        }).when(articleAiGateway).chat(anyList(), any(NotebookSummary.class), any(AgentSceneType.class), any(), any(), any(), any(), any(StreamingControl.class));
+
+        ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
+
+        service.chatByWebSocket("u-1", request);
+
+        verify(messagePublisher, times(4)).sendToUser(anyString(), payloadCaptor.capture());
+        List<String> payloads = payloadCaptor.getAllValues().stream().map(String::valueOf).toList();
+
+        assertEquals(4, payloads.size());
+        Assertions.assertTrue(payloads.get(0).contains(AgentStreamEventConstants.AGENT_CHAT_START));
+        Assertions.assertTrue(payloads.get(1).contains(AgentStreamEventConstants.AGENT_CHAT_DELTA));
+        Assertions.assertTrue(payloads.get(1).contains("\"content\":\"先\""));
+        Assertions.assertTrue(payloads.get(2).contains(AgentStreamEventConstants.AGENT_CHAT_DELTA));
+        Assertions.assertTrue(payloads.get(2).contains("\"content\":\"看受众\""));
+        Assertions.assertTrue(payloads.get(3).contains(AgentStreamEventConstants.AGENT_CHAT_DONE));
+        Assertions.assertTrue(payloads.get(3).contains("先看受众"));
     }
 
     private InteractionResponseRequest buildInteractionResponse() {
