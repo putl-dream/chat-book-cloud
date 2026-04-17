@@ -62,6 +62,10 @@
                         <p v-if="msg.streaming && !msg.content" class="streaming-hint">
                             <span class="typing-dot"></span> 正在思考...
                         </p>
+                        <StreamingMessageRenderer
+                            v-else-if="msg.streaming"
+                            :content="msg.content"
+                        />
                         <RichTextViewer
                             v-else
                             :html="renderHtml(msg.content)"
@@ -113,6 +117,7 @@ import { useAgentStudioStore } from '@/store/agentStudio.js';
 import { buildRichTextHtml } from '@/components/common/rich-text/content-pipeline.js';
 import RichTextViewer from '@/components/common/rich-text/RichTextViewer.vue';
 import InteractiveFormCard from '@/views/creator/components/agent/InteractiveFormCard.vue';
+import StreamingMessageRenderer from '@/views/creator/components/agent/StreamingMessageRenderer.vue';
 import { Position } from '@element-plus/icons-vue';
 
 const store = useAgentStudioStore();

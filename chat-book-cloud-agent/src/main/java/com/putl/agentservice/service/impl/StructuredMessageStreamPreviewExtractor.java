@@ -57,19 +57,10 @@ final class StructuredMessageStreamPreviewExtractor {
             return "";
         }
 
-        int candidateLength = value.length();
-        while (candidateLength > 0) {
-            String candidate = value.substring(0, candidateLength);
-            try {
-                return decodeJsonStringLiteral(candidate);
-            } catch (IllegalArgumentException ignored) {
-                candidateLength -= 1;
-            }
-        }
-        return "";
+        return decodeJsonStringPrefix(value);
     }
 
-    private static String decodeJsonStringLiteral(String value) {
+    private static String decodeJsonStringPrefix(String value) {
         StringBuilder builder = new StringBuilder(value.length());
         for (int index = 0; index < value.length(); index += 1) {
             char current = value.charAt(index);
@@ -78,7 +69,7 @@ final class StructuredMessageStreamPreviewExtractor {
                 continue;
             }
             if (index + 1 >= value.length()) {
-                throw new IllegalArgumentException("Incomplete escape sequence");
+                break;
             }
 
             char next = value.charAt(++index);
@@ -91,13 +82,19 @@ final class StructuredMessageStreamPreviewExtractor {
                 case 't' -> builder.append('\t');
                 case 'u' -> {
                     if (index + 4 >= value.length()) {
-                        throw new IllegalArgumentException("Incomplete unicode escape");
+                        return builder.toString();
                     }
                     String hex = value.substring(index + 1, index + 5);
-                    builder.append((char) Integer.parseInt(hex, 16));
+                    try {
+                        builder.append((char) Integer.parseInt(hex, 16));
+                    } catch (NumberFormatException ignored) {
+                        return builder.toString();
+                    }
                     index += 4;
                 }
-                default -> throw new IllegalArgumentException("Unsupported escape sequence");
+                default -> {
+                    return builder.toString();
+                }
             }
         }
         return builder.toString();
