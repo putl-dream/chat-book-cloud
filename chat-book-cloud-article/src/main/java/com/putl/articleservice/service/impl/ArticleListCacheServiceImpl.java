@@ -38,11 +38,7 @@ public class ArticleListCacheServiceImpl implements ArticleListCacheService {
     }
 
     @Override
-    @Cacheable(value = "hotArticleListCache", key = "'todayHot:' + #pageNo + ':' + #pageSize", unless = "#result == null || #result.getList().isEmpty()")
     public PageResult<ArticleListVO> getTodayHotPage(Integer pageNo, Integer pageSize) {
-        if (pageNo != 1) {
-            return articlePageService.getTodayHotPage(pageNo, pageSize);
-        }
         return articlePageService.getTodayHotPage(pageNo, pageSize);
     }
 
