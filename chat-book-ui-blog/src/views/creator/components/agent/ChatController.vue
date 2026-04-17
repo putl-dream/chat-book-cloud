@@ -64,7 +64,7 @@
                         </p>
                         <StreamingMessageRenderer
                             v-else-if="msg.streaming"
-                            :content="msg.content"
+                            :content="msg.previewText || msg.content"
                         />
                         <RichTextViewer
                             v-else

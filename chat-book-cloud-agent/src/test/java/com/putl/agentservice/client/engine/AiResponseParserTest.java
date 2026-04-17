@@ -38,6 +38,30 @@ class AiResponseParserTest {
     }
 
     @Test
+    void parseStructuredChatShouldReadFinalJsonFromEnvelope() {
+        AgentAssistantMessage message = parser.parseStructuredChat("""
+                <agent_preview>先看受众</agent_preview>
+                <agent_final>{"messageType":"text","content":"先看受众","payload":null}</agent_final>
+                """);
+
+        assertEquals(AgentMessageTypeConstants.TEXT, message.getMessageType());
+        assertEquals("先看受众", message.getContent());
+        assertNull(message.getPayload());
+    }
+
+    @Test
+    void parseStructuredChatShouldFallbackToEnvelopePreviewWhenFinalJsonIsInvalid() {
+        AgentAssistantMessage message = parser.parseStructuredChat("""
+                <agent_preview>先看受众</agent_preview>
+                <agent_final>{invalid-json}</agent_final>
+                """);
+
+        assertEquals(AgentMessageTypeConstants.TEXT, message.getMessageType());
+        assertEquals("先看受众", message.getContent());
+        assertNull(message.getPayload());
+    }
+
+    @Test
     void parseStructuredChatShouldNormalizeInteractiveFormPayload() {
         AgentAssistantMessage message = parser.parseStructuredChat("""
                 {

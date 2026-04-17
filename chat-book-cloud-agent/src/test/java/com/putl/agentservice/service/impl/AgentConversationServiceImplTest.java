@@ -200,8 +200,8 @@ class AgentConversationServiceImplTest {
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             java.util.function.Consumer<String> consumer = invocation.getArgument(6, java.util.function.Consumer.class);
-            consumer.accept("{\"messageType\":\"text\",\"content\":\"先");
-            consumer.accept("看受众\"");
+            consumer.accept("<agent_preview>先");
+            consumer.accept("看受众</agent_preview><agent_final>{\"messageType\":\"text\",\"content\":\"先看受众\",\"payload\":null}</agent_final>");
             return new AiInvocationResult<>(
                     AgentAssistantMessage.builder()
                             .messageType(AgentMessageTypeConstants.TEXT)
@@ -228,6 +228,39 @@ class AgentConversationServiceImplTest {
         Assertions.assertTrue(payloads.get(2).contains("\"content\":\"看受众\""));
         Assertions.assertTrue(payloads.get(3).contains(AgentStreamEventConstants.AGENT_CHAT_DONE));
         Assertions.assertTrue(payloads.get(3).contains("先看受众"));
+        Assertions.assertTrue(payloads.get(3).contains("\"previewMode\":\"tagged_preview\""));
+    }
+
+    @Test
+    void chatShouldFallbackToPreviewWhenFinalTextIsShorterThanPreview() {
+        AgentChatRequest request = new AgentChatRequest();
+        request.setSessionId(101);
+        request.setContent("帮我整理一个选题");
+
+        doAnswer(invocation -> {
+            @SuppressWarnings("unchecked")
+            java.util.function.Consumer<String> consumer = invocation.getArgument(6, java.util.function.Consumer.class);
+            consumer.accept("<agent_preview>先看受众</agent_preview>");
+            return new AiInvocationResult<>(
+                    AgentAssistantMessage.builder()
+                            .messageType(AgentMessageTypeConstants.TEXT)
+                            .content("先看")
+                            .build(),
+                    10,
+                    20,
+                    30,
+                    "claude-test");
+        }).when(articleAiGateway).chat(anyList(), any(NotebookSummary.class), any(AgentSceneType.class), any(), any(), any(), any(), any(StreamingControl.class));
+
+        AgentChatResponse response = service.chat(request);
+
+        ArgumentCaptor<AgentMessageDO> captor = ArgumentCaptor.forClass(AgentMessageDO.class);
+        verify(agentMessageMapper, times(2)).insert(captor.capture());
+        List<AgentMessageDO> savedMessages = captor.getAllValues();
+        AgentMessageDO assistantMessage = savedMessages.get(1);
+
+        assertEquals("先看受众", assistantMessage.getContent());
+        assertEquals("先看受众", response.getReply());
     }
 
     private InteractionResponseRequest buildInteractionResponse() {

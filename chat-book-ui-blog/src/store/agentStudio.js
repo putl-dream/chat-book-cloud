@@ -199,14 +199,15 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const visibleMessages = computed(() => messages.value
         .filter((message) => !isInteractionResponseMessage(message))
         .map((message) => {
-            if (message.role === 'assistant' && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM) {
-                const formId = message.payload?.formId;
+            const projectedMessage = projectVisibleMessage(message);
+            if (projectedMessage.role === 'assistant' && projectedMessage.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM) {
+                const formId = projectedMessage.payload?.formId;
                 return {
-                    ...message,
+                    ...projectedMessage,
                     interactionResponse: formId ? (interactionResponseMap.value.get(formId) ?? null) : null
                 };
             }
-            return message;
+            return projectedMessage;
         }));
 
     const hasMessages = computed(() => visibleMessages.value.length > 0);
@@ -306,6 +307,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         }
         chatRun.value = createRunRuntime({
             ...chatRun.value,
+            previewText: '',
+            previewParts: [],
             meta: {
                 ...(chatRun.value.meta || {}),
                 messageId: null,
@@ -403,6 +406,19 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const getStreamingAssistantMessageId = () => chatRun.value.meta?.messageId ?? null;
     const getStreamingAssistantDeltaCount = () => Number(chatRun.value.meta?.deltaCount || 0);
+    const getStreamingPreviewText = () => String(chatRun.value.previewText || '');
+
+    const projectVisibleMessage = (message) => {
+        if (!message?.streaming || message.id !== getStreamingAssistantMessageId()) {
+            return message;
+        }
+        return {
+            ...message,
+            content: getStreamingPreviewText(),
+            previewText: getStreamingPreviewText(),
+            previewParts: chatRun.value.previewParts
+        };
+    };
 
     const beginStreamingAssistantMessage = (messageId, activeSessionId) => {
         chatRun.value = startMessageRun(chatRun.value, {
@@ -425,58 +441,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
-            const normalized = typeof reply === 'object' && reply !== null
-                ? normalizeMessage({
-                    ...reply,
-                    id: reply.id ?? current.id,
-                    role: reply.role ?? 'ASSISTANT'
-                })
-                : normalizeMessage({
-                    id: current.id,
-                    role: 'ASSISTANT',
-                    messageType: AGENT_MESSAGE_TYPE.TEXT,
-                    content: typeof reply === 'string' && reply.length > 0 ? reply : current.content
-                });
-
-            const shouldRevealProgressively = normalized.messageType === AGENT_MESSAGE_TYPE.TEXT
-                && typeof normalized.content === 'string'
-                && normalized.content.length > 0
-                && (getStreamingAssistantDeltaCount() <= 1 || !current.content);
-
-            if (shouldRevealProgressively && normalized.content.length > (current.content || '').length) {
-                const baseContent = current.content || '';
-                const remainingContent = normalized.content.slice(baseContent.length);
-                const chunkSize = Math.max(2, Math.ceil(remainingContent.length / 24));
-
-                const applyRevealStep = (cursor = 0) => {
-                    const nextCursor = Math.min(cursor + chunkSize, remainingContent.length);
-                    const nextContent = `${baseContent}${remainingContent.slice(0, nextCursor)}`;
-                    messages.value[messageIndex] = {
-                        ...current,
-                        ...normalized,
-                        content: nextContent,
-                        streaming: nextCursor < remainingContent.length
-                    };
-
-                    if (nextCursor >= remainingContent.length) {
-                        chatRun.value = completeMessageRun(chatRun.value, {
-                            sessionId: sessionId.value,
-                            finalMessage: normalized,
-                            statusText: '回复已完成'
-                        });
-                        clearStreamingState();
-                        return;
-                    }
-
-                    streamingAssistantRevealTimer = setTimeout(() => {
-                        applyRevealStep(nextCursor);
-                    }, 20);
-                };
-
-                clearStreamingRevealTimer();
-                applyRevealStep(0);
-                return;
-            }
+            const normalized = resolveCompletedStreamingMessage(current, reply);
 
             messages.value[messageIndex] = {
                 ...current,
@@ -486,10 +451,47 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         }
         chatRun.value = completeMessageRun(chatRun.value, {
             sessionId: sessionId.value,
-            finalMessage: typeof reply === 'object' && reply !== null ? normalizeMessage(reply) : null,
+            finalMessage: reply?.message
+                ? normalizeMessage(reply.message)
+                : (typeof reply === 'object' && reply !== null ? normalizeMessage(reply) : null),
             statusText: '回复已完成'
         });
         clearStreamingState();
+    };
+
+    const resolveCompletedStreamingMessage = (current, reply) => {
+        const previewText = typeof reply?.streamPreview === 'string'
+            ? reply.streamPreview
+            : getStreamingPreviewText();
+        if (reply && typeof reply === 'object' && reply.message) {
+            const normalized = normalizeMessage({
+                ...reply.message,
+                id: reply.message.id ?? current.id,
+                role: reply.message.role ?? 'ASSISTANT'
+            });
+            const shouldUsePreviewFallback = normalized.messageType === AGENT_MESSAGE_TYPE.TEXT
+                && (!normalized.content || reply?.streamMeta?.previewFallbackApplied);
+            if (shouldUsePreviewFallback && previewText) {
+                return {
+                    ...normalized,
+                    content: previewText
+                };
+            }
+            return normalized;
+        }
+        if (typeof reply === 'object' && reply !== null) {
+            return normalizeMessage({
+                ...reply,
+                id: reply.id ?? current.id,
+                role: reply.role ?? 'ASSISTANT'
+            });
+        }
+        return normalizeMessage({
+            id: current.id,
+            role: 'ASSISTANT',
+            messageType: AGENT_MESSAGE_TYPE.TEXT,
+            content: typeof reply === 'string' && reply.length > 0 ? reply : previewText || current.content
+        });
     };
 
     const discardStreamingMessage = () => {
@@ -502,11 +504,13 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
-            if (!current.content) {
+            const previewText = getStreamingPreviewText();
+            if (!current.content && !previewText) {
                 messages.value.splice(messageIndex, 1);
             } else {
                 messages.value[messageIndex] = {
                     ...current,
+                    content: current.content || previewText,
                     streaming: false
                 };
             }
@@ -544,20 +548,13 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
             clearStreamingRevealTimer();
             chatRun.value = appendMessagePreviewDelta(chatRun.value, payload.content);
-            const current = messages.value[messageIndex];
-            const nextContent = chatRun.value.previewText;
             console.debug('[agent-chat-delta]', {
                 sessionId: payload.sessionId ?? sessionId.value,
                 deltaIndex: getStreamingAssistantDeltaCount(),
                 chunkLength: payload.content.length,
                 chunk: payload.content,
-                accumulatedLength: nextContent.length
+                accumulatedLength: chatRun.value.previewText.length
             });
-            messages.value[messageIndex] = {
-                ...current,
-                content: nextContent,
-                streaming: true
-            };
         });
 
         socketService.on(AGENT_STREAM_EVENT.CHAT_DONE, (payload = {}) => {
@@ -574,7 +571,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 finalMessage: payload.message ? normalizeMessage(payload.message) : null,
                 statusText: '回复已完成'
             });
-            finishStreamingMessage(payload.message ?? payload.reply ?? '');
+            finishStreamingMessage(payload);
             syncActiveSessionHistory({
                 sceneType: payload.currentScene ?? currentScene.value,
                 updateTime: new Date().toISOString()
