@@ -156,6 +156,25 @@ class ArticlePagePageServiceImplTest {
         verify(service, never()).toBean(eq(1), eq(5), any(Wrapper.class));
     }
 
+    @Test
+    void getTodayHotPageShouldFallbackToTodayScopeInsteadOfGlobalHotPage() {
+        when(zSetOperations.zCard(HOT_DAY_KEY)).thenReturn(0L);
+        when(zSetOperations.zCard(HOT_ALL_KEY)).thenReturn(0L);
+        PageResult<ArticleListVO> todayFallback = new PageResult<>(
+            List.of(ArticleListVO.builder().id(25).build()),
+            1L
+        );
+        doAnswer(invocation -> todayFallback)
+            .when(service)
+            .toBean(eq(1), eq(5), any(Wrapper.class));
+
+        PageResult<ArticleListVO> result = service.getTodayHotPage(1, 5);
+
+        assertThat(result.getList()).extracting(ArticleListVO::getId)
+            .containsExactly(25);
+        verify(service, never()).getHotPage(1, 5);
+    }
+
     private static ArticleDO article(Integer id, ArticleStatus status) {
         return ArticleDO.builder()
             .id(id)

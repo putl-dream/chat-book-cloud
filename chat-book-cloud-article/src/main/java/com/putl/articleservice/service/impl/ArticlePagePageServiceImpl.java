@@ -115,6 +115,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
             return PageResult.empty();
         }
 
+        HotFallbackRequest fallbackRequest = new HotFallbackRequest(pageNo, pageSize);
         String dayRankKey = RedisKeyConstants.interactionHotDay(env, LocalDate.now().format(HOT_DAY_FORMATTER));
         String allRankKey = RedisKeyConstants.interactionHotAll(env);
         long start = (long) (pageNo - 1) * pageSize;
@@ -125,7 +126,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
             Long dayRankTotal = redisTemplate.opsForZSet().zCard(dayRankKey);
             Long allRankTotal = redisTemplate.opsForZSet().zCard(allRankKey);
             if ((dayRankTotal == null || dayRankTotal == 0) && (allRankTotal == null || allRankTotal == 0)) {
-                return getHotPage(pageNo, pageSize);
+                return getTodayHotPageFallback(fallbackRequest);
             }
 
             LinkedHashMap<Integer, ArticleDO> orderedArticles = new LinkedHashMap<>();
@@ -136,7 +137,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
 
             List<ArticleDO> rankedArticles = sliceRankedArticles(orderedArticles, start, pageSize);
             if (rankedArticles.isEmpty()) {
-                return getHotPage(pageNo, pageSize);
+                return getTodayHotPageFallback(fallbackRequest);
             }
 
             List<ArticleListVO> rankedList = new ArrayList<>(toBean(rankedArticles));
@@ -149,7 +150,7 @@ public class ArticlePagePageServiceImpl extends BaseAbstractArticle implements A
         } catch (Exception e) {
             log.warn("Failed to load today hot page from redis, dayKey: {}, allKey: {}, pageNo: {}, pageSize: {}",
                     dayRankKey, allRankKey, pageNo, pageSize, e);
-            return getHotPage(pageNo, pageSize);
+            return getTodayHotPageFallback(fallbackRequest);
         }
     }
 
