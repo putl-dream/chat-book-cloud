@@ -51,6 +51,7 @@ watch(
 );
 
 onMounted(() => {
+    store.refreshSessionHistory();
     store.connectWebSocket();
 });
 

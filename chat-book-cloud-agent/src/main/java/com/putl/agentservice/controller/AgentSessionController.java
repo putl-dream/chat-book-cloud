@@ -5,6 +5,7 @@ import com.putl.agentservice.model.dto.CreateAgentSessionRequest;
 import com.putl.agentservice.model.vo.AgentChatResponse;
 import com.putl.agentservice.model.vo.AgentSessionCreateResponse;
 import com.putl.agentservice.model.vo.AgentSessionDetailResponse;
+import com.putl.agentservice.model.vo.AgentSessionPageResponse;
 import com.putl.agentservice.service.AgentConversationService;
 import com.putl.agentservice.service.AgentSessionService;
 import fun.amireux.chat.book.framework.common.pojo.CommonResult;
@@ -55,5 +56,13 @@ public class AgentSessionController {
     @GetMapping("/detail")
     public CommonResult<AgentSessionDetailResponse> detail(@RequestParam("sessionId") Integer sessionId) {
         return CommonResult.success(agentSessionService.getSessionDetail(sessionId));
+    }
+
+    @Operation(summary = "分页查询历史会话")
+    @GetMapping("/page")
+    public CommonResult<AgentSessionPageResponse> page(@RequestParam(value = "pageNo", defaultValue = "1") Integer pageNo,
+                                                       @RequestParam(value = "pageSize", defaultValue = "12") Integer pageSize,
+                                                       @RequestParam(value = "keyword", required = false) String keyword) {
+        return CommonResult.success(agentSessionService.getSessionPage(pageNo, pageSize, keyword));
     }
 }
