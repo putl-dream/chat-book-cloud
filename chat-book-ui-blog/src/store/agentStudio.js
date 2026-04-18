@@ -35,6 +35,11 @@ import {
     AGENT_RUNTIME_COMMAND
 } from '@/views/creator/_domain/stream-constants.js';
 import {
+    PREVIEW_PLAYBACK_INTERVAL_MS,
+    consumePreviewPlaybackTokens,
+    tokenizePreviewDelta
+} from '@/views/creator/_domain/preview-playback.js';
+import {
     AGENT_RUN_KIND,
     AGENT_RUN_STATUS,
     AGENT_RUNTIME_EVENT,
@@ -182,6 +187,9 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     let socketReadyPromise = null;
     let closingSocket = false;
     let sessionHistoryRequestSerial = 0;
+    let queuedPreviewTokens = [];
+    let previewPlaybackTimer = null;
+    let pendingCompletionPayload = null;
 
     // Computed
     const interactionResponseMap = computed(() => {
@@ -291,7 +299,67 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     // Message Utilities
     const findMessageIndex = (messageId) => messages.value.findIndex((item) => item.id === messageId);
 
+    const cancelPreviewPlayback = () => {
+        if (previewPlaybackTimer == null) {
+            return;
+        }
+        clearTimeout(previewPlaybackTimer);
+        previewPlaybackTimer = null;
+    };
+
+    const resetPreviewPlayback = () => {
+        cancelPreviewPlayback();
+        queuedPreviewTokens = [];
+        pendingCompletionPayload = null;
+    };
+
+    const schedulePreviewPlayback = () => {
+        if (previewPlaybackTimer != null || queuedPreviewTokens.length === 0) {
+            return;
+        }
+        previewPlaybackTimer = setTimeout(() => {
+            previewPlaybackTimer = null;
+            flushPreviewPlayback();
+        }, PREVIEW_PLAYBACK_INTERVAL_MS);
+    };
+
+    const flushPreviewPlayback = () => {
+        const streamingAssistantMessageId = getStreamingAssistantMessageId();
+        if (!streamingAssistantMessageId || findMessageIndex(streamingAssistantMessageId) < 0) {
+            resetPreviewPlayback();
+            return;
+        }
+
+        const delta = consumePreviewPlaybackTokens(queuedPreviewTokens);
+        if (delta) {
+            chatRun.value = appendMessagePreviewDelta(chatRun.value, delta);
+        }
+
+        if (queuedPreviewTokens.length > 0) {
+            schedulePreviewPlayback();
+            return;
+        }
+
+        if (pendingCompletionPayload) {
+            const completionPayload = pendingCompletionPayload;
+            pendingCompletionPayload = null;
+            finishStreamingMessage(completionPayload);
+        }
+    };
+
+    const enqueuePreviewDelta = (delta = '') => {
+        const nextTokens = tokenizePreviewDelta(delta);
+        if (!nextTokens.length) {
+            return;
+        }
+        queuedPreviewTokens.push(...nextTokens);
+        schedulePreviewPlayback();
+    };
+
+    const hasPendingPreviewPlayback = () => queuedPreviewTokens.length > 0 || previewPlaybackTimer != null;
+
     const clearStreamingState = ({ resetRuntime = false } = {}) => {
+        resetPreviewPlayback();
         if (resetRuntime) {
             chatRun.value = resetRunRuntime(chatRun.value);
             return;
@@ -411,6 +479,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     };
 
     const beginStreamingAssistantMessage = (messageId, activeSessionId) => {
+        resetPreviewPlayback();
         chatRun.value = startMessageRun(chatRun.value, {
             runId: messageId,
             messageId,
@@ -538,9 +607,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             console.log('[Agent Studio] Message delta received:', { 
                 length: payload.delta.length, 
                 preview: payload.delta.substring(0, 50),
-                totalPreviewLength: chatRun.value.previewText?.length || 0
+                totalPreviewLength: chatRun.value.previewText?.length || 0,
+                queuedTokens: queuedPreviewTokens.length
             });
-            chatRun.value = appendMessagePreviewDelta(chatRun.value, payload.delta);
+            enqueuePreviewDelta(payload.delta);
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_COMPLETED, (payload = {}) => {
@@ -552,7 +622,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 previewLength: payload.previewText?.length || 0
             });
             applyScenePayload(payload);
-            finishStreamingMessage(payload);
+            if (hasPendingPreviewPlayback()) {
+                pendingCompletionPayload = payload;
+                schedulePreviewPlayback();
+            } else {
+                finishStreamingMessage(payload);
+            }
             syncActiveSessionHistory({
                 sceneType: payload.currentScene ?? currentScene.value,
                 updateTime: new Date().toISOString()
