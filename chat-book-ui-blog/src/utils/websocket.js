@@ -1,22 +1,21 @@
-
 import { ElMessage } from 'element-plus';
 
 /**
- * 格式�?WebSocket URL
- * 处理 http/https 替换和相对路径转�?
+ * 格式化 WebSocket URL
+ * 处理 http/https 替换和相对路径转换
  * @param {string} baseUrl - 基础 URL
- * @returns {string} WebSocket URL (无尾部斜�?
+ * @returns {string} WebSocket URL (无尾部斜杠)
  */
 export const formatWsUrl = (baseUrl) => {
     if (!baseUrl) return '';
 
     let url = baseUrl;
 
-    // 处理�?http/https 开头的绝对路径
+    // 处理以 http/https 开头的绝对路径
     if (url.startsWith('http')) {
         url = url.replace(/^http/, 'ws').replace(/^https/, 'wss');
     }
-    // 处理�?/ 开头的相对路径
+    // 处理以 / 开头的相对路径
     else if (url.startsWith('/')) {
         const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
         const host = window.location.host;
@@ -111,6 +110,13 @@ export default class SocketService {
                 if (event.data === 'PONG') return;
 
                 const message = JSON.parse(event.data);
+                console.log('[WebSocket] Received message:', { 
+                    type: message.type, 
+                    hasData: !!message.data, 
+                    requestId: message.requestId,
+                    dataKeys: message.data ? Object.keys(message.data) : [],
+                    fullMessage: message
+                });
 
                 // Check if this is a response to a pending sendWithAck request
                 if (message.requestId && this.pendingRequests.has(message.requestId)) {

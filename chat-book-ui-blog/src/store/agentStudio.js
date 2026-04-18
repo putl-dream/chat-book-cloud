@@ -520,6 +520,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         socketService = new SocketService(resolveAgentSocketUrl(), getAccessToken());
 
         socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_STARTED, (payload = {}) => {
+            console.log('[Agent Studio] Message started:', payload);
             chatRun.value = startMessageRun(chatRun.value, {
                 runId: chatRun.value.runId ?? getStreamingAssistantMessageId(),
                 messageId: getStreamingAssistantMessageId(),
@@ -534,10 +535,22 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             const messageIndex = findMessageIndex(streamingAssistantMessageId);
             if (messageIndex < 0) return;
 
+            console.log('[Agent Studio] Message delta received:', { 
+                length: payload.delta.length, 
+                preview: payload.delta.substring(0, 50),
+                totalPreviewLength: chatRun.value.previewText?.length || 0
+            });
             chatRun.value = appendMessagePreviewDelta(chatRun.value, payload.delta);
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_COMPLETED, (payload = {}) => {
+            console.log('[Agent Studio] Message completed:', {
+                currentScene: payload.currentScene,
+                nextScene: payload.nextScene,
+                previewMode: payload.telemetry?.previewMode,
+                deltaCount: payload.telemetry?.deltaCount,
+                previewLength: payload.previewText?.length || 0
+            });
             applyScenePayload(payload);
             finishStreamingMessage(payload);
             syncActiveSessionHistory({
@@ -549,11 +562,13 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_FAILED, (payload = {}) => {
-            discardStreamingMessage(payload.message || '发送失败，请稍后重试');
-            ElMessage.error(payload.message || '发送失败，请稍后重试');
+            console.error('[Agent Studio] Message failed:', payload.message);
+            discardStreamingMessage(payload.message || '发送失败,请稍后重试');
+            ElMessage.error(payload.message || '发送失败,请稍后重试');
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STARTED, (payload = {}) => {
+            console.log('[Agent Studio] Artifact generation started:', payload);
             draftRun.value = startArtifactRun(draftRun.value, {
                 runId: payload.sessionId ?? sessionId.value,
                 sessionId: payload.sessionId ?? sessionId.value,
@@ -563,6 +578,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STATUS, (payload = {}) => {
+            console.log('[Agent Studio] Artifact status update:', payload.statusText);
             draftRun.value = updateArtifactStatus(
                 generatingDraft.value
                     ? draftRun.value
@@ -579,6 +595,11 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             if (typeof payload.chunk !== 'string' || !payload.chunk) {
                 return;
             }
+            console.log('[Agent Studio] Artifact delta received:', { 
+                chunkLength: payload.chunk.length,
+                preview: payload.chunk.substring(0, 50),
+                totalBufferLength: draftRun.value.artifactBuffer?.length || 0
+            });
             draftRun.value = appendArtifactDelta(draftRun.value, {
                 chunk: payload.chunk,
                 statusText: draftStreamingStatusText.value || '正在生成首稿内容...',
@@ -587,6 +608,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_COMPLETED, (payload = {}) => {
+            console.log('[Agent Studio] Artifact generation completed:', { draftId: payload.finalArtifact?.draftId, versionNo: payload.finalArtifact?.versionNo });
             draft.value = normalizeAgentDraft(payload.finalArtifact || {});
             candidateDraft.value = null;
             draftRun.value = completeArtifactRun(draftRun.value, {
@@ -596,7 +618,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 statusText: '首稿已生成'
             });
             resetDraftStreamingState({ resetRuntime: false });
-
+        
             if (session.value) {
                 session.value.targetDraftId = draft.value?.draftId ?? null;
             }
@@ -610,14 +632,14 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 draftReadiness: payload.draftReadiness ?? AGENT_DRAFT_READINESS.READY,
                 nextSuggestedAction: payload.assistantAction ?? AGENT_ASSISTANT_ACTION.EDIT_DRAFT
             });
-
+        
             messages.value.push(normalizeMessage({
                 id: `system-${Date.now()}`,
                 role: 'SYSTEM',
                 messageType: AGENT_MESSAGE_TYPE.TEXT,
                 content: '✅ 首稿生成完毕。你可以继续在对话框中圈出需要修改的段落或者补充新要求。'
             }));
-
+        
             syncActiveSessionHistory({
                 sceneType: payload.currentScene ?? AGENT_SCENE_TYPE.DRAFT,
                 targetDraftId: draft.value?.draftId ?? null,
@@ -625,26 +647,28 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             }, {
                 removeWhenFiltered: true
             });
-
-            ElMessage.success('首稿已生成，可以继续优化或导入编辑器');
+        
+            ElMessage.success('首稿已生成,可以继续优化或导入编辑器');
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_FAILED, (payload = {}) => {
-            draftRun.value = failArtifactRun(draftRun.value, payload.message || '生成草稿失败，请稍后重试');
+            console.error('[Agent Studio] Artifact generation failed:', payload.message);
+            draftRun.value = failArtifactRun(draftRun.value, payload.message || '生成草稿失败,请稍后重试');
             resetDraftStreamingState({ resetRuntime: false });
-            ElMessage.error(payload.message || '生成草稿失败，请稍后重试');
+            ElMessage.error(payload.message || '生成草稿失败,请稍后重试');
         });
 
         socketService.onClose(() => {
+            console.log('[Agent Studio] WebSocket connection closed');
             if (closingSocket) return;
             if (chatting.value) {
                 discardStreamingMessage();
-                ElMessage.error('Agent 连接已断开，请重试');
+                ElMessage.error('Agent 连接已断开,请重试');
             }
             if (generatingDraft.value) {
-                draftRun.value = failArtifactRun(draftRun.value, 'Agent 连接已断开，首稿生成已中断');
+                draftRun.value = failArtifactRun(draftRun.value, 'Agent 连接已断开,首稿生成已中断');
                 resetDraftStreamingState({ resetRuntime: false });
-                ElMessage.error('Agent 连接已断开，首稿生成已中断');
+                ElMessage.error('Agent 连接已断开,首稿生成已中断');
             }
         });
 
@@ -898,11 +922,12 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             ElMessage.warning('请先完成当前问题卡片');
             return;
         }
-
+    
+        console.log('[Agent Studio] Sending message:', { sessionId: sessionId.value, contentLength: content.length });
         try {
             const currentSessionId = await ensureSession(content);
             const service = await ensureSocketReady();
-
+    
             messages.value.push(normalizeMessage({
                 id: `user-${Date.now()}`,
                 role: 'USER',
@@ -914,7 +939,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             }, {
                 removeWhenFiltered: true
             });
-
+    
             const assistantMessageId = `assistant-${Date.now()}`;
             beginStreamingAssistantMessage(assistantMessageId, currentSessionId);
             messages.value.push(normalizeMessage({
@@ -924,18 +949,19 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 content: '',
                 streaming: true
             }));
-
+    
             const sent = service.send(AGENT_RUNTIME_COMMAND.MESSAGE_CREATE, {
                 sessionId: currentSessionId,
                 content
             });
+            console.log('[Agent Studio] Message sent successfully:', sent);
             if (!sent) {
                 throw new Error('Agent WebSocket 未连接');
             }
         } catch (error) {
-            console.error('Failed to send agent message:', error);
+            console.error('[Agent Studio] Failed to send agent message:', error);
             discardStreamingMessage();
-            ElMessage.error('发送失败，请稍后重试');
+            ElMessage.error('发送失败,请稍后重试');
         }
     };
 
@@ -1065,20 +1091,21 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             return;
         }
         if (chatting.value) {
-            ElMessage.warning('当前回复尚未完成，请稍后重试');
+            ElMessage.warning('当前回复尚未完成,请稍后重试');
             return;
         }
-
+    
         const interactionResponse = buildInteractionResponsePayload(message.payload, answersMap);
         if (!interactionResponse?.answers?.length) {
             ElMessage.warning('请至少完成一个问题');
             return;
         }
-
+    
+        console.log('[Agent Studio] Submitting interactive form:', { formId: message.payload.formId, answersCount: interactionResponse.answers.length });
         const optimisticMessageId = `user-form-${Date.now()}`;
         try {
             const service = await ensureSocketReady();
-
+    
             messages.value.push(normalizeMessage({
                 id: optimisticMessageId,
                 role: 'USER',
@@ -1091,7 +1118,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             }, {
                 removeWhenFiltered: true
             });
-
+    
             const assistantMessageId = `assistant-${Date.now()}`;
             beginStreamingAssistantMessage(assistantMessageId, sessionId.value);
             messages.value.push(normalizeMessage({
@@ -1101,22 +1128,23 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
                 content: '',
                 streaming: true
             }));
-
+    
             const sent = service.send(AGENT_RUNTIME_COMMAND.MESSAGE_CREATE, {
                 sessionId: sessionId.value,
                 interactionResponse
             });
+            console.log('[Agent Studio] Interactive form submitted:', sent);
             if (!sent) {
                 throw new Error('Agent WebSocket 未连接');
             }
         } catch (error) {
-            console.error('Failed to submit interactive form:', error);
+            console.error('[Agent Studio] Failed to submit interactive form:', error);
             const optimisticIndex = findMessageIndex(optimisticMessageId);
             if (optimisticIndex >= 0) {
                 messages.value.splice(optimisticIndex, 1);
             }
             discardStreamingMessage();
-            ElMessage.error('提交失败，请稍后重试');
+            ElMessage.error('提交失败,请稍后重试');
         }
     };
 
