@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        <div class="chat-body custom-scrollbar" ref="chatBodyRef">
+        <div class="chat-body custom-scrollbar" ref="chatBodyRef" @scroll="handleChatScroll">
             <div 
                 v-if="store.loadingSession" 
                 class="chat-placeholder"
@@ -112,7 +112,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useAgentStudioStore } from '@/store/agentStudio.js';
 import { buildRichTextHtml } from '@/components/common/rich-text/content-pipeline.js';
 import RichTextViewer from '@/components/common/rich-text/RichTextViewer.vue';
@@ -123,6 +123,10 @@ import { Position } from '@element-plus/icons-vue';
 const store = useAgentStudioStore();
 const inputValue = ref('');
 const chatBodyRef = ref(null);
+const shouldAutoFollow = ref(true);
+let scheduledScrollTimer = null;
+const AUTO_SCROLL_THRESHOLD_PX = 40;
+const AUTO_SCROLL_INTERVAL_MS = 64;
 const inputPlaceholder = computed(() => (
     store.hasPendingInteractiveForm
         ? '请先完成上方问题卡片'
@@ -141,18 +145,65 @@ const handleSend = () => {
 const renderHtml = (content) => buildRichTextHtml(content || '', 'markdown');
 const handleInteractiveSubmit = (message, answers) => store.submitInteractiveForm(message, answers);
 
-// Auto scroll down when new message comes
-watch(() => store.visibleMessages.length, async () => {
-    await nextTick();
-    if (chatBodyRef.value) {
-        chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
+const cancelScheduledAutoScroll = () => {
+    if (scheduledScrollTimer == null) {
+        return;
     }
+    clearTimeout(scheduledScrollTimer);
+    scheduledScrollTimer = null;
+};
+
+const syncAutoFollowState = () => {
+    if (!chatBodyRef.value) {
+        shouldAutoFollow.value = true;
+        return;
+    }
+    const { scrollHeight, scrollTop, clientHeight } = chatBodyRef.value;
+    shouldAutoFollow.value = scrollHeight - scrollTop - clientHeight <= AUTO_SCROLL_THRESHOLD_PX;
+};
+
+const scrollToBottom = () => {
+    if (!chatBodyRef.value) {
+        return;
+    }
+    chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
+    shouldAutoFollow.value = true;
+};
+
+const scheduleAutoScroll = ({ force = false } = {}) => {
+    if (!chatBodyRef.value || (!force && !shouldAutoFollow.value)) {
+        return;
+    }
+    if (scheduledScrollTimer != null) {
+        return;
+    }
+    scheduledScrollTimer = setTimeout(() => {
+        scheduledScrollTimer = null;
+        scrollToBottom();
+    }, AUTO_SCROLL_INTERVAL_MS);
+};
+
+const handleChatScroll = () => {
+    syncAutoFollowState();
+};
+
+watch(() => {
+    const lastMessage = store.visibleMessages[store.visibleMessages.length - 1];
+    return [
+        store.visibleMessages.length,
+        lastMessage?.id ?? '',
+        lastMessage?.content ?? '',
+        lastMessage?.previewText ?? ''
+    ];
+}, async () => {
+    await nextTick();
+    scheduleAutoScroll();
+}, {
+    flush: 'post'
 });
-watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, async () => {
-    await nextTick();
-    if (chatBodyRef.value) {
-        chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
-    }
+
+onBeforeUnmount(() => {
+    cancelScheduledAutoScroll();
 });
 </script>
 
