@@ -16,6 +16,7 @@ export const AGENT_RUNTIME_EVENT = Object.freeze({
     MESSAGE_DELTA: 'message.delta',
     MESSAGE_COMPLETED: 'message.completed',
     MESSAGE_FAILED: 'message.failed',
+    MESSAGE_STOPPED: 'message.stopped',
     ARTIFACT_STARTED: 'artifact.started',
     ARTIFACT_DELTA: 'artifact.delta',
     ARTIFACT_STATUS: 'artifact.status',
@@ -127,6 +128,16 @@ export function failMessageRun(current = {}, errorMessage = '') {
         status: AGENT_RUN_STATUS.FAILED,
         errorMessage,
         statusText: errorMessage || current?.statusText || ''
+    });
+}
+
+export function stopMessageRun(current = {}, statusText = '') {
+    return createRunRuntime({
+        ...current,
+        runKind: AGENT_RUN_KIND.CHAT,
+        status: AGENT_RUN_STATUS.STOPPED,
+        statusText: statusText || current?.statusText || '',
+        errorMessage: ''
     });
 }
 

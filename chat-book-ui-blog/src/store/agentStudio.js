@@ -27,10 +27,12 @@ import {
     buildInteractionResponsePayload,
     buildInteractionResponseSummary,
     extractInteractionResponse,
-    isInteractionResponseMessage,
-    normalizeAgentMessageType,
-    normalizeMessagePayload
+    isInteractionResponseMessage
 } from '@/views/creator/_domain/agent-interaction.js';
+import {
+    normalizeMessage,
+    resolveCompletedStreamingMessage
+} from '@/views/creator/_domain/agent-message.js';
 import {
     AGENT_RUNTIME_COMMAND
 } from '@/views/creator/_domain/stream-constants.js';
@@ -53,6 +55,7 @@ import {
     resetRunRuntime,
     startArtifactRun,
     startMessageRun,
+    stopMessageRun,
     stopArtifactRun,
     updateArtifactStatus
 } from '@/views/creator/_domain/run-runtime.js';
@@ -60,6 +63,7 @@ import router from '@/router/index.js';
 
 const DEFAULT_SESSION_TITLE = '新的 AI 创作会话';
 const DEFAULT_HISTORY_PAGE_SIZE = 12;
+const CHAT_PREVIEW_SETTLE_DELAY_MS = 360;
 
 const SCENE_LABELS = Object.freeze({
     [AGENT_SCENE_TYPE.DISCUSS]: '讨论共创',
@@ -74,27 +78,6 @@ const SCENE_SUBTITLES = Object.freeze({
     [AGENT_SCENE_TYPE.DRAFT]: '当前材料已接近成稿条件，可以进入首稿生成并开始搭建正文。',
     [AGENT_SCENE_TYPE.EDIT]: '已有草稿后，继续围绕润色、改写、扩写和补全推进。'
 });
-
-function normalizeMessageRole(role) {
-    const roleMap = {
-        USER: 'user',
-        ASSISTANT: 'assistant',
-        SYSTEM: 'system'
-    };
-    return roleMap[role] || 'assistant';
-}
-
-function normalizeMessage(message = {}) {
-    return {
-        id: message.id ?? `${Date.now()}-${Math.random()}`,
-        role: normalizeMessageRole(message.role),
-        messageType: normalizeAgentMessageType(message.messageType),
-        content: message.content ?? '',
-        payload: normalizeMessagePayload(message.messageType, message.payload),
-        createTime: message.createTime ?? '',
-        streaming: Boolean(message.streaming)
-    };
-}
 
 function normalizeNotebook(notebook = {}) {
     return {
@@ -155,6 +138,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const creatingSession = ref(false);
     const optimizingDraft = ref(false);
     const adoptingCandidate = ref(false);
+    const interruptingChat = ref(false);
 
     // Context
     const session = ref(null);
@@ -181,6 +165,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     const candidateDraft = ref(null);
     const chatRun = ref(createRunRuntime({ runKind: AGENT_RUN_KIND.CHAT }));
     const draftRun = ref(createRunRuntime({ runKind: AGENT_RUN_KIND.DRAFT }));
+    const chatPreviewSettled = ref(false);
 
     // WebSocket Internals (not reactive)
     let socketService = null;
@@ -190,6 +175,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
     let queuedPreviewTokens = [];
     let previewPlaybackTimer = null;
     let pendingCompletionPayload = null;
+    let previewSettleTimer = null;
 
     // Computed
     const interactionResponseMap = computed(() => {
@@ -226,6 +212,22 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         && message.messageType === AGENT_MESSAGE_TYPE.INTERACTIVE_FORM
         && !message.interactionResponse
     ));
+    const latestUserEditableMessage = computed(() => {
+        for (let index = messages.value.length - 1; index >= 0; index -= 1) {
+            const message = messages.value[index];
+            if (message?.role !== 'user' || message?.messageType !== AGENT_MESSAGE_TYPE.TEXT) {
+                continue;
+            }
+            if (extractInteractionResponse(message)) {
+                continue;
+            }
+            const content = String(message.content || '').trim();
+            if (content) {
+                return content;
+            }
+        }
+        return '';
+    });
     const currentSceneLabel = computed(() => SCENE_LABELS[currentScene.value] || '讨论共创');
     const nextSceneLabel = computed(() => SCENE_LABELS[nextScene.value] || currentSceneLabel.value);
     const currentSceneSubtitle = computed(() => SCENE_SUBTITLES[currentScene.value] || SCENE_SUBTITLES[AGENT_SCENE_TYPE.DISCUSS]);
@@ -289,7 +291,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const sessionStatusLabel = computed(() => {
         if (loadingSession.value) return '正在恢复';
+        if (interruptingChat.value) return '正在停止回复';
+        if (chatting.value && chatPreviewSettled.value) return '正在同步结果';
         if (chatting.value) return `${currentSceneLabel.value}中`;
+        if (chatRun.value.status === AGENT_RUN_STATUS.STOPPED) return '已停止回复';
         if (generatingDraft.value) return '正在跳转编辑器';
         if (optimizingDraft.value) return '优化重写中';
         if (sessionId.value) return `${currentSceneLabel.value}已激活`;
@@ -307,8 +312,22 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         previewPlaybackTimer = null;
     };
 
+    const cancelPreviewSettle = () => {
+        if (previewSettleTimer == null) {
+            return;
+        }
+        clearTimeout(previewSettleTimer);
+        previewSettleTimer = null;
+    };
+
+    const markChatPreviewActive = () => {
+        cancelPreviewSettle();
+        chatPreviewSettled.value = false;
+    };
+
     const resetPreviewPlayback = () => {
         cancelPreviewPlayback();
+        cancelPreviewSettle();
         queuedPreviewTokens = [];
         pendingCompletionPayload = null;
     };
@@ -344,7 +363,10 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             const completionPayload = pendingCompletionPayload;
             pendingCompletionPayload = null;
             finishStreamingMessage(completionPayload);
+            return;
         }
+
+        schedulePreviewSettle();
     };
 
     const enqueuePreviewDelta = (delta = '') => {
@@ -352,14 +374,30 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         if (!nextTokens.length) {
             return;
         }
+        markChatPreviewActive();
         queuedPreviewTokens.push(...nextTokens);
         schedulePreviewPlayback();
     };
 
     const hasPendingPreviewPlayback = () => queuedPreviewTokens.length > 0 || previewPlaybackTimer != null;
 
+    const schedulePreviewSettle = () => {
+        if (!chatting.value || hasPendingPreviewPlayback() || !getStreamingPreviewText()) {
+            return;
+        }
+        cancelPreviewSettle();
+        previewSettleTimer = setTimeout(() => {
+            previewSettleTimer = null;
+            if (!chatting.value || hasPendingPreviewPlayback() || !getStreamingPreviewText()) {
+                return;
+            }
+            chatPreviewSettled.value = true;
+        }, CHAT_PREVIEW_SETTLE_DELAY_MS);
+    };
+
     const clearStreamingState = ({ resetRuntime = false } = {}) => {
         resetPreviewPlayback();
+        chatPreviewSettled.value = false;
         if (resetRuntime) {
             chatRun.value = resetRunRuntime(chatRun.value);
             return;
@@ -480,6 +518,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
     const beginStreamingAssistantMessage = (messageId, activeSessionId) => {
         resetPreviewPlayback();
+        chatPreviewSettled.value = false;
         chatRun.value = startMessageRun(chatRun.value, {
             runId: messageId,
             messageId,
@@ -506,7 +545,11 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         const messageIndex = findMessageIndex(streamingAssistantMessageId);
         if (messageIndex >= 0) {
             const current = messages.value[messageIndex];
-            const normalized = resolveCompletedStreamingMessage(current, completionPayload);
+            const normalized = resolveCompletedStreamingMessage(
+                current,
+                completionPayload,
+                getStreamingPreviewText()
+            );
 
             messages.value[messageIndex] = {
                 ...current,
@@ -520,34 +563,6 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             statusText: '回复已完成'
         });
         clearStreamingState();
-    };
-
-    const resolveCompletedStreamingMessage = (current, completionPayload = {}) => {
-        const previewText = typeof completionPayload?.previewText === 'string'
-            ? completionPayload.previewText
-            : getStreamingPreviewText();
-        if (completionPayload?.finalMessage && typeof completionPayload.finalMessage === 'object') {
-            const normalized = normalizeMessage({
-                ...completionPayload.finalMessage,
-                id: completionPayload.finalMessage.id ?? current.id,
-                role: completionPayload.finalMessage.role ?? 'ASSISTANT'
-            });
-            const shouldUsePreviewFallback = normalized.messageType === AGENT_MESSAGE_TYPE.TEXT
-                && (!normalized.content || completionPayload?.telemetry?.previewFallbackApplied);
-            if (shouldUsePreviewFallback && previewText) {
-                return {
-                    ...normalized,
-                    content: previewText
-                };
-            }
-            return normalized;
-        }
-        return normalizeMessage({
-            id: current.id,
-            role: 'ASSISTANT',
-            messageType: AGENT_MESSAGE_TYPE.TEXT,
-            content: previewText || current.content
-        });
     };
 
     const discardStreamingMessage = (errorMessage = '') => {
@@ -573,6 +588,18 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             }
         }
         chatRun.value = failMessageRun(chatRun.value, errorMessage);
+        clearStreamingState();
+    };
+
+    const stopStreamingMessage = (statusText = '已停止回复，你可以修改后重新发送') => {
+        const streamingAssistantMessageId = getStreamingAssistantMessageId();
+        if (streamingAssistantMessageId) {
+            const messageIndex = findMessageIndex(streamingAssistantMessageId);
+            if (messageIndex >= 0) {
+                messages.value.splice(messageIndex, 1);
+            }
+        }
+        chatRun.value = stopMessageRun(chatRun.value, statusText);
         clearStreamingState();
     };
 
@@ -604,7 +631,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
             const messageIndex = findMessageIndex(streamingAssistantMessageId);
             if (messageIndex < 0) return;
 
-            console.log('[Agent Studio] Message delta received:', { 
+            console.log('[Agent Studio] Message delta received:', {
+                newTime: new Date().toISOString(),
                 length: payload.delta.length, 
                 preview: payload.delta.substring(0, 50),
                 totalPreviewLength: chatRun.value.previewText?.length || 0,
@@ -615,12 +643,14 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
         socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_COMPLETED, (payload = {}) => {
             console.log('[Agent Studio] Message completed:', {
+                newTime: new Date().toISOString(),
                 currentScene: payload.currentScene,
                 nextScene: payload.nextScene,
                 previewMode: payload.telemetry?.previewMode,
                 deltaCount: payload.telemetry?.deltaCount,
                 previewLength: payload.previewText?.length || 0
             });
+            interruptingChat.value = false;
             applyScenePayload(payload);
             if (hasPendingPreviewPlayback()) {
                 pendingCompletionPayload = payload;
@@ -638,8 +668,15 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
         socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_FAILED, (payload = {}) => {
             console.error('[Agent Studio] Message failed:', payload.message);
+            interruptingChat.value = false;
             discardStreamingMessage(payload.message || '发送失败,请稍后重试');
             ElMessage.error(payload.message || '发送失败,请稍后重试');
+        });
+
+        socketService.on(AGENT_RUNTIME_EVENT.MESSAGE_STOPPED, (payload = {}) => {
+            console.log('[Agent Studio] Message stopped:', payload.statusText);
+            interruptingChat.value = false;
+            stopStreamingMessage(payload.statusText || '已停止回复，你可以修改后重新发送');
         });
 
         socketService.on(AGENT_RUNTIME_EVENT.ARTIFACT_STARTED, (payload = {}) => {
@@ -735,6 +772,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
 
         socketService.onClose(() => {
             console.log('[Agent Studio] WebSocket connection closed');
+            interruptingChat.value = false;
             if (closingSocket) return;
             if (chatting.value) {
                 discardStreamingMessage();
@@ -813,6 +851,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         switchReason.value = '';
         draft.value = null;
         candidateDraft.value = null;
+        interruptingChat.value = false;
         clearStreamingState({ resetRuntime: true });
         resetDraftStreamingState();
     };
@@ -1040,6 +1079,32 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         }
     };
 
+    const interruptChat = async () => {
+        if (!chatting.value || interruptingChat.value) {
+            return false;
+        }
+        if (!sessionId.value) {
+            return false;
+        }
+
+        interruptingChat.value = true;
+        try {
+            const service = await ensureSocketReady();
+            const sent = service.send(AGENT_RUNTIME_COMMAND.MESSAGE_STOP, {
+                sessionId: sessionId.value
+            });
+            if (!sent) {
+                throw new Error('Agent WebSocket 未连接');
+            }
+            return true;
+        } catch (error) {
+            interruptingChat.value = false;
+            console.error('[Agent Studio] Failed to interrupt agent message:', error);
+            ElMessage.error('停止回复失败,请稍后重试');
+            return false;
+        }
+    };
+
     const createDraftFromSession = async () => {
         if (!sessionId.value) {
             ElMessage.warning('请先开始一段主题讨论');
@@ -1228,6 +1293,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         loadingSession,
         creatingSession,
         chatting,
+        interruptingChat,
         generatingDraft,
         optimizingDraft,
         adoptingCandidate,
@@ -1258,6 +1324,8 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         hasCandidateDraft,
         isDraftReady,
         hasPendingInteractiveForm,
+        chatPreviewSettled,
+        latestUserEditableMessage,
         draftStatus,
         displayDraft,
         activeDraftVersion,
@@ -1283,6 +1351,7 @@ export const useAgentStudioStore = defineStore('agentStudio', () => {
         ensureSession,
         openFreshSession,
         sendMessage,
+        interruptChat,
         submitInteractiveForm,
         createDraftFromSession,
         optimizeCurrentDraft,

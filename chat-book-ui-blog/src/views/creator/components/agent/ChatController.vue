@@ -26,7 +26,7 @@
             </div>
         </div>
 
-        <div class="chat-body custom-scrollbar" ref="chatBodyRef">
+        <div class="chat-body custom-scrollbar" ref="chatBodyRef" @scroll="handleChatScroll">
             <div 
                 v-if="store.loadingSession" 
                 class="chat-placeholder"
@@ -63,8 +63,9 @@
                             <span class="typing-dot"></span> 正在思考...
                         </p>
                         <StreamingMessageRenderer
-                            v-else-if="msg.streaming"
+                            v-else-if="msg.role === 'assistant' && msg.messageType === 'text'"
                             :content="msg.previewText || msg.content"
+                            :streaming="msg.streaming && !store.chatPreviewSettled"
                         />
                         <RichTextViewer
                             v-else
@@ -86,15 +87,24 @@
                     maxlength="1200"
                     :placeholder="inputPlaceholder"
                     @keydown.ctrl.enter.prevent="handleSend"
-                    :disabled="store.chatting || store.creatingSession || store.generatingDraft || store.hasPendingInteractiveForm"
+                    :disabled="store.loadingSession || store.creatingSession || store.generatingDraft || store.hasPendingInteractiveForm"
                 />
                 <div class="input-actions">
+                    <el-button
+                        v-if="store.chatting"
+                        class="interrupt-btn"
+                        text
+                        :loading="store.interruptingChat"
+                        @click="handleInterrupt"
+                    >
+                        打断回复
+                    </el-button>
                     <el-button 
                         class="send-btn" 
                         type="primary" 
                         circle 
-                        :loading="store.chatting || store.creatingSession"
-                        :disabled="!inputValue.trim() || store.hasPendingInteractiveForm"
+                        :loading="store.creatingSession"
+                        :disabled="store.chatting || store.interruptingChat || store.loadingSession || !inputValue.trim() || store.hasPendingInteractiveForm"
                         @click="handleSend"
                     >
                         <el-icon><Position /></el-icon>
@@ -104,6 +114,12 @@
             <div class="footer-hint" v-if="store.hasPendingInteractiveForm">
                 请先完成上方问题卡片，Agent 会在收到完整答案后继续生成建议
             </div>
+            <div class="footer-hint" v-else-if="store.chatting && store.chatPreviewSettled">
+                可见回复已完成，正在同步最终结果。你现在看到的内容基本已经稳定。
+            </div>
+            <div class="footer-hint" v-else-if="store.chatting">
+                当前回复进行中。你可以先继续修改输入内容；如果上一条发早了，点“打断回复”后再发送。
+            </div>
             <div class="footer-hint" v-else>
                 {{ store.sceneFooterHint }}
             </div>
@@ -112,7 +128,7 @@
 </template>
 
 <script setup>
-import { computed, ref, watch, nextTick } from 'vue';
+import { computed, ref, watch, nextTick, onBeforeUnmount } from 'vue';
 import { useAgentStudioStore } from '@/store/agentStudio.js';
 import { buildRichTextHtml } from '@/components/common/rich-text/content-pipeline.js';
 import RichTextViewer from '@/components/common/rich-text/RichTextViewer.vue';
@@ -123,14 +139,20 @@ import { Position } from '@element-plus/icons-vue';
 const store = useAgentStudioStore();
 const inputValue = ref('');
 const chatBodyRef = ref(null);
+const shouldAutoFollow = ref(true);
+let scheduledScrollTimer = null;
+const AUTO_SCROLL_THRESHOLD_PX = 40;
+const AUTO_SCROLL_INTERVAL_MS = 64;
 const inputPlaceholder = computed(() => (
     store.hasPendingInteractiveForm
         ? '请先完成上方问题卡片'
-        : '按 Ctrl+Enter 发送'
+        : store.chatting
+            ? '可先修改输入内容，打断当前回复后重新发送'
+            : '按 Ctrl+Enter 发送'
 ));
 
 const handleSend = () => {
-    if (!inputValue.value.trim() || store.chatting || store.loadingSession) return;
+    if (!inputValue.value.trim() || store.chatting || store.interruptingChat || store.loadingSession) return;
     
     const content = inputValue.value;
     inputValue.value = '';
@@ -138,21 +160,75 @@ const handleSend = () => {
     store.sendMessage(content);
 };
 
+const handleInterrupt = async () => {
+    if (!inputValue.value.trim() && store.latestUserEditableMessage) {
+        inputValue.value = store.latestUserEditableMessage;
+    }
+    await store.interruptChat();
+};
+
 const renderHtml = (content) => buildRichTextHtml(content || '', 'markdown');
 const handleInteractiveSubmit = (message, answers) => store.submitInteractiveForm(message, answers);
 
-// Auto scroll down when new message comes
-watch(() => store.visibleMessages.length, async () => {
-    await nextTick();
-    if (chatBodyRef.value) {
-        chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
+const cancelScheduledAutoScroll = () => {
+    if (scheduledScrollTimer == null) {
+        return;
     }
+    clearTimeout(scheduledScrollTimer);
+    scheduledScrollTimer = null;
+};
+
+const syncAutoFollowState = () => {
+    if (!chatBodyRef.value) {
+        shouldAutoFollow.value = true;
+        return;
+    }
+    const { scrollHeight, scrollTop, clientHeight } = chatBodyRef.value;
+    shouldAutoFollow.value = scrollHeight - scrollTop - clientHeight <= AUTO_SCROLL_THRESHOLD_PX;
+};
+
+const scrollToBottom = () => {
+    if (!chatBodyRef.value) {
+        return;
+    }
+    chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
+    shouldAutoFollow.value = true;
+};
+
+const scheduleAutoScroll = ({ force = false } = {}) => {
+    if (!chatBodyRef.value || (!force && !shouldAutoFollow.value)) {
+        return;
+    }
+    if (scheduledScrollTimer != null) {
+        return;
+    }
+    scheduledScrollTimer = setTimeout(() => {
+        scheduledScrollTimer = null;
+        scrollToBottom();
+    }, AUTO_SCROLL_INTERVAL_MS);
+};
+
+const handleChatScroll = () => {
+    syncAutoFollowState();
+};
+
+watch(() => {
+    const lastMessage = store.visibleMessages[store.visibleMessages.length - 1];
+    return [
+        store.visibleMessages.length,
+        lastMessage?.id ?? '',
+        lastMessage?.content ?? '',
+        lastMessage?.previewText ?? ''
+    ];
+}, async () => {
+    await nextTick();
+    scheduleAutoScroll();
+}, {
+    flush: 'post'
 });
-watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, async () => {
-    await nextTick();
-    if (chatBodyRef.value) {
-        chatBodyRef.value.scrollTop = chatBodyRef.value.scrollHeight;
-    }
+
+onBeforeUnmount(() => {
+    cancelScheduledAutoScroll();
 });
 </script>
 
@@ -431,7 +507,13 @@ watch(() => store.visibleMessages[store.visibleMessages.length - 1]?.content, as
 .input-actions {
     display: flex;
     justify-content: flex-end;
+    align-items: center;
+    gap: 8px;
     margin-top: 4px;
+}
+
+.interrupt-btn {
+    color: rgba(19, 39, 63, 0.7);
 }
 
 .send-btn {

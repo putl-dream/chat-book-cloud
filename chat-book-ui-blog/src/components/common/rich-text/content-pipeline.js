@@ -2,6 +2,7 @@ import MarkdownIt from 'markdown-it';
 import hljs from 'highlight.js';
 
 const CODE_LANGUAGE_RE = /(?:language|lang)-([\w+-]+)/i;
+const CODE_FENCE_LINE_RE = /^\s*```([\w+-]*)?\s*$/;
 const ELEMENT_NODE = 1;
 const TEXT_NODE = 3;
 const COMMENT_NODE = 8;
@@ -683,6 +684,61 @@ export const buildRichTextHtml = (content = '', sourceFormat = 'html', options =
     const normalizedHtml = sourceFormat === 'markdown'
         ? parseMarkdownToHtml(content)
         : content;
+
+    return enhanceContentHtml(sanitizeContentHtml(normalizedHtml), options);
+};
+
+const splitStreamingMarkdownContent = (content = '') => {
+    const normalized = String(content || '').replace(/\r\n/g, '\n');
+    const lines = normalized.split('\n');
+    let activeFence = null;
+
+    lines.forEach((line, index) => {
+        const match = line.match(CODE_FENCE_LINE_RE);
+        if (!match) {
+            return;
+        }
+
+        if (activeFence) {
+            activeFence = null;
+            return;
+        }
+
+        activeFence = {
+            startLineIndex: index,
+            language: (match[1] || '').trim().toLowerCase()
+        };
+    });
+
+    if (!activeFence) {
+        return {
+            stableMarkdown: normalized,
+            unstableTailHtml: ''
+        };
+    }
+
+    const stableMarkdown = lines.slice(0, activeFence.startLineIndex).join('\n');
+    const codeContent = lines.slice(activeFence.startLineIndex + 1).join('\n');
+    const escapedCodeContent = escapeHtml(codeContent);
+
+    return {
+        stableMarkdown,
+        unstableTailHtml: `<pre data-streaming-incomplete="true"><code>${escapedCodeContent}</code></pre>`
+    };
+};
+
+export const buildStreamingRichTextHtml = (content = '', sourceFormat = 'html', options = {}) => {
+    if (!content) {
+        return '';
+    }
+
+    if (sourceFormat !== 'markdown') {
+        return buildRichTextHtml(content, sourceFormat, options);
+    }
+
+    const { stableMarkdown, unstableTailHtml } = splitStreamingMarkdownContent(content);
+    const stableHtml = stableMarkdown ? parseMarkdownToHtml(stableMarkdown) : '';
+    const normalizedHtml = `${stableHtml}${unstableTailHtml}`;
 
     return enhanceContentHtml(sanitizeContentHtml(normalizedHtml), options);
 };

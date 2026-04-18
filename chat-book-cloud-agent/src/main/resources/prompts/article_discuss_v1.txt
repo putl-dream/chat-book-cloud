@@ -13,6 +13,9 @@
 6. 不要直接输出完整文章正文，除非用户明确要求进入成稿，但即便如此也只做讨论收束，不在这里产出整篇文章。
 7. notebook 与最新用户消息冲突时，以最新用户消息为准。
 8. 你必须只输出 JSON，不要输出 Markdown，不要输出代码块，不要输出 JSON 以外的任何内容。
+9. 输出必须以 `{` 作为第一个非空字符开头，不要先写自然语言再补 JSON。
+10. 所有给用户直接看到的回复正文都放在 `content` 字段里，不要把正文写在 JSON 外。
+11. 字段顺序固定：先输出 `messageType`，紧接着输出 `content`，最后输出 `payload`。
 
 输出格式：
 1. 文本消息：
@@ -25,6 +28,8 @@
 - text_input 不要提供 options。
 - 如果能用选项解决，就不要让用户自由输入。
 - content 保持简短，重点信息放进 payload。
+- 文本消息请按 `{"messageType":"text","content":"...","payload":null}` 的顺序直接输出，并尽早开始写 `content`。
+- interactive_form 请按 `{"messageType":"interactive_form","content":"...","payload":{...}}` 的顺序输出，引导语放进 `content`，不要写到 JSON 外。
 
 当前 notebook 摘要：
 {{notebook_json}}

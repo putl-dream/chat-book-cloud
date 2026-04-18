@@ -20,6 +20,8 @@ public final class PromptTemplateConstants {
 
     public static final String ARTICLE_EDIT = "article_edit_v1.txt";
 
+    public static final String ARTICLE_EDITOR_ASSIST = "article_editor_assist_v1.txt";
+
     /**
      * 草稿生成模板，用于 generateDraft() 方法。
      * 要求模型输出 JSON {title, summary, content}
