@@ -243,6 +243,13 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         if (StringUtils.hasText(rawTextPreview)) {
             previewState.previewMode = "raw_text";
             publishPreviewDelta(rawTextPreview, previewConsumer, previewState);
+            return;
+        }
+
+        String finalContentPreview = extractFinalContentPreview(rawBuffer);
+        if (StringUtils.hasText(finalContentPreview)) {
+            previewState.previewMode = "final_content";
+            publishPreviewDelta(finalContentPreview, previewConsumer, previewState);
         }
     }
 
@@ -277,6 +284,82 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 || content.startsWith("[")
                 || content.startsWith("```")
                 || content.startsWith("<");
+    }
+
+    private String extractFinalContentPreview(String rawBuffer) {
+        String partialFinalPayload = StructuredChatOutputFormat.extractPartialFinalPayload(rawBuffer);
+        if (!StringUtils.hasText(partialFinalPayload)) {
+            return "";
+        }
+        return extractJsonStringField(partialFinalPayload, "content");
+    }
+
+    private String extractJsonStringField(String jsonText, String fieldName) {
+        if (!StringUtils.hasText(jsonText) || !StringUtils.hasText(fieldName)) {
+            return "";
+        }
+
+        String fieldPattern = "\"" + fieldName + "\"";
+        int keyIndex = jsonText.indexOf(fieldPattern);
+        if (keyIndex < 0) {
+            return "";
+        }
+
+        int colonIndex = jsonText.indexOf(':', keyIndex + fieldPattern.length());
+        if (colonIndex < 0) {
+            return "";
+        }
+
+        int valueStart = colonIndex + 1;
+        while (valueStart < jsonText.length() && Character.isWhitespace(jsonText.charAt(valueStart))) {
+            valueStart += 1;
+        }
+        if (valueStart >= jsonText.length() || jsonText.charAt(valueStart) != '"') {
+            return "";
+        }
+
+        return readPartialJsonString(jsonText, valueStart + 1);
+    }
+
+    private String readPartialJsonString(String jsonText, int startIndex) {
+        StringBuilder builder = new StringBuilder();
+        boolean escaping = false;
+
+        for (int index = startIndex; index < jsonText.length(); index++) {
+            char current = jsonText.charAt(index);
+            if (escaping) {
+                if (current == 'u' && index + 4 < jsonText.length()) {
+                    String hex = jsonText.substring(index + 1, index + 5);
+                    if (hex.chars().allMatch(ch -> Character.digit(ch, 16) >= 0)) {
+                        builder.append((char) Integer.parseInt(hex, 16));
+                        index += 4;
+                        escaping = false;
+                        continue;
+                    }
+                }
+                builder.append(switch (current) {
+                    case 'n' -> '\n';
+                    case 'r' -> '\r';
+                    case 't' -> '\t';
+                    case 'b' -> '\b';
+                    case 'f' -> '\f';
+                    case '"', '\\', '/' -> current;
+                    default -> current;
+                });
+                escaping = false;
+                continue;
+            }
+
+            if (current == '\\') {
+                escaping = true;
+                continue;
+            }
+            if (current == '"') {
+                return builder.toString();
+            }
+            builder.append(current);
+        }
+        return builder.toString();
     }
 
     private void sendStart(String userId, Integer sessionId) {

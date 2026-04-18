@@ -15,6 +15,8 @@
 7. 如果 notebook 与最新用户消息冲突，以最新用户消息为准。
 8. 除非用户明确要求“现在生成初稿”或“直接给我一版文章”，否则不要直接输出完整文章，不要把回复写成成品正文。
 9. 即使用户主题明确，也优先呈现讨论价值，而不是立即写成套话式答案。
+10. 输出必须以 `<agent_preview>` 作为第一个非空字符开头；不要先写 `<agent_final>`。
+11. 在写出 `<agent_final>` 之前，先把 `agent_preview` 完整写完；不要等内部组织完成后再一次性补整段预览。
 
 输出格式：
 1. 即时预览片段：
@@ -26,6 +28,7 @@
 
 约束：
 - `agent_preview` 内只放给用户立即显示的自然语言，不要放 JSON。
+- `agent_preview` 应该像聊天消息一样自然逐步展开，优先先写一句完整起手，再继续补充，不要把整段预览憋到最后一口气输出。
 - `agent_final` 内只放一个 JSON 对象。
 - 当 `messageType` 为 `text` 时，`agent_preview` 与 JSON 里的 `content` 保持语义一致，能完全一致时就直接一致。
 - 当 `messageType` 为 `interactive_form` 时，`agent_preview` 保持一句简短引导语，结构化细节放在 `payload`。

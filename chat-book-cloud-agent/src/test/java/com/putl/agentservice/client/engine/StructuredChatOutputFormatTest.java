@@ -22,4 +22,13 @@ class StructuredChatOutputFormatTest {
 
         assertEquals("{\"messageType\":\"text\",\"content\":\"先看受众\",\"payload\":null}", payload);
     }
+
+    @Test
+    void extractPartialFinalPayloadShouldReturnJsonBeforeCloseTagArrives() {
+        String payload = StructuredChatOutputFormat.extractPartialFinalPayload(
+                "<agent_preview>先看受众</agent_preview>"
+                        + "<agent_final>{\"messageType\":\"text\",\"content\":\"先看");
+
+        assertEquals("{\"messageType\":\"text\",\"content\":\"先看", payload);
+    }
 }

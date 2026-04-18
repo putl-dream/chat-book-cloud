@@ -18,6 +18,10 @@ public final class StructuredChatOutputFormat {
         return extractSection(rawText, FINAL_OPEN_TAG, FINAL_CLOSE_TAG, false);
     }
 
+    public static String extractPartialFinalPayload(String rawText) {
+        return extractSection(rawText, FINAL_OPEN_TAG, FINAL_CLOSE_TAG, true);
+    }
+
     public static boolean containsEnvelope(String rawText) {
         if (rawText == null || rawText.isEmpty()) {
             return false;
