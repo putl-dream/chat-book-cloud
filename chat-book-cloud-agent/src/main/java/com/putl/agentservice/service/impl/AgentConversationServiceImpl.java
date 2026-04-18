@@ -145,6 +145,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 chunk -> handleStreamingChunk(chunk, previewConsumer, previewState),
                 streamingControl);
         AssistantMessageResolution resolution = reconcileAssistantMessage(aiReply.getData(), previewState);
+        publishCompletionPreviewFallbackIfNeeded(resolution.message(), previewConsumer, previewState);
         AgentAssistantMessage assistant = resolution.message();
         aiReply.setData(assistant);
         AgentMessageDO assistantMessage = saveMessage(
@@ -235,7 +236,47 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         if (StringUtils.hasText(previewContent)) {
             previewState.previewMode = "tagged_preview";
             publishPreviewDelta(previewContent, previewConsumer, previewState);
+            return;
         }
+
+        String rawTextPreview = extractRawTextPreview(rawBuffer);
+        if (StringUtils.hasText(rawTextPreview)) {
+            previewState.previewMode = "raw_text";
+            publishPreviewDelta(rawTextPreview, previewConsumer, previewState);
+        }
+    }
+
+    private String extractRawTextPreview(String rawBuffer) {
+        String candidate = defaultText(rawBuffer);
+        int firstEnvelopeTagIndex = firstEnvelopeTagIndex(candidate);
+        if (firstEnvelopeTagIndex >= 0) {
+            candidate = candidate.substring(0, firstEnvelopeTagIndex);
+        }
+
+        String normalized = candidate.trim();
+        if (!StringUtils.hasText(normalized) || looksLikeStructuredPayload(normalized)) {
+            return "";
+        }
+        return candidate;
+    }
+
+    private int firstEnvelopeTagIndex(String rawText) {
+        int previewIndex = rawText.indexOf(StructuredChatOutputFormat.PREVIEW_OPEN_TAG);
+        int finalIndex = rawText.indexOf(StructuredChatOutputFormat.FINAL_OPEN_TAG);
+        if (previewIndex < 0) {
+            return finalIndex;
+        }
+        if (finalIndex < 0) {
+            return previewIndex;
+        }
+        return Math.min(previewIndex, finalIndex);
+    }
+
+    private boolean looksLikeStructuredPayload(String content) {
+        return content.startsWith("{")
+                || content.startsWith("[")
+                || content.startsWith("```")
+                || content.startsWith("<");
     }
 
     private void sendStart(String userId, Integer sessionId) {
@@ -424,6 +465,27 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             previewState.firstDeltaLatencyMs = Math.max(0L, System.currentTimeMillis() - previewState.startedAtMs);
         }
         previewConsumer.accept(delta);
+    }
+
+    private void publishCompletionPreviewFallbackIfNeeded(AgentAssistantMessage assistant,
+                                                          java.util.function.Consumer<String> previewConsumer,
+                                                          StreamingChatPreviewState previewState) {
+        if (previewState == null || previewState.deltaCount > 0 || assistant == null) {
+            return;
+        }
+
+        String messageType = defaultText(assistant.getMessageType()).trim().toLowerCase(Locale.ROOT);
+        if (!AgentMessageTypeConstants.TEXT.equals(messageType)) {
+            return;
+        }
+
+        String content = defaultText(assistant.getContent());
+        if (!StringUtils.hasText(content)) {
+            return;
+        }
+
+        previewState.previewMode = "completion_fallback";
+        publishPreviewDelta(content, previewConsumer, previewState);
     }
 
     private StreamingChatSummary buildStreamSummary(StreamingChatPreviewState previewState,
