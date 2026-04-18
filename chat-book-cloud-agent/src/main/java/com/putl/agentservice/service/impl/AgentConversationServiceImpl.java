@@ -270,10 +270,10 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             return;
         }
 
-        String finalContentPreview = extractFinalContentPreview(rawBuffer);
-        if (StringUtils.hasText(finalContentPreview)) {
-            previewState.previewMode = "final_content";
-            publishPreviewDelta(finalContentPreview, previewConsumer, previewState);
+        StructuredContentPreview structuredContentPreview = extractStructuredContentPreview(rawBuffer);
+        if (structuredContentPreview.hasContent()) {
+            previewState.previewMode = structuredContentPreview.previewMode();
+            publishPreviewDelta(structuredContentPreview.content(), previewConsumer, previewState);
         }
     }
 
@@ -310,12 +310,25 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                 || content.startsWith("<");
     }
 
-    private String extractFinalContentPreview(String rawBuffer) {
+    private StructuredContentPreview extractStructuredContentPreview(String rawBuffer) {
         String partialFinalPayload = StructuredChatOutputFormat.extractPartialFinalPayload(rawBuffer);
-        if (!StringUtils.hasText(partialFinalPayload)) {
-            return "";
+        if (StringUtils.hasText(partialFinalPayload)) {
+            String contentPreview = extractJsonStringField(partialFinalPayload, "content");
+            if (StringUtils.hasText(contentPreview)) {
+                return new StructuredContentPreview(contentPreview, "final_content");
+            }
         }
-        return extractJsonStringField(partialFinalPayload, "content");
+
+        String normalized = stripCodeFence(defaultText(rawBuffer)).trim();
+        if (!normalized.startsWith("{")) {
+            return StructuredContentPreview.empty();
+        }
+
+        String contentPreview = extractJsonStringField(normalized, "content");
+        if (!StringUtils.hasText(contentPreview)) {
+            return StructuredContentPreview.empty();
+        }
+        return new StructuredContentPreview(contentPreview, "json_content");
     }
 
     private String extractJsonStringField(String jsonText, String fieldName) {
@@ -384,6 +397,18 @@ public class AgentConversationServiceImpl implements AgentConversationService {
             builder.append(current);
         }
         return builder.toString();
+    }
+
+    private String stripCodeFence(String text) {
+        String trimmed = defaultText(text).trim();
+        if (trimmed.startsWith("```")) {
+            int firstLineEnd = trimmed.indexOf('\n');
+            int lastFence = trimmed.lastIndexOf("```");
+            if (firstLineEnd >= 0 && lastFence > firstLineEnd) {
+                return trimmed.substring(firstLineEnd + 1, lastFence).trim();
+            }
+        }
+        return trimmed;
     }
 
     private void sendStart(String userId, Integer sessionId) {
@@ -758,6 +783,17 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                                         int deltaCount,
                                         boolean previewMismatch,
                                         boolean previewFallbackApplied) {
+    }
+
+    private record StructuredContentPreview(String content, String previewMode) {
+
+        private static StructuredContentPreview empty() {
+            return new StructuredContentPreview("", "none");
+        }
+
+        private boolean hasContent() {
+            return StringUtils.hasText(content);
+        }
     }
 
     private static final class StreamingChatPreviewState {

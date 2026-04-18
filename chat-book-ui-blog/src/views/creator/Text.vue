@@ -185,7 +185,13 @@
                 v-show="layoutState.rightOpen"
                 :style="{ width: layoutState.rightWidth + '%' }"
             >
-                <EditorAiPanel @close="toggleRight" />
+                <EditorAiPanel
+                    :editor="editor"
+                    :title="title"
+                    :summary="publishForm.abstractText"
+                    :disabled="aiGenerating"
+                    @close="toggleRight"
+                />
             </div>
 
             <el-drawer
@@ -196,7 +202,13 @@
                 size="80vh"
                 :append-to-body="true"
             >
-                <EditorAiPanel @close="toggleRight" />
+                <EditorAiPanel
+                    :editor="editor"
+                    :title="title"
+                    :summary="publishForm.abstractText"
+                    :disabled="aiGenerating"
+                    @close="toggleRight"
+                />
             </el-drawer>
         </div>
 

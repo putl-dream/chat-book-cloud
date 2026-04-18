@@ -63,8 +63,9 @@
                             <span class="typing-dot"></span> 正在思考...
                         </p>
                         <StreamingMessageRenderer
-                            v-else-if="msg.streaming"
+                            v-else-if="msg.role === 'assistant' && msg.messageType === 'text'"
                             :content="msg.previewText || msg.content"
+                            :streaming="msg.streaming && !store.chatPreviewSettled"
                         />
                         <RichTextViewer
                             v-else
@@ -112,6 +113,9 @@
             </div>
             <div class="footer-hint" v-if="store.hasPendingInteractiveForm">
                 请先完成上方问题卡片，Agent 会在收到完整答案后继续生成建议
+            </div>
+            <div class="footer-hint" v-else-if="store.chatting && store.chatPreviewSettled">
+                可见回复已完成，正在同步最终结果。你现在看到的内容基本已经稳定。
             </div>
             <div class="footer-hint" v-else-if="store.chatting">
                 当前回复进行中。你可以先继续修改输入内容；如果上一条发早了，点“打断回复”后再发送。

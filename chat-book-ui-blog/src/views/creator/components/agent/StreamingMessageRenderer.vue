@@ -11,7 +11,10 @@
 import { onBeforeUnmount, ref, watch } from 'vue';
 
 import RichTextViewer from '@/components/common/rich-text/RichTextViewer.vue';
-import { buildStreamingRichTextHtml } from '@/components/common/rich-text/content-pipeline.js';
+import {
+    buildRichTextHtml,
+    buildStreamingRichTextHtml
+} from '@/components/common/rich-text/content-pipeline.js';
 
 const STREAMING_RENDER_INTERVAL_MS = 56;
 
@@ -19,6 +22,10 @@ const props = defineProps({
     content: {
         type: String,
         default: ''
+    },
+    streaming: {
+        type: Boolean,
+        default: false
     }
 });
 
@@ -43,7 +50,9 @@ const cancelScheduledRender = () => {
 
 const flushRender = () => {
     cancelScheduledRender();
-    renderedHtml.value = buildStreamingRichTextHtml(pendingContent.value, 'markdown');
+    renderedHtml.value = props.streaming
+        ? buildStreamingRichTextHtml(pendingContent.value, 'markdown')
+        : buildRichTextHtml(pendingContent.value, 'markdown');
     lastRenderAt = now();
 };
 
@@ -64,16 +73,25 @@ const scheduleRender = ({ immediate = false } = {}) => {
     }, delay);
 };
 
-watch(() => props.content, (nextContent, previousContent) => {
-    pendingContent.value = nextContent || '';
-    const shouldFlushImmediately = !previousContent
-        || !renderedHtml.value
-        || pendingContent.value.length < String(previousContent || '').length
-        || !pendingContent.value;
-    scheduleRender({ immediate: shouldFlushImmediately });
-}, {
-    immediate: true
-});
+watch(
+    () => [props.content, props.streaming],
+    ([nextContent, nextStreaming], previousState) => {
+        const previousContent = Array.isArray(previousState) ? previousState[0] : '';
+        const previousStreaming = Array.isArray(previousState) ? previousState[1] : undefined;
+
+        pendingContent.value = nextContent || '';
+        const shouldFlushImmediately = !previousContent
+            || !renderedHtml.value
+            || pendingContent.value.length < String(previousContent || '').length
+            || !pendingContent.value
+            || !nextStreaming
+            || nextStreaming !== previousStreaming;
+        scheduleRender({ immediate: shouldFlushImmediately });
+    },
+    {
+        immediate: true
+    }
+);
 
 onBeforeUnmount(() => {
     cancelScheduledRender();

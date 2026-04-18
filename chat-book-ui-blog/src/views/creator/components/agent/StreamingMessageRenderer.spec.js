@@ -25,7 +25,8 @@ describe('StreamingMessageRenderer', () => {
     it('renders markdown directly during streaming', () => {
         const wrapper = mount(StreamingMessageRenderer, {
             props: {
-                content: '这是 **强调** 和 `inline` 示例\n\n- 第一项\n- 第二项\n\n```js\nconst a = 1;\n```'
+                content: '这是 **强调** 和 `inline` 示例\n\n- 第一项\n- 第二项\n\n```js\nconst a = 1;\n```',
+                streaming: true
             }
         });
 
@@ -38,7 +39,8 @@ describe('StreamingMessageRenderer', () => {
     it('degrades unfinished code fences into stable plain code blocks', () => {
         const wrapper = mount(StreamingMessageRenderer, {
             props: {
-                content: '```js\nconst a = 1;'
+                content: '```js\nconst a = 1;',
+                streaming: true
             }
         });
 
@@ -51,7 +53,8 @@ describe('StreamingMessageRenderer', () => {
         vi.useFakeTimers();
         const wrapper = mount(StreamingMessageRenderer, {
             props: {
-                content: '第一段'
+                content: '第一段',
+                streaming: true
             }
         });
 
@@ -65,6 +68,32 @@ describe('StreamingMessageRenderer', () => {
         expect(wrapper.text()).not.toContain('第二段');
 
         vi.advanceTimersByTime(60);
+        await nextTick();
+
+        expect(wrapper.text()).toContain('第二段');
+    });
+
+    it('flushes immediately when streaming ends so the final renderer does not lag behind', async () => {
+        vi.useFakeTimers();
+        const wrapper = mount(StreamingMessageRenderer, {
+            props: {
+                content: '第一段',
+                streaming: true
+            }
+        });
+
+        await wrapper.setProps({
+            content: '第一段\n\n第二段',
+            streaming: true
+        });
+        await nextTick();
+
+        expect(wrapper.text()).not.toContain('第二段');
+
+        await wrapper.setProps({
+            content: '第一段\n\n第二段',
+            streaming: false
+        });
         await nextTick();
 
         expect(wrapper.text()).toContain('第二段');

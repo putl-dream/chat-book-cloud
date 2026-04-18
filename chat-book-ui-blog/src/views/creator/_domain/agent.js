@@ -72,6 +72,12 @@ export function extractArticleSummary(params) {
     });
 }
 
+export function assistEditorContent(params) {
+    return request.post('/agent/editor/assist', params, {
+        timeout: 60000
+    });
+}
+
 export function normalizeAgentDraft(source = {}) {
     return {
         draftId: source.draftId ?? null,

@@ -21,6 +21,7 @@ const mockStore = vi.hoisted(() => ({
     sceneFooterHint: '继续讨论',
     creatingSession: false,
     interruptingChat: false,
+    chatPreviewSettled: false,
     latestUserEditableMessage: '',
     visibleMessages: [],
     sendMessage: vi.fn(),
@@ -46,8 +47,8 @@ vi.mock('@/components/common/rich-text/RichTextViewer.vue', () => ({
 
 vi.mock('@/views/creator/components/agent/StreamingMessageRenderer.vue', () => ({
     default: {
-        props: ['content'],
-        template: '<div class="streaming-renderer">{{ content }}</div>'
+        props: ['content', 'streaming'],
+        template: '<div class="streaming-renderer" :data-streaming="String(streaming)">{{ content }}</div>'
     }
 }));
 
@@ -75,6 +76,7 @@ describe('ChatController', () => {
         mockStore.sceneFooterHint = '继续讨论';
         mockStore.creatingSession = false;
         mockStore.interruptingChat = false;
+        mockStore.chatPreviewSettled = false;
         mockStore.latestUserEditableMessage = '';
         mockStore.visibleMessages = [];
         vi.clearAllMocks();
@@ -102,7 +104,60 @@ describe('ChatController', () => {
         });
 
         expect(wrapper.find('.streaming-renderer').text()).toContain('正在逐字增长');
+        expect(wrapper.find('.streaming-renderer').attributes('data-streaming')).toBe('true');
         expect(wrapper.find('.rich-text-viewer').exists()).toBe(false);
+    });
+
+    it('keeps completed assistant text on the shared assistant renderer', () => {
+        mockStore.visibleMessages = [{
+            id: 'assistant-2',
+            role: 'assistant',
+            messageType: 'text',
+            content: '已经完成的回复',
+            streaming: false
+        }];
+
+        const wrapper = mount(ChatController, {
+            global: {
+                stubs: {
+                    'el-button': { template: '<button><slot /></button>' },
+                    'el-input': { template: '<textarea />' },
+                    'el-icon': { template: '<i><slot /></i>' },
+                    'el-skeleton': { template: '<div class="skeleton"></div>' }
+                }
+            }
+        });
+
+        expect(wrapper.find('.streaming-renderer').text()).toContain('已经完成的回复');
+        expect(wrapper.find('.streaming-renderer').attributes('data-streaming')).toBe('false');
+        expect(wrapper.find('.rich-text-viewer').exists()).toBe(false);
+    });
+
+    it('shows settling hint after visible preview finishes but completion is still syncing', () => {
+        mockStore.chatting = true;
+        mockStore.chatPreviewSettled = true;
+        mockStore.visibleMessages = [{
+            id: 'assistant-3',
+            role: 'assistant',
+            messageType: 'text',
+            content: '已经稳定的回复',
+            previewText: '已经稳定的回复',
+            streaming: true
+        }];
+
+        const wrapper = mount(ChatController, {
+            global: {
+                stubs: {
+                    'el-button': { template: '<button><slot /></button>' },
+                    'el-input': { template: '<textarea />' },
+                    'el-icon': { template: '<i><slot /></i>' },
+                    'el-skeleton': { template: '<div class="skeleton"></div>' }
+                }
+            }
+        });
+
+        expect(wrapper.text()).toContain('可见回复已完成，正在同步最终结果');
+        expect(wrapper.find('.streaming-renderer').attributes('data-streaming')).toBe('false');
     });
 
     it('keeps interactive form messages on the final card renderer', () => {
