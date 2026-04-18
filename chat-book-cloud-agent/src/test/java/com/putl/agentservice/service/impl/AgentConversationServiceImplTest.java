@@ -270,7 +270,7 @@ class AgentConversationServiceImplTest {
     }
 
     @Test
-    void chatByWebSocketShouldEmitCompletionFallbackDeltaWhenOnlyFinalEnvelopeExists() {
+    void chatByWebSocketShouldStreamPreviewFromPartialFinalEnvelope() {
         AgentChatRequest request = new AgentChatRequest();
         request.setSessionId(101);
         request.setContent("帮我整理一个选题");
@@ -278,8 +278,8 @@ class AgentConversationServiceImplTest {
         doAnswer(invocation -> {
             @SuppressWarnings("unchecked")
             java.util.function.Consumer<String> consumer = invocation.getArgument(6, java.util.function.Consumer.class);
-            consumer.accept("<agent_final>{\"messageType\":\"text\",\"content\":\"先看受众\"");
-            consumer.accept(",\"payload\":null}</agent_final>");
+            consumer.accept("<agent_final>{\"messageType\":\"text\",\"content\":\"先看");
+            consumer.accept("受众\",\"payload\":null}</agent_final>");
             return new AiInvocationResult<>(
                     AgentAssistantMessage.builder()
                             .messageType(AgentMessageTypeConstants.TEXT)
@@ -295,14 +295,16 @@ class AgentConversationServiceImplTest {
 
         service.chatByWebSocket("u-1", request);
 
-        verify(messagePublisher, times(3)).sendToUser(anyString(), payloadCaptor.capture());
+        verify(messagePublisher, times(4)).sendToUser(anyString(), payloadCaptor.capture());
         List<String> payloads = payloadCaptor.getAllValues().stream().map(String::valueOf).toList();
 
-        assertEquals(3, payloads.size());
+        assertEquals(4, payloads.size());
         Assertions.assertTrue(payloads.get(1).contains(AgentStreamEventConstants.MESSAGE_DELTA));
-        Assertions.assertTrue(payloads.get(1).contains("\"delta\":\"先看受众\""));
-        Assertions.assertTrue(payloads.get(2).contains("\"previewText\":\"先看受众\""));
-        Assertions.assertTrue(payloads.get(2).contains("\"previewMode\":\"completion_fallback\""));
+        Assertions.assertTrue(payloads.get(1).contains("\"delta\":\"先看\""));
+        Assertions.assertTrue(payloads.get(2).contains(AgentStreamEventConstants.MESSAGE_DELTA));
+        Assertions.assertTrue(payloads.get(2).contains("\"delta\":\"受众\""));
+        Assertions.assertTrue(payloads.get(3).contains("\"previewText\":\"先看受众\""));
+        Assertions.assertTrue(payloads.get(3).contains("\"previewMode\":\"final_content\""));
     }
 
     @Test
