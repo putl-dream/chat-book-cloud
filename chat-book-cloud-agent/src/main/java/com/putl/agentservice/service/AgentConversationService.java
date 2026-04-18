@@ -11,4 +11,6 @@ public interface AgentConversationService {
     SseEmitter chatStream(AgentChatRequest request);
 
     void chatByWebSocket(String userId, AgentChatRequest request);
+
+    void cancelChatByWebSocket(String userId, AgentChatRequest request);
 }

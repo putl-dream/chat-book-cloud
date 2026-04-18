@@ -1,6 +1,7 @@
 package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.ArticleAiGateway;
+import com.putl.agentservice.client.engine.StreamingCancelledException;
 import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
@@ -50,6 +51,7 @@ import static org.mockito.ArgumentMatchers.anyList;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -101,6 +103,7 @@ class AgentConversationServiceImplTest {
                 agentSceneRouter,
                 articleClient,
                 agentChatProperties,
+                new ActiveChatStreamingRegistry(),
                 messagePublisher,
                 directExecutor);
 
@@ -113,7 +116,7 @@ class AgentConversationServiceImplTest {
             return current;
         });
         when(agentNotebookCacheService.getNotebook(anyInt())).thenReturn(NotebookSummary.builder().build());
-        when(agentNotebookService.refreshNotebook(anyInt())).thenReturn(NotebookSummary.builder().build());
+        lenient().when(agentNotebookService.refreshNotebook(anyInt())).thenReturn(NotebookSummary.builder().build());
         when(agentSessionMapper.selectById(anyInt())).thenReturn(AgentSessionDO.builder()
                 .id(101)
                 .sceneType(AgentSceneType.DISCUSS)
@@ -125,9 +128,9 @@ class AgentConversationServiceImplTest {
                 .assistantAction(AgentAssistantAction.SUGGEST_DRAFT)
                 .draftReadiness(DraftReadiness.READY)
                 .build());
-        when(agentSceneRouter.applyDecision(any(NotebookSummary.class), any(SceneDecision.class), anyBoolean()))
+        lenient().when(agentSceneRouter.applyDecision(any(NotebookSummary.class), any(SceneDecision.class), anyBoolean()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
-        when(agentSceneRouter.finalizeDecision(any(SceneDecision.class), any(NotebookSummary.class), anyBoolean()))
+        lenient().when(agentSceneRouter.finalizeDecision(any(SceneDecision.class), any(NotebookSummary.class), anyBoolean()))
                 .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
@@ -305,6 +308,45 @@ class AgentConversationServiceImplTest {
         Assertions.assertTrue(payloads.get(2).contains("\"delta\":\"受众\""));
         Assertions.assertTrue(payloads.get(3).contains("\"previewText\":\"先看受众\""));
         Assertions.assertTrue(payloads.get(3).contains("\"previewMode\":\"final_content\""));
+    }
+
+    @Test
+    void cancelChatByWebSocketShouldPublishStoppedEventAndSkipDone() {
+        AgentChatRequest request = new AgentChatRequest();
+        request.setSessionId(101);
+        request.setContent("帮我整理一个选题");
+
+        doAnswer(invocation -> {
+            StreamingControl streamingControl = invocation.getArgument(7, StreamingControl.class);
+            java.util.function.Consumer<String> consumer = invocation.getArgument(6, java.util.function.Consumer.class);
+            consumer.accept("先");
+            service.cancelChatByWebSocket("u-1", request);
+            if (streamingControl.isCancelled()) {
+                throw new StreamingCancelledException();
+            }
+            return new AiInvocationResult<>(
+                    AgentAssistantMessage.builder()
+                            .messageType(AgentMessageTypeConstants.TEXT)
+                            .content("先看受众")
+                            .build(),
+                    10,
+                    20,
+                    30,
+                    "claude-test");
+        }).when(articleAiGateway).chat(anyList(), any(NotebookSummary.class), any(AgentSceneType.class), any(), any(), any(), any(), any(StreamingControl.class));
+
+        ArgumentCaptor<Object> payloadCaptor = ArgumentCaptor.forClass(Object.class);
+
+        service.chatByWebSocket("u-1", request);
+
+        verify(messagePublisher, times(3)).sendToUser(anyString(), payloadCaptor.capture());
+        List<String> payloads = payloadCaptor.getAllValues().stream().map(String::valueOf).toList();
+
+        assertEquals(3, payloads.size());
+        Assertions.assertTrue(payloads.get(0).contains(AgentStreamEventConstants.MESSAGE_STARTED));
+        Assertions.assertTrue(payloads.get(1).contains(AgentStreamEventConstants.MESSAGE_DELTA));
+        Assertions.assertTrue(payloads.get(2).contains(AgentStreamEventConstants.MESSAGE_STOPPED));
+        Assertions.assertTrue(payloads.stream().noneMatch(payload -> payload.contains(AgentStreamEventConstants.MESSAGE_COMPLETED)));
     }
 
     @Test

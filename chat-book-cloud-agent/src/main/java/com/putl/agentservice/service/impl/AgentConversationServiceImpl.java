@@ -2,6 +2,7 @@ package com.putl.agentservice.service.impl;
 
 import com.putl.agentservice.client.ArticleAiGateway;
 import com.putl.agentservice.client.engine.StructuredChatOutputFormat;
+import com.putl.agentservice.client.engine.StreamingCancelledException;
 import com.putl.agentservice.client.engine.StreamingControl;
 import com.putl.agentservice.config.AgentChatProperties;
 import com.putl.agentservice.constants.AgentMessageTypeConstants;
@@ -60,6 +61,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     private final AgentChatProperties agentChatProperties;
     private final Executor agentChatStreamExecutor;
     private final MessagePublisher messagePublisher;
+    private final ActiveChatStreamingRegistry activeChatStreamingRegistry;
 
     public AgentConversationServiceImpl(AgentMessageMapper agentMessageMapper,
                                         AgentSessionMapper agentSessionMapper,
@@ -70,6 +72,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
                                         AgentSceneRouter agentSceneRouter,
                                         ArticleClient articleClient,
                                         AgentChatProperties agentChatProperties,
+                                        ActiveChatStreamingRegistry activeChatStreamingRegistry,
                                         MessagePublisher messagePublisher,
                                         @Qualifier("agentChatStreamExecutor") Executor agentChatStreamExecutor) {
         this.agentMessageMapper = agentMessageMapper;
@@ -81,6 +84,7 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         this.agentSceneRouter = agentSceneRouter;
         this.articleClient = articleClient;
         this.agentChatProperties = agentChatProperties;
+        this.activeChatStreamingRegistry = activeChatStreamingRegistry;
         this.messagePublisher = messagePublisher;
         this.agentChatStreamExecutor = agentChatStreamExecutor;
     }
@@ -109,6 +113,17 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     @Override
     public void chatByWebSocket(String userId, AgentChatRequest request) {
         agentChatStreamExecutor.execute(() -> doChatWebSocket(userId, request));
+    }
+
+    @Override
+    public void cancelChatByWebSocket(String userId, AgentChatRequest request) {
+        Integer sessionId = request == null ? null : request.getSessionId();
+        ActiveChatStreamingRegistry.ChatStreamingHandle handle = activeChatStreamingRegistry.cancel(
+                userId,
+                sessionId,
+                "User requested stop");
+        log.info("Agent chat stop requested. sessionId={}, userId={}, activeTaskFound={}",
+                sessionId, userId, handle != null);
     }
 
     private ChatExecutionResult executeChat(AgentChatRequest request) {
@@ -212,15 +227,24 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     }
 
     private void doChatWebSocket(String userId, AgentChatRequest request) {
+        Integer sessionId = request == null ? null : request.getSessionId();
+        ActiveChatStreamingRegistry.ChatStreamingHandle handle = activeChatStreamingRegistry.register(userId, sessionId);
         try {
-            Integer sessionId = request == null ? null : request.getSessionId();
             sendStart(userId, sessionId);
             StreamingChatPreviewState previewState = new StreamingChatPreviewState();
             ChatExecutionResult result = executeChat(request, preview ->
-                    sendDelta(userId, sessionId, preview), StreamingControl.noop(), previewState);
+                    sendDelta(userId, sessionId, preview), handle, previewState);
             messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.MESSAGE_COMPLETED, donePayload(request, result)));
+        } catch (StreamingCancelledException ex) {
+            log.info("Agent chat cancelled. sessionId={}, userId={}, reason={}",
+                    sessionId, userId, defaultText(handle.getCancelReason(), "cancelled"));
+            messagePublisher.sendToUser(userId, WebSocketResult.of(
+                    AgentStreamEventConstants.MESSAGE_STOPPED,
+                    payload(sessionId, "statusText", "已停止回复，你可以修改后重新发送")));
         } catch (Exception ex) {
             messagePublisher.sendToUser(userId, WebSocketResult.of(AgentStreamEventConstants.MESSAGE_FAILED, errorPayload(request, ex)));
+        } finally {
+            activeChatStreamingRegistry.complete(handle);
         }
     }
 
@@ -425,6 +449,10 @@ public class AgentConversationServiceImpl implements AgentConversationService {
 
     private String defaultText(String value) {
         return value == null ? "" : value;
+    }
+
+    private String defaultText(String value, String fallback) {
+        return StringUtils.hasText(value) ? value : defaultText(fallback);
     }
 
     private AgentSessionDO requireSession(Integer sessionId) {
