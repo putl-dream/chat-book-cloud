@@ -443,8 +443,14 @@ jobs:
 
           if docker compose version > /dev/null 2>&1; then
             docker compose -f docker-compose.dev.yml up -d --build --no-deps --remove-orphans ${services}
+            if [[ " ${services} " == *" caddy "* ]]; then
+              docker compose -f docker-compose.dev.yml restart caddy
+            fi
           else
             docker-compose -f docker-compose.dev.yml up -d --build --no-deps --remove-orphans ${services}
+            if [[ " ${services} " == *" caddy "* ]]; then
+              docker-compose -f docker-compose.dev.yml restart caddy
+            fi
           fi
 
           docker image prune -f
