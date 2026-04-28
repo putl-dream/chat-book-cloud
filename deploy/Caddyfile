@@ -1,0 +1,7 @@
+putl.online, www.putl.online {
+    reverse_proxy frontend:80
+}
+
+admin.putl.online {
+    reverse_proxy admin-frontend:80
+}

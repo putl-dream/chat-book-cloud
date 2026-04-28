@@ -48,6 +48,7 @@ services:
       RABBITMQ_PORT: ${RABBITMQ_PORT:-5672}
       RABBITMQ_USERNAME: ${RABBITMQ_USERNAME:-admin}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD:-admin@2026}
+      SERVER_FORWARD_HEADERS_STRATEGY: framework
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:?GOOGLE_CLIENT_ID is required for auth oauth2 login}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:?GOOGLE_CLIENT_SECRET is required for auth oauth2 login}
       OAUTH2_SUCCESS_REDIRECT_URL: ${OAUTH2_SUCCESS_REDIRECT_URL:-https://putl.online/login}
@@ -102,7 +103,7 @@ services:
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://10.0.0.2:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-admin@2026}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://49.235.53.56:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://putl.online}
     networks:
       - chat-book-net
 
@@ -132,7 +133,7 @@ services:
       MINIO_ENDPOINT: ${MINIO_ENDPOINT:-http://10.0.0.2:9000}
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-admin@2026}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://49.235.53.56:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://putl.online}
     networks:
       - chat-book-net
 
@@ -163,7 +164,7 @@ services:
       MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-admin}
       MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-admin@2026}
       MINIO_BUCKET: ${MINIO_BUCKET:-chat-book-images}
-      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-http://49.235.53.56:9000}
+      MINIO_PUBLIC_URL: ${MINIO_PUBLIC_URL:-https://putl.online}
     networks:
       - chat-book-net
 
@@ -210,8 +211,8 @@ services:
     container_name: frontend
     restart: always
     build: ./chat-book-ui-blog
-    ports:
-      - "80:80"
+    expose:
+      - "80"
     environment:
       GATEWAY_PROXY_TARGET: http://gateway:8080
       AUTH_PROXY_TARGET: http://auth:8081
@@ -226,13 +227,30 @@ services:
     container_name: admin-frontend
     restart: always
     build: ./chat-book-ui-admin
-    ports:
-      - "${ADMIN_UI_PORT:-3000}:80"
+    expose:
+      - "80"
     environment:
       GATEWAY_PROXY_TARGET: http://gateway:8080
       MINIO_PROXY_TARGET: ${MINIO_PROXY_TARGET:-http://10.0.0.2:9000}
     depends_on:
       - gateway
+    networks:
+      - chat-book-net
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: caddy
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./deploy/Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./data/caddy/data:/data
+      - ./data/caddy/config:/config
+    depends_on:
+      - frontend
+      - admin-frontend
     networks:
       - chat-book-net
 
