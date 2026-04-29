@@ -1,9 +1,9 @@
 package com.putl.agentservice.client.task;
 
-import com.anthropic.models.messages.MessageCreateParams;
 import com.putl.agentservice.client.engine.AgentMessageAssembler;
 import com.putl.agentservice.client.engine.AiResponseParser;
-import com.putl.agentservice.client.engine.AnthropicRequestFactory;
+import com.putl.agentservice.client.engine.ArticleAiRequest;
+import com.putl.agentservice.client.engine.ArticleAiRequestFactory;
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.client.engine.PromptTemplateService;
 import com.putl.agentservice.config.AnthropicProperties;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Component;
 public class ArticleEditorAssistTask extends AbstractAnthropicArticleAiTask<EditorAssistResponse> {
 
     public ArticleEditorAssistTask(AnthropicProperties properties,
-                                   AnthropicRequestFactory requestFactory,
+                                   ArticleAiRequestFactory requestFactory,
                                    PromptTemplateService promptTemplateService,
                                    AgentMessageAssembler agentMessageAssembler,
                                    AiResponseParser aiResponseParser) {
@@ -28,10 +28,10 @@ public class ArticleEditorAssistTask extends AbstractAnthropicArticleAiTask<Edit
     }
 
     @Override
-    public MessageCreateParams createParams(ArticleAiContext context) {
+    public ArticleAiRequest createRequest(ArticleAiContext context) {
         return newRequest(
-                properties.getAnthropic().getModel().getOptimize(),
-                properties.getAnthropic().getMaxTokens().getOptimize(),
+                optimizeModel(),
+                optimizeMaxTokens(),
                 0.2,
                 loadTemplate(PromptTemplateConstants.ARTICLE_EDITOR_ASSIST))
                 .addUserMessage(buildPrompt(context))

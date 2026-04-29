@@ -2,12 +2,14 @@ package com.putl.agentservice.client.engine;
 
 import com.putl.agentservice.model.vo.AiInvocationResult;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.util.function.Consumer;
 
 @Slf4j
 @Component
+@ConditionalOnProperty(prefix = "agent.ai", name = "provider", havingValue = "anthropic", matchIfMissing = true)
 public class AnthropicArticleAiExecutionEngine implements ArticleAiExecutionEngine {
 
     private final AnthropicExecutor anthropicExecutor;
@@ -58,9 +60,10 @@ public class AnthropicArticleAiExecutionEngine implements ArticleAiExecutionEngi
         if (chunkConsumer != null && !task.supportsStreaming()) {
             throw new IllegalArgumentException("Task does not support streaming: " + task.taskCode());
         }
+        ArticleAiRequest request = task.createRequest(context);
         AiInvocationResult<String> raw = chunkConsumer == null
-                ? anthropicExecutor.execute(task.createParams(context))
-                : anthropicExecutor.executeStream(task.createParams(context), chunkConsumer, streamingControl);
+                ? anthropicExecutor.execute(request)
+                : anthropicExecutor.executeStream(request, chunkConsumer, streamingControl);
         T parsed = task.parseResponse(raw.getData());
         return new AiInvocationResult<>(
                 parsed,

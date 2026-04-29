@@ -71,7 +71,7 @@ public class AgentSessionServiceImpl implements AgentSessionService {
                 .title(sessionTitle)
                 .status(AgentSessionStatus.ACTIVE)
                 .notebookSummary(JsonUtil.toJsonString(notebook))
-                .model(anthropicProperties.getAnthropic().getModel().getChat())
+                .model(anthropicProperties.activeModel().getChat())
                 .promptVersion("v1")
                 .build();
         agentSessionMapper.insert(session);

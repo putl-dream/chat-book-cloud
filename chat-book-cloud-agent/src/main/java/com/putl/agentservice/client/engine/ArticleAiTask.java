@@ -1,12 +1,10 @@
 package com.putl.agentservice.client.engine;
 
-import com.anthropic.models.messages.MessageCreateParams;
-
 public interface ArticleAiTask<T> {
 
     String taskCode();
 
-    MessageCreateParams createParams(ArticleAiContext context);
+    ArticleAiRequest createRequest(ArticleAiContext context);
 
     T parseResponse(String rawText);
 

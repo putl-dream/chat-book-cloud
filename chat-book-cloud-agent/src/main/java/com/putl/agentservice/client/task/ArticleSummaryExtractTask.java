@@ -1,9 +1,9 @@
 package com.putl.agentservice.client.task;
 
-import com.anthropic.models.messages.MessageCreateParams;
 import com.putl.agentservice.client.engine.AgentMessageAssembler;
 import com.putl.agentservice.client.engine.AiResponseParser;
-import com.putl.agentservice.client.engine.AnthropicRequestFactory;
+import com.putl.agentservice.client.engine.ArticleAiRequest;
+import com.putl.agentservice.client.engine.ArticleAiRequestFactory;
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.client.engine.PromptTemplateService;
 import com.putl.agentservice.config.AnthropicProperties;
@@ -24,7 +24,7 @@ public class ArticleSummaryExtractTask extends AbstractAnthropicArticleAiTask<Ar
      * @param aiResponseParser      AI 响应解析器
      */
     public ArticleSummaryExtractTask(AnthropicProperties properties,
-                                     AnthropicRequestFactory requestFactory,
+                                     ArticleAiRequestFactory requestFactory,
                                      PromptTemplateService promptTemplateService,
                                      AgentMessageAssembler agentMessageAssembler,
                                      AiResponseParser aiResponseParser) {
@@ -45,13 +45,13 @@ public class ArticleSummaryExtractTask extends AbstractAnthropicArticleAiTask<Ar
      * 创建摘要提取请求参数
      *
      * @param context AI 执行上下文
-     * @return MessageCreateParams
+     * @return ArticleAiRequest
      */
     @Override
-    public MessageCreateParams createParams(ArticleAiContext context) {
+    public ArticleAiRequest createRequest(ArticleAiContext context) {
         return newRequest(
-                properties.getAnthropic().getModel().getOptimize(),
-                properties.getAnthropic().getMaxTokens().getOptimize(),
+                optimizeModel(),
+                optimizeMaxTokens(),
                 0.1,
                 loadTemplate(PromptTemplateConstants.ARTICLE_SUMMARY))
                 .addUserMessage(buildSummaryPrompt(context))
