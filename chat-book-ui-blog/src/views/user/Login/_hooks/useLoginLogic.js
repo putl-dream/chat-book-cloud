@@ -72,7 +72,7 @@ export function useLoginLogic() {
     try {
       const data = await loginByEmailCode({
         email: signInForm.email,
-        verificationCode: signInForm.captcha
+        captcha: signInForm.captcha
       });
       setTokens(data);
       ElMessage.success('登录成功');

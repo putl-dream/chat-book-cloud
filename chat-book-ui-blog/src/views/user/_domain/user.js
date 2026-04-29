@@ -12,7 +12,7 @@ export function login(params) {
 export function loginByEmailCode(params) {
     return request.post('/auth/account/login/captcha', {
         email: params.email,
-        captcha: params.verificationCode
+        captcha: params.captcha
     });
 }
 
@@ -21,7 +21,7 @@ export function signUp(params) {
         email: params.email,
         username: params.username,
         password: params.password,
-        captcha: params.verificationCode
+        captcha: params.captcha
     });
 }
 
