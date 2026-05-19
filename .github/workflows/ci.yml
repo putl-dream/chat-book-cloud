@@ -128,3 +128,30 @@ jobs:
       - name: Build frontend
         working-directory: ${{ matrix.app }}
         run: npm run build
+
+  mcp-server-ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v6
+
+      - name: Set up Node.js 24
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+          cache-dependency-path: chat-book-mcp-server/package-lock.json
+
+      - name: Install MCP server dependencies
+        working-directory: chat-book-mcp-server
+        run: npm ci --prefer-offline --no-audit --fund=false
+
+      - name: Test MCP server
+        working-directory: chat-book-mcp-server
+        run: npm test
+
+      - name: Build MCP server
+        working-directory: chat-book-mcp-server
+        run: npm run build

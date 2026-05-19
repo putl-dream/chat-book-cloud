@@ -47,6 +47,9 @@ jobs:
       GOOGLE_CLIENT_ID: ${{ secrets.GOOGLE_CLIENT_ID || vars.GOOGLE_CLIENT_ID || '' }}
       GOOGLE_CLIENT_SECRET: ${{ secrets.GOOGLE_CLIENT_SECRET || vars.GOOGLE_CLIENT_SECRET || '' }}
       OAUTH2_SUCCESS_REDIRECT_URL: ${{ vars.OAUTH2_SUCCESS_REDIRECT_URL || 'https://putl.online/login' }}
+      CHAT_BOOK_MCP_TOKEN: ${{ secrets.CHAT_BOOK_MCP_TOKEN || vars.CHAT_BOOK_MCP_TOKEN || '' }}
+      CHAT_BOOK_MCP_SERVER_AUTH_TOKEN: ${{ secrets.CHAT_BOOK_MCP_SERVER_AUTH_TOKEN || vars.CHAT_BOOK_MCP_SERVER_AUTH_TOKEN || '' }}
+      CHAT_BOOK_MCP_MAX_CONTENT_LENGTH: ${{ vars.CHAT_BOOK_MCP_MAX_CONTENT_LENGTH || '100000' }}
 
     steps:
       - name: Download source archive
@@ -126,6 +129,7 @@ jobs:
               "chat-book-cloud-chat/": ("chat", "chat-book-cloud-chat"),
               "chat-book-ui-blog/": ("frontend", None),
               "chat-book-ui-admin/": ("admin-frontend", None),
+              "chat-book-mcp-server/": ("mcp-server", None),
           }
           backend_services = [
               ("gateway", "chat-book-cloud-gateway"),
@@ -139,8 +143,9 @@ jobs:
           ]
           backend_service_map = dict(backend_services)
           infrastructure_services = {"caddy"}
-          compose_service_names = set(backend_service_map) | {"frontend", "admin-frontend"} | infrastructure_services
-          deploy_order = [name for name, _ in backend_services] + ["frontend", "admin-frontend", "caddy"]
+          node_services = {"mcp-server"}
+          compose_service_names = set(backend_service_map) | {"frontend", "admin-frontend"} | node_services | infrastructure_services
+          deploy_order = [name for name, _ in backend_services] + ["mcp-server", "frontend", "admin-frontend", "caddy"]
           common_backend_prefixes = (
               "chat-book-cloud-framework/",
               "chat-book-cloud-api/",
@@ -269,6 +274,7 @@ jobs:
           full_backend = files is None
           build_frontend = files is None
           build_admin_frontend = files is None
+          build_mcp_server = files is None
           backend_modules = set()
           deploy_services = set()
 
@@ -300,6 +306,9 @@ jobs:
                           elif service == "admin-frontend":
                               build_admin_frontend = True
                               deploy_services.add("admin-frontend")
+                          elif service == "mcp-server":
+                              build_mcp_server = True
+                              deploy_services.add("mcp-server")
                           elif service in infrastructure_services:
                               deploy_services.add(service)
                           else:
@@ -325,6 +334,9 @@ jobs:
                           elif service == "admin-frontend":
                               build_admin_frontend = True
                               deploy_services.add("admin-frontend")
+                          elif service == "mcp-server":
+                              build_mcp_server = True
+                              deploy_services.add("mcp-server")
                           else:
                               backend_modules.add(module)
                               deploy_services.add(service)
@@ -336,6 +348,7 @@ jobs:
                   full_backend = True
                   build_frontend = True
                   build_admin_frontend = True
+                  build_mcp_server = True
 
           if full_backend:
               backend_modules = {module for _, module in backend_services}
@@ -346,6 +359,9 @@ jobs:
 
           if build_admin_frontend:
               deploy_services.add("admin-frontend")
+
+          if build_mcp_server:
+              deploy_services.add("mcp-server")
 
           ordered_backend_modules = ordered_unique(
               backend_modules,
@@ -360,6 +376,7 @@ jobs:
               out.write(f"backend_modules={','.join(ordered_backend_modules)}\n")
               out.write(f"build_frontend={'true' if build_frontend else 'false'}\n")
               out.write(f"build_admin_frontend={'true' if build_admin_frontend else 'false'}\n")
+              out.write(f"build_mcp_server={'true' if build_mcp_server else 'false'}\n")
               out.write(f"maven_threads={maven_threads}\n")
               out.write(f"deploy_services={','.join(ordered_deploy_services)}\n")
           PY
@@ -373,6 +390,7 @@ jobs:
           echo "backend_modules=${{ steps.changes.outputs.backend_modules }}"
           echo "build_frontend=${{ steps.changes.outputs.build_frontend }}"
           echo "build_admin_frontend=${{ steps.changes.outputs.build_admin_frontend }}"
+          echo "build_mcp_server=${{ steps.changes.outputs.build_mcp_server }}"
           echo "maven_threads=${{ steps.changes.outputs.maven_threads }}"
           echo "deploy_services=${{ steps.changes.outputs.deploy_services }}"
 
@@ -432,6 +450,16 @@ jobs:
       - name: Build admin frontend
         if: steps.changes.outputs.build_admin_frontend == 'true'
         working-directory: chat-book-ui-admin
+        run: npm run build
+
+      - name: Install MCP server dependencies
+        if: steps.changes.outputs.build_mcp_server == 'true'
+        working-directory: chat-book-mcp-server
+        run: npm ci --prefer-offline --no-audit --fund=false
+
+      - name: Build MCP server
+        if: steps.changes.outputs.build_mcp_server == 'true'
+        working-directory: chat-book-mcp-server
         run: npm run build
 
       - name: Deploy services on VPN server
