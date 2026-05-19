@@ -119,6 +119,20 @@ spring:
                 redis-rate-limiter.burstCapacity: ${GATEWAY_RATE_LIMIT_BURST_CAPACITY:40}
                 redis-rate-limiter.requestedTokens: ${GATEWAY_RATE_LIMIT_REQUESTED_TOKENS:1}
 
+        # MCP 内容入口 - /api/mcp/**
+        - id: mcp-article-service
+          uri: ${ARTICLE_SERVICE_URI:lb://chat-book-cloud-article}
+          predicates:
+            - Path=/api/mcp/**
+          filters:
+            - StripPrefix=1
+            - name: RequestRateLimiter
+              args:
+                key-resolver: "#{@userOrIpKeyResolver}"
+                redis-rate-limiter.replenishRate: ${GATEWAY_RATE_LIMIT_REPLENISH_RATE:20}
+                redis-rate-limiter.burstCapacity: ${GATEWAY_RATE_LIMIT_BURST_CAPACITY:40}
+                redis-rate-limiter.requestedTokens: ${GATEWAY_RATE_LIMIT_REQUESTED_TOKENS:1}
+
         # 互动服务 - /api/interaction/**
         - id: interaction-service
           uri: ${INTERACTION_SERVICE_URI:lb://chat-book-cloud-interaction}
