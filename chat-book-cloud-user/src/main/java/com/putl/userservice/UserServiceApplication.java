@@ -8,6 +8,13 @@ import org.springframework.cloud.openfeign.EnableFeignClients;
 import org.springframework.context.annotation.Import;
 import org.springframework.scheduling.annotation.EnableAsync;
 
+/**
+ * 用户服务应用启动类
+ * <p>负责初始化并启动用户微服务，提供用户管理、个人信息、权限控制等功能</p>
+ *
+ * @author ChatBook Cloud Team
+ * @since 1.0.0
+ */
 @EnableAsync
 @SpringBootApplication(scanBasePackages = "com.putl")
 @ServletComponentScan
@@ -15,6 +22,11 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @Import(SecurityMvcConfig.class)
 public class UserServiceApplication {
 
+    /**
+     * 应用程序入口方法
+     *
+     * @param args 命令行参数
+     */
     public static void main(String[] args) {
         SpringApplication.run(UserServiceApplication.class, args);
     }
