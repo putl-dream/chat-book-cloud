@@ -1,9 +1,9 @@
 package com.putl.agentservice.client.task;
 
-import com.anthropic.models.messages.MessageCreateParams;
 import com.putl.agentservice.client.engine.AgentMessageAssembler;
 import com.putl.agentservice.client.engine.AiResponseParser;
-import com.putl.agentservice.client.engine.AnthropicRequestFactory;
+import com.putl.agentservice.client.engine.ArticleAiRequest;
+import com.putl.agentservice.client.engine.ArticleAiRequestFactory;
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.client.engine.PromptTemplateService;
 import com.putl.agentservice.config.AnthropicProperties;
@@ -24,7 +24,7 @@ public class ArticleDraftGenerateTask extends AbstractAnthropicArticleAiTask<Art
      * @param aiResponseParser      AI 响应解析器
      */
     public ArticleDraftGenerateTask(AnthropicProperties properties,
-                                    AnthropicRequestFactory requestFactory,
+                                    ArticleAiRequestFactory requestFactory,
                                     PromptTemplateService promptTemplateService,
                                     AgentMessageAssembler agentMessageAssembler,
                                     AiResponseParser aiResponseParser) {
@@ -55,13 +55,13 @@ public class ArticleDraftGenerateTask extends AbstractAnthropicArticleAiTask<Art
      * 创建草稿生成请求参数
      *
      * @param context AI 执行上下文
-     * @return MessageCreateParams
+     * @return ArticleAiRequest
      */
     @Override
-    public MessageCreateParams createParams(ArticleAiContext context) {
+    public ArticleAiRequest createRequest(ArticleAiContext context) {
         return newRequest(
-                properties.getAnthropic().getModel().getGenerate(),
-                properties.getAnthropic().getMaxTokens().getGenerate(),
+                generateModel(),
+                generateMaxTokens(),
                 0.2,
                 loadTemplate(PromptTemplateConstants.ARTICLE_GENERATE))
                 .addUserMessage(buildGeneratePrompt(context))

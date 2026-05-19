@@ -199,7 +199,29 @@ services:
     networks:
       - chat-book-net
 
-  # --- 10. 前端服务 ---
+  # --- 10. MCP 服务 ---
+  mcp-server:
+    image: chat-book-mcp-server:local
+    container_name: mcp-server
+    restart: always
+    build: ./chat-book-mcp-server
+    ports:
+      - "${MCP_SERVER_PORT:-3001}:3001"
+    environment:
+      CHAT_BOOK_MCP_TRANSPORT: http
+      CHAT_BOOK_MCP_HTTP_HOST: 0.0.0.0
+      CHAT_BOOK_MCP_HTTP_PORT: 3001
+      CHAT_BOOK_API_BASE_URL: http://gateway:8080/api
+      CHAT_BOOK_MCP_TOKEN: ${CHAT_BOOK_MCP_TOKEN:?CHAT_BOOK_MCP_TOKEN is required for MCP draft creation}
+      CHAT_BOOK_MCP_SERVER_AUTH_TOKEN: ${CHAT_BOOK_MCP_SERVER_AUTH_TOKEN:?CHAT_BOOK_MCP_SERVER_AUTH_TOKEN is required for remote MCP access}
+      CHAT_BOOK_MCP_MAX_CONTENT_LENGTH: ${CHAT_BOOK_MCP_MAX_CONTENT_LENGTH:-100000}
+    depends_on:
+      - gateway
+      - article
+    networks:
+      - chat-book-net
+
+  # --- 11. 前端服务 ---
   frontend:
     image: chat-book-ui-blog:local
     container_name: frontend
@@ -231,7 +253,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 11. 互动服务 ---
+  # --- 12. 互动服务 ---
   interaction:
     image: chat-book-cloud-interaction:local
     container_name: interaction
@@ -259,7 +281,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 12. 社交服务 ---
+  # --- 13. 社交服务 ---
   social:
     image: chat-book-cloud-social:local
     container_name: social
@@ -274,7 +296,7 @@ services:
     networks:
       - chat-book-net
 
-  # --- 13. 聊天服务 ---
+  # --- 14. 聊天服务 ---
   chat:
     image: chat-book-cloud-chat:local
     container_name: chat

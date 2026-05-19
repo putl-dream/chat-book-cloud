@@ -168,7 +168,7 @@ create table article_draft_version
     id          int auto_increment primary key,
     draft_id    int                                    not null comment '草稿ID',
     version_no  int                                    not null comment '版本号',
-    source_type varchar(16)                            not null comment 'CREATE/OPTIMIZE/USER_EDIT',
+    source_type varchar(16)                            not null comment 'CREATE/OPTIMIZE/USER_EDIT/MCP_CREATE',
     instruction text                                   null comment '生成或优化指令',
     title       varchar(255) default ''                not null comment '标题',
     summary     text                                   null comment '摘要',
@@ -179,3 +179,19 @@ create table article_draft_version
     key idx_article_draft_version_draft_id (draft_id)
 )
     comment '文章草稿版本表' row_format = DYNAMIC;
+
+create table mcp_token
+(
+    id             int auto_increment primary key,
+    user_id        int                                    not null comment '绑定用户ID',
+    name           varchar(64)  default ''                not null comment 'token名称',
+    token_hash     char(64)                               not null comment 'MCP token SHA-256 hash',
+    scopes         varchar(255) default ''                not null comment '逗号分隔的权限，如 article:draft:create',
+    status         varchar(16)  default 'ACTIVE'          not null comment 'ACTIVE/DISABLED',
+    last_used_time datetime                               null comment '最后使用时间',
+    create_time    datetime     default CURRENT_TIMESTAMP not null comment '创建时间',
+    update_time    datetime     default CURRENT_TIMESTAMP not null on update CURRENT_TIMESTAMP comment '更新时间',
+    unique key uk_mcp_token_hash (token_hash),
+    key idx_mcp_token_user_id (user_id)
+)
+    comment 'MCP访问令牌表' row_format = DYNAMIC;

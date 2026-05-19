@@ -1,9 +1,9 @@
 package com.putl.agentservice.client.task;
 
-import com.anthropic.models.messages.MessageCreateParams;
 import com.putl.agentservice.client.engine.AgentMessageAssembler;
 import com.putl.agentservice.client.engine.AiResponseParser;
-import com.putl.agentservice.client.engine.AnthropicRequestFactory;
+import com.putl.agentservice.client.engine.ArticleAiRequest;
+import com.putl.agentservice.client.engine.ArticleAiRequestFactory;
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.config.AnthropicProperties;
 import com.putl.agentservice.constants.PromptTemplateConstants;
@@ -25,7 +25,7 @@ public class ArticleChatTask extends AbstractAnthropicArticleAiTask<AgentAssista
      * @param aiResponseParser      AI 响应解析器
      */
     public ArticleChatTask(AnthropicProperties properties,
-                           AnthropicRequestFactory requestFactory,
+                           ArticleAiRequestFactory requestFactory,
                            com.putl.agentservice.client.engine.PromptTemplateService promptTemplateService,
                            AgentMessageAssembler agentMessageAssembler,
                            AiResponseParser aiResponseParser) {
@@ -51,18 +51,18 @@ public class ArticleChatTask extends AbstractAnthropicArticleAiTask<AgentAssista
      * 创建对话请求参数
      *
      * @param context AI 执行上下文
-     * @return MessageCreateParams
+     * @return ArticleAiRequest
      */
     @Override
-    public MessageCreateParams createParams(ArticleAiContext context) {
-        MessageCreateParams.Builder builder = newRequest(
-                properties.getAnthropic().getModel().getChat(),
-                properties.getAnthropic().getMaxTokens().getChat(),
+    public ArticleAiRequest createRequest(ArticleAiContext context) {
+        ArticleAiRequest.Builder builder = newRequest(
+                chatModel(),
+                chatMaxTokens(),
                 0.2,
                 renderTemplate(PromptTemplateConstants.ARTICLE_DISCUSS, Map.of(
                         "notebook_json", prettyJson(normalizeNotebook(context.getNotebookSummary()))
                 )));
-        agentMessageAssembler.toAnthropicMessages(context.getMessages()).forEach(builder::addMessage);
+        agentMessageAssembler.toArticleMessages(context.getMessages()).forEach(builder::addMessage);
         return builder.build();
     }
 

@@ -137,6 +137,27 @@ services:
     networks:
       - chat-book-net
 
+  mcp-server:
+    image: chat-book-mcp-server:dev
+    container_name: mcp-server
+    restart: always
+    build: ./chat-book-mcp-server
+    expose:
+      - "3001"
+    environment:
+      CHAT_BOOK_MCP_TRANSPORT: http
+      CHAT_BOOK_MCP_HTTP_HOST: 0.0.0.0
+      CHAT_BOOK_MCP_HTTP_PORT: 3001
+      CHAT_BOOK_API_BASE_URL: http://gateway:8080/api
+      CHAT_BOOK_MCP_TOKEN: ${CHAT_BOOK_MCP_TOKEN:?CHAT_BOOK_MCP_TOKEN is required for MCP draft creation}
+      CHAT_BOOK_MCP_SERVER_AUTH_TOKEN: ${CHAT_BOOK_MCP_SERVER_AUTH_TOKEN:?CHAT_BOOK_MCP_SERVER_AUTH_TOKEN is required for remote MCP access}
+      CHAT_BOOK_MCP_MAX_CONTENT_LENGTH: ${CHAT_BOOK_MCP_MAX_CONTENT_LENGTH:-100000}
+    depends_on:
+      - gateway
+      - article
+    networks:
+      - chat-book-net
+
   interaction:
     image: chat-book-cloud-interaction:dev
     container_name: interaction
@@ -251,6 +272,7 @@ services:
     depends_on:
       - frontend
       - admin-frontend
+      - mcp-server
     networks:
       - chat-book-net
 

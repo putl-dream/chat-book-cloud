@@ -1,9 +1,9 @@
 package com.putl.agentservice.client.task;
 
-import com.anthropic.models.messages.MessageCreateParams;
 import com.putl.agentservice.client.engine.AgentMessageAssembler;
 import com.putl.agentservice.client.engine.AiResponseParser;
-import com.putl.agentservice.client.engine.AnthropicRequestFactory;
+import com.putl.agentservice.client.engine.ArticleAiRequest;
+import com.putl.agentservice.client.engine.ArticleAiRequestFactory;
 import com.putl.agentservice.client.engine.ArticleAiTask;
 import com.putl.agentservice.client.engine.PromptTemplateService;
 import com.putl.agentservice.config.AnthropicProperties;
@@ -14,7 +14,7 @@ import java.util.Map;
 abstract class AbstractAnthropicArticleAiTask<T> implements ArticleAiTask<T> {
 
     protected final AnthropicProperties properties;
-    protected final AnthropicRequestFactory requestFactory;
+    protected final ArticleAiRequestFactory requestFactory;
     protected final PromptTemplateService promptTemplateService;
     protected final AgentMessageAssembler agentMessageAssembler;
     protected final AiResponseParser aiResponseParser;
@@ -29,7 +29,7 @@ abstract class AbstractAnthropicArticleAiTask<T> implements ArticleAiTask<T> {
      * @param aiResponseParser      AI 响应解析器
      */
     protected AbstractAnthropicArticleAiTask(AnthropicProperties properties,
-                                             AnthropicRequestFactory requestFactory,
+                                             ArticleAiRequestFactory requestFactory,
                                              PromptTemplateService promptTemplateService,
                                              AgentMessageAssembler agentMessageAssembler,
                                              AiResponseParser aiResponseParser) {
@@ -47,12 +47,12 @@ abstract class AbstractAnthropicArticleAiTask<T> implements ArticleAiTask<T> {
      * @param maxTokens    最大 token 数
      * @param temperature  温度参数
      * @param systemPrompt 系统提示词
-     * @return MessageCreateParams 构建器
+     * @return ArticleAiRequest 构建器
      */
-    protected MessageCreateParams.Builder newRequest(String model,
-                                                     Integer maxTokens,
-                                                     double temperature,
-                                                     String systemPrompt) {
+    protected ArticleAiRequest.Builder newRequest(String model,
+                                                  Integer maxTokens,
+                                                  double temperature,
+                                                  String systemPrompt) {
         return requestFactory.newRequest(model, maxTokens, temperature, systemPrompt);
     }
 
@@ -95,6 +95,38 @@ abstract class AbstractAnthropicArticleAiTask<T> implements ArticleAiTask<T> {
      */
     protected NotebookSummary normalizeNotebook(NotebookSummary notebookSummary) {
         return promptTemplateService.normalizeNotebook(notebookSummary);
+    }
+
+    protected String chatModel() {
+        return properties.activeModel().getChat();
+    }
+
+    protected String generateModel() {
+        return properties.activeModel().getGenerate();
+    }
+
+    protected String optimizeModel() {
+        return properties.activeModel().getOptimize();
+    }
+
+    protected String notebookModel() {
+        return properties.activeModel().getNotebook();
+    }
+
+    protected Integer chatMaxTokens() {
+        return properties.activeMaxTokens().getChat();
+    }
+
+    protected Integer generateMaxTokens() {
+        return properties.activeMaxTokens().getGenerate();
+    }
+
+    protected Integer optimizeMaxTokens() {
+        return properties.activeMaxTokens().getOptimize();
+    }
+
+    protected Integer notebookMaxTokens() {
+        return properties.activeMaxTokens().getNotebook();
     }
 
     /**

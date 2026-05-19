@@ -23,14 +23,16 @@ import java.util.stream.Collectors;
 public class AnthropicExecutor {
 
     private final AnthropicClient anthropicClient;
+    private final AnthropicRequestFactory requestFactory;
 
     /**
      * 构造 Anthropic 执行器
      *
      * @param anthropicClient Anthropic SDK 客户端
      */
-    public AnthropicExecutor(AnthropicClient anthropicClient) {
+    public AnthropicExecutor(AnthropicClient anthropicClient, AnthropicRequestFactory requestFactory) {
         this.anthropicClient = anthropicClient;
+        this.requestFactory = requestFactory;
     }
 
     /**
@@ -39,7 +41,8 @@ public class AnthropicExecutor {
      * @param params 请求参数
      * @return AI 调用结果，包含响应文本、token 消耗和延迟
      */
-    public AiInvocationResult<String> execute(MessageCreateParams params) {
+    public AiInvocationResult<String> execute(ArticleAiRequest request) {
+        MessageCreateParams params = requestFactory.toParams(request);
         Instant startedAt = Instant.now();
         Message response = anthropicClient.messages().create(params);
         int latencyMs = toInt(Duration.between(startedAt, Instant.now()).toMillis());
@@ -58,13 +61,14 @@ public class AnthropicExecutor {
      * @param chunkConsumer  内容块回调，用于处理流式响应
      * @return AI 调用结果
      */
-    public AiInvocationResult<String> executeStream(MessageCreateParams params, Consumer<String> chunkConsumer) {
-        return executeStream(params, chunkConsumer, StreamingControl.noop());
+    public AiInvocationResult<String> executeStream(ArticleAiRequest request, Consumer<String> chunkConsumer) {
+        return executeStream(request, chunkConsumer, StreamingControl.noop());
     }
 
-    public AiInvocationResult<String> executeStream(MessageCreateParams params,
+    public AiInvocationResult<String> executeStream(ArticleAiRequest request,
                                                     Consumer<String> chunkConsumer,
                                                     StreamingControl streamingControl) {
+        MessageCreateParams params = requestFactory.toParams(request);
         Instant startedAt = Instant.now();
         StringBuilder content = new StringBuilder();
         AtomicInteger tokenInput = new AtomicInteger(0);

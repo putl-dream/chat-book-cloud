@@ -33,6 +33,17 @@ public class AgentMessageAssembler {
                 .collect(Collectors.toList());
     }
 
+    public List<ArticleAiRequest.Message> toArticleMessages(List<AgentMessageDO> messages) {
+        if (messages == null || messages.isEmpty()) {
+            return List.of();
+        }
+        return messages.stream()
+                .filter(Objects::nonNull)
+                .filter(message -> StringUtils.hasText(message.getContent()))
+                .map(message -> newArticleMessage(toArticleRole(message.getRole()), normalizeMessageContent(message)))
+                .collect(Collectors.toList());
+    }
+
     /**
      * 将消息列表转换为可读会话记录格式
      *
@@ -61,6 +72,17 @@ public class AgentMessageAssembler {
             return MessageParam.Role.ASSISTANT;
         }
         return MessageParam.Role.USER;
+    }
+
+    private ArticleAiRequest.Role toArticleRole(AgentMessageRole role) {
+        if (role == AgentMessageRole.ASSISTANT) {
+            return ArticleAiRequest.Role.ASSISTANT;
+        }
+        return ArticleAiRequest.Role.USER;
+    }
+
+    private ArticleAiRequest.Message newArticleMessage(ArticleAiRequest.Role role, String content) {
+        return ArticleAiRequest.Message.of(role, content);
     }
 
     /**

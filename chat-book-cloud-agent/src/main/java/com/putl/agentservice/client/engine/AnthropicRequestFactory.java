@@ -1,6 +1,7 @@
 package com.putl.agentservice.client.engine;
 
 import com.anthropic.models.messages.MessageCreateParams;
+import com.anthropic.models.messages.MessageParam;
 import com.putl.agentservice.config.AnthropicProperties;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
@@ -19,25 +20,31 @@ public class AnthropicRequestFactory {
         this.properties = properties;
     }
 
-    /**
-     * 创建新的请求参数构建器
-     *
-     * @param model        模型名称
-     * @param maxTokens    最大 token 数
-     * @param temperature  温度参数
-     * @param systemPrompt 系统提示词
-     * @return MessageCreateParams 构建器
-     */
-    public MessageCreateParams.Builder newRequest(String model,
-                                                  Integer maxTokens,
-                                                  double temperature,
-                                                  String systemPrompt) {
+    public MessageCreateParams toParams(ArticleAiRequest request) {
         validateApiKeyConfigured();
-        return MessageCreateParams.builder()
-                .model(model)
-                .maxTokens(maxTokens.longValue())
-                .temperature(temperature)
-                .system(systemPrompt);
+        MessageCreateParams.Builder builder = MessageCreateParams.builder()
+                .model(request.getModel())
+                .maxTokens(request.getMaxOutputTokens().longValue())
+                .temperature(request.getTemperature())
+                .system(request.getSystemPrompt());
+        request.getMessages().stream()
+                .map(this::toAnthropicMessage)
+                .forEach(builder::addMessage);
+        return builder.build();
+    }
+
+    private MessageParam toAnthropicMessage(ArticleAiRequest.Message message) {
+        return MessageParam.builder()
+                .role(toAnthropicRole(message.getRole()))
+                .content(message.getContent())
+                .build();
+    }
+
+    private MessageParam.Role toAnthropicRole(ArticleAiRequest.Role role) {
+        if (role == ArticleAiRequest.Role.ASSISTANT) {
+            return MessageParam.Role.ASSISTANT;
+        }
+        return MessageParam.Role.USER;
     }
 
     /**

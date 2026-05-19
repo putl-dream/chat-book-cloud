@@ -1,0 +1,48 @@
+Chat Book MCP Server
+
+Purpose:
+  Expose a minimal MCP tool that lets Codex create a Chat Book article draft.
+
+Required environment:
+  CHAT_BOOK_API_BASE_URL=http://localhost:8080/api
+  CHAT_BOOK_MCP_TOKEN=cbmcp_xxx
+
+Install and build:
+  npm install
+  npm run build
+
+Run over stdio:
+  npm start
+
+Run over Streamable HTTP:
+  CHAT_BOOK_MCP_TRANSPORT=http
+  CHAT_BOOK_MCP_HTTP_PORT=3001
+  CHAT_BOOK_MCP_SERVER_AUTH_TOKEN=remote_mcp_auth_token
+  npm start
+
+Remote MCP endpoint after docker compose + Caddy deployment:
+  https://putl.online/mcp
+
+Remote MCP clients must send:
+  Authorization: Bearer remote_mcp_auth_token
+
+Codex MCP config example:
+  {
+    "mcpServers": {
+      "chat-book": {
+        "command": "node",
+        "args": ["/absolute/path/to/chat-book-mcp-server/dist/server.js"],
+        "env": {
+          "CHAT_BOOK_API_BASE_URL": "http://localhost:8080/api",
+          "CHAT_BOOK_MCP_TOKEN": "cbmcp_xxx"
+        }
+      }
+    }
+  }
+
+Create an MCP token hash for database seeding:
+  node -e "console.log(require('crypto').createHash('sha256').update(process.argv[1]).digest('hex'))" cbmcp_xxx
+
+Seed example:
+  insert into mcp_token(user_id, name, token_hash, scopes, status)
+  values (1, 'Codex local', '<sha256-token-hash>', 'article:draft:create', 'ACTIVE');

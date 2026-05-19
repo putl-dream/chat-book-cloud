@@ -1,9 +1,9 @@
 package com.putl.agentservice.client.task;
 
-import com.anthropic.models.messages.MessageCreateParams;
 import com.putl.agentservice.client.engine.AgentMessageAssembler;
 import com.putl.agentservice.client.engine.AiResponseParser;
-import com.putl.agentservice.client.engine.AnthropicRequestFactory;
+import com.putl.agentservice.client.engine.ArticleAiRequest;
+import com.putl.agentservice.client.engine.ArticleAiRequestFactory;
 import com.putl.agentservice.client.engine.ArticleAiContext;
 import com.putl.agentservice.config.AnthropicProperties;
 import com.putl.agentservice.constants.PromptTemplateConstants;
@@ -16,7 +16,7 @@ import java.util.Map;
 public class ArticleLearnTask extends AbstractAnthropicArticleAiTask<AgentAssistantMessage> {
 
     public ArticleLearnTask(AnthropicProperties properties,
-                            AnthropicRequestFactory requestFactory,
+                            ArticleAiRequestFactory requestFactory,
                             com.putl.agentservice.client.engine.PromptTemplateService promptTemplateService,
                             AgentMessageAssembler agentMessageAssembler,
                             AiResponseParser aiResponseParser) {
@@ -34,15 +34,15 @@ public class ArticleLearnTask extends AbstractAnthropicArticleAiTask<AgentAssist
     }
 
     @Override
-    public MessageCreateParams createParams(ArticleAiContext context) {
-        MessageCreateParams.Builder builder = newRequest(
-                properties.getAnthropic().getModel().getChat(),
-                properties.getAnthropic().getMaxTokens().getChat(),
+    public ArticleAiRequest createRequest(ArticleAiContext context) {
+        ArticleAiRequest.Builder builder = newRequest(
+                chatModel(),
+                chatMaxTokens(),
                 0.2,
                 renderTemplate(PromptTemplateConstants.ARTICLE_LEARN, Map.of(
                         "notebook_json", prettyJson(normalizeNotebook(context.getNotebookSummary()))
                 )));
-        agentMessageAssembler.toAnthropicMessages(context.getMessages()).forEach(builder::addMessage);
+        agentMessageAssembler.toArticleMessages(context.getMessages()).forEach(builder::addMessage);
         return builder.build();
     }
 

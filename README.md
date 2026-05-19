@@ -499,6 +499,7 @@ npm run build
   - 创建测试数据库
   - 执行 `mvn test`
   - 分别构建 `chat-book-ui-blog` 与 `chat-book-ui-admin`
+  - 测试并构建 `chat-book-mcp-server`
 - `deploy-dev.yml`
   - `master` 分支推送或手动触发
   - 自动分析改动范围，仅构建受影响服务
@@ -518,6 +519,13 @@ npm run build
 - Prompt 模板位于 `chat-book-cloud-agent/src/main/resources/prompts/`
 - 流式聊天接口使用 `text/event-stream`
 - 默认 WebSocket 路径为 `/agent/ws`
+
+### MCP 服务说明
+
+- MCP 服务目录为 `chat-book-mcp-server`
+- 本地 stdio 模式默认读取 `CHAT_BOOK_API_BASE_URL` 与 `CHAT_BOOK_MCP_TOKEN`
+- Docker Compose 使用 HTTP 模式启动，Caddy 将 `https://putl.online/mcp` 转发到 `mcp-server:3001`
+- Dev 部署需要配置 `CHAT_BOOK_MCP_TOKEN` 和 `CHAT_BOOK_MCP_SERVER_AUTH_TOKEN`
 
 ### 管理端说明
 

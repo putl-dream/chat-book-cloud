@@ -11,6 +11,20 @@ public class AnthropicProperties {
 
     private Anthropic anthropic = new Anthropic();
 
+    private Codex codex = new Codex();
+
+    public boolean isCodexProvider() {
+        return "codex".equalsIgnoreCase(provider) || "openai".equalsIgnoreCase(provider);
+    }
+
+    public Model activeModel() {
+        return isCodexProvider() ? codex.getModel() : anthropic.getModel();
+    }
+
+    public MaxTokens activeMaxTokens() {
+        return isCodexProvider() ? codex.getMaxTokens() : anthropic.getMaxTokens();
+    }
+
     @Data
     public static class Anthropic {
         private String apiKey;
@@ -21,11 +35,33 @@ public class AnthropicProperties {
     }
 
     @Data
+    public static class Codex {
+        private String apiKey;
+        private String baseUrl = "https://api.openai.com";
+        private Model model = new Model("gpt-5.2");
+        private MaxTokens maxTokens = new MaxTokens();
+        private Integer timeoutMs = 300000;
+        private String reasoningEffort;
+        private Boolean store = false;
+    }
+
+    @Data
     public static class Model {
-        private String chat = "claude-sonnet-4-5";
-        private String generate = "claude-sonnet-4-5";
-        private String optimize = "claude-sonnet-4-5";
-        private String notebook = "claude-sonnet-4-5";
+        private String chat;
+        private String generate;
+        private String optimize;
+        private String notebook;
+
+        public Model() {
+            this("claude-sonnet-4-5");
+        }
+
+        public Model(String defaultModel) {
+            this.chat = defaultModel;
+            this.generate = defaultModel;
+            this.optimize = defaultModel;
+            this.notebook = defaultModel;
+        }
     }
 
     @Data
