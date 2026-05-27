@@ -429,8 +429,9 @@ public class AgentConversationServiceImpl implements AgentConversationService {
     private Map<String, Object> donePayload(AgentChatRequest request, ChatExecutionResult result) {
         Map<String, Object> payload = new LinkedHashMap<>();
         payload.put("sessionId", request.getSessionId());
-        payload.put("finalMessage", toMessageVO(result.assistantMessage()));
-        payload.put("previewText", result.streamSummary().previewText());
+        if (requiresCompletionMessagePayload(result.assistantMessage())) {
+            payload.put("finalMessage", toMessageVO(result.assistantMessage()));
+        }
         payload.put("currentScene", result.sceneDecision().getCurrentScene());
         payload.put("nextScene", result.sceneDecision().getNextScene());
         payload.put("switchReason", defaultText(result.sceneDecision().getSwitchReason()));
@@ -439,6 +440,14 @@ public class AgentConversationServiceImpl implements AgentConversationService {
         payload.put("usage", usagePayload(result.aiReply()));
         payload.put("telemetry", telemetryPayload(result.streamSummary()));
         return payload;
+    }
+
+    private boolean requiresCompletionMessagePayload(AgentMessageDO assistantMessage) {
+        if (assistantMessage == null) {
+            return false;
+        }
+        String messageType = defaultText(assistantMessage.getMessageType()).trim().toLowerCase(Locale.ROOT);
+        return !AgentMessageTypeConstants.TEXT.equals(messageType);
     }
 
     private Map<String, Object> errorPayload(AgentChatRequest request, Exception ex) {
