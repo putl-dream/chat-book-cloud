@@ -186,3 +186,35 @@
     margin-bottom: 24px;
   }
 }
+
+@media (max-width: 768px) {
+  .search-page {
+    padding-top: 20px;
+  }
+
+  .search-page .search-container {
+    padding: 0 16px;
+  }
+
+  .search-page .search-header-area {
+    margin-bottom: 16px;
+  }
+
+  .search-page .search-input-group {
+    --search-shell-height: 48px;
+    --search-shell-button-width: 64px;
+  }
+
+  .search-page .search-input-group .c-search-shell__input {
+    padding: 0 20px;
+    font-size: 1rem;
+  }
+
+  .search-page .search-main-list {
+    --surface-padding: 16px;
+  }
+
+  .search-page .post-item {
+    margin-bottom: 16px;
+  }
+}

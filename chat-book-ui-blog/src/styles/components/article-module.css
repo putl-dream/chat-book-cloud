@@ -510,7 +510,7 @@
 
 .article-toc .toc-title {
   font-weight: 600;
-  color: #374151;
+  color: var(--text-color-regular);
   font-size: 15px;
 }
 
@@ -544,7 +544,7 @@
 
 .article-toc .toc-item {
   font-size: 13px;
-  color: #6b7280;
+  color: var(--text-color-secondary);
   cursor: pointer;
   padding: 8px 12px 8px 8px;
   border-radius: var(--border-radius-base, 8px);
@@ -561,20 +561,20 @@
 
 .article-toc .toc-item:hover {
   background: rgba(0, 0, 0, 0.03);
-  color: #374151;
+  color: var(--text-color-regular);
 }
 
 .article-toc .toc-item.active {
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.05);
+  color: var(--color-primary);
+  background: rgba(var(--color-primary-rgb, 79, 70, 229), 0.05);
   font-weight: 500;
-  border-left: 3px solid #3b82f6;
+  border-left: 3px solid var(--color-primary);
 }
 
 .article-toc .level-1 {
   padding-left: 12px;
   font-weight: 600;
-  color: #111827;
+  color: var(--text-color-primary);
 }
 
 .article-toc .level-2 {
@@ -956,14 +956,14 @@
 .post-card .post-title {
   font-size: 18px;
   font-weight: 600;
-  color: #1f2937;
+  color: var(--text-color-primary);
   margin: 0;
   line-height: 1.4;
   transition: color 0.2s;
 }
 
 .post-card .post-title:hover {
-  color: #3b82f6;
+  color: var(--color-primary);
 }
 
 .post-card .post-summary {
@@ -973,7 +973,7 @@
 
 .post-card .post-summary .el-text {
   font-size: 14px;
-  color: #6b7280;
+  color: var(--text-color-secondary);
   line-height: 1.6;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -992,6 +992,11 @@
   align-items: center;
 }
 
+.post-card .userInfo-avatar {
+  margin-right: 8px;
+  flex-shrink: 0;
+}
+
 .post-card .meta-details {
   display: flex;
   align-items: center;
@@ -1002,12 +1007,12 @@
   display: flex;
   align-items: center;
   font-size: 13px;
-  color: #9ca3af;
+  color: var(--text-color-placeholder);
   gap: 4px;
 }
 
 .post-card .userInfo b {
-  color: #4b5563;
+  color: var(--text-color-regular);
   font-weight: 500;
 }
 

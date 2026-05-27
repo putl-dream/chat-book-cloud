@@ -3,7 +3,7 @@
         <div class="chat-container glass-effect">
             <el-row class="chat-layout">
                 <!-- 好友列表 -->
-                <el-col :span="7" class="friend-list-sidebar">
+                <el-col :span="isMobile ? 24 : 7" class="friend-list-sidebar" v-if="!isMobile || !selectedFriend">
                     <div class="sidebar-header">
                         <h2 class="sidebar-title">
                             <span class="u-text-gradient">消息列表</span>
@@ -22,10 +22,12 @@
                 </el-col>
 
                 <!-- 对话框 -->
-                <el-col :span="17" class="chat-main-area">
+                <el-col :span="isMobile ? 24 : 17" class="chat-main-area" v-if="!isMobile || selectedFriend">
                     <template v-if="selectedFriend">
                         <div class="chat-header glass-header">
                             <div class="user-meta">
+                                <!-- Mobile Back Button -->
+                                <el-button v-if="isMobile" icon="ArrowLeft" circle plain class="action-btn back-btn" @click="selectedFriend = null" style="margin-right: 12px;"></el-button>
                                 <div class="avatar-wrapper">
                                     <el-avatar :size="42" :src="selectedFriend.photo" class="user-avatar" />
                                     <span class="status-dot"></span>
@@ -110,11 +112,20 @@ const {
   destroyChat
 } = useChatLogic();
 
+const isMobile = ref(false);
+
+const checkViewport = () => {
+    isMobile.value = window.innerWidth <= 768;
+};
+
 onMounted(() => {
-    initChat()
+    initChat();
+    checkViewport();
+    window.addEventListener('resize', checkViewport);
 })
 
 onUnmounted(() => {
-    destroyChat()
+    destroyChat();
+    window.removeEventListener('resize', checkViewport);
 })
 </script>

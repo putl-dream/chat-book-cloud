@@ -508,18 +508,18 @@ watch(aiGenerating, async (isGenerating) => {
 
 .stop-generation-btn {
     border-radius: 999px;
-    border: 1px solid rgba(19, 39, 63, 0.14);
-    background: #fff;
-    color: #13273f;
+    border: 1px solid var(--border-color-light);
+    background: var(--bg-color-white);
+    color: var(--text-color-primary);
 }
 
 .summary-area {
     margin-bottom: 22px;
     padding: 16px 18px;
     border-radius: 20px;
-    background: rgba(255, 255, 255, 0.88);
-    border: 1px solid rgba(22, 50, 79, 0.08);
-    box-shadow: 0 10px 24px rgba(19, 39, 63, 0.04);
+    background: var(--bg-color-glass);
+    border: 1px solid var(--border-color-light);
+    box-shadow: var(--box-shadow-base);
 }
 
 .summary-area.is-generating {
