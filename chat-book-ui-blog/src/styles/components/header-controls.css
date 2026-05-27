@@ -24,3 +24,43 @@
     background: var(--app-dropdown-bg);
     box-shadow: var(--box-shadow-hover);
 }
+
+/* Mobile Drawer Unified Styling */
+.c-drawer-user-profile {
+    padding: 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid var(--border-color-light);
+}
+
+.c-drawer-user-info {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.c-drawer-username {
+    font-weight: 600;
+    font-size: 15px;
+    color: var(--text-color-primary);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.c-drawer-logout {
+    font-size: 12px;
+    color: var(--color-danger);
+    cursor: pointer;
+    transition: var(--transition-fast);
+}
+
+.c-drawer-logout:hover {
+    opacity: 0.8;
+}
+
+.c-drawer-welcome {
+    font-size: 12px;
+    color: var(--text-color-secondary);
+}

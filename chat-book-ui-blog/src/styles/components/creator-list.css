@@ -4,11 +4,11 @@
     flex: 1;
     flex-direction: column;
     min-height: 0;
-    background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%);
+    background: var(--bg-color-base);
 }
 
 .c-creator-page--rounded {
-    border-radius: 16px;
+    border-radius: var(--border-radius-xl, 16px);
 }
 
 .c-creator-scroll {
@@ -24,8 +24,8 @@
     overflow-y: auto;
     --scrollbar-size: 6px;
     --scrollbar-radius: 3px;
-    --scrollbar-thumb: rgba(156, 163, 175, 0.5);
-    --scrollbar-thumb-hover: rgba(156, 163, 175, 0.8);
+    --scrollbar-thumb: rgba(156, 163, 175, 0.3);
+    --scrollbar-thumb-hover: rgba(156, 163, 175, 0.5);
 }
 
 .c-creator-list {
@@ -39,18 +39,20 @@
     align-items: center;
     justify-content: space-between;
     padding: 24px;
-    border: 1px solid rgba(255, 255, 255, 0.5);
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.7);
-    backdrop-filter: blur(10px);
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
-    transition: all 0.3s ease;
+    border: 1px solid var(--border-color-glass);
+    border-radius: var(--border-radius-xl, 16px);
+    background: var(--bg-color-glass);
+    backdrop-filter: blur(var(--blur-base, 12px));
+    -webkit-backdrop-filter: blur(var(--blur-base, 12px));
+    box-shadow: var(--box-shadow-base);
+    transition: var(--transition-base);
 }
 
 .c-creator-card:hover {
     transform: translateY(-2px);
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
+    background: var(--bg-color-white);
+    box-shadow: var(--box-shadow-hover);
+    border-color: var(--color-primary-light);
 }
 
 .c-creator-card__main {
@@ -61,7 +63,7 @@
 
 .c-creator-card__title {
     margin: 0 0 8px;
-    color: #1f2937;
+    color: var(--text-color-primary);
     font-size: 18px;
     font-weight: 600;
     white-space: nowrap;
@@ -76,7 +78,7 @@
 
 .c-creator-card__summary {
     margin: 0 0 12px;
-    color: #6b7280;
+    color: var(--text-color-regular);
     font-size: 14px;
     line-height: 1.6;
     display: -webkit-box;
@@ -88,14 +90,15 @@
 .c-creator-card__meta {
     display: flex;
     align-items: center;
-    color: #9ca3af;
+    color: var(--text-color-placeholder);
     font-size: 12px;
 }
 
 .c-creator-card__date {
     padding: 2px 8px;
-    border-radius: 4px;
-    background: rgba(0, 0, 0, 0.05);
+    border-radius: var(--border-radius-base, 8px);
+    background: var(--bg-color-hover);
+    color: var(--text-color-secondary);
 }
 
 .c-creator-card__actions {
@@ -114,8 +117,8 @@
     display: flex;
     gap: 24px;
     padding: 0 24px;
-    border-left: 1px solid rgba(229, 231, 235, 0.5);
-    border-right: 1px solid rgba(229, 231, 235, 0.5);
+    border-left: 1px solid var(--border-color-base);
+    border-right: 1px solid var(--border-color-base);
 }
 
 .c-creator-card__stat {
@@ -128,7 +131,7 @@
 
 .c-creator-card__stat-icon {
     font-size: 20px;
-    color: #9ca3af;
+    color: var(--text-color-placeholder);
     margin-bottom: 4px;
     transition: all 0.3s;
 }
@@ -136,29 +139,33 @@
 .c-creator-card__stat-value {
     font-size: 16px;
     font-weight: 700;
-    color: #4b5563;
+    color: var(--text-color-primary);
     line-height: 1.2;
 }
 
 .c-creator-card__stat-label {
     font-size: 12px;
-    color: #9ca3af;
+    color: var(--text-color-secondary);
     margin-top: 2px;
 }
 
 .c-creator-card:hover .c-creator-card__stat:hover .c-creator-card__stat-icon {
-    color: #3b82f6;
+    color: var(--color-primary);
     transform: scale(1.1);
 }
 
 .c-creator-empty {
     padding: 60px 0;
-    border-radius: 16px;
-    background: rgba(255, 255, 255, 0.5);
-    backdrop-filter: blur(10px);
+    border-radius: var(--border-radius-xl, 16px);
+    background: var(--bg-color-glass);
+    backdrop-filter: blur(var(--blur-base, 12px));
 }
 
 @media (max-width: 1024px) {
+    .c-creator-page {
+        padding: 16px;
+    }
+
     .c-creator-card {
         flex-direction: column;
         align-items: flex-start;
@@ -178,7 +185,7 @@
     .c-creator-card__stats {
         width: 100%;
         border: none;
-        border-top: 1px solid #e5e7eb;
+        border-top: 1px solid var(--border-color-base);
         padding: 16px 0 0 0;
         justify-content: space-between;
     }

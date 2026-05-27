@@ -84,8 +84,8 @@ const metaBadges = computed(() => {
     align-items: center;
     padding: 6px 12px;
     border-radius: 999px;
-    background: rgba(15, 118, 110, 0.08);
-    color: #0f766e;
+    background: rgba(var(--color-success-rgb, 16, 185, 129), 0.08);
+    color: var(--color-success);
     font-size: 12px;
     font-weight: 600;
 }

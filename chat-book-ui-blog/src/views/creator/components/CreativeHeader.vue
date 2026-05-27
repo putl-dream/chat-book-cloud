@@ -91,13 +91,11 @@
             class="mobile-creative-drawer"
             :append-to-body="true"
         >
-            <div style="padding: 16px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border-color-light);">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <el-avatar :size="40" :src="user.photo">{{ user.username?.charAt(0) }}</el-avatar>
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-weight: 600; font-size: 15px;">{{ user.username || '创作者' }}</span>
-                        <span style="font-size: 12px; color: var(--color-danger); cursor: pointer;" @click="handleCommand('logout')">退出登录</span>
-                    </div>
+            <div class="c-drawer-user-profile">
+                <el-avatar :size="40" :src="user.photo">{{ user.username?.charAt(0) }}</el-avatar>
+                <div class="c-drawer-user-info">
+                    <span class="c-drawer-username">{{ user.username || '创作者' }}</span>
+                    <span class="c-drawer-logout" @click="handleCommand('logout')">退出登录</span>
                 </div>
             </div>
             <!-- Render the creative aside inside the drawer -->

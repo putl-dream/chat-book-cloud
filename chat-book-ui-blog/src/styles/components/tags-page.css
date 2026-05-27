@@ -43,3 +43,30 @@
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
+
+@media (max-width: 768px) {
+  .tags-page {
+    padding: 20px 16px;
+  }
+
+  .tags-page .tags-header {
+    --page-header-margin: 0 0 24px;
+  }
+
+  .tags-page .tags-content {
+    gap: 24px;
+  }
+
+  .tags-page .tag-section {
+    --solid-panel-padding: 20px;
+  }
+
+  .tags-page .tag-cloud {
+    gap: 8px;
+  }
+
+  .tags-page .tag-item {
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+}

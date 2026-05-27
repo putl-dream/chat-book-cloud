@@ -72,14 +72,14 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: column;
     overflow: hidden;
-    background: #fff;
+    background: var(--bg-color-white);
     z-index: 100;
 }
 
 .workspace-header {
     flex-shrink: 0;
     position: relative !important;
-    border-bottom: 1px solid rgba(22, 50, 79, 0.08);
+    border-bottom: 1px solid var(--border-color-light);
 }
 
 .workspace-body {
@@ -87,7 +87,7 @@ onBeforeUnmount(() => {
     display: flex;
     flex-direction: row;
     min-height: 0;
-    background: #F9FAFB;
+    background: var(--bg-color-base);
 }
 
 .header-actions {
@@ -98,25 +98,25 @@ onBeforeUnmount(() => {
 
 .status-badge {
     padding: 6px 14px;
-    background: rgba(22, 50, 79, 0.04);
+    background: var(--bg-color-hover);
     border-radius: 999px;
     font-size: 12px;
     font-weight: 600;
-    color: rgba(19, 39, 63, 0.6);
+    color: var(--text-color-secondary);
     letter-spacing: 0.02em;
 }
 
 .header-btn.primary {
-    background: #13273f;
+    background: var(--color-primary);
     border: none;
-    color: #fff;
+    color: var(--bg-color-white);
     padding: 0 20px;
 }
 
 .header-btn.primary:not(:disabled):hover {
-    background: #1e3a5f;
+    background: var(--color-primary-hover);
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(19, 39, 63, 0.15);
+    box-shadow: var(--box-shadow-hover);
 }
 
 .header-btn.primary:disabled {

@@ -86,11 +86,11 @@
             :append-to-body="true"
         >
             <el-menu mode="vertical" :default-active="route?.path" router>
-                <div v-if="user.id" style="padding: 16px; display: flex; align-items: center; gap: 12px;">
+                <div v-if="user.id" class="c-drawer-user-profile">
                     <el-avatar :size="40" :src="user.photo"></el-avatar>
-                    <div style="display: flex; flex-direction: column;">
-                        <span style="font-weight: 600; font-size: 15px;">{{ user.name || user.username || '用户' }}</span>
-                        <span style="font-size: 12px; color: var(--text-color-secondary);">欢迎回来</span>
+                    <div class="c-drawer-user-info">
+                        <span class="c-drawer-username">{{ user.name || user.username || '用户' }}</span>
+                        <span class="c-drawer-welcome">欢迎回来</span>
                     </div>
                 </div>
 

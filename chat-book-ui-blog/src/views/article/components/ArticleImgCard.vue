@@ -1,7 +1,7 @@
 <template>
     <div class="post-card c-article-card-shell">
         <div class="post-picture" @click='openArticle(post.id)'>
-            <el-image :src="post.cover" fit="cover" style="width: 150px;height: 100px" />
+            <el-image :src="post.cover" fit="cover" />
         </div>
         <div class="post-context">
             <div class="post-header" @click="openArticle(post.id)">
@@ -12,7 +12,7 @@
             </div>
             <div class="post-footer">
                 <div class="post-meta" @click="openArticle(post.id)">
-                    <el-avatar class="userInfo" :src="post.authorAvatar" size="small" style="margin-right: 10px" />
+                    <el-avatar class="userInfo-avatar" :src="post.authorAvatar" size="small" />
                     <div class="meta-details">
                         <el-text class="userInfo"><b>{{ post.userName }}</b></el-text>
                         <el-text class="userInfo">{{ post.createTime }}</el-text>
