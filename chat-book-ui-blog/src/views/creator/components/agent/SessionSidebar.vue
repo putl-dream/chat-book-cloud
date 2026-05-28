@@ -213,11 +213,11 @@ onBeforeUnmount(() => {
     width: 300px;
     height: 100%;
     background:
-        radial-gradient(circle at top left, rgba(209, 96, 61, 0.12), transparent 28%),
-        linear-gradient(180deg, rgba(255, 248, 242, 0.92), rgba(255, 255, 255, 0.8));
+        radial-gradient(circle at top left, rgba(var(--color-primary-rgb), 0.12), transparent 28%),
+        linear-gradient(180deg, var(--bg-color-glass), var(--bg-color-white));
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
-    border-right: 1px solid rgba(22, 50, 79, 0.08);
+    border-right: 1px solid var(--border-color-light);
     display: flex;
     flex-direction: column;
     transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -236,26 +236,26 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(22, 50, 79, 0.05);
+    border-bottom: 1px solid var(--border-color-light);
 }
 
 .sidebar-title {
     margin: 0;
     font-size: 15px;
     font-weight: 700;
-    color: #13273f;
+    color: var(--text-color-primary);
     white-space: nowrap;
     letter-spacing: 0.02em;
 }
 
 .collapse-btn {
-    color: rgba(19, 39, 63, 0.56);
+    color: var(--text-color-secondary);
     margin-left: auto;
 }
 
 .collapse-btn:hover {
     color: var(--color-primary);
-    background: rgba(22, 50, 79, 0.04);
+    background: var(--bg-color-hover);
 }
 
 .session-sidebar.is-collapsed .sidebar-header {
@@ -280,13 +280,13 @@ onBeforeUnmount(() => {
     height: 42px;
     margin-bottom: 14px;
     font-weight: 600;
-    background: linear-gradient(135deg, #d1603d, #c04e2b);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
     border: none;
-    box-shadow: 0 10px 20px rgba(209, 96, 61, 0.18);
+    box-shadow: 0 10px 20px rgba(var(--color-primary-rgb), 0.18);
 }
 
 .new-session-btn:hover {
-    background: linear-gradient(135deg, #d66a49, #b94725);
+    background: linear-gradient(135deg, var(--color-primary-hover), var(--color-primary-active));
 }
 
 .search-shell {
@@ -295,15 +295,15 @@ onBeforeUnmount(() => {
 
 .search-input :deep(.el-input__wrapper) {
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.88);
-    box-shadow: 0 0 0 1px rgba(19, 39, 63, 0.06);
+    background: var(--bg-color-white);
+    box-shadow: 0 0 0 1px var(--border-color-base);
     padding: 0 12px;
 }
 
 .search-input :deep(.el-input__wrapper.is-focus) {
     box-shadow:
-        0 0 0 1px rgba(209, 96, 61, 0.22),
-        0 10px 18px rgba(209, 96, 61, 0.08);
+        0 0 0 1px var(--color-primary),
+        0 10px 18px rgba(var(--color-primary-rgb), 0.08);
 }
 
 .session-section + .session-section {
@@ -321,7 +321,7 @@ onBeforeUnmount(() => {
     margin-bottom: 10px;
     font-size: 11px;
     font-weight: 700;
-    color: rgba(19, 39, 63, 0.48);
+    color: var(--text-color-placeholder);
     letter-spacing: 0.08em;
 }
 
@@ -342,33 +342,33 @@ onBeforeUnmount(() => {
     transition: all 0.2s ease;
     border: 1px solid transparent;
     text-align: left;
-    background: rgba(255, 255, 255, 0.55);
+    background: var(--bg-color-glass);
 }
 
 .session-item:hover {
-    background: rgba(255, 255, 255, 0.96);
-    border-color: rgba(22, 50, 79, 0.08);
+    background: var(--bg-color-hover);
+    border-color: var(--border-color-base);
     transform: translateY(-1px);
 }
 
 .session-item.is-active {
-    background: rgba(255, 255, 255, 1);
-    border-color: rgba(209, 96, 61, 0.18);
-    box-shadow: 0 10px 20px rgba(21, 37, 64, 0.06);
+    background: var(--bg-color-white);
+    border-color: var(--color-primary);
+    box-shadow: var(--box-shadow-base);
 }
 
 .session-item--history {
-    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.45);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
 .session-icon {
     font-size: 18px;
-    color: rgba(19, 39, 63, 0.36);
+    color: var(--text-color-placeholder);
     flex-shrink: 0;
 }
 
 .session-item.is-active .session-icon {
-    color: #d1603d;
+    color: var(--color-primary);
 }
 
 .session-info {
@@ -389,7 +389,7 @@ onBeforeUnmount(() => {
 .session-name {
     font-size: 14px;
     font-weight: 600;
-    color: #13273f;
+    color: var(--text-color-primary);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
@@ -398,7 +398,7 @@ onBeforeUnmount(() => {
 .session-time,
 .session-meta {
     font-size: 11px;
-    color: rgba(19, 39, 63, 0.52);
+    color: var(--text-color-secondary);
 }
 
 .session-time {
@@ -415,8 +415,8 @@ onBeforeUnmount(() => {
     border-radius: 999px;
     font-size: 10px;
     font-weight: 700;
-    color: #b24a28;
-    background: rgba(209, 96, 61, 0.12);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
     flex-shrink: 0;
 }
 
@@ -432,15 +432,15 @@ onBeforeUnmount(() => {
     gap: 8px;
     padding: 14px;
     border-radius: 16px;
-    background: rgba(255, 255, 255, 0.72);
-    border: 1px solid rgba(22, 50, 79, 0.04);
+    background: var(--bg-color-glass);
+    border: 1px solid var(--border-color-light);
 }
 
 .session-skeleton__title,
 .session-skeleton__meta {
     display: block;
     border-radius: 999px;
-    background: linear-gradient(90deg, rgba(19, 39, 63, 0.06), rgba(19, 39, 63, 0.14), rgba(19, 39, 63, 0.06));
+    background: linear-gradient(90deg, var(--border-color-light), var(--border-color-base), var(--border-color-light));
     background-size: 200% 100%;
     animation: skeleton-shimmer 1.3s linear infinite;
 }
@@ -460,20 +460,20 @@ onBeforeUnmount(() => {
     text-align: center;
     font-size: 12px;
     line-height: 1.6;
-    color: rgba(19, 39, 63, 0.42);
-    background: rgba(255, 255, 255, 0.55);
+    color: var(--text-color-secondary);
+    background: var(--bg-color-glass);
     border-radius: 16px;
-    border: 1px dashed rgba(22, 50, 79, 0.08);
+    border: 1px dashed var(--border-color-base);
 }
 
 .load-more-btn {
     margin-top: 12px;
     align-self: center;
-    color: rgba(19, 39, 63, 0.62);
+    color: var(--text-color-regular);
 }
 
 .load-more-btn:hover {
-    color: #d1603d;
+    color: var(--color-primary);
 }
 
 @keyframes skeleton-shimmer {

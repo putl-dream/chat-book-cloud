@@ -238,8 +238,8 @@ onBeforeUnmount(() => {
     height: 100%;
     min-width: 0;
     background:
-        radial-gradient(circle at top left, rgba(209, 96, 61, 0.08), transparent 26%),
-        linear-gradient(180deg, rgba(255, 251, 247, 0.86), rgba(255, 255, 255, 0.98));
+        radial-gradient(circle at top left, rgba(var(--color-primary-rgb), 0.08), transparent 26%),
+        linear-gradient(180deg, var(--bg-color-glass), var(--bg-color-base));
     display: flex;
     flex-direction: column;
     z-index: 10;
@@ -251,8 +251,8 @@ onBeforeUnmount(() => {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid rgba(22, 50, 79, 0.05);
-    background: rgba(255, 255, 255, 0.8);
+    border-bottom: 1px solid var(--border-color-light);
+    background: var(--bg-color-overlay);
     backdrop-filter: blur(16px);
     gap: 16px;
 }
@@ -276,8 +276,8 @@ onBeforeUnmount(() => {
     align-items: center;
     padding: 4px 10px;
     border-radius: 999px;
-    background: rgba(209, 96, 61, 0.12);
-    color: #b24a28;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
     font-size: 11px;
     font-weight: 700;
     letter-spacing: 0.04em;
@@ -285,14 +285,14 @@ onBeforeUnmount(() => {
 
 .scene-next {
     font-size: 11px;
-    color: rgba(19, 39, 63, 0.52);
+    color: var(--text-color-secondary);
 }
 
 .chat-title {
     margin: 0;
     font-size: 18px;
     font-weight: 700;
-    color: #13273f;
+    color: var(--text-color-primary);
     letter-spacing: -0.02em;
 }
 
@@ -300,14 +300,14 @@ onBeforeUnmount(() => {
     margin: 0;
     font-size: 13px;
     line-height: 1.5;
-    color: rgba(19, 39, 63, 0.58);
+    color: var(--text-color-regular);
 }
 
 .chat-reason {
     margin: 0;
     font-size: 12px;
     line-height: 1.4;
-    color: rgba(19, 39, 63, 0.46);
+    color: var(--text-color-secondary);
 }
 
 .chat-actions {
@@ -332,7 +332,7 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     text-align: center;
-    color: rgba(19, 39, 63, 0.6);
+    color: var(--text-color-secondary);
     padding: 20px;
     max-width: 540px;
     margin: 0 auto;
@@ -341,7 +341,7 @@ onBeforeUnmount(() => {
 .placeholder-title {
     font-size: 16px;
     font-weight: 600;
-    color: #13273f;
+    color: var(--text-color-primary);
     margin: 0 0 8px;
 }
 
@@ -379,23 +379,23 @@ onBeforeUnmount(() => {
     width: 36px;
     height: 36px;
     border-radius: 12px;
-    background: rgba(22, 50, 79, 0.06);
+    background: var(--bg-color-hover);
     flex-shrink: 0;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 12px;
     font-weight: 600;
-    color: rgba(19, 39, 63, 0.7);
+    color: var(--text-color-regular);
 }
 
 .msg-assistant .msg-avatar {
-    background: rgba(209, 96, 61, 0.1);
-    color: #d1603d;
+    background: var(--color-primary-light);
+    color: var(--color-primary);
 }
 
 .msg-user .msg-avatar {
-    background: rgba(22, 50, 79, 0.8);
+    background: var(--color-primary);
     color: #fff;
 }
 
@@ -406,17 +406,17 @@ onBeforeUnmount(() => {
 .msg-bubble {
     padding: 2px 8px;
     border-radius: 14px;
-    background: #F9FAFB;
-    border: 1px solid rgba(22, 50, 79, 0.04);
+    background: var(--bg-color-white);
+    border: 1px solid var(--border-color-light);
     font-size: 14px;
     line-height: 1.5;
-    color: #13273f;
+    color: var(--text-color-primary);
     word-break: break-word;
     overflow-x: auto;
 }
 
 .msg-user .msg-bubble {
-    background: #13273f;
+    background: var(--color-primary);
     color: #fff;
     border: none;
     border-top-right-radius: 4px;
@@ -428,14 +428,14 @@ onBeforeUnmount(() => {
 
 .msg-assistant .msg-bubble {
     border-top-left-radius: 4px;
-    background: rgb(240, 244, 249);
-    box-shadow: 0 2px 8px rgba(21, 37, 64, 0.04);
-    border-color: rgba(22, 50, 79, 0.08);
+    background: var(--bg-color-white);
+    box-shadow: var(--box-shadow-base);
+    border-color: var(--border-color-light);
 }
 
 .msg-system .msg-bubble {
-    background: rgba(209, 96, 61, 0.06);
-    color: rgba(209, 96, 61, 0.8);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
     border: none;
     font-size: 12px;
     padding: 8px 16px;
@@ -450,7 +450,7 @@ onBeforeUnmount(() => {
 
 .streaming-hint {
     margin: 0;
-    color: rgba(19, 39, 63, 0.5);
+    color: var(--text-color-secondary);
     display: flex;
     align-items: center;
     gap: 6px;
@@ -471,8 +471,8 @@ onBeforeUnmount(() => {
 
 .chat-footer {
     padding: 16px 22px 18px;
-    border-top: 1px solid rgba(22, 50, 79, 0.05);
-    background: rgba(255, 255, 255, 0.9);
+    border-top: 1px solid var(--border-color-light);
+    background: var(--bg-color-overlay);
     backdrop-filter: blur(16px);
 }
 
@@ -480,18 +480,18 @@ onBeforeUnmount(() => {
     position: relative;
     max-width: 920px;
     margin: 0 auto;
-    border: 1px solid rgba(22, 50, 79, 0.15);
+    border: 1px solid var(--border-color-base);
     border-radius: 12px;
     transition: all 0.2s ease;
-    background: #fff;
+    background: var(--bg-color-white);
     display: flex;
     flex-direction: column;
     padding: 6px;
 }
 
 .input-wrapper:focus-within {
-    border-color: rgba(209, 96, 61, 0.5);
-    box-shadow: 0 0 0 2px rgba(209, 96, 61, 0.08);
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px rgba(var(--color-primary-rgb), 0.15);
 }
 
 .input-wrapper :deep(.el-textarea__inner) {
@@ -500,7 +500,7 @@ onBeforeUnmount(() => {
     background: transparent !important;
     padding: 4px 6px;
     font-size: 14px;
-    color: #13273f;
+    color: var(--text-color-primary);
     line-height: 1.5;
 }
 
@@ -513,7 +513,7 @@ onBeforeUnmount(() => {
 }
 
 .interrupt-btn {
-    color: rgba(19, 39, 63, 0.7);
+    color: var(--text-color-regular);
 }
 
 .send-btn {
@@ -521,23 +521,23 @@ onBeforeUnmount(() => {
     height: 28px;
     padding: 0;
     transition: all 0.2s ease;
-    background: #d1603d;
+    background: var(--color-primary);
     border: none;
 }
 
 .send-btn:hover:not(:disabled) {
-    background: #b94725;
+    background: var(--color-primary-hover);
     transform: scale(1.05);
 }
 
 .send-btn:disabled {
-    background: rgba(22, 50, 79, 0.1);
-    color: rgba(255, 255, 255, 0.9);
+    background: var(--border-color-light);
+    color: var(--text-color-placeholder);
 }
 
 .footer-hint {
     font-size: 12px;
-    color: rgba(19, 39, 63, 0.5);
+    color: var(--text-color-secondary);
     margin: 10px auto 0;
     max-width: 920px;
     padding: 0 4px;
@@ -545,9 +545,9 @@ onBeforeUnmount(() => {
 }
 
 .primary-action-btn {
-    background: linear-gradient(135deg, #d1603d, #c04e2b);
+    background: linear-gradient(135deg, var(--color-primary), var(--color-primary-hover));
     border: none;
-    box-shadow: 0 4px 10px rgba(209, 96, 61, 0.2);
+    box-shadow: 0 4px 10px rgba(var(--color-primary-rgb), 0.2);
 }
 
 @media (max-width: 900px) {

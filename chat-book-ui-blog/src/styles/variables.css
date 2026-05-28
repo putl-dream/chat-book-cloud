@@ -348,6 +348,7 @@
 
 [data-theme="dark"] {
     --color-primary: #6366f1; /* indigo-500 */
+    --color-primary-rgb: 99, 102, 241;
     --color-primary-hover: #818cf8;
     --color-primary-light: #3730a3;
     --color-primary-active: #4f46e5;
