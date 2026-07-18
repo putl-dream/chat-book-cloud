@@ -1,0 +1,24 @@
+name: Test Mini Runner
+
+on:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on:
+      - self-hosted
+      - linux
+      - x64
+      - mini-server
+
+    steps:
+      - name: Check host
+        run: |
+          echo "host=$(hostname)"
+          echo "user=$(whoami)"
+          echo "path=$(pwd)"
+
+      - name: Check Docker
+        run: |
+          docker ps
+          docker compose version
